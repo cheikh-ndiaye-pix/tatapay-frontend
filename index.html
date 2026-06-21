@@ -188,10 +188,13 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
 <div class="screen active" id="screenSplash" style="background:linear-gradient(180deg,#06120a,#0c2010);justify-content:space-between;">
   <div class="sn-stripe"></div>
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;">
-    <svg width="80" height="54" viewBox="0 0 90 60" style="border-radius:8px;margin-bottom:20px;display:block;">
-      <rect width="30" height="60" fill="#009A44"/><rect x="30" width="30" height="60" fill="#FDEF42"/><rect x="60" width="30" height="60" fill="#DF0024"/>
-      <polygon points="45,18 47.9,27 57,27 49.5,32.5 52.4,41.5 45,36 37.6,41.5 40.5,32.5 33,27 42.1,27" fill="#009A44"/>
-    </svg>
+    <img src="https://i.ibb.co/placeholder/tatapay-logo.png" onerror="this.style.display='none'" style="width:120px;height:120px;object-fit:contain;margin-bottom:20px;border-radius:20px;" />
+    <div style="width:120px;height:120px;background:linear-gradient(135deg,#009A44,#006B30);border-radius:24px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 8px 32px #009A4440;">
+      <div style="text-align:center;">
+        <div style="font-size:40px;">🚌</div>
+        <div style="font-size:10px;color:#FDEF42;font-weight:800;letter-spacing:1px;">TATAPAY</div>
+      </div>
+    </div>
     <div style="font-weight:900;font-size:46px;line-height:1;letter-spacing:-2px;margin-bottom:6px;">Tata<span style="color:var(--y)">Pay</span></div>
     <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;background:linear-gradient(90deg,#009A44,#FDEF42,#DF0024);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;margin-bottom:8px;">🇸🇳 AFTU · CAPTRANS · Transport</div>
     <div style="color:#ffffff22;font-size:11px;font-family:'JetBrains Mono',monospace;">== TRANSPAY == AFTU == CAPTRANS ==</div>
@@ -1358,6 +1361,12 @@ window.forgotPassword=async()=>{
   }
 };
 
+
+window.adminSignOut=async()=>{
+  await signOut(auth);
+  show('screenSplash');
+};
+
 window.markWithdrawDone=async(docId)=>{
   try{
     await updateDoc(doc(db,'withdrawal_requests',docId),{status:'done',treatedAt:serverTimestamp()});
@@ -1402,7 +1411,7 @@ function handleQR(raw){
   <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
   <div style="padding:16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ffffff15;">
     <div style="font-weight:900;font-size:20px;color:#fff;">🛡️ Admin <span style="color:#009A44;">TataPay</span></div>
-    <button onclick="doSignOut()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px 14px;color:#aaa;font-family:'Space Grotesk',sans-serif;font-size:13px;cursor:pointer;">Déconnexion</button>
+    <button onclick="adminSignOut()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px 14px;color:#aaa;font-family:'Space Grotesk',sans-serif;font-size:13px;cursor:pointer;">Déconnexion</button>
   </div>
   <div style="padding:16px;overflow-y:auto;flex:1;">
     <!-- Stats -->
