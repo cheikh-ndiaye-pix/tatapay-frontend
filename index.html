@@ -204,7 +204,10 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
     <div class="input-wrap"><label class="input-label">Mot de passe *</label><input class="input-field" id="authPass" type="password" placeholder="••••••••"/></div>
     <div id="fieldPass2" style="display:none"><div class="input-wrap"><label class="input-label">Confirmer *</label><input class="input-field" id="authPass2" type="password" placeholder="••••••••"/></div></div>
     <button class="btn btn-primary btn-full" onclick="doAuth()" id="authSubmitBtn">Se connecter</button>
-    <div style="text-align:center;margin-top:18px;color:#666;font-size:14px;">
+    <div style="text-align:center;margin-top:12px;">
+      <span onclick="forgotPassword()" style="color:#888;font-size:13px;cursor:pointer;text-decoration:underline;">Mot de passe oublié ?</span>
+    </div>
+    <div style="text-align:center;margin-top:12px;color:#666;font-size:14px;">
       <span id="authSwitchText">Pas de compte ?</span>
       <span onclick="toggleAuthMode()" style="color:var(--g);font-weight:700;cursor:pointer;margin-left:4px;" id="authSwitchLink">S'inscrire</span>
     </div>
@@ -557,7 +560,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
 
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import{getFirestore,doc,setDoc,getDoc,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:265d82fbda0db1b09b0b6d"};
@@ -567,7 +570,7 @@ const db=getFirestore(fbApp);
 
 // ── BACKEND RENDER ──────────────────────────────────────────
 const BACKEND='https://tatapay-backend-1.onrender.com';
-const ADMIN_EMAIL='cheikhmndiaye209@gmail.com'; // ← ton email admin
+const ADMIN_EMAIL='papadioup11@gmail.com'; // ← ton email admin
 
 let S={role:null,uid:null,profile:null,authRole:'passenger',isReg:false,scMethod:null,ticketBus:null,ticketSection:null,camMode:null,stream:null,facing:'environment',scanning:false,friendTarget:null};
 let activeTicketData=null;
@@ -1318,6 +1321,19 @@ async function loadAdminDashboard(){
     console.error('Erreur admin:',e);
   }
 }
+
+
+// ── MOT DE PASSE OUBLIÉ ──
+window.forgotPassword=async()=>{
+  const email=document.getElementById('authEmail').value.trim().toLowerCase();
+  if(!email){notify('⚠️','Email requis','Entre ton email pour réinitialiser le mot de passe.');return;}
+  try{
+    await sendPasswordResetEmail(auth,email);
+    notify('✅','Email envoyé','Vérifie ta boîte mail pour réinitialiser ton mot de passe.');
+  }catch(e){
+    notify('❌','Erreur',e.message);
+  }
+};
 
 window.markWithdrawDone=async(docId)=>{
   try{
