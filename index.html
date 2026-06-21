@@ -567,6 +567,7 @@ const db=getFirestore(fbApp);
 
 // ── BACKEND RENDER ──────────────────────────────────────────
 const BACKEND='https://tatapay-backend-1.onrender.com';
+const ADMIN_EMAIL='cheikhmndiaye209@gmail.com'; // ← ton email admin
 
 let S={role:null,uid:null,profile:null,authRole:'passenger',isReg:false,scMethod:null,ticketBus:null,ticketSection:null,camMode:null,stream:null,facing:'environment',scanning:false,friendTarget:null};
 let activeTicketData=null;
@@ -650,7 +651,9 @@ onAuthStateChanged(auth,async user=>{
     loader('Chargement…');
     try{
       const snap=await getDoc(doc(db,'users',user.uid));
-      if(snap.exists()){S.uid=user.uid;S.profile=snap.data();S.role=S.profile.role;loginUI();}
+      if(snap.exists()){S.uid=user.uid;S.profile=snap.data();S.role=S.profile.role;
+      if(user.email===ADMIN_EMAIL){show('screenAdmin');loadAdminDashboard();loader('',false);return;}
+      loginUI();}
       else{loader('',false);await signOut(auth);}
     }catch(e){loader('',false);notify('❌','Erreur',e.message);}
   }else{show('screenSplash');loader('',false);}
@@ -1278,6 +1281,54 @@ function scanWithJsQR(video){
 window.stopCamera=()=>{S.scanning=false;document.getElementById('cameraScreen').classList.remove('open');document.getElementById('manualPanel')?.remove();if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null;}};
 window.flipCamera=async()=>{S.facing=S.facing==='environment'?'user':'environment';if(S.stream)S.stream.getTracks().forEach(t=>t.stop());await window.openCamera(S.camMode);};
 
+
+// ── ADMIN DASHBOARD ──
+async function loadAdminDashboard(){
+  try{
+    // Demandes de retrait
+    const wdSnap=await getDocs(query(collection(db,'withdrawal_requests'),orderBy('requestedAt','desc'),limit(50)));
+    const list=document.getElementById('adminWithdrawList');
+    const pending=wdSnap.docs.filter(d=>d.data().status==='pending');
+    document.getElementById('adminPendingWithdraw').textContent=pending.length;
+    
+    if(wdSnap.empty){list.innerHTML='<div style="text-align:center;color:#555;padding:30px;">Aucune demande</div>';return;}
+    
+    list.innerHTML=wdSnap.docs.map(d=>{
+      const w=d.data();
+      const date=w.requestedAt?.toDate?.()?.toLocaleDateString('fr-FR')||'—';
+      const isPending=w.status==='pending';
+      return `<div style="background:#ffffff08;border:1px solid #ffffff15;border-radius:14px;padding:14px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-weight:700;color:#fff;">${w.name||'—'}</div>
+          <div style="font-weight:900;color:#FDEF42;">${(w.amount||0).toLocaleString('fr-FR')} FCFA</div>
+        </div>
+        <div style="font-size:11px;color:#888;margin-bottom:4px;">Wallet: ${w.walletId||'—'}</div>
+        <div style="font-size:11px;color:#888;margin-bottom:10px;">Ref: ${w.ref||'—'} · ${date}</div>
+        <div style="display:flex;gap:8px;">
+          ${isPending?`<button onclick="markWithdrawDone('${d.id}')" style="flex:1;background:#009A44;border:none;border-radius:10px;padding:8px;color:#fff;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;">✅ Marquer traité</button>`
+          :`<div style="flex:1;text-align:center;color:#009A44;font-weight:700;font-size:13px;">✅ Traité</div>`}
+        </div>
+      </div>`;
+    }).join('');
+
+    // Stats utilisateurs
+    const usersSnap=await getDocs(collection(db,'users'));
+    document.getElementById('adminTotalUsers').textContent=usersSnap.size;
+  }catch(e){
+    console.error('Erreur admin:',e);
+  }
+}
+
+window.markWithdrawDone=async(docId)=>{
+  try{
+    await updateDoc(doc(db,'withdrawal_requests',docId),{status:'done',treatedAt:serverTimestamp()});
+    notify('✅','Traité','Demande marquée comme traitée');
+    loadAdminDashboard();
+  }catch(e){
+    notify('❌','Erreur',e.message);
+  }
+};
+
 function handleQR(raw){
   stopCamera();raw=(raw||'').trim();
   const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);
@@ -1296,5 +1347,34 @@ function handleQR(raw){
 }
 </script>
 </div>
+
+<!-- ADMIN DASHBOARD -->
+<div class="screen" id="screenAdmin" style="background:#0a0a0a;">
+  <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
+  <div style="padding:16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ffffff15;">
+    <div style="font-weight:900;font-size:20px;color:#fff;">🛡️ Admin <span style="color:#009A44;">TataPay</span></div>
+    <button onclick="doSignOut()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px 14px;color:#aaa;font-family:'Space Grotesk',sans-serif;font-size:13px;cursor:pointer;">Déconnexion</button>
+  </div>
+  <div style="padding:16px;overflow-y:auto;flex:1;">
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+      <div style="background:#009A4420;border:1px solid #009A4444;border-radius:14px;padding:14px;text-align:center;">
+        <div style="font-size:24px;font-weight:900;color:#009A44;" id="adminTotalUsers">—</div>
+        <div style="font-size:11px;color:#aaa;margin-top:4px;">Utilisateurs</div>
+      </div>
+      <div style="background:#FDEF4220;border:1px solid #FDEF4244;border-radius:14px;padding:14px;text-align:center;">
+        <div style="font-size:24px;font-weight:900;color:#FDEF42;" id="adminPendingWithdraw">—</div>
+        <div style="font-size:11px;color:#aaa;margin-top:4px;">Retraits en attente</div>
+      </div>
+    </div>
+
+    <!-- Demandes de retrait -->
+    <div style="font-weight:800;font-size:16px;color:#fff;margin-bottom:12px;">💸 Demandes de retrait</div>
+    <div id="adminWithdrawList">
+      <div style="text-align:center;color:#555;padding:30px;">Chargement...</div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
