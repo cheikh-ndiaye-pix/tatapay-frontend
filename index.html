@@ -38,6 +38,9 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
 .input-field{width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid #2a3a2a;background:#ffffff0d;font-size:15px;color:var(--w);outline:none;font-family:'Space Grotesk',sans-serif;}
 .input-field::placeholder{color:#444;}
 .input-field:focus{border-color:var(--g);box-shadow:0 0 0 3px #009A4420;}
+.select-field{width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid #2a3a2a;background:#0f2016;font-size:15px;color:var(--w);outline:none;font-family:'Space Grotesk',sans-serif;appearance:none;}
+.select-field:focus{border-color:var(--g);}
+.select-field option{background:#0f2016;color:var(--w);}
 .bottom-nav{display:flex;background:#0a1e0d;border-top:1px solid #009A4422;padding:8px 0 18px;position:sticky;bottom:0;z-index:10;}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;font-size:10px;font-weight:600;padding:6px 0;font-family:'Space Grotesk',sans-serif;transition:color .2s;}
 .nav-btn.active{color:var(--g);}
@@ -46,6 +49,10 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
 .recv-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;font-size:10px;font-weight:600;padding:6px 0;font-family:'Space Grotesk',sans-serif;transition:color .2s;}
 .recv-nav-btn.active{color:var(--orange);}
 .recv-nav-btn:not(.active){color:#555;}
+.owner-nav{display:flex;background:#0a1e0d;border-top:1px solid #7c3aed22;padding:8px 0 18px;position:sticky;bottom:0;z-index:10;}
+.owner-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;font-size:10px;font-weight:600;padding:6px 0;font-family:'Space Grotesk',sans-serif;transition:color .2s;}
+.owner-nav-btn.active{color:#a78bfa;}
+.owner-nav-btn:not(.active){color:#555;}
 .modal-overlay{position:fixed;inset:0;background:#000000cc;z-index:200;display:flex;align-items:flex-end;justify-content:center;}
 .modal-box{background:#0c1f12;border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:92vh;overflow-y:auto;border:1px solid #009A4422;animation:slideUp .3s ease;}
 .modal-header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px 0;}
@@ -64,10 +71,8 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
 .ticket-thermal .t-header{text-align:center;font-weight:800;font-size:14px;border-bottom:1px dashed #999;padding-bottom:8px;margin-bottom:8px;}
 .ticket-thermal .t-sn{text-align:center;border-top:1px dashed #999;padding-top:8px;margin-top:8px;font-size:11px;color:#444;}
 .sel-tabs{display:flex;background:#ffffff0d;border-radius:12px;padding:4px;border:1px solid #ffffff12;}
-.sel-tab{flex:1;padding:10px;border-radius:10px;border:none;cursor:pointer;font-weight:700;font-size:14px;font-family:'Space Grotesk',sans-serif;transition:all .2s;}
+.sel-tab{flex:1;padding:10px;border-radius:10px;border:none;cursor:pointer;font-weight:700;font-size:13px;font-family:'Space Grotesk',sans-serif;transition:all .2s;}
 .pay-method-card{border:2px solid #2a3a2a;border-radius:18px;padding:20px 14px;text-align:center;cursor:pointer;background:#ffffff08;transition:all .22s;flex:1;}
-.pay-method-card.sel-wave{border-color:#1a56db;background:#1a56db18;}
-.pay-method-card.sel-om{border-color:var(--orange);background:#FF6B0018;}
 .step-dots{display:flex;gap:8px;justify-content:center;margin-bottom:20px;}
 .step-dot{width:8px;height:8px;border-radius:4px;background:#ffffff20;transition:all .3s;}
 .step-dot.active{width:24px;background:var(--g);}
@@ -104,6 +109,9 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
 .cam-scanline{position:absolute;left:4px;right:4px;height:3px;background:linear-gradient(90deg,transparent,#009A44,#FDEF42,#DF0024,transparent);border-radius:2px;animation:scanMove 1.8s ease-in-out infinite;top:50%;}
 .cam-error{background:#DF0024cc;border-radius:14px;padding:14px 20px;margin-top:20px;color:#fff;font-size:13px;font-weight:700;text-align:center;max-width:300px;line-height:1.5;}
 .camera-toolbar{position:absolute;bottom:0;left:0;right:0;padding:24px 20px 40px;display:flex;justify-content:center;background:linear-gradient(0deg,#000000cc,transparent);}
+/* PENDING BADGE */
+.pending-badge{background:var(--r);color:#fff;border-radius:50%;width:18px;height:18px;font-size:9px;font-weight:900;display:none;align-items:center;justify-content:center;position:absolute;top:-4px;right:-4px;}
+.pending-badge.show{display:flex;}
 </style>
 </head>
 <body>
@@ -156,7 +164,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
   <div class="camera-toolbar"><button onclick="stopCamera()" style="padding:12px 32px;border-radius:14px;border:none;cursor:pointer;background:#ffffff22;color:#fff;font-weight:800;font-size:14px;font-family:'Space Grotesk',sans-serif;pointer-events:all;">✕ Fermer</button></div>
 </div>
 
-<!-- SPLASH -->
+<!-- ═══════════════════════════ SPLASH ═══════════════════════════ -->
 <div class="screen active" id="screenSplash" style="background:linear-gradient(180deg,#06120a,#0c2010);justify-content:space-between;">
   <div class="sn-stripe"></div>
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;">
@@ -175,7 +183,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
   <div class="sn-stripe"></div>
 </div>
 
-<!-- AUTH -->
+<!-- ═══════════════════════════ AUTH ═══════════════════════════ -->
 <div class="screen" id="screenAuth">
   <div class="sn-stripe"></div>
   <div style="background:#0c1f12;padding:28px 24px 20px;border-bottom:1px solid #009A4422;">
@@ -183,19 +191,39 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
     <div style="font-weight:900;font-size:22px;" id="authTitle">Connexion</div>
   </div>
   <div style="padding:20px 24px;flex:1;overflow-y:auto;">
-    <div class="sel-tabs" style="margin-bottom:20px;">
-      <button class="sel-tab" id="tabPassenger" onclick="setRole('passenger')" style="background:var(--g);color:var(--w);">🧍 Passager</button>
-      <button class="sel-tab" id="tabReceiver" onclick="setRole('receiver')" style="background:transparent;color:#888;">🎫 Receveur</button>
+    <!-- Tabs rôles -->
+    <div class="sel-tabs" style="margin-bottom:20px;" id="roleTabsWrap">
+      <button class="sel-tab" id="tabPassenger" onclick="setRole('passenger')" style="background:var(--g);color:var(--w);font-size:12px;">🧍 Passager</button>
+      <button class="sel-tab" id="tabReceiver" onclick="setRole('receiver')" style="background:transparent;color:#888;font-size:12px;">🎫 Receveur</button>
+      <button class="sel-tab" id="tabOwner" onclick="setRole('owner')" style="background:transparent;color:#888;font-size:12px;">🚌 Propriétaire</button>
     </div>
+
+    <!-- Champs communs -->
     <div id="fieldName" style="display:none"><div class="input-wrap"><label class="input-label">Nom complet *</label><input class="input-field" id="authName" placeholder="Moussa Diallo"/></div></div>
     <div class="input-wrap"><label class="input-label">E-mail *</label><input class="input-field" id="authEmail" type="email" placeholder="exemple@email.com"/></div>
     <div id="fieldPhone" style="display:none"><div class="input-wrap"><label class="input-label">Téléphone *</label><input class="input-field" id="authPhone" type="tel" placeholder="77 123 45 67"/></div></div>
+
+    <!-- Champs receveur -->
     <div id="fieldsReceiver" style="display:none;">
       <div class="input-wrap"><label class="input-label">GIE *</label><input class="input-field" id="authGIE" placeholder="DPL"/></div>
       <div class="input-wrap"><label class="input-label">N° Véhicule *</label><input class="input-field" id="authVehicle" placeholder="AA809ST"/></div>
       <div class="input-wrap"><label class="input-label">Ligne *</label><input class="input-field" id="authLigne" placeholder="72"/></div>
       <div class="input-wrap"><label class="input-label">Zone *</label><input class="input-field" id="authZone" placeholder="B"/></div>
+      <div class="input-wrap">
+        <label class="input-label">Propriétaire de bus *</label>
+        <select class="select-field" id="authOwnerSelect"><option value="">Chargement…</option></select>
+        <div style="font-size:11px;color:#666;margin-top:4px;">Votre compte sera activé après validation par le propriétaire choisi.</div>
+      </div>
     </div>
+
+    <!-- Champs propriétaire -->
+    <div id="fieldsOwner" style="display:none;">
+      <div class="input-wrap"><label class="input-label">Nom du GIE / Entreprise *</label><input class="input-field" id="authOwnerCompany" placeholder="GIE Dakar Express"/></div>
+      <div style="background:#7c3aed15;border:1.5px solid #7c3aed44;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#c4b5fd;line-height:1.6;">
+        ⚠️ La création d'un compte propriétaire nécessite une validation par l'administrateur. Votre compte sera en attente jusqu'à approbation.
+      </div>
+    </div>
+
     <div class="input-wrap"><label class="input-label">Mot de passe *</label><input class="input-field" id="authPass" type="password" placeholder="••••••••"/></div>
     <div id="fieldPass2" style="display:none"><div class="input-wrap"><label class="input-label">Confirmer *</label><input class="input-field" id="authPass2" type="password" placeholder="••••••••"/></div></div>
     <button class="btn btn-primary btn-full" onclick="doAuth()" id="authSubmitBtn">Se connecter</button>
@@ -206,7 +234,16 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
   </div>
 </div>
 
-<!-- PASSENGER -->
+<!-- ═══════════════════════════ ÉCRAN EN ATTENTE ═══════════════════════════ -->
+<div class="screen" id="screenPending" style="justify-content:center;align-items:center;padding:32px 24px;text-align:center;">
+  <div class="sn-stripe" style="position:absolute;top:0;left:0;right:0;"></div>
+  <div style="font-size:64px;margin-bottom:20px;" id="pendingIcon">⏳</div>
+  <div style="font-weight:900;font-size:22px;margin-bottom:10px;" id="pendingTitle">Compte en attente</div>
+  <div style="color:#888;font-size:14px;line-height:1.7;margin-bottom:28px;" id="pendingBody">Votre compte est en attente de validation.</div>
+  <button class="btn btn-secondary" onclick="doLogout()">← Se déconnecter</button>
+</div>
+
+<!-- ═══════════════════════════ PASSAGER (INCHANGÉ) ═══════════════════════════ -->
 <div class="screen" id="screenPassenger">
   <div class="scroll-area">
     <div class="tab-content active" id="passTab-home">
@@ -271,7 +308,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
   </div>
 </div>
 
-<!-- RECEIVER -->
+<!-- ═══════════════════════════ RECEVEUR (INCHANGÉ) ═══════════════════════════ -->
 <div class="screen" id="screenReceiver">
   <div class="scroll-area">
     <div class="tab-content active" id="recvTab-home">
@@ -337,7 +374,109 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
   </div>
 </div>
 
-<!-- MODALS -->
+<!-- ═══════════════════════════ PROPRIÉTAIRE DE BUS ═══════════════════════════ -->
+<div class="screen" id="screenOwner">
+  <div class="scroll-area">
+    <div class="tab-content active" id="ownerTab-home">
+      <div class="sn-stripe"></div>
+      <div style="background:linear-gradient(135deg,#0d0a20,#1a1040);padding:18px 20px 14px;border-bottom:1px solid #7c3aed22;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:10px;color:#a78bfa88;letter-spacing:2px;font-family:'JetBrains Mono',monospace;">== PROPRIÉTAIRE BUS ==</div>
+            <div style="font-weight:900;font-size:18px;margin-top:4px;" id="ownerGreet">—</div>
+            <div style="color:#888;font-size:12px;font-family:'JetBrains Mono',monospace;" id="ownerInfoLine">—</div>
+          </div>
+          <button onclick="doLogout()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px;cursor:pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+        </div>
+      </div>
+      <div style="padding:18px 20px;">
+        <!-- Stats -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+          <div class="card" style="text-align:center;border-color:#7c3aed22;"><div style="color:#888;font-size:10px;text-transform:uppercase;">Receveurs actifs</div><div style="color:#a78bfa;font-weight:900;font-size:28px;margin-top:4px;" id="ownerActiveCount">0</div></div>
+          <div class="card" style="text-align:center;border-color:#7c3aed22;"><div style="color:#888;font-size:10px;text-transform:uppercase;">En attente</div><div style="color:var(--y);font-weight:900;font-size:28px;margin-top:4px;" id="ownerPendingCount">0</div></div>
+        </div>
+        <!-- Revenus totaux du jour -->
+        <div style="background:linear-gradient(135deg,#0d0a20,#1a1040);border:2px solid #7c3aed44;border-radius:20px;padding:18px;margin-bottom:16px;">
+          <div style="font-size:11px;color:#a78bfa88;margin-bottom:4px;">Revenus totaux aujourd'hui</div>
+          <div style="color:var(--y);font-weight:900;font-size:32px;"><span id="ownerTotalRevenue">0</span> <span style="font-size:14px;font-weight:700;color:#FDEF4288;">FCFA</span></div>
+        </div>
+        <!-- Demandes en attente -->
+        <div style="font-weight:800;font-size:15px;margin-bottom:10px;">⏳ Demandes Receveurs</div>
+        <div id="ownerPendingRecvList"><div style="text-align:center;color:#555;padding:16px 0;font-size:13px;">Aucune demande.</div></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="ownerTab-receivers">
+      <div style="padding:20px;">
+        <div style="font-weight:900;font-size:22px;margin-bottom:18px;">👥 Mes Receveurs</div>
+        <div id="ownerReceiversList"><div style="text-align:center;color:#555;padding:48px 0;">Aucun receveur actif.</div></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="ownerTab-revenues">
+      <div style="padding:20px;">
+        <div style="font-weight:900;font-size:22px;margin-bottom:18px;">📊 Revenus par receveur</div>
+        <div id="ownerRevenuesList"><div style="text-align:center;color:#555;padding:48px 0;">Aucune donnée.</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="owner-nav" style="position:relative;">
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
+    <button class="owner-nav-btn active" id="onav-home" onclick="switchOwnerTab('home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Accueil</button>
+    <button class="owner-nav-btn" id="onav-receivers" onclick="switchOwnerTab('receivers')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Receveurs</button>
+    <button class="owner-nav-btn" id="onav-revenues" onclick="switchOwnerTab('revenues')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Revenus</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ ADMIN ═══════════════════════════ -->
+<div class="screen" id="screenAdmin">
+  <div class="scroll-area">
+    <div class="tab-content active" id="adminTab-owners">
+      <div class="sn-stripe"></div>
+      <div style="background:linear-gradient(135deg,#1a0000,#300000);padding:18px 20px 14px;border-bottom:1px solid #DF002422;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:10px;color:#ff444488;letter-spacing:2px;font-family:'JetBrains Mono',monospace;">== ADMIN TATAPAY ==</div>
+            <div style="font-weight:900;font-size:18px;margin-top:4px;">Tableau de bord</div>
+            <div style="color:#888;font-size:12px;">papacheikh900@gmail.com</div>
+          </div>
+          <button onclick="doLogout()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px;cursor:pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+        </div>
+      </div>
+      <div style="padding:18px 20px;">
+        <!-- Stat cards -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
+          <div class="card" style="text-align:center;border-color:#DF002422;"><div style="color:#888;font-size:10px;text-transform:uppercase;">Propriétaires actifs</div><div style="color:var(--r);font-weight:900;font-size:28px;margin-top:4px;" id="adminOwnerActiveCount">0</div></div>
+          <div class="card" style="text-align:center;border-color:#DF002422;"><div style="color:#888;font-size:10px;text-transform:uppercase;">En attente</div><div style="color:var(--y);font-weight:900;font-size:28px;margin-top:4px;" id="adminOwnerPendingCount">0</div></div>
+        </div>
+
+        <!-- Propriétaires en attente -->
+        <div style="font-weight:800;font-size:15px;margin-bottom:10px;">⏳ Demandes Propriétaires</div>
+        <div id="adminPendingOwners"><div style="text-align:center;color:#555;padding:16px 0;font-size:13px;">Aucune demande.</div></div>
+
+        <!-- Tous les propriétaires -->
+        <div style="font-weight:800;font-size:15px;margin-top:20px;margin-bottom:10px;">🚌 Tous les Propriétaires</div>
+        <div id="adminAllOwners"><div style="text-align:center;color:#555;padding:16px 0;font-size:13px;">Chargement…</div></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="adminTab-users">
+      <div style="padding:20px;">
+        <div style="font-weight:900;font-size:22px;margin-bottom:18px;">👥 Tous les utilisateurs</div>
+        <div class="input-wrap"><input class="input-field" id="adminSearchInput" placeholder="🔍 Rechercher par nom ou email…" oninput="filterAdminUsers()"/></div>
+        <div id="adminUsersList"><div style="text-align:center;color:#555;padding:48px 0;">Chargement…</div></div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;background:#0a1e0d;border-top:1px solid #DF002422;padding:8px 0 18px;position:sticky;bottom:0;z-index:10;">
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
+    <button class="owner-nav-btn active" id="anav-owners" onclick="switchAdminTab('owners')" style="color:var(--r)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Propriétaires</button>
+    <button class="owner-nav-btn" id="anav-users" onclick="switchAdminTab('users')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Utilisateurs</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ MODALS PARTAGÉS ═══════════════════════════ -->
+
 <div class="notif-panel" id="notifPanel" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
   <div class="notif-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
@@ -346,14 +485,11 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
   </div>
 </div>
 
-<!-- MODAL RETRAIT PAYTECH -->
+<!-- MODAL RETRAIT -->
 <div class="modal-overlay" id="modalWithdraw" style="display:none;" onclick="if(event.target===this)closeModal('modalWithdraw')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
-    <div class="modal-header">
-      <div><div style="font-weight:900;font-size:18px;">💸 Retirer mon argent</div><div style="font-size:11px;color:#FF6B00;font-family:'JetBrains Mono',monospace;margin-top:2px;">via PayTech Sénégal</div></div>
-      <button class="modal-close" onclick="closeModal('modalWithdraw')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>
+    <div class="modal-header"><div><div style="font-weight:900;font-size:18px;">💸 Retirer mon argent</div><div style="font-size:11px;color:#FF6B00;font-family:'JetBrains Mono',monospace;margin-top:2px;">via PayTech Sénégal</div></div><button class="modal-close" onclick="closeModal('modalWithdraw')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="modal-body">
       <div style="background:#009A4415;border:1.5px solid #009A4444;border-radius:14px;padding:12px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;">
         <div style="font-size:13px;color:#aaa;">Solde disponible</div>
@@ -361,130 +497,56 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
       </div>
       <div id="wdStep1">
         <div style="font-weight:800;font-size:14px;margin-bottom:12px;">Montant à retirer :</div>
-        <div class="quick-grid">
-          <button class="quick-btn" onclick="document.getElementById('wdAmt').value=1000">1 000</button>
-          <button class="quick-btn" onclick="document.getElementById('wdAmt').value=2000">2 000</button>
-          <button class="quick-btn" onclick="document.getElementById('wdAmt').value=5000">5 000</button>
-          <button class="quick-btn" onclick="document.getElementById('wdAmt').value=10000">10 000</button>
-        </div>
+        <div class="quick-grid"><button class="quick-btn" onclick="document.getElementById('wdAmt').value=1000">1 000</button><button class="quick-btn" onclick="document.getElementById('wdAmt').value=2000">2 000</button><button class="quick-btn" onclick="document.getElementById('wdAmt').value=5000">5 000</button><button class="quick-btn" onclick="document.getElementById('wdAmt').value=10000">10 000</button></div>
         <input class="input-field" id="wdAmt" type="number" placeholder="Montant en FCFA" style="margin-bottom:16px;"/>
         <button class="btn btn-primary btn-full" onclick="wdGoStep2()">Continuer →</button>
       </div>
       <div id="wdStep2" style="display:none;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-          <button onclick="wdBackStep1()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:#aaa;font-family:'Space Grotesk',sans-serif;font-size:13px;">← Retour</button>
-          <div style="font-weight:800;font-size:14px;">Confirmer le retrait</div>
-        </div>
-        <div style="background:#ffffff08;border-radius:18px;padding:24px;text-align:center;margin-bottom:18px;">
-          <div style="font-size:13px;color:#888;margin-bottom:6px;">Montant à retirer</div>
-          <div style="font-weight:900;font-size:32px;color:var(--y);" id="wdAmtBig">— FCFA</div>
-          <div style="margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#666;">Vous serez redirigé vers PayTech pour choisir votre opérateur (Wave, Orange Money, Free Money…) et finaliser le retrait.</div>
-        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><button onclick="wdBackStep1()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:#aaa;font-family:'Space Grotesk',sans-serif;font-size:13px;">← Retour</button><div style="font-weight:800;font-size:14px;">Confirmer le retrait</div></div>
+        <div style="background:#ffffff08;border-radius:18px;padding:24px;text-align:center;margin-bottom:18px;"><div style="font-size:13px;color:#888;margin-bottom:6px;">Montant à retirer</div><div style="font-weight:900;font-size:32px;color:var(--y);" id="wdAmtBig">— FCFA</div><div style="margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#666;">Vous serez redirigé vers PayTech.</div></div>
         <button class="btn btn-full" onclick="doWithdraw()" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-weight:900;font-size:15px;padding:16px;">💸 Retirer via PayTech</button>
       </div>
-      <div id="wdStep3" style="display:none;text-align:center;padding:30px 0;">
-        <div class="spinner" style="margin:0 auto 18px;"></div>
-        <div style="font-weight:800;font-size:15px;color:#aaa;">Connexion à PayTech…</div>
-      </div>
+      <div id="wdStep3" style="display:none;text-align:center;padding:30px 0;"><div class="spinner" style="margin:0 auto 18px;"></div><div style="font-weight:800;font-size:15px;color:#aaa;">Connexion à PayTech…</div></div>
     </div>
   </div>
 </div>
 
-<!-- MODAL RECHARGE WALLET PASSAGER PAR RECEVEUR -->
+<!-- MODAL RECHARGE PASSAGER PAR RECEVEUR -->
 <div class="modal-overlay" id="modalRecvCharge" style="display:none;" onclick="if(event.target===this)closeModal('modalRecvCharge')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
-    <div class="modal-header">
-      <div><div style="font-weight:900;font-size:18px;">💳 Recharger Wallet Passager</div><div style="font-size:11px;color:#888;font-family:'JetBrains Mono',monospace;margin-top:2px;">Transfert interne TataPay</div></div>
-      <button class="modal-close" onclick="closeModal('modalRecvCharge')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>
+    <div class="modal-header"><div><div style="font-weight:900;font-size:18px;">💳 Recharger Wallet Passager</div><div style="font-size:11px;color:#888;font-family:'JetBrains Mono',monospace;margin-top:2px;">Transfert interne TataPay</div></div><button class="modal-close" onclick="closeModal('modalRecvCharge')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="modal-body">
-      <div style="background:#009A4415;border:1.5px solid #009A4444;border-radius:14px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:13px;color:#aaa;">Votre solde</div>
-        <div style="font-weight:900;font-size:18px;color:var(--y);" id="rcRecvBalance">0 FCFA</div>
-      </div>
-      <div class="input-wrap">
-        <label class="input-label">ID Wallet Passager *</label>
-        <div style="display:flex;gap:8px;">
-          <input class="input-field" id="rcWalletId" placeholder="TP-XXXXXX" style="flex:1;" oninput="rcClearPreview()"/>
-          <button onclick="openCamera('wallet-scan')" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:12px;padding:12px;cursor:pointer;flex-shrink:0;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><path d="M16 16h5v5h-5z"/></svg>
-          </button>
-        </div>
-      </div>
+      <div style="background:#009A4415;border:1.5px solid #009A4444;border-radius:14px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;"><div style="font-size:13px;color:#aaa;">Votre solde</div><div style="font-weight:900;font-size:18px;color:var(--y);" id="rcRecvBalance">0 FCFA</div></div>
+      <div class="input-wrap"><label class="input-label">ID Wallet Passager *</label><div style="display:flex;gap:8px;"><input class="input-field" id="rcWalletId" placeholder="TP-XXXXXX" style="flex:1;" oninput="rcClearPreview()"/><button onclick="openCamera('wallet-scan')" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:12px;padding:12px;cursor:pointer;flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><path d="M16 16h5v5h-5z"/></svg></button></div></div>
       <div id="rcPassengerPreview" style="display:none;background:#00A65015;border:1px solid #00A65044;border-radius:12px;padding:10px 14px;margin-bottom:14px;"></div>
-      <div class="input-wrap">
-        <label class="input-label">Montant (FCFA) *</label>
-        <div class="quick-grid">
-          <button class="quick-btn" onclick="document.getElementById('rcAmt').value=500">500</button>
-          <button class="quick-btn" onclick="document.getElementById('rcAmt').value=1000">1 000</button>
-          <button class="quick-btn" onclick="document.getElementById('rcAmt').value=2000">2 000</button>
-          <button class="quick-btn" onclick="document.getElementById('rcAmt').value=5000">5 000</button>
-        </div>
-        <input class="input-field" id="rcAmt" type="number" placeholder="Montant en FCFA"/>
-      </div>
+      <div class="input-wrap"><label class="input-label">Montant (FCFA) *</label><div class="quick-grid"><button class="quick-btn" onclick="document.getElementById('rcAmt').value=500">500</button><button class="quick-btn" onclick="document.getElementById('rcAmt').value=1000">1 000</button><button class="quick-btn" onclick="document.getElementById('rcAmt').value=2000">2 000</button><button class="quick-btn" onclick="document.getElementById('rcAmt').value=5000">5 000</button></div><input class="input-field" id="rcAmt" type="number" placeholder="Montant en FCFA"/></div>
       <button class="btn btn-yellow btn-full" style="margin-top:4px;" onclick="doRecvCharge()">✅ Valider la recharge</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL RECHARGE PASSAGER (PayTech RÉEL) -->
+<!-- MODAL RECHARGE PASSAGER PayTech -->
 <div class="modal-overlay" id="modalRecharge" style="display:none;" onclick="if(event.target===this)closeModal('modalRecharge')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
-    <div class="modal-header">
-      <div><div style="font-weight:900;font-size:18px;">💰 Recharger mon compte</div><div style="font-size:11px;color:#7ab4ff;font-family:'JetBrains Mono',monospace;margin-top:2px;">via PayTech Sénégal</div></div>
-      <button class="modal-close" onclick="closeModal('modalRecharge')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>
+    <div class="modal-header"><div><div style="font-weight:900;font-size:18px;">💰 Recharger mon compte</div><div style="font-size:11px;color:#7ab4ff;font-family:'JetBrains Mono',monospace;margin-top:2px;">via PayTech Sénégal</div></div><button class="modal-close" onclick="closeModal('modalRecharge')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="modal-body">
-      <div id="rgStep1">
-        <div style="font-weight:800;font-size:14px;margin-bottom:12px;">Montant à recharger :</div>
-        <div class="quick-grid">
-          <button class="quick-btn" onclick="selQuickAmt(500,this)">500</button>
-          <button class="quick-btn" onclick="selQuickAmt(1000,this)">1 000</button>
-          <button class="quick-btn" onclick="selQuickAmt(2000,this)">2 000</button>
-          <button class="quick-btn" onclick="selQuickAmt(5000,this)">5 000</button>
-        </div>
-        <input class="input-field" id="rechargeAmt" type="number" placeholder="Montant en FCFA" style="margin-bottom:16px;"/>
-        <button class="btn btn-primary btn-full" onclick="rgGoStep2()">Continuer →</button>
-      </div>
-      <div id="rgStep2" style="display:none;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-          <button onclick="rgBackStep1()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:#aaa;font-family:'Space Grotesk',sans-serif;font-size:13px;">← Retour</button>
-          <div style="font-weight:800;font-size:14px;">Confirmer la recharge</div>
-        </div>
-        <div style="background:#ffffff08;border-radius:18px;padding:24px;text-align:center;margin-bottom:18px;">
-          <div style="font-size:13px;color:#888;margin-bottom:6px;">Montant à recharger</div>
-          <div style="font-weight:900;font-size:32px;color:var(--y);" id="rgAmtBig">— FCFA</div>
-          <div style="margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#666;">Vous allez être redirigé vers PayTech pour choisir votre moyen de paiement (Wave, Orange Money, Free Money…) et confirmer la transaction.</div>
-        </div>
-        <button class="btn btn-full" onclick="rgPayWithPaytech()" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-weight:900;font-size:15px;padding:16px;">💳 Payer via PayTech</button>
-      </div>
-      <div id="rgStep3" style="display:none;text-align:center;padding:30px 0;">
-        <div class="spinner" style="margin:0 auto 18px;"></div>
-        <div style="font-weight:800;font-size:15px;color:#aaa;">Connexion à PayTech…</div>
-        <div style="color:#666;font-size:12px;margin-top:8px;">Vous allez être redirigé…</div>
-      </div>
+      <div id="rgStep1"><div style="font-weight:800;font-size:14px;margin-bottom:12px;">Montant à recharger :</div><div class="quick-grid"><button class="quick-btn" onclick="selQuickAmt(500,this)">500</button><button class="quick-btn" onclick="selQuickAmt(1000,this)">1 000</button><button class="quick-btn" onclick="selQuickAmt(2000,this)">2 000</button><button class="quick-btn" onclick="selQuickAmt(5000,this)">5 000</button></div><input class="input-field" id="rechargeAmt" type="number" placeholder="Montant en FCFA" style="margin-bottom:16px;"/><button class="btn btn-primary btn-full" onclick="rgGoStep2()">Continuer →</button></div>
+      <div id="rgStep2" style="display:none;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><button onclick="rgBackStep1()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:#aaa;font-family:'Space Grotesk',sans-serif;font-size:13px;">← Retour</button><div style="font-weight:800;font-size:14px;">Confirmer la recharge</div></div><div style="background:#ffffff08;border-radius:18px;padding:24px;text-align:center;margin-bottom:18px;"><div style="font-size:13px;color:#888;margin-bottom:6px;">Montant à recharger</div><div style="font-weight:900;font-size:32px;color:var(--y);" id="rgAmtBig">— FCFA</div></div><button class="btn btn-full" onclick="rgPayWithPaytech()" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-weight:900;font-size:15px;padding:16px;">💳 Payer via PayTech</button></div>
+      <div id="rgStep3" style="display:none;text-align:center;padding:30px 0;"><div class="spinner" style="margin:0 auto 18px;"></div><div style="font-weight:800;font-size:15px;color:#aaa;">Connexion à PayTech…</div></div>
     </div>
   </div>
 </div>
 
+<!-- MODAL TRANSFERT -->
 <div class="modal-overlay" id="modalSend" style="display:none;" onclick="if(event.target===this)closeModal('modalSend')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
     <div class="modal-header"><div style="font-weight:900;font-size:18px;">↗️ Transfert</div><button class="modal-close" onclick="closeModal('modalSend')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="modal-body">
-      <div id="friendPreview" style="display:none;background:#00A65015;border:2px solid #00A65044;border-radius:14px;padding:12px 14px;margin-bottom:14px;align-items:center;gap:12px;">
-        <div style="width:40px;height:40px;border-radius:20px;background:linear-gradient(135deg,var(--g),var(--gd));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🧍</div>
-        <div style="flex:1;"><div style="font-weight:900;" id="friendName">—</div><div style="color:#888;font-size:12px;" id="friendWalletId">—</div></div>
-        <button onclick="clearFriend()" style="background:#ffffff12;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;color:#888;font-size:12px;">✕</button>
-      </div>
-      <div id="friendManualWrap">
-        <div style="display:flex;gap:8px;margin-bottom:14px;">
-          <input class="input-field" id="sendTarget" placeholder="TP-XXXXXX" style="flex:1;"/>
-          <button onclick="openCamera('friend')" style="background:linear-gradient(135deg,#059669,#065f46);border:none;border-radius:12px;padding:12px;cursor:pointer;flex-shrink:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><path d="M16 16h5v5h-5z"/></svg></button>
-        </div>
-      </div>
+      <div id="friendPreview" style="display:none;background:#00A65015;border:2px solid #00A65044;border-radius:14px;padding:12px 14px;margin-bottom:14px;align-items:center;gap:12px;"><div style="width:40px;height:40px;border-radius:20px;background:linear-gradient(135deg,var(--g),var(--gd));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🧍</div><div style="flex:1;"><div style="font-weight:900;" id="friendName">—</div><div style="color:#888;font-size:12px;" id="friendWalletId">—</div></div><button onclick="clearFriend()" style="background:#ffffff12;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;color:#888;font-size:12px;">✕</button></div>
+      <div id="friendManualWrap"><div style="display:flex;gap:8px;margin-bottom:14px;"><input class="input-field" id="sendTarget" placeholder="TP-XXXXXX" style="flex:1;"/><button onclick="openCamera('friend')" style="background:linear-gradient(135deg,#059669,#065f46);border:none;border-radius:12px;padding:12px;cursor:pointer;flex-shrink:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><path d="M16 16h5v5h-5z"/></svg></button></div></div>
       <div class="quick-grid"><button class="quick-btn" onclick="document.getElementById('sendAmt').value=500">500</button><button class="quick-btn" onclick="document.getElementById('sendAmt').value=1000">1 000</button><button class="quick-btn" onclick="document.getElementById('sendAmt').value=2000">2 000</button><button class="quick-btn" onclick="document.getElementById('sendAmt').value=5000">5 000</button></div>
       <div class="input-wrap"><label class="input-label">Montant (FCFA)</label><input class="input-field" id="sendAmt" type="number" placeholder="1000"/></div>
       <button class="btn btn-orange btn-full" onclick="doSend()">Envoyer →</button>
@@ -492,6 +554,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
   </div>
 </div>
 
+<!-- TICKET FLOW -->
 <div class="full-modal" id="modalTicketFlow" style="display:none;">
   <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
   <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #009A4422;">
@@ -515,11 +578,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button class="btn btn-secondary" onclick="resetFlow()">← Retour</button><button class="btn btn-primary" id="btnPayTicket" onclick="goPayTicketWithPaytech()" disabled>Payer →</button></div>
     </div>
-    <div id="ticketStep2" style="display:none;text-align:center;padding:30px 0;">
-      <div class="spinner" style="margin:0 auto 18px;"></div>
-      <div style="font-weight:800;font-size:15px;color:#aaa;">Connexion à PayTech…</div>
-      <div style="color:#666;font-size:12px;margin-top:8px;">Vous allez être redirigé…</div>
-    </div>
+    <div id="ticketStep2" style="display:none;text-align:center;padding:30px 0;"><div class="spinner" style="margin:0 auto 18px;"></div><div style="font-weight:800;font-size:15px;color:#aaa;">Connexion à PayTech…</div></div>
     <div id="ticketStep3" style="display:none;">
       <div style="font-weight:900;font-size:20px;margin-bottom:16px;">Étape 3 · En attente…</div>
       <div style="background:#FFD10010;border:2px dashed var(--y);border-radius:18px;padding:24px;text-align:center;margin-bottom:18px;animation:pulse 2s ease-in-out infinite;"><div style="font-size:48px;margin-bottom:8px;">⏳</div><div style="font-weight:900;font-size:16px;color:var(--y);">En attente du receveur…</div><div style="color:#888;font-size:12px;margin-top:4px;">Le receveur valide en scannant votre QR Wallet</div></div>
@@ -528,13 +587,14 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
   </div>
 </div>
 
+<!-- ═══════════════════════════ JAVASCRIPT ═══════════════════════════ -->
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import{getFirestore,doc,setDoc,getDoc,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,setDoc,getDoc,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,writeBatch}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-// ── CONFIG ──
-const BACKEND_URL = 'https://tatapay-backend-1.onrender.com';
+const BACKEND_URL='https://tatapay-backend-1.onrender.com';
+const ADMIN_EMAIL='papacheikh900@gmail.com';
 
 const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:265d82fbda0db1b09b0b6d"};
 const fbApp=initializeApp(FC);
@@ -543,40 +603,71 @@ const db=getFirestore(fbApp);
 
 let S={role:null,uid:null,profile:null,authRole:'passenger',isReg:false,scMethod:null,ticketBus:null,ticketSection:null,camMode:null,stream:null,facing:'environment',scanning:false,friendTarget:null,flowPayMethod:null,wdAmt:0,rgAmt:0};
 let activeTicketData=null;
-let unsubPending=null,unsubNotif=null,unsubBalance=null,unsubRecvBalance=null;
+let allAdminUsers=[];
+let unsubPending=null,unsubNotif=null,unsubBalance=null,unsubRecvBalance=null,unsubOwnerRecvs=null;
 
+// ── UTILS ──
 function loader(msg='',show=true){const l=document.getElementById('globalLoader');l.className=show?'show':'';if(msg)document.getElementById('loaderMsg').textContent=msg;}
-
 let ntTimer=null;
 function notify(icon,title,body){['sygostIcon','sygostTitle','sygostBody'].forEach((id,i)=>document.getElementById(id).textContent=[icon,title,body][i]);const el=document.getElementById('sygostNotif');el.classList.add('show');if(ntTimer)clearTimeout(ntTimer);ntTimer=setTimeout(hideSygost,4500);}
 window.hideSygost=()=>document.getElementById('sygostNotif').classList.remove('show');
-
 function renderQR(id,text,size=130){const el=document.getElementById(id);if(!el)return;el.innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&ecc=H&margin=10" width="${size}" height="${size}" style="border-radius:4px;display:block;"/>`;}
-function renderMerchantQR(id,p,size=160){
-  const el=document.getElementById(id);if(!el)return;
-  const data=`tatapay://bus/${p.walletId}?gie=${encodeURIComponent(p.gie)}&vehicle=${encodeURIComponent(p.vehicle)}&ligne=${encodeURIComponent(p.ligne)}&zone=${encodeURIComponent(p.zone)}`;
-  el.innerHTML=`<div style="background:#fff;border-radius:14px;padding:12px;display:inline-block;box-shadow:0 4px 18px #00000066;"><img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(data)}&ecc=H&margin=10" width="${size}" height="${size}" style="display:block;border-radius:4px;"/><div style="margin-top:8px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:#333;font-weight:700;line-height:1.6;">GIE:${p.gie} · LIGNE ${p.ligne} · ZONE ${p.zone}<br>${p.vehicle} · AFTU/CAPTRANS<br><span style="color:#009A44;">${p.walletId}</span></div></div>`;}
-
+function renderMerchantQR(id,p,size=160){const el=document.getElementById(id);if(!el)return;const data=`tatapay://bus/${p.walletId}?gie=${encodeURIComponent(p.gie)}&vehicle=${encodeURIComponent(p.vehicle)}&ligne=${encodeURIComponent(p.ligne)}&zone=${encodeURIComponent(p.zone)}`;el.innerHTML=`<div style="background:#fff;border-radius:14px;padding:12px;display:inline-block;box-shadow:0 4px 18px #00000066;"><img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(data)}&ecc=H&margin=10" width="${size}" height="${size}" style="display:block;border-radius:4px;"/><div style="margin-top:8px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:#333;font-weight:700;line-height:1.6;">GIE:${p.gie} · LIGNE ${p.ligne} · ZONE ${p.zone}<br>${p.vehicle} · AFTU/CAPTRANS<br><span style="color:#009A44;">${p.walletId}</span></div></div>`;}
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id)?.classList.add('active');}
+
+// ── NAVIGATION AUTH ──
 window.goSplash=()=>show('screenSplash');
-window.goAuth=(mode)=>{
+window.goAuth=async(mode)=>{
   S.isReg=mode==='register';
   document.getElementById('authTitle').textContent=S.isReg?'Inscription':'Connexion';
   document.getElementById('authSubmitBtn').textContent=S.isReg?'Créer mon compte':'Se connecter';
   document.getElementById('authSwitchText').textContent=S.isReg?'Déjà inscrit ?':'Pas de compte ?';
   document.getElementById('authSwitchLink').textContent=S.isReg?'Se connecter':"S'inscrire";
   ['fieldName','fieldPhone','fieldPass2'].forEach(id=>document.getElementById(id).style.display=S.isReg?'block':'none');
-  document.getElementById('fieldsReceiver').style.display=(S.isReg&&S.authRole==='receiver')?'block':'none';
+  document.getElementById('roleTabsWrap').style.display=S.isReg?'flex':'none';
+  document.getElementById('fieldsReceiver').style.display='none';
+  document.getElementById('fieldsOwner').style.display='none';
+  if(S.isReg){
+    setRole('passenger');
+    // Si inscription receveur : charger la liste des owners approuvés
+  }
   show('screenAuth');
 };
 window.toggleAuthMode=()=>window.goAuth(S.isReg?'login':'register');
-window.setRole=(r)=>{
+
+window.setRole=async(r)=>{
   S.authRole=r;
-  document.getElementById('tabPassenger').style.cssText=`background:${r==='passenger'?'var(--g)':'transparent'};color:${r==='passenger'?'var(--w)':'#888'};`;
-  document.getElementById('tabReceiver').style.cssText=`background:${r==='receiver'?'var(--orange)':'transparent'};color:${r==='receiver'?'var(--w)':'#888'};`;
+  const styles={passenger:'var(--g)',receiver:'var(--orange)',owner:'#7c3aed'};
+  ['passenger','receiver','owner'].forEach(role=>{
+    const btn=document.getElementById('tab'+role.charAt(0).toUpperCase()+role.slice(1));
+    if(btn)btn.style.cssText=`background:${role===r?styles[role]:'transparent'};color:${role===r?'var(--w)':'#888'};`;
+  });
   document.getElementById('fieldsReceiver').style.display=(S.isReg&&r==='receiver')?'block':'none';
+  document.getElementById('fieldsOwner').style.display=(S.isReg&&r==='owner')?'block':'none';
+  if(S.isReg&&r==='receiver'){
+    await loadOwnerList();
+  }
 };
 
+async function loadOwnerList(){
+  const sel=document.getElementById('authOwnerSelect');
+  sel.innerHTML='<option value="">Chargement…</option>';
+  try{
+    const q=query(collection(db,'users'),where('role','==','owner'),where('status','==','approved'));
+    const snap=await getDocs(q);
+    if(snap.empty){sel.innerHTML='<option value="">Aucun propriétaire disponible</option>';return;}
+    sel.innerHTML='<option value="">— Choisir un propriétaire —</option>';
+    snap.docs.forEach(d=>{
+      const u=d.data();
+      const opt=document.createElement('option');
+      opt.value=d.id;
+      opt.textContent=`${u.name} — ${u.company||u.email}`;
+      sel.appendChild(opt);
+    });
+  }catch(e){sel.innerHTML='<option value="">Erreur de chargement</option>';}
+}
+
+// ── INSCRIPTION / CONNEXION ──
 window.doAuth=async()=>{
   const email=document.getElementById('authEmail').value.trim().toLowerCase();
   const pass=document.getElementById('authPass').value;
@@ -589,18 +680,40 @@ window.doAuth=async()=>{
       if(document.getElementById('authPass2').value!==pass){loader('',false);notify('⚠️','Erreur','Mots de passe différents.');return;}
       const cred=await createUserWithEmailAndPassword(auth,email,pass);
       const uid=cred.user.uid;
-      const walletId=S.authRole==='passenger'?'TP-'+uid.slice(0,6).toUpperCase():'RV-'+uid.slice(0,6).toUpperCase();
-      let profile={walletId,name,email,phone:document.getElementById('authPhone').value.trim(),role:S.authRole,balance:0,createdAt:serverTimestamp()};
-      if(S.authRole==='receiver'){
+
+      // Rôle passager → actif immédiatement
+      if(S.authRole==='passenger'){
+        const walletId='TP-'+uid.slice(0,6).toUpperCase();
+        const profile={walletId,name,email,phone:document.getElementById('authPhone').value.trim(),role:'passenger',status:'approved',balance:0,createdAt:serverTimestamp()};
+        await setDoc(doc(db,'users',uid),profile);
+        await setDoc(doc(db,'wallets',walletId),{uid,role:'passenger'});
+
+      // Rôle receveur → en attente du propriétaire
+      }else if(S.authRole==='receiver'){
         const gie=document.getElementById('authGIE').value.trim();
         const vehicle=document.getElementById('authVehicle').value.trim();
         const ligne=document.getElementById('authLigne').value.trim();
         const zone=document.getElementById('authZone').value.trim().toUpperCase();
-        if(!gie||!vehicle||!ligne||!zone){loader('',false);notify('⚠️','Champs receveur','Remplissez GIE, Véhicule, Ligne, Zone.');return;}
-        Object.assign(profile,{gie,vehicle,ligne,zone,today:0,count:0});
+        const ownerUid=document.getElementById('authOwnerSelect').value;
+        if(!gie||!vehicle||!ligne||!zone){loader('',false);notify('⚠️','Champs','Remplissez GIE, Véhicule, Ligne, Zone.');return;}
+        if(!ownerUid){loader('',false);notify('⚠️','Propriétaire','Choisissez un propriétaire.');return;}
+        const walletId='RV-'+uid.slice(0,6).toUpperCase();
+        const profile={walletId,name,email,phone:document.getElementById('authPhone').value.trim(),role:'receiver',status:'pending',ownerUid,gie,vehicle,ligne,zone,today:0,count:0,balance:0,createdAt:serverTimestamp()};
+        await setDoc(doc(db,'users',uid),profile);
+        await setDoc(doc(db,'wallets',walletId),{uid,role:'receiver'});
+        // Notifier le propriétaire
+        await addDoc(collection(db,'notifications'),{toUid:ownerUid,type:'receiver_request',receiverUid:uid,receiverName:name,receiverEmail:email,gie,vehicle,read:false,ts:serverTimestamp()});
+
+      // Rôle propriétaire → en attente admin
+      }else if(S.authRole==='owner'){
+        const company=document.getElementById('authOwnerCompany').value.trim();
+        if(!company){loader('',false);notify('⚠️','Champs','Entrez le nom du GIE/Entreprise.');return;}
+        const walletId='OW-'+uid.slice(0,6).toUpperCase();
+        const profile={walletId,name,email,phone:document.getElementById('authPhone').value.trim(),role:'owner',status:'pending',company,balance:0,createdAt:serverTimestamp()};
+        await setDoc(doc(db,'users',uid),profile);
+        // Notifier admin (on stocke pour afficher dans le dashboard admin)
+        await addDoc(collection(db,'adminNotifications'),{type:'owner_request',ownerUid:uid,ownerName:name,ownerEmail:email,company,phone:document.getElementById('authPhone').value.trim(),read:false,ts:serverTimestamp()});
       }
-      await setDoc(doc(db,'users',uid),profile);
-      await setDoc(doc(db,'wallets',walletId),{uid,role:S.authRole});
       loader('',false);
     }else{
       await signInWithEmailAndPassword(auth,email,pass);
@@ -618,27 +731,66 @@ window.doLogout=async()=>{
   show('screenSplash');
 };
 
+// ── AUTH STATE ──
 onAuthStateChanged(auth,async user=>{
   if(user){
     loader('Chargement…');
     try{
+      // Admin special case
+      if(user.email===ADMIN_EMAIL){
+        S.uid=user.uid;S.role='admin';
+        S.profile={email:ADMIN_EMAIL,name:'Admin',role:'admin'};
+        await loginUI();return;
+      }
       const snap=await getDoc(doc(db,'users',user.uid));
-      if(snap.exists()){S.uid=user.uid;S.profile=snap.data();S.role=S.profile.role;loginUI();}
+      if(snap.exists()){S.uid=user.uid;S.profile=snap.data();S.role=S.profile.role;await loginUI();}
       else{loader('',false);await signOut(auth);}
     }catch(e){loader('',false);notify('❌','Erreur',e.message);}
   }else{show('screenSplash');loader('',false);}
 });
 
 function detachListeners(){
-  if(unsubPending){unsubPending();unsubPending=null;}
-  if(unsubNotif){unsubNotif();unsubNotif=null;}
-  if(unsubBalance){unsubBalance();unsubBalance=null;}
-  if(unsubRecvBalance){unsubRecvBalance();unsubRecvBalance=null;}
+  [unsubPending,unsubNotif,unsubBalance,unsubRecvBalance,unsubOwnerRecvs].forEach(u=>{if(u)u();});
+  unsubPending=unsubNotif=unsubBalance=unsubRecvBalance=unsubOwnerRecvs=null;
 }
 
-function loginUI(){
+async function loginUI(){
   const p=S.profile;
   detachListeners();
+
+  // ── ADMIN ──
+  if(S.role==='admin'||p?.email===ADMIN_EMAIL){
+    show('screenAdmin');
+    await loadAdminDashboard();
+    loader('',false);
+    return;
+  }
+
+  // ── OWNER (en attente) ──
+  if(S.role==='owner'&&p.status==='pending'){
+    document.getElementById('pendingIcon').textContent='⏳';
+    document.getElementById('pendingTitle').textContent='Compte en attente de validation';
+    document.getElementById('pendingBody').textContent='Votre demande a été envoyée à l\'administrateur. Votre compte sera activé après vérification. Reconnectez-vous après confirmation.';
+    show('screenPending');loader('',false);return;
+  }
+
+  // ── RECEIVER (en attente du propriétaire) ──
+  if(S.role==='receiver'&&p.status==='pending'){
+    document.getElementById('pendingIcon').textContent='🎫';
+    document.getElementById('pendingTitle').textContent='En attente du propriétaire';
+    document.getElementById('pendingBody').textContent=`Votre demande a été envoyée au propriétaire de bus. Votre compte sera activé une fois accepté par lui.`;
+    show('screenPending');loader('',false);return;
+  }
+
+  // ── RECEIVER (refusé) ──
+  if(S.role==='receiver'&&p.status==='rejected'){
+    document.getElementById('pendingIcon').textContent='❌';
+    document.getElementById('pendingTitle').textContent='Demande refusée';
+    document.getElementById('pendingBody').textContent='Votre demande a été refusée par le propriétaire. Veuillez contacter l\'administrateur.';
+    show('screenPending');loader('',false);return;
+  }
+
+  // ── PASSENGER ──
   if(S.role==='passenger'){
     document.getElementById('passGreet').textContent=p.name.split(' ')[0];
     document.getElementById('passWalletId').textContent=p.walletId;
@@ -650,687 +802,414 @@ function loginUI(){
     unsubBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;updateBalanceUI();}});
     loadPassHomeTx();loadPassTickets();
     show('screenPassenger');notify('✅','Bienvenue !',p.name+' — '+p.walletId);
-  }else{
+    loader('',false);return;
+  }
+
+  // ── RECEIVER ACTIF ──
+  if(S.role==='receiver'&&p.status==='approved'){
     document.getElementById('recvGreet').textContent=p.name;
     document.getElementById('recvInfoLine').textContent=`GIE:${p.gie} · Ligne ${p.ligne} · Zone ${p.zone}`;
     renderMerchantQR('recvBusQRWrap',p,160);
     refreshRecvStats();loadTrajets();loadRecvTickets();
     attachPendingListener();attachNotifListener();
-    unsubRecvBalance=onSnapshot(doc(db,'users',S.uid),snap=>{
-      if(snap.exists()){S.profile.balance=snap.data().balance||0;const el=document.getElementById('recvBalance');if(el)el.textContent=(S.profile.balance).toLocaleString('fr-FR');}
-    });
+    unsubRecvBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;const el=document.getElementById('recvBalance');if(el)el.textContent=(S.profile.balance).toLocaleString('fr-FR');}});
     show('screenReceiver');notify('✅','Connecté',p.name+' — '+p.vehicle);
+    loader('',false);return;
   }
+
+  // ── OWNER APPROUVÉ ──
+  if(S.role==='owner'&&p.status==='approved'){
+    document.getElementById('ownerGreet').textContent=p.name;
+    document.getElementById('ownerInfoLine').textContent=p.company||p.email;
+    await loadOwnerDashboard();
+    attachOwnerListeners();
+    show('screenOwner');notify('✅','Connecté',p.name);
+    loader('',false);return;
+  }
+
   loader('',false);
 }
 
-function attachPendingListener(){
-  const q=query(collection(db,'pending'),where('busUid','==',S.uid));
-  unsubPending=onSnapshot(q,snap=>{
-    const items=snap.docs.map(d=>({id:d.id,...d.data()}));
-    renderPendingList(items);
-    document.getElementById('recvTicketCount').textContent=items.length||'0';
-  });
-}
+// ══════════════════════════════════════════════════════
+// PROPRIÉTAIRE DE BUS
+// ══════════════════════════════════════════════════════
+window.switchOwnerTab=(tab)=>{
+  document.querySelectorAll('#screenOwner .tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.owner-nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('ownerTab-'+tab)?.classList.add('active');
+  document.getElementById('onav-'+tab)?.classList.add('active');
+  if(tab==='receivers')loadOwnerReceivers();
+  if(tab==='revenues')loadOwnerRevenues();
+};
 
-function attachNotifListener(){
+function attachOwnerListeners(){
+  // Écouter les notifications (demandes receveurs)
   const q=query(collection(db,'notifications'),where('toUid','==',S.uid),where('read','==',false));
-  unsubNotif=onSnapshot(q,snap=>{
-    const n=snap.docs.length;
-    const badge=document.getElementById('bellBadge');
-    if(badge){badge.textContent=n;badge.className='bell-badge'+(n>0?' show':'');}
-    snap.docs.forEach(d=>{
-      const data=d.data();
-      showRecvToast(data.type,data);
-      updateDoc(doc(db,'notifications',d.id),{read:true});
-    });
+  unsubOwnerRecvs=onSnapshot(q,snap=>{
+    const count=snap.docs.length;
+    // Rafraîchir le dashboard
+    loadOwnerDashboard();
   });
 }
 
-function playDescendreSound(){
-  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();[[0,880,.18],[.2,1100,.18],[.4,1320,.28]].forEach(([s,f,d])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(0,ctx.currentTime+s);g.gain.linearRampToValueAtTime(.5,ctx.currentTime+s+.02);g.gain.linearRampToValueAtTime(0,ctx.currentTime+s+d);o.start(ctx.currentTime+s);o.stop(ctx.currentTime+s+d+.05);});}catch(e){}
-}
+async function loadOwnerDashboard(){
+  // Compter receveurs actifs
+  const activeQ=query(collection(db,'users'),where('role','==','receiver'),where('ownerUid','==',S.uid),where('status','==','approved'));
+  const activeSnap=await getDocs(activeQ);
+  document.getElementById('ownerActiveCount').textContent=activeSnap.size;
 
-function showRecvToast(type,data){
-  const stack=document.getElementById('recvToastStack');
-  const div=document.createElement('div');div.className='recv-toast';
-  let icon='🔔',title='Notification',body='',color='var(--orange)';
-  if(type==='descendre'){icon='🛑';title='Passager veut descendre !';body=`${data.passenger||'—'}\n${data.from||''}→${data.to||''}`;color='#DF0024';playDescendreSound();}
-  else if(type==='ticket_request'){icon='🎫';title='Nouvelle demande ticket';body=`${data.passenger||'—'} · ${data.price||0} FCFA`;}
-  div.innerHTML=`<button onclick="this.closest('.recv-toast').remove()" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:#888;font-size:14px;">✕</button><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="font-size:18px;">${icon}</span><div style="font-weight:900;font-size:13px;color:${color};">${title}</div></div><div style="font-size:12px;color:#ccc;line-height:1.5;font-family:'JetBrains Mono',monospace;">${body}</div>`;
-  stack.appendChild(div);
-  const bell=document.getElementById('bellIcon');
-  if(bell){bell.classList.remove('bell-anim');void bell.offsetWidth;bell.classList.add('bell-anim');}
-  setTimeout(()=>{div.classList.add('out');setTimeout(()=>div.remove(),300);},type==='descendre'?8000:5000);
-}
+  // Receveurs en attente
+  const pendQ=query(collection(db,'users'),where('role','==','receiver'),where('ownerUid','==',S.uid),where('status','==','pending'));
+  const pendSnap=await getDocs(pendQ);
+  document.getElementById('ownerPendingCount').textContent=pendSnap.size;
 
-window.switchTab=(tab)=>{
-  document.querySelectorAll('#screenPassenger .tab-content').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('passTab-'+tab)?.classList.add('active');
-  document.getElementById('nav-'+tab)?.classList.add('active');
-  if(tab==='tickets')loadPassTickets();
-  if(tab==='history')loadPassHistory();
-};
-window.switchRecvTab=(tab)=>{
-  document.querySelectorAll('#screenReceiver .tab-content').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.recv-nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('recvTab-'+tab)?.classList.add('active');
-  document.getElementById('rnav-'+tab)?.classList.add('active');
-  if(tab==='trajets')loadTrajets();
-  if(tab==='tickets')loadRecvTickets();
-};
+  // Revenue du jour = somme des today de tous les receveurs actifs
+  let totalRevenue=0;
+  activeSnap.docs.forEach(d=>totalRevenue+=(d.data().today||0));
+  document.getElementById('ownerTotalRevenue').textContent=totalRevenue.toLocaleString('fr-FR');
 
-window.openModal=(id)=>document.getElementById(id).style.display='flex';
-window.closeModal=(id)=>{document.getElementById(id).style.display='none';if(id==='modalTicketFlow')resetFlow();if(id==='modalWithdraw')resetWithdraw();if(id==='modalRecharge')resetRecharge();};
-
-function updateBalanceUI(){document.getElementById('passBalance').textContent=(S.profile?.balance||0).toLocaleString('fr-FR');}
-
-function showDescendBtn(t){activeTicketData=t;document.getElementById('descendInfo').textContent=`${t.from}→${t.to} · ${t.price} FCFA`;document.getElementById('descendBtn').style.display='block';document.getElementById('activeTicketBanner').style.display='block';document.getElementById('activeTicketLabel').textContent=`🚌 ${t.gie}/${t.vehicle} — ${t.from}→${t.to}`;}
-function hideDescendBtn(){document.getElementById('descendBtn').style.display='none';document.getElementById('activeTicketBanner').style.display='none';activeTicketData=null;}
-window.demandDescendre=async()=>{
-  if(!activeTicketData)return;
-  const t=activeTicketData;
-  await addDoc(collection(db,'notifications'),{toUid:t.busUid,type:'descendre',passenger:S.profile.name,from:t.from,to:t.to,read:false,ts:serverTimestamp()});
-  notify('🛑','Signal envoyé !','Le receveur a été prévenu.');
-  hideDescendBtn();
-};
-window.showActiveTicket=()=>{if(activeTicketData)showTicketData(activeTicketData);};
-
-// ============================================================
-// RETRAIT PAYTECH RÉEL
-// ============================================================
-window.openWithdraw=()=>{
-  resetWithdraw();
-  const bal=S.profile?.balance||0;
-  document.getElementById('withdrawAvailable').textContent=bal.toLocaleString('fr-FR')+' FCFA';
-  openModal('modalWithdraw');
-};
-function resetWithdraw(){
-  ['wdStep1','wdStep2','wdStep3'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});
-  const wa=document.getElementById('wdAmt');if(wa)wa.value='';
-}
-window.wdGoStep2=()=>{
-  const amt=parseInt(document.getElementById('wdAmt').value||0);
-  const bal=S.profile?.balance||0;
-  if(!amt||amt<500){notify('⚠️','Montant','Minimum 500 FCFA.');return;}
-  if(amt>bal){notify('❌','Solde','Solde insuffisant ('+bal.toLocaleString('fr-FR')+' FCFA disponibles).');return;}
-  S.wdAmt=amt;
-  document.getElementById('wdAmtBig').textContent=amt.toLocaleString('fr-FR')+' FCFA';
-  document.getElementById('wdStep1').style.display='none';
-  document.getElementById('wdStep2').style.display='block';
-};
-window.wdBackStep1=()=>{document.getElementById('wdStep2').style.display='none';document.getElementById('wdStep1').style.display='block';};
-
-window.doWithdraw=async()=>{
-  const amt=S.wdAmt;if(!amt)return;
-  document.getElementById('wdStep2').style.display='none';
-  document.getElementById('wdStep3').style.display='block';
-  loader('Connexion à PayTech…');
-  try{
-    const resp=await fetch(`${BACKEND_URL}/api/payment/init`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({amount:amt,method:'wave',type:'retrait',uid:S.uid})
-    });
-    const data=await resp.json();
-    loader('',false);
-    if(data.payment_url){
-      sessionStorage.setItem('tp_ref',data.ref_command);
-      sessionStorage.setItem('tp_uid',S.uid);
-      sessionStorage.setItem('tp_type','retrait');
-      window.location.href=data.payment_url;
-    }else{
-      document.getElementById('wdStep3').style.display='none';
-      document.getElementById('wdStep2').style.display='block';
-      notify('❌','Erreur PayTech',data.error||'Impossible d\'initier le retrait');
-    }
-  }catch(err){
-    loader('',false);
-    document.getElementById('wdStep3').style.display='none';
-    document.getElementById('wdStep2').style.display='block';
-    notify('❌','Erreur réseau',err.message);
-  }
-};
-
-// ============================================================
-// RECHARGE PASSAGER PAR RECEVEUR — transfert interne
-// ============================================================
-window.openRecvCharge=()=>{
-  document.getElementById('rcWalletId').value='';
-  document.getElementById('rcAmt').value='';
-  document.getElementById('rcPassengerPreview').style.display='none';
-  document.getElementById('rcRecvBalance').textContent=(S.profile?.balance||0).toLocaleString('fr-FR')+' FCFA';
-  openModal('modalRecvCharge');
-};
-window.rcClearPreview=()=>{document.getElementById('rcPassengerPreview').style.display='none';};
-window.doRecvCharge=async()=>{
-  const walletId=document.getElementById('rcWalletId').value.trim().toUpperCase();
-  const amt=parseInt(document.getElementById('rcAmt').value);
-  if(!walletId){notify('⚠️','Wallet','Entrez ou scannez l\'ID wallet du passager.');return;}
-  if(!amt||amt<100){notify('⚠️','Montant','Montant minimum 100 FCFA.');return;}
-  const recvBal=S.profile?.balance||0;
-  if(amt>recvBal){notify('❌','Solde','Votre solde est insuffisant ('+recvBal.toLocaleString('fr-FR')+' FCFA).');return;}
-  loader('Recharge en cours…');
-  try{
-    const wSnap=await getDoc(doc(db,'wallets',walletId));
-    if(!wSnap.exists()){loader('',false);notify('❌','Introuvable','Wallet passager inconnu.');return;}
-    const paxUid=wSnap.data().uid;
-    if(paxUid===S.uid){loader('',false);notify('⚠️','Erreur','Impossible de vous recharger vous-même.');return;}
-    const pSnap=await getDoc(doc(db,'users',paxUid));
-    const pax=pSnap.data();
-    await updateDoc(doc(db,'users',S.uid),{balance:increment(-amt)});
-    await updateDoc(doc(db,'users',paxUid),{balance:increment(amt)});
-    await addDoc(collection(db,'users',S.uid,'history'),{type:'recharge_given',label:'Recharge → '+pax.name,amount:-amt,ts:serverTimestamp()});
-    await addDoc(collection(db,'users',paxUid,'history'),{type:'recharge',label:'Recharge par '+S.profile.name,amount:amt,ts:serverTimestamp()});
-    loader('',false);closeModal('modalRecvCharge');
-    notify('✅','Recharge effectuée',pax.name+' +'+amt.toLocaleString('fr-FR')+' FCFA');
-    refreshRecvStats();
-  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
-};
-
-// ============================================================
-// RECHARGE PAYTECH RÉEL — PASSAGER
-// ============================================================
-window.openRecharge=()=>{resetRecharge();openModal('modalRecharge');};
-function resetRecharge(){
-  ['rgStep1','rgStep2','rgStep3'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});
-  const amt=document.getElementById('rechargeAmt');if(amt)amt.value='';
-  document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));
-}
-window.selQuickAmt=(v,btn)=>{document.getElementById('rechargeAmt').value=v;document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');};
-window.rgGoStep2=()=>{
-  const v=parseInt(document.getElementById('rechargeAmt').value);
-  if(!v||v<100){notify('⚠️','Montant','Min 100 FCFA.');return;}
-  S.rgAmt=v;
-  document.getElementById('rgAmtBig').textContent=v.toLocaleString('fr-FR')+' FCFA';
-  document.getElementById('rgStep1').style.display='none';
-  document.getElementById('rgStep2').style.display='block';
-};
-window.rgBackStep1=()=>{document.getElementById('rgStep2').style.display='none';document.getElementById('rgStep1').style.display='block';};
-
-window.rgPayWithPaytech=async()=>{
-  const amt=S.rgAmt;if(!amt)return;
-  document.getElementById('rgStep2').style.display='none';
-  document.getElementById('rgStep3').style.display='block';
-  loader('Connexion à PayTech…');
-  try{
-    const resp=await fetch(`${BACKEND_URL}/api/payment/init`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({amount:amt,method:'wave',type:'recharge',uid:S.uid})
-    });
-    const data=await resp.json();
-    loader('',false);
-    if(data.payment_url){
-      sessionStorage.setItem('tp_ref',data.ref_command);
-      sessionStorage.setItem('tp_uid',S.uid);
-      sessionStorage.setItem('tp_type','recharge');
-      window.location.href=data.payment_url;
-    }else{
-      document.getElementById('rgStep3').style.display='none';
-      document.getElementById('rgStep2').style.display='block';
-      notify('❌','Erreur PayTech',data.error||'Impossible d\'initier le paiement');
-    }
-  }catch(err){
-    loader('',false);
-    document.getElementById('rgStep3').style.display='none';
-    document.getElementById('rgStep2').style.display='block';
-    notify('❌','Erreur réseau',err.message);
-  }
-};
-
-// ============================================================
-// TRANSFERT ENTRE WALLETS
-// ============================================================
-window.openSend=()=>{clearFriend();document.getElementById('sendAmt').value='';openModal('modalSend');};
-window.clearFriend=()=>{S.friendTarget=null;document.getElementById('friendPreview').style.display='none';document.getElementById('friendManualWrap').style.display='block';document.getElementById('sendTarget').value='';};
-function setFriend(walletId,name){S.friendTarget={walletId,name};document.getElementById('friendName').textContent=name;document.getElementById('friendWalletId').textContent=walletId;document.getElementById('friendPreview').style.display='flex';document.getElementById('friendManualWrap').style.display='none';}
-window.doSend=async()=>{
-  const targetWid=S.friendTarget?.walletId||document.getElementById('sendTarget').value.trim().toUpperCase();
-  const amt=parseInt(document.getElementById('sendAmt').value);
-  if(!targetWid||!amt||amt<100){notify('⚠️','Formulaire','Remplissez les champs (min 100 FCFA).');return;}
-  if((S.profile.balance||0)<amt){notify('❌','Solde','Solde insuffisant.');return;}
-  if(targetWid===S.profile.walletId){notify('⚠️','Erreur','Impossible de vous envoyer à vous-même.');return;}
-  loader('Transfert…');
-  try{
-    const wSnap=await getDoc(doc(db,'wallets',targetWid));
-    if(!wSnap.exists()){loader('',false);notify('❌','Introuvable','Wallet destinataire inconnu.');return;}
-    const destUid=wSnap.data().uid;
-    const destSnap=await getDoc(doc(db,'users',destUid));
-    const dest=destSnap.data();
-    await updateDoc(doc(db,'users',S.uid),{balance:increment(-amt)});
-    await updateDoc(doc(db,'users',destUid),{balance:increment(amt)});
-    await addDoc(collection(db,'users',S.uid,'history'),{type:'transfer_out',label:'Transfert → '+dest.name,amount:-amt,ts:serverTimestamp()});
-    await addDoc(collection(db,'users',destUid,'history'),{type:'transfer_in',label:'Reçu de '+S.profile.name,amount:amt,ts:serverTimestamp()});
-    loader('',false);closeModal('modalSend');clearFriend();
-    notify('✅','Envoyé',amt.toLocaleString('fr-FR')+' FCFA → '+dest.name);
-  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
-};
-
-// ============================================================
-// TRAJETS
-// ============================================================
-window.openAddTrajet=()=>{['trajetFrom','trajetTo','trajetSection','trajetPrice'].forEach(id=>document.getElementById(id).value='');openModal('modalAddTrajet');};
-window.doAddTrajet=async()=>{
-  const from=document.getElementById('trajetFrom').value.trim();
-  const to=document.getElementById('trajetTo').value.trim();
-  const section=parseInt(document.getElementById('trajetSection').value)||1;
-  const price=parseInt(document.getElementById('trajetPrice').value);
-  if(!from||!to||!price||price<50){notify('⚠️','Champs','Tous les champs sont requis (prix min 50 FCFA).');return;}
-  loader('Enregistrement…');
-  try{
-    await addDoc(collection(db,'users',S.uid,'destinations'),{from,to,section,price,createdAt:serverTimestamp()});
-    loader('',false);closeModal('modalAddTrajet');loadTrajets();
-    notify('✅','Trajet ajouté',`${from}→${to} · S${section} · ${price} FCFA`);
-  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
-};
-window.delTrajet=async(id)=>{
-  try{await deleteDoc(doc(db,'users',S.uid,'destinations',id));loadTrajets();}
-  catch(e){notify('❌','Erreur',e.message);}
-};
-async function loadTrajets(){
-  if(S.role!=='receiver')return;
-  const snap=await getDocs(collection(db,'users',S.uid,'destinations'));
-  const cont=document.getElementById('trajetsList');
-  if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;color:#555;">Aucune section. Cliquez + Ajouter.</div>';return;}
-  cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div class="trajet-row"><div style="flex:1;"><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.from}-->${t.to}</div><div style="color:#888;font-size:11px;margin-top:2px;">Section: ${t.section} == <strong style="color:var(--y);">${t.price} FCFA</strong></div></div><button onclick="delTrajet('${d.id}')" style="background:#DF002422;border:1px solid #DF002244;border-radius:10px;padding:8px;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>`;}).join('');
-}
-
-// ============================================================
-// TICKET FLOW — PAYTECH RÉEL
-// ============================================================
-window.openTicketFlow=()=>{resetFlow();openModal('modalTicketFlow');};
-window.resetFlow=()=>{
-  setDots(0);
-  ['ticketStep0','ticketStep1','ticketStep2','ticketStep3'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
-  document.getElementById('ticketStep0').style.display='block';
-  document.getElementById('payMethodWrap').style.display='none';
-  S.ticketBus=null;S.ticketSection=null;S.flowPayMethod=null;
-  document.getElementById('ticketPriceDisplay').textContent='— FCFA';
-  document.getElementById('btnPayTicket').disabled=true;
-};
-function setDots(s){for(let i=0;i<4;i++){const d=document.getElementById('tdot'+i);if(d)d.className='step-dot'+(i<s?' done':i===s?' active':'');}}
-
-window.selFlowMethod=(m)=>{
-  S.flowPayMethod=m;
-  const wB=document.getElementById('flowWaveBtn'),oB=document.getElementById('flowOMBtn');
-  wB.style.background=m==='wave'?'#1a56db55':'#1a56db22';wB.style.borderColor=m==='wave'?'#1a56db':'#1a56db44';
-  oB.style.background=m==='om'?'#FF6B0055':'#FF6B0022';oB.style.borderColor=m==='om'?'#FF6B00':'#FF6B0044';
-  document.getElementById('btnPayTicket').disabled=false;
-};
-
-async function loadBusInFlow(walletId){
-  loader('Chargement bus…');
-  try{
-    const wSnap=await getDoc(doc(db,'wallets',walletId));
-    if(!wSnap.exists()){loader('',false);notify('❌','Bus inconnu','QR non reconnu.');return;}
-    const recvUid=wSnap.data().uid;
-    const rSnap=await getDoc(doc(db,'users',recvUid));
-    if(!rSnap.exists()){loader('',false);notify('❌','Erreur','Receveur introuvable.');return;}
-    const recv={...rSnap.data(),uid:recvUid};
-    S.ticketBus=recv;S.ticketSection=null;
-    document.getElementById('detectedBusInfo').innerHTML=`GIE:${recv.gie} = ${recv.vehicle} = Ligne:${recv.ligne}<br>Zone:${recv.zone}`;
-    const destSnap=await getDocs(collection(db,'users',recvUid,'destinations'));
-    const destList=document.getElementById('destList');destList.innerHTML='';
-    if(destSnap.empty){destList.innerHTML='<div style="background:#FFD10015;border:1px solid #FFD10044;border-radius:12px;padding:12px;color:#888;font-size:13px;text-align:center;">Aucune section définie par ce receveur.</div>';}
-    else{
-      destSnap.docs.forEach(d=>{
-        const t=d.data();
-        const chip=document.createElement('div');
-        chip.style.cssText='background:#ffffff0d;border:1.5px solid #2a3a2a;border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .2s;';
-        chip.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.from}-->${t.to}</div><div style="color:#888;font-size:11px;">Section ${t.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${t.price} F</div></div>`;
-        chip.onclick=()=>{S.ticketSection={...t,docId:d.id};destList.querySelectorAll('div[style]').forEach(c=>{c.style.background='#ffffff0d';c.style.borderColor='#2a3a2a';});chip.style.background='#00A65033';chip.style.borderColor='var(--g)';document.getElementById('ticketPriceDisplay').textContent=t.price.toLocaleString('fr-FR')+' FCFA';document.getElementById('payMethodWrap').style.display='block';S.flowPayMethod=null;document.getElementById('flowWaveBtn').style.cssText="background:#1a56db22;border:2px solid #1a56db44;border-radius:16px;padding:16px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:'Space Grotesk',sans-serif;font-weight:900;font-size:13px;color:#7ab4ff;transition:all .2s;";document.getElementById('flowOMBtn').style.cssText="background:#FF6B0022;border:2px solid #FF6B0044;border-radius:16px;padding:16px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:'Space Grotesk',sans-serif;font-weight:900;font-size:13px;color:#ffb380;transition:all .2s;";document.getElementById('btnPayTicket').disabled=true;};
-        destList.appendChild(chip);
-      });
-    }
-    loader('',false);
-    document.getElementById('ticketStep0').style.display='none';
-    document.getElementById('ticketStep1').style.display='block';
-    setDots(1);notify('🚌','Bus détecté',recv.vehicle+' · Ligne '+recv.ligne);
-  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
-}
-
-// Bouton Payer → déclenche PayTech
-window.goPayTicketWithPaytech=async()=>{
-  if(!S.ticketSection){notify('⚠️','Section','Choisissez une destination.');return;}
-  if(!S.flowPayMethod){notify('⚠️','Paiement','Choisissez Wave ou Orange Money.');return;}
-  const sec=S.ticketSection;
-  const recv=S.ticketBus;
-  document.getElementById('ticketStep1').style.display='none';
-  document.getElementById('ticketStep2').style.display='block';
-  setDots(2);
-  loader('Connexion à PayTech…');
-  try{
-    const resp=await fetch(`${BACKEND_URL}/api/payment/init`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        amount:sec.price,
-        method:S.flowPayMethod,
-        type:'ticket',
-        uid:S.uid,
-        meta:{
-          busUid:recv.uid,busId:recv.walletId,
-          from:sec.from,to:sec.to,section:sec.section,
-          passengerId:S.profile.walletId,passengerName:S.profile.name,
-          gie:recv.gie,vehicle:recv.vehicle,ligne:recv.ligne,zone:recv.zone
-        }
-      })
-    });
-    const data=await resp.json();
-    loader('',false);
-    if(data.payment_url){
-      // Sauvegarder les infos ticket pour créer la demande au retour
-      sessionStorage.setItem('tp_ref',data.ref_command);
-      sessionStorage.setItem('tp_uid',S.uid);
-      sessionStorage.setItem('tp_type','ticket');
-      sessionStorage.setItem('tp_ticket',JSON.stringify({
-        busUid:recv.uid,busId:recv.walletId,
-        from:sec.from,to:sec.to,section:sec.section,price:sec.price,
-        method:S.flowPayMethod,
-        passengerId:S.profile.walletId,passengerUid:S.uid,passengerName:S.profile.name,
-        gie:recv.gie,vehicle:recv.vehicle,ligne:recv.ligne,zone:recv.zone
-      }));
-      window.location.href=data.payment_url;
-    }else{
-      document.getElementById('ticketStep2').style.display='none';
-      document.getElementById('ticketStep1').style.display='block';
-      setDots(1);
-      notify('❌','Erreur PayTech',data.error||'Impossible d\'initier le paiement');
-    }
-  }catch(err){
-    loader('',false);
-    document.getElementById('ticketStep2').style.display='none';
-    document.getElementById('ticketStep1').style.display='block';
-    setDots(1);
-    notify('❌','Erreur réseau',err.message);
-  }
-};
-
-// ============================================================
-// SCANNER PASSAGER (receveur)
-// ============================================================
-let currentScanReq=null;
-window.showScanPanel=async(walletId)=>{
-  document.getElementById('scanPanelEl')?.remove();
-  loader('Recherche passager…');
-  try{
-    const wSnap=await getDoc(doc(db,'wallets',walletId));
-    if(!wSnap.exists()){loader('',false);notify('❌','Inconnu','Wallet passager introuvable.');return;}
-    const paxUid=wSnap.data().uid;
-    const paxSnap=await getDoc(doc(db,'users',paxUid));
-    const pax=paxSnap.data();
-    const q=query(collection(db,'pending'),where('passengerUid','==',paxUid),where('busUid','==',S.uid));
-    const pSnap=await getDocs(q);
-    currentScanReq=pSnap.empty?null:{id:pSnap.docs[0].id,...pSnap.docs[0].data(),paxUid};
-    loader('',false);
-    const div=document.createElement('div');div.id='scanPanelEl';
-    div.style.cssText='position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:600;padding:20px;background:#0c1f12;border-radius:24px 24px 0 0;border:1px solid #009A4422;animation:slideUp .3s ease;max-height:92vh;overflow-y:auto;';
-    if(currentScanReq){
-      const req=currentScanReq;
-      div.innerHTML=`<div style="background:#00A65015;border:2px solid #00A65044;border-radius:14px;padding:14px;margin-bottom:12px;"><div style="font-weight:900;font-size:15px;">${pax.name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;margin-top:4px;">${req.from}→${req.to} · S${req.section} · <strong style="color:var(--y);">${req.price} FCFA</strong></div></div><div style="font-weight:700;font-size:13px;color:#888;margin-bottom:8px;">Méthode de paiement :</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;"><button id="spWave" onclick="setScMethod('wave')" style="background:#1a56db22;border:2px solid #1a56db44;border-radius:12px;padding:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:13px;color:#7ab4ff;">🌊 Wave</button><button id="spOM" onclick="setScMethod('om')" style="background:#FF6B0022;border:2px solid #FF6B0044;border-radius:12px;padding:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:13px;color:#ffb380;">🟠 Orange Money</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button onclick="rejectScan()" style="background:linear-gradient(135deg,var(--r),#B71C1C);border:none;border-radius:14px;padding:14px;color:#fff;font-weight:800;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;">✗ Rejeter</button><button id="confirmScBtn" disabled onclick="confirmScan()" style="background:#ffffff15;border:none;border-radius:14px;padding:14px;color:#888;font-weight:800;cursor:not-allowed;font-family:'Space Grotesk',sans-serif;font-size:14px;">✅ Valider</button></div>`;
-    }else{
-      div.innerHTML=`<div style="background:#1a56db15;border:2px solid #1a56db44;border-radius:14px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;"><div style="width:44px;height:44px;border-radius:22px;background:linear-gradient(135deg,var(--g),var(--gd));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🧍</div><div><div style="font-weight:900;font-size:15px;">${pax.name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;">${walletId}</div><div style="color:var(--y);font-weight:800;font-size:13px;margin-top:2px;">Solde : ${(pax.balance||0).toLocaleString('fr-FR')} FCFA</div></div></div><div style="font-weight:800;font-size:14px;margin-bottom:10px;">💰 Montant du trajet</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;"><button class="quick-btn" onclick="document.getElementById('manualAmt').value=150">150</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=200">200</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=300">300</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=500">500</button></div><input id="manualAmt" class="input-field" type="number" placeholder="Montant en FCFA" style="margin-bottom:12px;font-size:20px;font-weight:900;text-align:center;"/><div style="font-weight:700;font-size:13px;color:#888;margin-bottom:8px;">Méthode de paiement :</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"><button id="manWave" onclick="selManualMethod('wave')" style="background:#1a56db22;border:2px solid #1a56db44;border-radius:12px;padding:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:13px;color:#7ab4ff;transition:all .2s;">🌊 Wave</button><button id="manOM" onclick="selManualMethod('om')" style="background:#FF6B0022;border:2px solid #FF6B0044;border-radius:12px;padding:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:13px;color:#ffb380;transition:all .2s;">🟠 Orange Money</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button onclick="document.getElementById('scanPanelEl').remove()" style="background:#ffffff10;border:none;border-radius:14px;padding:14px;color:#888;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">✕ Annuler</button><button id="manConfirmBtn" onclick="confirmManualScan('${paxUid}','${walletId}','${pax.name.replace(/'/g,'')}',${pax.balance||0})" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:14px;padding:14px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;">✅ Encaisser</button></div>`;
-    }
-    document.body.appendChild(div);
-  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
-};
-
-let manualMethod=null;
-window.selManualMethod=(m)=>{
-  manualMethod=m;
-  const wB=document.getElementById('manWave'),oB=document.getElementById('manOM');
-  if(wB){wB.style.background=m==='wave'?'#1a56db55':'#1a56db22';wB.style.borderColor=m==='wave'?'#1a56db':'#1a56db44';}
-  if(oB){oB.style.background=m==='om'?'#FF6B0055':'#FF6B0022';oB.style.borderColor=m==='om'?'#FF6B00':'#FF6B0044';}
-};
-
-window.confirmManualScan=async(paxUid,walletId,passengerName,paxBalance)=>{
-  const amt=parseInt(document.getElementById('manualAmt')?.value||0);
-  if(!amt||amt<50){notify('⚠️','Montant','Entrez un montant valide (min 50 FCFA).');return;}
-  if(!manualMethod){notify('⚠️','Méthode','Choisissez Wave ou Orange Money.');return;}
-  if(paxBalance<amt){notify('❌','Solde insuffisant',`Le passager n'a que ${paxBalance.toLocaleString('fr-FR')} FCFA.`);return;}
-  loader('Encaissement…');
-  try{
-    const now=new Date();
-    const sn=`${walletId.replace('TP-','')}*M${Math.floor(1000+Math.random()*9000)}`;
-    const ticket={busId:S.profile.walletId,busUid:S.uid,gie:S.profile.gie,vehicle:S.profile.vehicle,ligne:S.profile.ligne,zone:S.profile.zone,from:'—',to:'—',section:0,price:amt,method:manualMethod,passengerId:walletId,passengerUid:paxUid,passenger:passengerName,date:now.toLocaleDateString('fr-FR'),time:now.toLocaleTimeString('fr-FR'),sn,ts:serverTimestamp()};
-    await updateDoc(doc(db,'users',paxUid),{balance:increment(-amt)});
-    await addDoc(collection(db,'users',paxUid,'history'),{type:'ticket',label:`Ticket ${S.profile.gie}/${S.profile.vehicle}`,amount:-amt,ts:serverTimestamp()});
-    await updateDoc(doc(db,'users',S.uid),{today:increment(amt),count:increment(1),balance:increment(amt)});
-    const tkRef=await addDoc(collection(db,'tickets'),ticket);
-    await addDoc(collection(db,'users',paxUid,'tickets'),{...ticket,ticketId:tkRef.id});
-    await addDoc(collection(db,'notifications'),{toUid:paxUid,type:'ticket_validated',passenger:passengerName,read:false,ts:serverTimestamp()});
-    manualMethod=null;
-    loader('',false);document.getElementById('scanPanelEl')?.remove();
-    refreshRecvStats();loadRecvTickets();
-    showTicketData({...ticket,id:tkRef.id});
-    notify('✅','Encaissé !',amt.toLocaleString('fr-FR')+' FCFA de '+passengerName);
-  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
-};
-
-window.setScMethod=(m)=>{
-  S.scMethod=m;
-  const wB=document.getElementById('spWave'),oB=document.getElementById('spOM');
-  if(wB){wB.style.background=m==='wave'?'#1a56db55':'#1a56db22';wB.style.borderColor=m==='wave'?'#1a56db':'#1a56db44';}
-  if(oB){oB.style.background=m==='om'?'#FF6B0055':'#FF6B0022';oB.style.borderColor=m==='om'?'#FF6B00':'#FF6B0044';}
-  const btn=document.getElementById('confirmScBtn');
-  if(btn){btn.disabled=false;btn.style.cssText="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:14px;padding:14px;color:#fff;font-weight:800;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;";}
-};
-
-window.confirmScan=async()=>{
-  if(!currentScanReq||!S.scMethod){notify('⚠️','Méthode','Choisissez une méthode.');return;}
-  const req=currentScanReq;
-  loader('Validation ticket…');
-  try{
-    const paxSnap=await getDoc(doc(db,'users',req.paxUid));
-    const pax=paxSnap.data();
-    if((pax.balance||0)<req.price){loader('',false);notify('❌','Solde insuffisant','Le passager n\'a pas assez.');return;}
-    const now=new Date();
-    const sn=`${req.passengerId.replace('TP-','')}*R${Math.floor(1000+Math.random()*9000)}`;
-    const ticket={busId:S.profile.walletId,busUid:S.uid,gie:S.profile.gie,vehicle:S.profile.vehicle,ligne:S.profile.ligne,zone:S.profile.zone,from:req.from,to:req.to,section:req.section,price:req.price,method:S.scMethod,passengerId:req.passengerId,passengerUid:req.paxUid,passenger:req.passengerName,date:now.toLocaleDateString('fr-FR'),time:now.toLocaleTimeString('fr-FR'),sn,ts:serverTimestamp()};
-    await updateDoc(doc(db,'users',req.paxUid),{balance:increment(-req.price)});
-    await addDoc(collection(db,'users',req.paxUid,'history'),{type:'ticket',label:`Ticket ${S.profile.gie}/${S.profile.vehicle} → ${req.to}`,amount:-req.price,ts:serverTimestamp()});
-    await updateDoc(doc(db,'users',S.uid),{today:increment(req.price),count:increment(1),balance:increment(req.price)});
-    const tkRef=await addDoc(collection(db,'tickets'),ticket);
-    await addDoc(collection(db,'users',req.paxUid,'tickets'),{...ticket,ticketId:tkRef.id});
-    await deleteDoc(doc(db,'pending',req.id));
-    await addDoc(collection(db,'notifications'),{toUid:req.paxUid,type:'ticket_validated',passenger:req.passengerName,read:false,ts:serverTimestamp()});
-    loader('',false);document.getElementById('scanPanelEl')?.remove();
-    currentScanReq=null;S.scMethod=null;
-    refreshRecvStats();loadRecvTickets();
-    showTicketData({...ticket,id:tkRef.id});
-    notify('✅','Ticket validé !',req.price.toLocaleString('fr-FR')+' FCFA encaissés.');
-  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
-};
-
-window.rejectScan=async()=>{
-  if(!currentScanReq)return;
-  await deleteDoc(doc(db,'pending',currentScanReq.id));
-  document.getElementById('scanPanelEl')?.remove();currentScanReq=null;S.scMethod=null;
-  notify('❌','Rejeté','Demande annulée.');
-};
-
-async function refreshRecvStats(){
-  if(S.role!=='receiver')return;
-  const snap=await getDoc(doc(db,'users',S.uid));
-  if(!snap.exists())return;
-  const u=snap.data();S.profile={...S.profile,...u};
-  document.getElementById('recvTotalToday').textContent=(u.today||0).toLocaleString('fr-FR')+' F';
-  document.getElementById('recvTicketCount').textContent=u.count||0;
-  const rb=document.getElementById('recvBalance');if(rb)rb.textContent=(u.balance||0).toLocaleString('fr-FR');
-}
-
-async function loadRecvTickets(){
-  const q=query(collection(db,'tickets'),where('busUid','==',S.uid),orderBy('ts','desc'),limit(50));
-  const snap=await getDocs(q);
-  const cont=document.getElementById('recvTicketsList');
-  if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;color:#555;">Aucun ticket émis.</div>';return;}
-  cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div onclick='showTicketData(${JSON.stringify({...t,id:d.id}).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">== TRANSPAY = AFTU = CAPTRANS ==</div><div style="font-size:11px;line-height:1.9;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}</div></div></div>`;}).join('');
-}
-
-function renderPendingList(items){
-  const cont=document.getElementById('recvPending');
-  if(!items.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:16px 0;font-size:13px;">Aucune demande en attente.</div>';return;}
-  cont.innerHTML=items.map(req=>{
-    const mIcon=req.method==='wave'?'🌊':'🟠';const mColor=req.method==='wave'?'#1a56db':'#FF6B00';const mLabel=req.method==='wave'?'Wave':'Orange Money';
-    return`<div style="background:#FFD10010;border:1px solid #FFD10044;border-radius:18px;padding:14px 16px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><div style="font-size:28px;">⏳</div><div style="flex:1;"><div style="font-weight:900;font-size:14px;">${req.passengerName||'Passager'}</div><div style="color:#888;font-size:11px;font-family:'JetBrains Mono',monospace;">${req.from}→${req.to} · S${req.section}</div><div style="display:inline-flex;align-items:center;gap:4px;background:${mColor}22;border:1px solid ${mColor}44;border-radius:8px;padding:2px 8px;margin-top:4px;"><span style="font-size:13px;">${mIcon}</span><span style="color:${mColor};font-weight:800;font-size:11px;">${mLabel}</span></div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${req.price} F</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><button onclick="recvRejectTicket('${req.id}')" style="background:linear-gradient(135deg,#DF0024,#B71C1C);border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✗ Annuler</button><button onclick="recvConfirmTicket('${req.id}','${req.passengerUid}','${req.passengerId}','${req.passengerName}','${req.from}','${req.to}','${req.section}',${req.price},'${req.method||'wave'}','${req.busUid||S.uid}')" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✅ Confirmer</button></div></div>`;
+  // Afficher les demandes en attente
+  const cont=document.getElementById('ownerPendingRecvList');
+  if(pendSnap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:16px 0;font-size:13px;">Aucune demande en attente.</div>';return;}
+  cont.innerHTML=pendSnap.docs.map(d=>{
+    const u=d.data();
+    return`<div style="background:#7c3aed15;border:2px solid #7c3aed44;border-radius:18px;padding:14px 16px;margin-bottom:12px;">
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;">
+        <div style="font-size:28px;">🎫</div>
+        <div style="flex:1;">
+          <div style="font-weight:900;font-size:15px;">${u.name}</div>
+          <div style="color:#888;font-size:12px;">${u.email}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#a78bfa;margin-top:4px;">GIE:${u.gie} · ${u.vehicle} · Ligne ${u.ligne} · Zone ${u.zone}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button onclick="ownerRejectReceiver('${d.id}')" style="background:linear-gradient(135deg,#DF0024,#B71C1C);border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✗ Refuser</button>
+        <button onclick="ownerApproveReceiver('${d.id}')" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✅ Accepter</button>
+      </div>
+    </div>`;
   }).join('');
 }
 
-window.recvConfirmTicket=async(pendingId,paxUid,passengerId,passengerName,from,to,section,price,method)=>{
-  price=parseInt(price);section=parseInt(section);
-  loader('Validation ticket…');
+window.ownerApproveReceiver=async(receiverUid)=>{
+  loader('Validation…');
   try{
-    const paxSnap=await getDoc(doc(db,'users',paxUid));
-    const pax=paxSnap.data();
-    if((pax.balance||0)<price){loader('',false);notify('❌','Solde insuffisant','Le passager n\'a pas assez.');return;}
-    const now=new Date();
-    const sn=`${passengerId.replace('TP-','')}*R${Math.floor(1000+Math.random()*9000)}`;
-    const ticket={busId:S.profile.walletId,busUid:S.uid,gie:S.profile.gie,vehicle:S.profile.vehicle,ligne:S.profile.ligne,zone:S.profile.zone,from,to,section,price,method,passengerId,passengerUid:paxUid,passenger:passengerName,date:now.toLocaleDateString('fr-FR'),time:now.toLocaleTimeString('fr-FR'),sn,ts:serverTimestamp()};
-    await updateDoc(doc(db,'users',paxUid),{balance:increment(-price)});
-    await addDoc(collection(db,'users',paxUid,'history'),{type:'ticket',label:`Ticket ${S.profile.gie}/${S.profile.vehicle} → ${to}`,amount:-price,ts:serverTimestamp()});
-    await updateDoc(doc(db,'users',S.uid),{today:increment(price),count:increment(1),balance:increment(price)});
-    const tkRef=await addDoc(collection(db,'tickets'),ticket);
-    await addDoc(collection(db,'users',paxUid,'tickets'),{...ticket,ticketId:tkRef.id});
-    await deleteDoc(doc(db,'pending',pendingId));
-    await addDoc(collection(db,'notifications'),{toUid:paxUid,type:'ticket_validated',read:false,ts:serverTimestamp()});
-    loader('',false);refreshRecvStats();loadRecvTickets();
-    showTicketData({...ticket,id:tkRef.id});
-    notify('✅','Ticket validé !',price.toLocaleString('fr-FR')+' FCFA encaissés.');
+    await updateDoc(doc(db,'users',receiverUid),{status:'approved'});
+    const snap=await getDoc(doc(db,'users',receiverUid));
+    const recv=snap.data();
+    // Notifier le receveur
+    await addDoc(collection(db,'notifications'),{toUid:receiverUid,type:'account_approved',read:false,ts:serverTimestamp()});
+    loader('',false);notify('✅','Accepté',recv.name+' peut maintenant travailler.');
+    await loadOwnerDashboard();
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-window.recvRejectTicket=async(pendingId)=>{
-  try{await deleteDoc(doc(db,'pending',pendingId));notify('❌','Annulé','Demande refusée.');}
-  catch(e){notify('❌','Erreur',e.message);}
+window.ownerRejectReceiver=async(receiverUid)=>{
+  loader('Refus…');
+  try{
+    await updateDoc(doc(db,'users',receiverUid),{status:'rejected'});
+    const snap=await getDoc(doc(db,'users',receiverUid));
+    const recv=snap.data();
+    await addDoc(collection(db,'notifications'),{toUid:receiverUid,type:'account_rejected',read:false,ts:serverTimestamp()});
+    loader('',false);notify('❌','Refusé',recv.name+' a été refusé.');
+    await loadOwnerDashboard();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-async function loadPassHomeTx(){
-  if(S.role!=='passenger')return;
-  const q=query(collection(db,'users',S.uid,'history'),orderBy('ts','desc'),limit(4));
+async function loadOwnerReceivers(){
+  const q=query(collection(db,'users'),where('role','==','receiver'),where('ownerUid','==',S.uid),where('status','==','approved'));
   const snap=await getDocs(q);
-  const cont=document.getElementById('passHomeTx');
-  if(snap.empty){cont.innerHTML='<div style="color:#555;text-align:center;padding:16px 0;">Aucune transaction.</div>';return;}
-  cont.innerHTML=snap.docs.map(d=>txRow(d.data())).join('');
-}
-async function loadPassHistory(){
-  if(S.role!=='passenger')return;
-  const q=query(collection(db,'users',S.uid,'history'),orderBy('ts','desc'),limit(50));
-  const snap=await getDocs(q);
-  const cont=document.getElementById('passHistory');
-  if(snap.empty){cont.innerHTML='<div style="color:#555;text-align:center;padding:40px 0;">Aucune transaction.</div>';return;}
-  cont.innerHTML=snap.docs.map(d=>txRow(d.data())).join('');
-}
-function txRow(h){
-  const icons={recharge:'💳',transfer_out:'↗️',transfer_in:'↙️',ticket:'🎫',withdraw:'💸',recharge_given:'💳'};
-  const pos=h.amount>0;
-  return`<div class="tx-row"><div style="width:36px;height:36px;border-radius:12px;background:${pos?'#00A65022':'#DF002422'};display:flex;align-items:center;justify-content:center;font-size:16px;">${icons[h.type]||'💼'}</div><div style="flex:1;margin-left:4px;"><div style="font-weight:700;font-size:14px;">${h.label}</div></div><div style="color:${pos?'var(--g)':'var(--r)'};font-weight:800;font-size:14px;">${pos?'+':''}${(h.amount||0).toLocaleString('fr-FR')} F</div></div>`;
+  const cont=document.getElementById('ownerReceiversList');
+  if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:48px 0;">Aucun receveur actif.</div>';return;}
+  cont.innerHTML=snap.docs.map(d=>{
+    const u=d.data();
+    return`<div style="background:#0f2016;border:1px solid #009A4422;border-radius:18px;padding:14px 16px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:44px;height:44px;border-radius:22px;background:linear-gradient(135deg,var(--orange),#cc3d00);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🎫</div>
+        <div style="flex:1;">
+          <div style="font-weight:900;font-size:15px;">${u.name}</div>
+          <div style="color:#888;font-size:12px;">${u.email} · ${u.phone||'—'}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--orange);margin-top:3px;">GIE:${u.gie} · ${u.vehicle} · L${u.ligne} · Z${u.zone}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:#666;">Recettes</div>
+          <div style="font-weight:900;color:var(--y);font-size:16px;">${(u.today||0).toLocaleString('fr-FR')} F</div>
+          <div style="font-size:10px;color:#666;">${u.count||0} tickets</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-async function loadPassTickets(){
-  if(S.role!=='passenger')return;
-  const q=query(collection(db,'users',S.uid,'tickets'),orderBy('ts','desc'),limit(30));
+async function loadOwnerRevenues(){
+  const q=query(collection(db,'users'),where('role','==','receiver'),where('ownerUid','==',S.uid),where('status','==','approved'));
   const snap=await getDocs(q);
-  const cont=document.getElementById('passTicketsContainer');
-  if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;"><div style="font-size:56px;opacity:.4;margin-bottom:16px;">🎫</div><div style="color:#555;font-weight:800;">Aucun ticket</div><button class="btn btn-purple" style="margin-top:16px;" onclick="openTicketFlow()">🎫 Acheter un ticket</button></div>';return;}
-  cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">== TRANSPAY = AFTU = CAPTRANS ==</div><div style="font-size:12px;line-height:1.9;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}</div><div style="text-align:center;margin-top:6px;font-size:10px;color:#009A44;font-weight:800;">✅ Validé</div></div></div>`;}).join('');
+  const cont=document.getElementById('ownerRevenuesList');
+  if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:48px 0;">Aucun receveur actif.</div>';return;}
+  // Tri par recettes décroissantes
+  const receivers=snap.docs.map(d=>d.data()).sort((a,b)=>(b.today||0)-(a.today||0));
+  let total=receivers.reduce((s,r)=>s+(r.today||0),0);
+  cont.innerHTML=`<div style="background:linear-gradient(135deg,#0d0a20,#1a1040);border:2px solid #7c3aed44;border-radius:18px;padding:16px 18px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;"><div style="font-size:13px;color:#a78bfa;">Total du jour (tous receveurs)</div><div style="font-weight:900;font-size:24px;color:var(--y);">${total.toLocaleString('fr-FR')} F</div></div>`+
+  receivers.map((u,i)=>{
+    const pct=total>0?Math.round((u.today||0)/total*100):0;
+    return`<div style="background:#0f2016;border:1px solid #009A4422;border-radius:16px;padding:14px 16px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div>
+          <div style="font-weight:800;font-size:14px;">${u.name}</div>
+          <div style="font-size:11px;color:#888;font-family:'JetBrains Mono',monospace;">${u.vehicle} · Ligne ${u.ligne}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-weight:900;color:var(--y);font-size:18px;">${(u.today||0).toLocaleString('fr-FR')} F</div>
+          <div style="font-size:11px;color:#666;">${u.count||0} tickets</div>
+        </div>
+      </div>
+      <div style="background:#ffffff10;border-radius:6px;height:6px;overflow:hidden;">
+        <div style="height:100%;border-radius:6px;background:linear-gradient(90deg,var(--g),var(--y));width:${pct}%;transition:width .5s;"></div>
+      </div>
+      <div style="font-size:10px;color:#666;text-align:right;margin-top:3px;">${pct}% du total</div>
+    </div>`;
+  }).join('');
 }
 
-window.showTicketData=(t)=>{
-  if(typeof t==='string')t=JSON.parse(t);
-  document.getElementById('ticketThermalContent').innerHTML=`<div class="t-header">== TRANSPAY = AFTU = CAPTRANS ==</div><div style="font-size:13px;line-height:2;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}</div><div style="margin-top:10px;text-align:center;font-size:11px;color:${t.method==='wave'?'#1a56db':'#FF6B00'};font-weight:800;">${t.method==='wave'?'🌊 Wave':'🟠 Orange Money'} · ${t.passenger} · ✅ Validé</div>`;
-  document.getElementById('ticketOverlay').style.display='flex';
-  if(S.role==='passenger')showDescendBtn(t);
+// ══════════════════════════════════════════════════════
+// ADMIN
+// ══════════════════════════════════════════════════════
+window.switchAdminTab=(tab)=>{
+  document.querySelectorAll('#screenAdmin .tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#screenAdmin .owner-nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('adminTab-'+tab)?.classList.add('active');
+  document.getElementById('anav-'+tab)?.classList.add('active');
+  if(tab==='owners')loadAdminDashboard();
+  if(tab==='users')loadAdminUsers();
 };
+
+async function loadAdminDashboard(){
+  // Propriétaires approuvés
+  const approvedQ=query(collection(db,'users'),where('role','==','owner'),where('status','==','approved'));
+  const approvedSnap=await getDocs(approvedQ);
+  document.getElementById('adminOwnerActiveCount').textContent=approvedSnap.size;
+
+  // Propriétaires en attente
+  const pendQ=query(collection(db,'users'),where('role','==','owner'),where('status','==','pending'));
+  const pendSnap=await getDocs(pendQ);
+  document.getElementById('adminOwnerPendingCount').textContent=pendSnap.size;
+
+  // Afficher en attente
+  const pendCont=document.getElementById('adminPendingOwners');
+  if(pendSnap.empty){pendCont.innerHTML='<div style="text-align:center;color:#555;padding:16px 0;font-size:13px;">Aucune demande.</div>';}
+  else{
+    pendCont.innerHTML=pendSnap.docs.map(d=>{
+      const u=d.data();
+      return`<div style="background:#DF002415;border:2px solid #DF002444;border-radius:18px;padding:14px 16px;margin-bottom:12px;">
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;">
+          <div style="font-size:28px;">🚌</div>
+          <div style="flex:1;">
+            <div style="font-weight:900;font-size:15px;">${u.name}</div>
+            <div style="color:#888;font-size:12px;">${u.email}</div>
+            <div style="color:#aaa;font-size:12px;">${u.phone||'—'}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#ff8888;margin-top:4px;">GIE/Entreprise: ${u.company}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button onclick="adminRejectOwner('${d.id}')" style="background:linear-gradient(135deg,#DF0024,#B71C1C);border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✗ Refuser</button>
+          <button onclick="adminApproveOwner('${d.id}')" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✅ Valider</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Afficher tous les propriétaires approuvés
+  const allCont=document.getElementById('adminAllOwners');
+  if(approvedSnap.empty){allCont.innerHTML='<div style="text-align:center;color:#555;padding:16px 0;font-size:13px;">Aucun propriétaire actif.</div>';}
+  else{
+    allCont.innerHTML=approvedSnap.docs.map(d=>{
+      const u=d.data();
+      return`<div style="background:#0f2016;border:1px solid #009A4422;border-radius:16px;padding:14px 16px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:42px;height:42px;border-radius:21px;background:linear-gradient(135deg,#7c3aed,#4c1d95);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🚌</div>
+          <div style="flex:1;">
+            <div style="font-weight:900;font-size:14px;">${u.name}</div>
+            <div style="color:#888;font-size:12px;">${u.email}</div>
+            <div style="color:#aaa;font-size:12px;">📞 ${u.phone||'—'}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#a78bfa;margin-top:2px;">${u.company}</div>
+          </div>
+          <button onclick="adminSuspendOwner('${d.id}')" style="background:#DF002422;border:1px solid #DF002244;border-radius:10px;padding:8px;cursor:pointer;font-size:11px;color:#ff8888;font-family:'Space Grotesk',sans-serif;font-weight:700;">Suspendre</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+window.adminApproveOwner=async(ownerUid)=>{
+  loader('Validation…');
+  try{
+    await updateDoc(doc(db,'users',ownerUid),{status:'approved'});
+    const snap=await getDoc(doc(db,'users',ownerUid));
+    const owner=snap.data();
+    await addDoc(collection(db,'notifications'),{toUid:ownerUid,type:'account_approved',read:false,ts:serverTimestamp()});
+    loader('',false);notify('✅','Propriétaire validé',owner.name+' peut maintenant se connecter.');
+    await loadAdminDashboard();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
+
+window.adminRejectOwner=async(ownerUid)=>{
+  loader('Refus…');
+  try{
+    await updateDoc(doc(db,'users',ownerUid),{status:'rejected'});
+    loader('',false);notify('❌','Refusé','Le propriétaire a été refusé.');
+    await loadAdminDashboard();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
+
+window.adminSuspendOwner=async(ownerUid)=>{
+  if(!confirm('Suspendre ce propriétaire ?'))return;
+  loader('Suspension…');
+  try{
+    await updateDoc(doc(db,'users',ownerUid),{status:'suspended'});
+    loader('',false);notify('⚠️','Suspendu','Le propriétaire a été suspendu.');
+    await loadAdminDashboard();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
+
+async function loadAdminUsers(){
+  const snap=await getDocs(collection(db,'users'));
+  allAdminUsers=snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderAdminUsers(allAdminUsers);
+}
+
+function renderAdminUsers(users){
+  const cont=document.getElementById('adminUsersList');
+  if(!users.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:48px 0;">Aucun utilisateur.</div>';return;}
+  const roleIcons={passenger:'🧍',receiver:'🎫',owner:'🚌',admin:'👑'};
+  const statusColors={approved:'var(--g)',pending:'var(--y)',rejected:'var(--r)',suspended:'#888'};
+  cont.innerHTML=users.map(u=>`
+    <div style="background:#0f2016;border:1px solid #009A4418;border-radius:16px;padding:12px 14px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-size:24px;">${roleIcons[u.role]||'👤'}</div>
+        <div style="flex:1;">
+          <div style="font-weight:800;font-size:14px;">${u.name||'—'}</div>
+          <div style="color:#888;font-size:12px;">${u.email}</div>
+          <div style="color:#aaa;font-size:12px;">📞 ${u.phone||'—'}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;color:${statusColors[u.status]||'#888'};font-weight:800;">${(u.status||'').toUpperCase()}</div>
+          <div style="font-size:10px;color:#555;margin-top:2px;">${u.role}</div>
+          <div style="font-size:10px;color:#555;">${u.walletId||''}</div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+window.filterAdminUsers=()=>{
+  const q=document.getElementById('adminSearchInput').value.toLowerCase();
+  const filtered=allAdminUsers.filter(u=>(u.name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q));
+  renderAdminUsers(filtered);
+};
+
+// ══════════════════════════════════════════════════════
+// RECEVEUR — LISTENERS (inchangé)
+// ══════════════════════════════════════════════════════
+function attachPendingListener(){
+  const q=query(collection(db,'pending'),where('busUid','==',S.uid));
+  unsubPending=onSnapshot(q,snap=>{const items=snap.docs.map(d=>({id:d.id,...d.data()}));renderPendingList(items);document.getElementById('recvTicketCount').textContent=items.length||'0';});
+}
+function attachNotifListener(){
+  const q=query(collection(db,'notifications'),where('toUid','==',S.uid),where('read','==',false));
+  unsubNotif=onSnapshot(q,snap=>{const n=snap.docs.length;const badge=document.getElementById('bellBadge');if(badge){badge.textContent=n;badge.className='bell-badge'+(n>0?' show':'');}snap.docs.forEach(d=>{const data=d.data();showRecvToast(data.type,data);updateDoc(doc(db,'notifications',d.id),{read:true});});});
+}
+function playDescendreSound(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();[[0,880,.18],[.2,1100,.18],[.4,1320,.28]].forEach(([s,f,d])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(0,ctx.currentTime+s);g.gain.linearRampToValueAtTime(.5,ctx.currentTime+s+.02);g.gain.linearRampToValueAtTime(0,ctx.currentTime+s+d);o.start(ctx.currentTime+s);o.stop(ctx.currentTime+s+d+.05);});}catch(e){}}
+function showRecvToast(type,data){const stack=document.getElementById('recvToastStack');const div=document.createElement('div');div.className='recv-toast';let icon='🔔',title='Notification',body='',color='var(--orange)';if(type==='descendre'){icon='🛑';title='Passager veut descendre !';body=`${data.passenger||'—'}\n${data.from||''}→${data.to||''}`;color='#DF0024';playDescendreSound();}else if(type==='ticket_request'){icon='🎫';title='Nouvelle demande ticket';body=`${data.passenger||'—'} · ${data.price||0} FCFA`;}div.innerHTML=`<button onclick="this.closest('.recv-toast').remove()" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:#888;font-size:14px;">✕</button><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="font-size:18px;">${icon}</span><div style="font-weight:900;font-size:13px;color:${color};">${title}</div></div><div style="font-size:12px;color:#ccc;line-height:1.5;font-family:'JetBrains Mono',monospace;">${body}</div>`;stack.appendChild(div);const bell=document.getElementById('bellIcon');if(bell){bell.classList.remove('bell-anim');void bell.offsetWidth;bell.classList.add('bell-anim');}setTimeout(()=>{div.classList.add('out');setTimeout(()=>div.remove(),300);},type==='descendre'?8000:5000);}
+
+window.switchTab=(tab)=>{document.querySelectorAll('#screenPassenger .tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('passTab-'+tab)?.classList.add('active');document.getElementById('nav-'+tab)?.classList.add('active');if(tab==='tickets')loadPassTickets();if(tab==='history')loadPassHistory();};
+window.switchRecvTab=(tab)=>{document.querySelectorAll('#screenReceiver .tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.recv-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('recvTab-'+tab)?.classList.add('active');document.getElementById('rnav-'+tab)?.classList.add('active');if(tab==='trajets')loadTrajets();if(tab==='tickets')loadRecvTickets();};
+window.openModal=(id)=>document.getElementById(id).style.display='flex';
+window.closeModal=(id)=>{document.getElementById(id).style.display='none';if(id==='modalTicketFlow')resetFlow();if(id==='modalWithdraw')resetWithdraw();if(id==='modalRecharge')resetRecharge();};
+function updateBalanceUI(){document.getElementById('passBalance').textContent=(S.profile?.balance||0).toLocaleString('fr-FR');}
+function showDescendBtn(t){activeTicketData=t;document.getElementById('descendInfo').textContent=`${t.from}→${t.to} · ${t.price} FCFA`;document.getElementById('descendBtn').style.display='block';document.getElementById('activeTicketBanner').style.display='block';document.getElementById('activeTicketLabel').textContent=`🚌 ${t.gie}/${t.vehicle} — ${t.from}→${t.to}`;}
+function hideDescendBtn(){document.getElementById('descendBtn').style.display='none';document.getElementById('activeTicketBanner').style.display='none';activeTicketData=null;}
+window.demandDescendre=async()=>{if(!activeTicketData)return;const t=activeTicketData;await addDoc(collection(db,'notifications'),{toUid:t.busUid,type:'descendre',passenger:S.profile.name,from:t.from,to:t.to,read:false,ts:serverTimestamp()});notify('🛑','Signal envoyé !','Le receveur a été prévenu.');hideDescendBtn();};
+window.showActiveTicket=()=>{if(activeTicketData)showTicketData(activeTicketData);};
+
+// RETRAIT
+window.openWithdraw=()=>{resetWithdraw();const bal=S.profile?.balance||0;document.getElementById('withdrawAvailable').textContent=bal.toLocaleString('fr-FR')+' FCFA';openModal('modalWithdraw');};
+function resetWithdraw(){['wdStep1','wdStep2','wdStep3'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const wa=document.getElementById('wdAmt');if(wa)wa.value='';}
+window.wdGoStep2=()=>{const amt=parseInt(document.getElementById('wdAmt').value||0);const bal=S.profile?.balance||0;if(!amt||amt<500){notify('⚠️','Montant','Minimum 500 FCFA.');return;}if(amt>bal){notify('❌','Solde','Solde insuffisant.');return;}S.wdAmt=amt;document.getElementById('wdAmtBig').textContent=amt.toLocaleString('fr-FR')+' FCFA';document.getElementById('wdStep1').style.display='none';document.getElementById('wdStep2').style.display='block';};
+window.wdBackStep1=()=>{document.getElementById('wdStep2').style.display='none';document.getElementById('wdStep1').style.display='block';};
+window.doWithdraw=async()=>{const amt=S.wdAmt;if(!amt)return;document.getElementById('wdStep2').style.display='none';document.getElementById('wdStep3').style.display='block';loader('Connexion à PayTech…');try{const resp=await fetch(`${BACKEND_URL}/api/payment/init`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,method:'wave',type:'retrait',uid:S.uid})});const data=await resp.json();loader('',false);if(data.payment_url){sessionStorage.setItem('tp_ref',data.ref_command);sessionStorage.setItem('tp_uid',S.uid);sessionStorage.setItem('tp_type','retrait');window.location.href=data.payment_url;}else{document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep2').style.display='block';notify('❌','Erreur PayTech',data.error||'Impossible d\'initier le retrait');}}catch(err){loader('',false);document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep2').style.display='block';notify('❌','Erreur réseau',err.message);}};
+
+// RECHARGE RECEVEUR→PASSAGER
+window.openRecvCharge=()=>{document.getElementById('rcWalletId').value='';document.getElementById('rcAmt').value='';document.getElementById('rcPassengerPreview').style.display='none';document.getElementById('rcRecvBalance').textContent=(S.profile?.balance||0).toLocaleString('fr-FR')+' FCFA';openModal('modalRecvCharge');};
+window.rcClearPreview=()=>{document.getElementById('rcPassengerPreview').style.display='none';};
+window.doRecvCharge=async()=>{const walletId=document.getElementById('rcWalletId').value.trim().toUpperCase();const amt=parseInt(document.getElementById('rcAmt').value);if(!walletId){notify('⚠️','Wallet','Entrez ou scannez l\'ID wallet du passager.');return;}if(!amt||amt<100){notify('⚠️','Montant','Montant minimum 100 FCFA.');return;}const recvBal=S.profile?.balance||0;if(amt>recvBal){notify('❌','Solde','Votre solde est insuffisant ('+recvBal.toLocaleString('fr-FR')+' FCFA).');return;}loader('Recharge en cours…');try{const wSnap=await getDoc(doc(db,'wallets',walletId));if(!wSnap.exists()){loader('',false);notify('❌','Introuvable','Wallet passager inconnu.');return;}const paxUid=wSnap.data().uid;if(paxUid===S.uid){loader('',false);notify('⚠️','Erreur','Impossible de vous recharger vous-même.');return;}const pSnap=await getDoc(doc(db,'users',paxUid));const pax=pSnap.data();await updateDoc(doc(db,'users',S.uid),{balance:increment(-amt)});await updateDoc(doc(db,'users',paxUid),{balance:increment(amt)});await addDoc(collection(db,'users',S.uid,'history'),{type:'recharge_given',label:'Recharge → '+pax.name,amount:-amt,ts:serverTimestamp()});await addDoc(collection(db,'users',paxUid,'history'),{type:'recharge',label:'Recharge par '+S.profile.name,amount:amt,ts:serverTimestamp()});loader('',false);closeModal('modalRecvCharge');notify('✅','Recharge effectuée',pax.name+' +'+amt.toLocaleString('fr-FR')+' FCFA');refreshRecvStats();}catch(e){loader('',false);notify('❌','Erreur',e.message);}};
+
+// RECHARGE PAYTECH PASSAGER
+window.openRecharge=()=>{resetRecharge();openModal('modalRecharge');};
+function resetRecharge(){['rgStep1','rgStep2','rgStep3'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const amt=document.getElementById('rechargeAmt');if(amt)amt.value='';document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));}
+window.selQuickAmt=(v,btn)=>{document.getElementById('rechargeAmt').value=v;document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');};
+window.rgGoStep2=()=>{const v=parseInt(document.getElementById('rechargeAmt').value);if(!v||v<100){notify('⚠️','Montant','Min 100 FCFA.');return;}S.rgAmt=v;document.getElementById('rgAmtBig').textContent=v.toLocaleString('fr-FR')+' FCFA';document.getElementById('rgStep1').style.display='none';document.getElementById('rgStep2').style.display='block';};
+window.rgBackStep1=()=>{document.getElementById('rgStep2').style.display='none';document.getElementById('rgStep1').style.display='block';};
+window.rgPayWithPaytech=async()=>{const amt=S.rgAmt;if(!amt)return;document.getElementById('rgStep2').style.display='none';document.getElementById('rgStep3').style.display='block';loader('Connexion à PayTech…');try{const resp=await fetch(`${BACKEND_URL}/api/payment/init`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:amt,method:'wave',type:'recharge',uid:S.uid})});const data=await resp.json();loader('',false);if(data.payment_url){sessionStorage.setItem('tp_ref',data.ref_command);sessionStorage.setItem('tp_uid',S.uid);sessionStorage.setItem('tp_type','recharge');window.location.href=data.payment_url;}else{document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';notify('❌','Erreur PayTech',data.error||'Impossible d\'initier le paiement');}}catch(err){loader('',false);document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';notify('❌','Erreur réseau',err.message);}};
+
+// TRANSFERT
+window.openSend=()=>{clearFriend();document.getElementById('sendAmt').value='';openModal('modalSend');};
+window.clearFriend=()=>{S.friendTarget=null;document.getElementById('friendPreview').style.display='none';document.getElementById('friendManualWrap').style.display='block';document.getElementById('sendTarget').value='';};
+function setFriend(walletId,name){S.friendTarget={walletId,name};document.getElementById('friendName').textContent=name;document.getElementById('friendWalletId').textContent=walletId;document.getElementById('friendPreview').style.display='flex';document.getElementById('friendManualWrap').style.display='none';}
+window.doSend=async()=>{const targetWid=S.friendTarget?.walletId||document.getElementById('sendTarget').value.trim().toUpperCase();const amt=parseInt(document.getElementById('sendAmt').value);if(!targetWid||!amt||amt<100){notify('⚠️','Formulaire','Remplissez les champs (min 100 FCFA).');return;}if((S.profile.balance||0)<amt){notify('❌','Solde','Solde insuffisant.');return;}if(targetWid===S.profile.walletId){notify('⚠️','Erreur','Impossible de vous envoyer à vous-même.');return;}loader('Transfert…');try{const wSnap=await getDoc(doc(db,'wallets',targetWid));if(!wSnap.exists()){loader('',false);notify('❌','Introuvable','Wallet destinataire inconnu.');return;}const destUid=wSnap.data().uid;const destSnap=await getDoc(doc(db,'users',destUid));const dest=destSnap.data();await updateDoc(doc(db,'users',S.uid),{balance:increment(-amt)});await updateDoc(doc(db,'users',destUid),{balance:increment(amt)});await addDoc(collection(db,'users',S.uid,'history'),{type:'transfer_out',label:'Transfert → '+dest.name,amount:-amt,ts:serverTimestamp()});await addDoc(collection(db,'users',destUid,'history'),{type:'transfer_in',label:'Reçu de '+S.profile.name,amount:amt,ts:serverTimestamp()});loader('',false);closeModal('modalSend');clearFriend();notify('✅','Envoyé',amt.toLocaleString('fr-FR')+' FCFA → '+dest.name);}catch(e){loader('',false);notify('❌','Erreur',e.message);}};
+
+// TRAJETS
+window.openAddTrajet=()=>{['trajetFrom','trajetTo','trajetSection','trajetPrice'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});openModal('modalAddTrajet');};
+window.doAddTrajet=async()=>{const from=document.getElementById('trajetFrom').value.trim();const to=document.getElementById('trajetTo').value.trim();const section=parseInt(document.getElementById('trajetSection').value)||1;const price=parseInt(document.getElementById('trajetPrice').value);if(!from||!to||!price||price<50){notify('⚠️','Champs','Tous les champs sont requis (prix min 50 FCFA).');return;}loader('Enregistrement…');try{await addDoc(collection(db,'users',S.uid,'destinations'),{from,to,section,price,createdAt:serverTimestamp()});loader('',false);closeModal('modalAddTrajet');loadTrajets();notify('✅','Trajet ajouté',`${from}→${to} · S${section} · ${price} FCFA`);}catch(e){loader('',false);notify('❌','Erreur',e.message);}};
+window.delTrajet=async(id)=>{try{await deleteDoc(doc(db,'users',S.uid,'destinations',id));loadTrajets();}catch(e){notify('❌','Erreur',e.message);}};
+async function loadTrajets(){if(S.role!=='receiver')return;const snap=await getDocs(collection(db,'users',S.uid,'destinations'));const cont=document.getElementById('trajetsList');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;color:#555;">Aucune section. Cliquez + Ajouter.</div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div class="trajet-row"><div style="flex:1;"><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.from}-->${t.to}</div><div style="color:#888;font-size:11px;margin-top:2px;">Section: ${t.section} == <strong style="color:var(--y);">${t.price} FCFA</strong></div></div><button onclick="delTrajet('${d.id}')" style="background:#DF002422;border:1px solid #DF002244;border-radius:10px;padding:8px;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>`;}).join('');}
+
+// TICKET FLOW
+window.openTicketFlow=()=>{resetFlow();openModal('modalTicketFlow');};
+window.resetFlow=()=>{setDots(0);['ticketStep0','ticketStep1','ticketStep2','ticketStep3'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('ticketStep0').style.display='block';document.getElementById('payMethodWrap').style.display='none';S.ticketBus=null;S.ticketSection=null;S.flowPayMethod=null;document.getElementById('ticketPriceDisplay').textContent='— FCFA';document.getElementById('btnPayTicket').disabled=true;};
+function setDots(s){for(let i=0;i<4;i++){const d=document.getElementById('tdot'+i);if(d)d.className='step-dot'+(i<s?' done':i===s?' active':'');}}
+window.selFlowMethod=(m)=>{S.flowPayMethod=m;const wB=document.getElementById('flowWaveBtn'),oB=document.getElementById('flowOMBtn');wB.style.background=m==='wave'?'#1a56db55':'#1a56db22';wB.style.borderColor=m==='wave'?'#1a56db':'#1a56db44';oB.style.background=m==='om'?'#FF6B0055':'#FF6B0022';oB.style.borderColor=m==='om'?'#FF6B00':'#FF6B0044';document.getElementById('btnPayTicket').disabled=false;};
+async function loadBusInFlow(walletId){loader('Chargement bus…');try{const wSnap=await getDoc(doc(db,'wallets',walletId));if(!wSnap.exists()){loader('',false);notify('❌','Bus inconnu','QR non reconnu.');return;}const recvUid=wSnap.data().uid;const rSnap=await getDoc(doc(db,'users',recvUid));if(!rSnap.exists()){loader('',false);notify('❌','Erreur','Receveur introuvable.');return;}const recv={...rSnap.data(),uid:recvUid};S.ticketBus=recv;S.ticketSection=null;document.getElementById('detectedBusInfo').innerHTML=`GIE:${recv.gie} = ${recv.vehicle} = Ligne:${recv.ligne}<br>Zone:${recv.zone}`;const destSnap=await getDocs(collection(db,'users',recvUid,'destinations'));const destList=document.getElementById('destList');destList.innerHTML='';if(destSnap.empty){destList.innerHTML='<div style="background:#FFD10015;border:1px solid #FFD10044;border-radius:12px;padding:12px;color:#888;font-size:13px;text-align:center;">Aucune section définie par ce receveur.</div>';}else{destSnap.docs.forEach(d=>{const t=d.data();const chip=document.createElement('div');chip.style.cssText='background:#ffffff0d;border:1.5px solid #2a3a2a;border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .2s;';chip.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.from}-->${t.to}</div><div style="color:#888;font-size:11px;">Section ${t.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${t.price} F</div></div>`;chip.onclick=()=>{S.ticketSection={...t,docId:d.id};destList.querySelectorAll('div[style]').forEach(c=>{c.style.background='#ffffff0d';c.style.borderColor='#2a3a2a';});chip.style.background='#00A65033';chip.style.borderColor='var(--g)';document.getElementById('ticketPriceDisplay').textContent=t.price.toLocaleString('fr-FR')+' FCFA';document.getElementById('payMethodWrap').style.display='block';S.flowPayMethod=null;document.getElementById('flowWaveBtn').style.cssText="background:#1a56db22;border:2px solid #1a56db44;border-radius:16px;padding:16px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:'Space Grotesk',sans-serif;font-weight:900;font-size:13px;color:#7ab4ff;transition:all .2s;";document.getElementById('flowOMBtn').style.cssText="background:#FF6B0022;border:2px solid #FF6B0044;border-radius:16px;padding:16px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:'Space Grotesk',sans-serif;font-weight:900;font-size:13px;color:#ffb380;transition:all .2s;";document.getElementById('btnPayTicket').disabled=true;};destList.appendChild(chip);});}loader('',false);document.getElementById('ticketStep0').style.display='none';document.getElementById('ticketStep1').style.display='block';setDots(1);notify('🚌','Bus détecté',recv.vehicle+' · Ligne '+recv.ligne);}catch(e){loader('',false);notify('❌','Erreur',e.message);}}
+window.goPayTicketWithPaytech=async()=>{if(!S.ticketSection){notify('⚠️','Section','Choisissez une destination.');return;}if(!S.flowPayMethod){notify('⚠️','Paiement','Choisissez Wave ou Orange Money.');return;}const sec=S.ticketSection;const recv=S.ticketBus;document.getElementById('ticketStep1').style.display='none';document.getElementById('ticketStep2').style.display='block';setDots(2);loader('Connexion à PayTech…');try{const resp=await fetch(`${BACKEND_URL}/api/payment/init`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:sec.price,method:S.flowPayMethod,type:'ticket',uid:S.uid,meta:{busUid:recv.uid,busId:recv.walletId,from:sec.from,to:sec.to,section:sec.section,passengerId:S.profile.walletId,passengerName:S.profile.name,gie:recv.gie,vehicle:recv.vehicle,ligne:recv.ligne,zone:recv.zone}})});const data=await resp.json();loader('',false);if(data.payment_url){sessionStorage.setItem('tp_ref',data.ref_command);sessionStorage.setItem('tp_uid',S.uid);sessionStorage.setItem('tp_type','ticket');sessionStorage.setItem('tp_ticket',JSON.stringify({busUid:recv.uid,busId:recv.walletId,from:sec.from,to:sec.to,section:sec.section,price:sec.price,method:S.flowPayMethod,passengerId:S.profile.walletId,passengerUid:S.uid,passengerName:S.profile.name,gie:recv.gie,vehicle:recv.vehicle,ligne:recv.ligne,zone:recv.zone}));window.location.href=data.payment_url;}else{document.getElementById('ticketStep2').style.display='none';document.getElementById('ticketStep1').style.display='block';setDots(1);notify('❌','Erreur PayTech',data.error||'Impossible d\'initier le paiement');}}catch(err){loader('',false);document.getElementById('ticketStep2').style.display='none';document.getElementById('ticketStep1').style.display='block';setDots(1);notify('❌','Erreur réseau',err.message);}};
+
+// SCANNER PASSAGER (receveur)
+let currentScanReq=null;
+window.showScanPanel=async(walletId)=>{document.getElementById('scanPanelEl')?.remove();loader('Recherche passager…');try{const wSnap=await getDoc(doc(db,'wallets',walletId));if(!wSnap.exists()){loader('',false);notify('❌','Inconnu','Wallet passager introuvable.');return;}const paxUid=wSnap.data().uid;const paxSnap=await getDoc(doc(db,'users',paxUid));const pax=paxSnap.data();const q=query(collection(db,'pending'),where('passengerUid','==',paxUid),where('busUid','==',S.uid));const pSnap=await getDocs(q);currentScanReq=pSnap.empty?null:{id:pSnap.docs[0].id,...pSnap.docs[0].data(),paxUid};loader('',false);const div=document.createElement('div');div.id='scanPanelEl';div.style.cssText='position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:600;padding:20px;background:#0c1f12;border-radius:24px 24px 0 0;border:1px solid #009A4422;animation:slideUp .3s ease;max-height:92vh;overflow-y:auto;';if(currentScanReq){const req=currentScanReq;div.innerHTML=`<div style="background:#00A65015;border:2px solid #00A65044;border-radius:14px;padding:14px;margin-bottom:12px;"><div style="font-weight:900;font-size:15px;">${pax.name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;margin-top:4px;">${req.from}→${req.to} · S${req.section} · <strong style="color:var(--y);">${req.price} FCFA</strong></div></div><div style="font-weight:700;font-size:13px;color:#888;margin-bottom:8px;">Méthode de paiement :</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;"><button id="spWave" onclick="setScMethod('wave')" style="background:#1a56db22;border:2px solid #1a56db44;border-radius:12px;padding:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:13px;color:#7ab4ff;">🌊 Wave</button><button id="spOM" onclick="setScMethod('om')" style="background:#FF6B0022;border:2px solid #FF6B0044;border-radius:12px;padding:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:13px;color:#ffb380;">🟠 Orange Money</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button onclick="rejectScan()" style="background:linear-gradient(135deg,var(--r),#B71C1C);border:none;border-radius:14px;padding:14px;color:#fff;font-weight:800;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;">✗ Rejeter</button><button id="confirmScBtn" disabled onclick="confirmScan()" style="background:#ffffff15;border:none;border-radius:14px;padding:14px;color:#888;font-weight:800;cursor:not-allowed;font-family:'Space Grotesk',sans-serif;font-size:14px;">✅ Valider</button></div>`;}else{div.innerHTML=`<div style="background:#1a56db15;border:2px solid #1a56db44;border-radius:14px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;"><div style="width:44px;height:44px;border-radius:22px;background:linear-gradient(135deg,var(--g),var(--gd));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🧍</div><div><div style="font-weight:900;font-size:15px;">${pax.name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;">${walletId}</div><div style="color:var(--y);font-weight:800;font-size:13px;margin-top:2px;">Solde : ${(pax.balance||0).toLocaleString('fr-FR')} FCFA</div></div></div><div style="font-weight:800;font-size:14px;margin-bottom:10px;">💰 Montant du trajet</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;"><button class="quick-btn" onclick="document.getElementById('manualAmt').value=150">150</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=200">200</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=300">300</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=500">500</button></div><input id="manualAmt" class="input-field" type="number" placeholder="Montant en FCFA" style="margin-bottom:12px;font-size:20px;font-weight:900;text-align:center;"/><div style="font-weight:700;font-size:13px;color:#888;margin-bottom:8px;">Méthode de paiement :</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"><button id="manWave" onclick="selManualMethod('wave')" style="background:#1a56db22;border:2px solid #1a56db44;border-radius:12px;padding:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:13px;color:#7ab4ff;transition:all .2s;">🌊 Wave</button><button id="manOM" onclick="selManualMethod('om')" style="background:#FF6B0022;border:2px solid #FF6B0044;border-radius:12px;padding:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:13px;color:#ffb380;transition:all .2s;">🟠 Orange Money</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button onclick="document.getElementById('scanPanelEl').remove()" style="background:#ffffff10;border:none;border-radius:14px;padding:14px;color:#888;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">✕ Annuler</button><button id="manConfirmBtn" onclick="confirmManualScan('${paxUid}','${walletId}','${pax.name.replace(/'/g,'')}',${pax.balance||0})" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:14px;padding:14px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;">✅ Encaisser</button></div>`;}document.body.appendChild(div);}catch(e){loader('',false);notify('❌','Erreur',e.message);}};
+let manualMethod=null;
+window.selManualMethod=(m)=>{manualMethod=m;const wB=document.getElementById('manWave'),oB=document.getElementById('manOM');if(wB){wB.style.background=m==='wave'?'#1a56db55':'#1a56db22';wB.style.borderColor=m==='wave'?'#1a56db':'#1a56db44';}if(oB){oB.style.background=m==='om'?'#FF6B0055':'#FF6B0022';oB.style.borderColor=m==='om'?'#FF6B00':'#FF6B0044';}};
+window.confirmManualScan=async(paxUid,walletId,passengerName,paxBalance)=>{const amt=parseInt(document.getElementById('manualAmt')?.value||0);if(!amt||amt<50){notify('⚠️','Montant','Entrez un montant valide (min 50 FCFA).');return;}if(!manualMethod){notify('⚠️','Méthode','Choisissez Wave ou Orange Money.');return;}if(paxBalance<amt){notify('❌','Solde insuffisant',`Le passager n'a que ${paxBalance.toLocaleString('fr-FR')} FCFA.`);return;}loader('Encaissement…');try{const now=new Date();const sn=`${walletId.replace('TP-','')}*M${Math.floor(1000+Math.random()*9000)}`;const ticket={busId:S.profile.walletId,busUid:S.uid,gie:S.profile.gie,vehicle:S.profile.vehicle,ligne:S.profile.ligne,zone:S.profile.zone,from:'—',to:'—',section:0,price:amt,method:manualMethod,passengerId:walletId,passengerUid:paxUid,passenger:passengerName,date:now.toLocaleDateString('fr-FR'),time:now.toLocaleTimeString('fr-FR'),sn,ts:serverTimestamp()};await updateDoc(doc(db,'users',paxUid),{balance:increment(-amt)});await addDoc(collection(db,'users',paxUid,'history'),{type:'ticket',label:`Ticket ${S.profile.gie}/${S.profile.vehicle}`,amount:-amt,ts:serverTimestamp()});await updateDoc(doc(db,'users',S.uid),{today:increment(amt),count:increment(1),balance:increment(amt)});const tkRef=await addDoc(collection(db,'tickets'),ticket);await addDoc(collection(db,'users',paxUid,'tickets'),{...ticket,ticketId:tkRef.id});await addDoc(collection(db,'notifications'),{toUid:paxUid,type:'ticket_validated',passenger:passengerName,read:false,ts:serverTimestamp()});manualMethod=null;loader('',false);document.getElementById('scanPanelEl')?.remove();refreshRecvStats();loadRecvTickets();showTicketData({...ticket,id:tkRef.id});notify('✅','Encaissé !',amt.toLocaleString('fr-FR')+' FCFA de '+passengerName);}catch(e){loader('',false);notify('❌','Erreur',e.message);}};
+window.setScMethod=(m)=>{S.scMethod=m;const wB=document.getElementById('spWave'),oB=document.getElementById('spOM');if(wB){wB.style.background=m==='wave'?'#1a56db55':'#1a56db22';wB.style.borderColor=m==='wave'?'#1a56db':'#1a56db44';}if(oB){oB.style.background=m==='om'?'#FF6B0055':'#FF6B0022';oB.style.borderColor=m==='om'?'#FF6B00':'#FF6B0044';}const btn=document.getElementById('confirmScBtn');if(btn){btn.disabled=false;btn.style.cssText="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:14px;padding:14px;color:#fff;font-weight:800;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;";}};
+window.confirmScan=async()=>{if(!currentScanReq||!S.scMethod){notify('⚠️','Méthode','Choisissez une méthode.');return;}const req=currentScanReq;loader('Validation ticket…');try{const paxSnap=await getDoc(doc(db,'users',req.paxUid));const pax=paxSnap.data();if((pax.balance||0)<req.price){loader('',false);notify('❌','Solde insuffisant','Le passager n\'a pas assez.');return;}const now=new Date();const sn=`${req.passengerId.replace('TP-','')}*R${Math.floor(1000+Math.random()*9000)}`;const ticket={busId:S.profile.walletId,busUid:S.uid,gie:S.profile.gie,vehicle:S.profile.vehicle,ligne:S.profile.ligne,zone:S.profile.zone,from:req.from,to:req.to,section:req.section,price:req.price,method:S.scMethod,passengerId:req.passengerId,passengerUid:req.paxUid,passenger:req.passengerName,date:now.toLocaleDateString('fr-FR'),time:now.toLocaleTimeString('fr-FR'),sn,ts:serverTimestamp()};await updateDoc(doc(db,'users',req.paxUid),{balance:increment(-req.price)});await addDoc(collection(db,'users',req.paxUid,'history'),{type:'ticket',label:`Ticket ${S.profile.gie}/${S.profile.vehicle} → ${req.to}`,amount:-req.price,ts:serverTimestamp()});await updateDoc(doc(db,'users',S.uid),{today:increment(req.price),count:increment(1),balance:increment(req.price)});const tkRef=await addDoc(collection(db,'tickets'),ticket);await addDoc(collection(db,'users',req.paxUid,'tickets'),{...ticket,ticketId:tkRef.id});await deleteDoc(doc(db,'pending',req.id));await addDoc(collection(db,'notifications'),{toUid:req.paxUid,type:'ticket_validated',passenger:req.passengerName,read:false,ts:serverTimestamp()});loader('',false);document.getElementById('scanPanelEl')?.remove();currentScanReq=null;S.scMethod=null;refreshRecvStats();loadRecvTickets();showTicketData({...ticket,id:tkRef.id});notify('✅','Ticket validé !',req.price.toLocaleString('fr-FR')+' FCFA encaissés.');}catch(e){loader('',false);notify('❌','Erreur',e.message);}};
+window.rejectScan=async()=>{if(!currentScanReq)return;await deleteDoc(doc(db,'pending',currentScanReq.id));document.getElementById('scanPanelEl')?.remove();currentScanReq=null;S.scMethod=null;notify('❌','Rejeté','Demande annulée.');};
+async function refreshRecvStats(){if(S.role!=='receiver')return;const snap=await getDoc(doc(db,'users',S.uid));if(!snap.exists())return;const u=snap.data();S.profile={...S.profile,...u};document.getElementById('recvTotalToday').textContent=(u.today||0).toLocaleString('fr-FR')+' F';document.getElementById('recvTicketCount').textContent=u.count||0;const rb=document.getElementById('recvBalance');if(rb)rb.textContent=(u.balance||0).toLocaleString('fr-FR');}
+async function loadRecvTickets(){const q=query(collection(db,'tickets'),where('busUid','==',S.uid),orderBy('ts','desc'),limit(50));const snap=await getDocs(q);const cont=document.getElementById('recvTicketsList');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;color:#555;">Aucun ticket émis.</div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div onclick='showTicketData(${JSON.stringify({...t,id:d.id}).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">== TRANSPAY = AFTU = CAPTRANS ==</div><div style="font-size:11px;line-height:1.9;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}</div></div></div>`;}).join('');}
+function renderPendingList(items){const cont=document.getElementById('recvPending');if(!items.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:16px 0;font-size:13px;">Aucune demande en attente.</div>';return;}cont.innerHTML=items.map(req=>{const mIcon=req.method==='wave'?'🌊':'🟠';const mColor=req.method==='wave'?'#1a56db':'#FF6B00';const mLabel=req.method==='wave'?'Wave':'Orange Money';return`<div style="background:#FFD10010;border:1px solid #FFD10044;border-radius:18px;padding:14px 16px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><div style="font-size:28px;">⏳</div><div style="flex:1;"><div style="font-weight:900;font-size:14px;">${req.passengerName||'Passager'}</div><div style="color:#888;font-size:11px;font-family:'JetBrains Mono',monospace;">${req.from}→${req.to} · S${req.section}</div><div style="display:inline-flex;align-items:center;gap:4px;background:${mColor}22;border:1px solid ${mColor}44;border-radius:8px;padding:2px 8px;margin-top:4px;"><span style="font-size:13px;">${mIcon}</span><span style="color:${mColor};font-weight:800;font-size:11px;">${mLabel}</span></div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${req.price} F</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><button onclick="recvRejectTicket('${req.id}')" style="background:linear-gradient(135deg,#DF0024,#B71C1C);border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✗ Annuler</button><button onclick="recvConfirmTicket('${req.id}','${req.passengerUid}','${req.passengerId}','${req.passengerName}','${req.from}','${req.to}','${req.section}',${req.price},'${req.method||'wave'}','${req.busUid||S.uid}')" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✅ Confirmer</button></div></div>`;}).join('');}
+window.recvConfirmTicket=async(pendingId,paxUid,passengerId,passengerName,from,to,section,price,method)=>{price=parseInt(price);section=parseInt(section);loader('Validation ticket…');try{const paxSnap=await getDoc(doc(db,'users',paxUid));const pax=paxSnap.data();if((pax.balance||0)<price){loader('',false);notify('❌','Solde insuffisant','Le passager n\'a pas assez.');return;}const now=new Date();const sn=`${passengerId.replace('TP-','')}*R${Math.floor(1000+Math.random()*9000)}`;const ticket={busId:S.profile.walletId,busUid:S.uid,gie:S.profile.gie,vehicle:S.profile.vehicle,ligne:S.profile.ligne,zone:S.profile.zone,from,to,section,price,method,passengerId,passengerUid:paxUid,passenger:passengerName,date:new Date().toLocaleDateString('fr-FR'),time:new Date().toLocaleTimeString('fr-FR'),sn,ts:serverTimestamp()};await updateDoc(doc(db,'users',paxUid),{balance:increment(-price)});await addDoc(collection(db,'users',paxUid,'history'),{type:'ticket',label:`Ticket ${S.profile.gie}/${S.profile.vehicle} → ${to}`,amount:-price,ts:serverTimestamp()});await updateDoc(doc(db,'users',S.uid),{today:increment(price),count:increment(1),balance:increment(price)});const tkRef=await addDoc(collection(db,'tickets'),ticket);await addDoc(collection(db,'users',paxUid,'tickets'),{...ticket,ticketId:tkRef.id});await deleteDoc(doc(db,'pending',pendingId));await addDoc(collection(db,'notifications'),{toUid:paxUid,type:'ticket_validated',read:false,ts:serverTimestamp()});loader('',false);refreshRecvStats();loadRecvTickets();showTicketData({...ticket,id:tkRef.id});notify('✅','Ticket validé !',price.toLocaleString('fr-FR')+' FCFA encaissés.');}catch(e){loader('',false);notify('❌','Erreur',e.message);}};
+window.recvRejectTicket=async(pendingId)=>{try{await deleteDoc(doc(db,'pending',pendingId));notify('❌','Annulé','Demande refusée.');}catch(e){notify('❌','Erreur',e.message);}};
+
+// PASSAGER — HISTORIQUE & TICKETS
+async function loadPassHomeTx(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'history'),orderBy('ts','desc'),limit(4));const snap=await getDocs(q);const cont=document.getElementById('passHomeTx');if(snap.empty){cont.innerHTML='<div style="color:#555;text-align:center;padding:16px 0;">Aucune transaction.</div>';return;}cont.innerHTML=snap.docs.map(d=>txRow(d.data())).join('');}
+async function loadPassHistory(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'history'),orderBy('ts','desc'),limit(50));const snap=await getDocs(q);const cont=document.getElementById('passHistory');if(snap.empty){cont.innerHTML='<div style="color:#555;text-align:center;padding:40px 0;">Aucune transaction.</div>';return;}cont.innerHTML=snap.docs.map(d=>txRow(d.data())).join('');}
+function txRow(h){const icons={recharge:'💳',transfer_out:'↗️',transfer_in:'↙️',ticket:'🎫',withdraw:'💸',recharge_given:'💳'};const pos=h.amount>0;return`<div class="tx-row"><div style="width:36px;height:36px;border-radius:12px;background:${pos?'#00A65022':'#DF002422'};display:flex;align-items:center;justify-content:center;font-size:16px;">${icons[h.type]||'💼'}</div><div style="flex:1;margin-left:4px;"><div style="font-weight:700;font-size:14px;">${h.label}</div></div><div style="color:${pos?'var(--g)':'var(--r)'};font-weight:800;font-size:14px;">${pos?'+':''}${(h.amount||0).toLocaleString('fr-FR')} F</div></div>`;}
+async function loadPassTickets(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'tickets'),orderBy('ts','desc'),limit(30));const snap=await getDocs(q);const cont=document.getElementById('passTicketsContainer');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;"><div style="font-size:56px;opacity:.4;margin-bottom:16px;">🎫</div><div style="color:#555;font-weight:800;">Aucun ticket</div><button class="btn btn-purple" style="margin-top:16px;" onclick="openTicketFlow()">🎫 Acheter un ticket</button></div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">== TRANSPAY = AFTU = CAPTRANS ==</div><div style="font-size:12px;line-height:1.9;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}</div><div style="text-align:center;margin-top:6px;font-size:10px;color:#009A44;font-weight:800;">✅ Validé</div></div></div>`;}).join('');}
+window.showTicketData=(t)=>{if(typeof t==='string')t=JSON.parse(t);document.getElementById('ticketThermalContent').innerHTML=`<div class="t-header">== TRANSPAY = AFTU = CAPTRANS ==</div><div style="font-size:13px;line-height:2;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}</div><div style="margin-top:10px;text-align:center;font-size:11px;color:${t.method==='wave'?'#1a56db':'#FF6B00'};font-weight:800;">${t.method==='wave'?'🌊 Wave':'🟠 Orange Money'} · ${t.passenger} · ✅ Validé</div>`;document.getElementById('ticketOverlay').style.display='flex';if(S.role==='passenger')showDescendBtn(t);};
 window.closeTicket=()=>document.getElementById('ticketOverlay').style.display='none';
 
-window.openNotifPanel=async()=>{
-  const q=query(collection(db,'notifications'),where('toUid','==',S.uid),orderBy('ts','desc'),limit(20));
-  const snap=await getDocs(q);
-  const cont=document.getElementById('notifList');
-  if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';}
-  else{cont.innerHTML=snap.docs.map(d=>{const n=d.data();let icon='🔔',title='Notification',body='',color='var(--orange)';if(n.type==='descendre'){icon='🛑';title='Passager veut descendre';body=`${n.passenger||'—'} · ${n.from||''}→${n.to||''}`;color='#DF0024';}else if(n.type==='ticket_request'){icon='🎫';title='Demande ticket';body=`${n.passenger||'—'} · ${n.price||0} FCFA`;color='var(--g)';}else if(n.type==='ticket_validated'){icon='✅';title='Ticket validé';body='Votre ticket a été validé !';color='var(--g)';}return`<div style="background:#ffffff08;border:1px solid ${color}33;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;"><div style="font-size:22px;">${icon}</div><div><div style="font-weight:800;font-size:13px;color:${color};">${title}</div><div style="font-size:12px;color:#ccc;margin-top:3px;">${body}</div></div></div>`;}).join('');}
-  document.getElementById('notifPanel').style.display='flex';
-};
-window.clearNotifs=async()=>{
-  const q=query(collection(db,'notifications'),where('toUid','==',S.uid));
-  const snap=await getDocs(q);
-  await Promise.all(snap.docs.map(d=>deleteDoc(doc(db,'notifications',d.id))));
-  document.getElementById('notifList').innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';
-  const b=document.getElementById('bellBadge');if(b)b.className='bell-badge';
-};
+// NOTIFS
+window.openNotifPanel=async()=>{const q=query(collection(db,'notifications'),where('toUid','==',S.uid),orderBy('ts','desc'),limit(20));const snap=await getDocs(q);const cont=document.getElementById('notifList');if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';}else{cont.innerHTML=snap.docs.map(d=>{const n=d.data();let icon='🔔',title='Notification',body='',color='var(--orange)';if(n.type==='descendre'){icon='🛑';title='Passager veut descendre';body=`${n.passenger||'—'} · ${n.from||''}→${n.to||''}`;color='#DF0024';}else if(n.type==='ticket_validated'){icon='✅';title='Ticket validé';body='Votre ticket a été validé !';color='var(--g)';}else if(n.type==='account_approved'){icon='✅';title='Compte approuvé';body='Votre compte a été validé ! Reconnectez-vous.';color='var(--g)';}else if(n.type==='account_rejected'){icon='❌';title='Compte refusé';body='Votre demande a été refusée.';color='var(--r)';}return`<div style="background:#ffffff08;border:1px solid ${color}33;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;"><div style="font-size:22px;">${icon}</div><div><div style="font-weight:800;font-size:13px;color:${color};">${title}</div><div style="font-size:12px;color:#ccc;margin-top:3px;">${body}</div></div></div>`;}).join('');}document.getElementById('notifPanel').style.display='flex';};
+window.clearNotifs=async()=>{const q=query(collection(db,'notifications'),where('toUid','==',S.uid));const snap=await getDocs(q);await Promise.all(snap.docs.map(d=>deleteDoc(doc(db,'notifications',d.id))));document.getElementById('notifList').innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';const b=document.getElementById('bellBadge');if(b)b.className='bell-badge';};
 
-// ============================================================
-// CAMÉRA & QR
-// ============================================================
+// CAMÉRA
 let detector=null;
 if('BarcodeDetector' in window){try{detector=new BarcodeDetector({formats:['qr_code']});}catch(e){}}
 let scanCanvas=null,scanCtx=null;
-window.openCamera=async(mode)=>{
-  S.camMode=mode;S.scanning=false;
-  const labels={bus:'Scanner QR Bus',recv:'Scanner Passager',friend:'Scanner Ami 📷','wallet-scan':'Scanner Wallet'};
-  document.getElementById('camTitle').textContent=labels[mode]||'Scanner QR';
-  document.getElementById('camError').style.display='none';
-  document.getElementById('manualPanel')?.remove();
-  document.getElementById('cameraScreen').classList.add('open');
-  try{
-    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:S.facing},audio:false});
-    S.stream=stream;const video=document.getElementById('cameraVideo');video.srcObject=stream;await video.play();
-    if(!scanCanvas){scanCanvas=document.createElement('canvas');scanCtx=scanCanvas.getContext('2d',{willReadFrequently:true});}
-    S.scanning=true;scanLoop();
-  }catch(e){
-    let msg='Caméra inaccessible.';
-    if(e.name==='NotAllowedError')msg='Permission caméra refusée.';
-    document.getElementById('camError').style.display='block';
-    document.getElementById('camError').textContent='⚠️ '+msg;
-    showManualPanel();
-  }
-};
-function showManualPanel(){
-  document.getElementById('manualPanel')?.remove();
-  const div=Object.assign(document.createElement('div'),{id:'manualPanel'});
-  div.style.cssText='position:absolute;left:0;right:0;bottom:90px;padding:0 20px;pointer-events:all;';
-  div.innerHTML=`<div style="background:#0c1f12;border:1px solid #009A4444;border-radius:14px;padding:14px;"><div style="color:#aaa;font-size:12px;margin-bottom:8px;">Entrez l'ID (TP-XXXXXX ou RV-XXXXXX) :</div><input id="manualQrInput" class="input-field" placeholder="TP-... ou RV-..."/><button class="btn btn-primary btn-full" style="margin-top:10px;" onclick="submitManual()">Valider</button></div>`;
-  document.querySelector('#cameraScreen .camera-overlay').appendChild(div);
-}
+window.openCamera=async(mode)=>{S.camMode=mode;S.scanning=false;const labels={bus:'Scanner QR Bus',recv:'Scanner Passager',friend:'Scanner Ami 📷','wallet-scan':'Scanner Wallet'};document.getElementById('camTitle').textContent=labels[mode]||'Scanner QR';document.getElementById('camError').style.display='none';document.getElementById('manualPanel')?.remove();document.getElementById('cameraScreen').classList.add('open');try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:S.facing},audio:false});S.stream=stream;const video=document.getElementById('cameraVideo');video.srcObject=stream;await video.play();if(!scanCanvas){scanCanvas=document.createElement('canvas');scanCtx=scanCanvas.getContext('2d',{willReadFrequently:true});}S.scanning=true;scanLoop();}catch(e){let msg='Caméra inaccessible.';if(e.name==='NotAllowedError')msg='Permission caméra refusée.';document.getElementById('camError').style.display='block';document.getElementById('camError').textContent='⚠️ '+msg;showManualPanel();}};
+function showManualPanel(){document.getElementById('manualPanel')?.remove();const div=Object.assign(document.createElement('div'),{id:'manualPanel'});div.style.cssText='position:absolute;left:0;right:0;bottom:90px;padding:0 20px;pointer-events:all;';div.innerHTML=`<div style="background:#0c1f12;border:1px solid #009A4444;border-radius:14px;padding:14px;"><div style="color:#aaa;font-size:12px;margin-bottom:8px;">Entrez l'ID (TP-XXXXXX ou RV-XXXXXX) :</div><input id="manualQrInput" class="input-field" placeholder="TP-... ou RV-..."/><button class="btn btn-primary btn-full" style="margin-top:10px;" onclick="submitManual()">Valider</button></div>`;document.querySelector('#cameraScreen .camera-overlay').appendChild(div);}
 window.submitManual=()=>{const v=document.getElementById('manualQrInput')?.value.trim();if(v)handleQR(v);};
-function scanLoop(){
-  if(!S.scanning)return;
-  const video=document.getElementById('cameraVideo');
-  if(video.readyState!==video.HAVE_ENOUGH_DATA){requestAnimationFrame(scanLoop);return;}
-  if(detector){detector.detect(video).then(codes=>{if(codes?.length){handleQR(codes[0].rawValue);return;}scanWithJsQR(video);}).catch(()=>scanWithJsQR(video));}
-  else{scanWithJsQR(video);}
-}
-function scanWithJsQR(video){
-  if(!S.scanning)return;
-  if(typeof jsQR==='function'){
-    const w=video.videoWidth,h=video.videoHeight;
-    if(w&&h){scanCanvas.width=w;scanCanvas.height=h;scanCtx.drawImage(video,0,0,w,h);try{const img=scanCtx.getImageData(0,0,w,h);const code=jsQR(img.data,w,h,{inversionAttempts:'dontInvert'});if(code?.data){handleQR(code.data);return;}}catch(e){}}
-  }
-  requestAnimationFrame(scanLoop);
-}
+function scanLoop(){if(!S.scanning)return;const video=document.getElementById('cameraVideo');if(video.readyState!==video.HAVE_ENOUGH_DATA){requestAnimationFrame(scanLoop);return;}if(detector){detector.detect(video).then(codes=>{if(codes?.length){handleQR(codes[0].rawValue);return;}scanWithJsQR(video);}).catch(()=>scanWithJsQR(video));}else{scanWithJsQR(video);}}
+function scanWithJsQR(video){if(!S.scanning)return;if(typeof jsQR==='function'){const w=video.videoWidth,h=video.videoHeight;if(w&&h){scanCanvas.width=w;scanCanvas.height=h;scanCtx.drawImage(video,0,0,w,h);try{const img=scanCtx.getImageData(0,0,w,h);const code=jsQR(img.data,w,h,{inversionAttempts:'dontInvert'});if(code?.data){handleQR(code.data);return;}}catch(e){}}}requestAnimationFrame(scanLoop);}
 window.stopCamera=()=>{S.scanning=false;document.getElementById('cameraScreen').classList.remove('open');document.getElementById('manualPanel')?.remove();if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null;}};
 window.flipCamera=async()=>{S.facing=S.facing==='environment'?'user':'environment';if(S.stream)S.stream.getTracks().forEach(t=>t.stop());await window.openCamera(S.camMode);};
+function handleQR(raw){stopCamera();raw=(raw||'').trim();const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Ce n\'est pas un QR marchand.');return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId);}else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}}
 
-function handleQR(raw){
-  stopCamera();raw=(raw||'').trim();
-  const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);
-  const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);
-  const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);
-  const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);
-  if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Ce n\'est pas un QR marchand.');return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}
-  else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId);}
-  else if(S.camMode==='wallet-scan'){
-    if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}
-    document.getElementById('rcWalletId').value=walletId;
-    openModal('modalRecvCharge');
-    notify('📷','Wallet scanné',walletId);
-  }
-  else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}
-}
-
-// Modal Ajouter Trajet (manquait dans le HTML — on l'ajoute dynamiquement)
+// Modal Ajouter Trajet
 const trajetModal=document.createElement('div');
 trajetModal.className='modal-overlay';trajetModal.id='modalAddTrajet';trajetModal.style.display='none';
 trajetModal.onclick=function(e){if(e.target===this)closeModal('modalAddTrajet');};
