@@ -14,9 +14,11 @@
       "type": "image/jpeg"
     },
     {
-      "src": "/ic%C3%B4ne-192.jpeg",
-      "sizes": "512x512",
-      "type": "image/jpeg"
-    }
-  ]
+      ""icons": [
+  {
+    "src": "logo.png",
+    "sizes": "192x192",
+    "type": "image/png"
+  }
+]
 }
