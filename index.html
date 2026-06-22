@@ -34,8 +34,9 @@ if('serviceWorker' in navigator){
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 :root{--g:#009A44;--gd:#007832;--y:#FDEF42;--bk:#06120a;--w:#fff;--r:#DF0024;--orange:#FF6B00;}
-body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);overflow-x:hidden;}
-#app{max-width:430px;margin:0 auto;min-height:100vh;position:relative;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);overflow:hidden;}
+#app{max-width:430px;margin:0 auto;height:100vh;position:relative;overflow:hidden;}
 .sn-stripe{height:4px;background:linear-gradient(90deg,#009A44 33.33%,#FDEF42 33.33% 66.66%,#DF0024 66.66%);}
 @keyframes slideUp{0%{transform:translateY(100%);opacity:0}100%{transform:translateY(0);opacity:1}}
 @keyframes fadeIn{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
@@ -48,10 +49,10 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
 @keyframes bellShake{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-15deg)}40%,80%{transform:rotate(15deg)}}
 @keyframes notifIn{0%{transform:translateX(110%);opacity:0}100%{transform:translateX(0);opacity:1}}
 @keyframes notifOut{0%{transform:translateX(0);opacity:1}100%{transform:translateX(110%);opacity:0}}
-.screen{display:none;flex-direction:column;height:100vh;overflow:hidden;}
+.screen{position:absolute;top:0;left:0;right:0;bottom:0;display:none;flex-direction:column;height:100vh;overflow:hidden;background:var(--bk);}
 .screen.active{display:flex;}
-#screenAdmin{height:100vh;overflow:hidden;}
-#screenAdmin>div:last-child{flex:1;overflow-y:auto;}
+#screenAdmin{background:#0a0a0a;}
+#screenAdmin>div:nth-child(3){flex:1;overflow-y:auto;}
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 24px;border-radius:14px;border:none;cursor:pointer;font-weight:700;font-size:15px;font-family:'Space Grotesk',sans-serif;transition:all .18s;}
 .btn:active{transform:scale(.97);}
 .btn:disabled{opacity:.45;cursor:not-allowed;}
@@ -221,7 +222,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
     </div>
     <div id="fieldName" style="display:none"><div class="input-wrap"><label class="input-label">Nom complet *</label><input class="input-field" id="authName" placeholder="Moussa Diallo"/></div></div>
     <div class="input-wrap"><label class="input-label">E-mail *</label><input class="input-field" id="authEmail" type="email" placeholder="exemple@email.com"/></div>
-    <div id="fieldPhone" style="display:none"><div class="input-wrap"><label class="input-label">Téléphone *</label><input class="input-field" id="authPhone" type="tel" placeholder="77 123 45 67"/></div></div>
+    <div id="fieldPhone" style="display:none"><div class="input-wrap"><label class="input-label">Téléphone * <span id="phoneLabelNote" style="color:#FF6B00;font-size:10px;">(obligatoire pour les retraits)</span></label><input class="input-field" id="authPhone" type="tel" placeholder="77 123 45 67"/></div></div>
     <div id="fieldsReceiver" style="display:none;">
       <div class="input-wrap"><label class="input-label">GIE *</label><input class="input-field" id="authGIE" placeholder="DPL"/></div>
       <div class="input-wrap"><label class="input-label">N° Véhicule *</label><input class="input-field" id="authVehicle" placeholder="AA809ST"/></div>
@@ -650,6 +651,8 @@ window.doAuth=async()=>{
       const walletId=S.authRole==='passenger'?'TP-'+uid.slice(0,6).toUpperCase():'RV-'+uid.slice(0,6).toUpperCase();
       let profile={walletId,name,email,phone:document.getElementById('authPhone').value.trim(),role:S.authRole,balance:0,createdAt:serverTimestamp()};
       if(S.authRole==='receiver'){
+        const phone=document.getElementById('authPhone').value.trim();
+        if(!phone){loader('',false);notify('⚠️','Téléphone requis','Le numéro de téléphone est obligatoire pour les receveurs.');return;}
         const gie=document.getElementById('authGIE').value.trim();
         const vehicle=document.getElementById('authVehicle').value.trim();
         const ligne=document.getElementById('authLigne').value.trim();
@@ -1316,7 +1319,6 @@ window.flipCamera=async()=>{S.facing=S.facing==='environment'?'user':'environmen
 // ── ADMIN DASHBOARD ──
 async function loadAdminDashboard(){
   try{
-    // Demandes de retrait
     const wdSnap=await getDocs(query(collection(db,'withdrawal_requests'),orderBy('requestedAt','desc'),limit(50)));
     const list=document.getElementById('adminWithdrawList');
     const pending=wdSnap.docs.filter(d=>d.data().status==='pending');
@@ -1324,26 +1326,41 @@ async function loadAdminDashboard(){
     
     if(wdSnap.empty){list.innerHTML='<div style="text-align:center;color:#555;padding:30px;">Aucune demande</div>';return;}
     
-    list.innerHTML=wdSnap.docs.map(d=>{
+    // Recuperer phone depuis users si absent dans la demande
+    const items=await Promise.all(wdSnap.docs.map(async d=>{
       const w=d.data();
+      let phone=w.phone||null;
+      if(!phone && w.uid){
+        try{
+          const uSnap=await getDoc(doc(db,'users',w.uid));
+          if(uSnap.exists()) phone=uSnap.data().phone||null;
+        }catch(e){}
+      }
+      return {docId:d.id, ...w, phone};
+    }));
+
+    list.innerHTML=items.map(w=>{
       const date=w.requestedAt?.toDate?.()?.toLocaleDateString('fr-FR')||'—';
       const isPending=w.status==='pending';
+      const phoneDisplay=w.phone||'Numéro non renseigné';
+      const phoneColor=w.phone?'#009A44':'#FF6B00';
       return `<div style="background:#ffffff08;border:1px solid #ffffff15;border-radius:14px;padding:14px;margin-bottom:10px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <div style="font-weight:700;color:#fff;">${w.name||'—'}</div>
-          <div style="font-weight:900;color:#FDEF42;">${(w.amount||0).toLocaleString('fr-FR')} FCFA</div>
+          <div style="font-weight:700;color:#fff;font-size:15px;">${w.name||'—'}</div>
+          <div style="font-weight:900;color:#FDEF42;font-size:16px;">${(w.amount||0).toLocaleString('fr-FR')} FCFA</div>
         </div>
         <div style="font-size:11px;color:#888;margin-bottom:4px;">Wallet: ${w.walletId||'—'}</div>
-        <div style="font-size:11px;color:#009A44;font-weight:700;margin-bottom:4px;">📞 ${w.phone||'Numéro non renseigné'}</div>
+        <div style="font-size:14px;color:${phoneColor};font-weight:800;margin-bottom:6px;">📞 ${phoneDisplay}</div>
         <div style="font-size:11px;color:#888;margin-bottom:10px;">Ref: ${w.ref||'—'} · ${date}</div>
         <div style="display:flex;gap:8px;">
-          ${isPending?`<button onclick="markWithdrawDone('${d.id}','${w.uid||''}',${w.amount||0})" style="flex:1;background:#009A44;border:none;border-radius:10px;padding:8px;color:#fff;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;">✅ Marquer traité</button>`
-          :`<div style="flex:1;text-align:center;color:#009A44;font-weight:700;font-size:13px;">✅ Traité</div>`}
+          ${isPending
+            ?`<button onclick="markWithdrawDone('${w.docId}','${w.uid||''}',${w.amount||0})" style="flex:1;background:#009A44;border:none;border-radius:10px;padding:12px;color:#fff;font-weight:800;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;">✅ Marquer traité</button>`
+            :`<div style="flex:1;text-align:center;color:#009A44;font-weight:700;font-size:13px;">✅ Traité</div>`
+          }
         </div>
       </div>`;
     }).join('');
 
-    // Stats utilisateurs
     const usersSnap=await getDocs(collection(db,'users'));
     document.getElementById('adminTotalUsers').textContent=usersSnap.size;
   }catch(e){
