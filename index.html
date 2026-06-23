@@ -228,26 +228,38 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
   </div>
   <div style="padding:20px 24px;flex:1;overflow-y:auto;">
     <div class="sel-tabs" style="margin-bottom:20px;">
-      <button class="sel-tab" id="tabPassenger" onclick="setRole('passenger')" style="background:var(--g);color:var(--w);">🧍 Passager</button>
-      <button class="sel-tab" id="tabReceiver" onclick="setRole('receiver')" style="background:transparent;color:#888;">🎫 Receveur</button>
+      <button class="sel-tab" id="tabPassenger" onclick="setRole('passenger')" style="background:var(--g);color:var(--w);font-size:11px;">🧍 Passager</button>
+      <button class="sel-tab" id="tabReceiver" onclick="setRole('receiver')" style="background:transparent;color:#888;font-size:11px;">🎫 Receveur</button>
+      <button class="sel-tab" id="tabOwner" onclick="setRole('owner')" style="background:transparent;color:#888;font-size:11px;">🚌 Proprio</button>
+      <button class="sel-tab" id="tabDirecteur" onclick="setRole('directeur')" style="background:transparent;color:#888;font-size:11px;">🏢 Directeur</button>
     </div>
     <div id="fieldName" style="display:none"><div class="input-wrap"><label class="input-label">Nom complet *</label><input class="input-field" id="authName" placeholder="Moussa Diallo"/></div></div>
     <div class="input-wrap"><label class="input-label">E-mail *</label><input class="input-field" id="authEmail" type="email" placeholder="exemple@email.com"/></div>
     <div id="fieldPhone" style="display:none"><div class="input-wrap"><label class="input-label">Téléphone *</label><input class="input-field" id="authPhone" type="tel" placeholder="77 123 45 67"/></div></div>
     <div id="fieldsReceiver" style="display:none;">
       <div style="background:#FF6B0010;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FF6B00;line-height:1.6;">
-        🎫 Ces informations sont obligatoires pour valider votre identité en tant que receveur.
+        🎫 Remplissez vos informations d'identité. Les infos du bus seront complétées après validation par le propriétaire.
       </div>
       <div class="input-wrap"><label class="input-label">Numéro CNI *</label><input class="input-field" id="authCNI" placeholder="1 234 567 890 12345" maxlength="20"/></div>
       <div class="input-wrap"><label class="input-label">Adresse / Quartier *</label><input class="input-field" id="authAddress" placeholder="ex: Médina, Dakar"/></div>
-      <div class="input-wrap"><label class="input-label">GIE *</label><input class="input-field" id="authGIE" placeholder="DPL"/></div>
-      <div class="input-wrap"><label class="input-label">N° Véhicule *</label><input class="input-field" id="authVehicle" placeholder="AA809ST"/></div>
-      <div class="input-wrap"><label class="input-label">Ligne *</label><input class="input-field" id="authLigne" placeholder="72"/></div>
-      <div class="input-wrap"><label class="input-label">Zone *</label><input class="input-field" id="authZone" placeholder="B"/></div>
       <div class="input-wrap">
         <label class="input-label">Propriétaire de bus *</label>
         <select class="select-field" id="authOwnerSelect"><option value="">— Choisir un propriétaire —</option></select>
-        <div style="font-size:11px;color:#666;margin-top:4px;">Votre compte sera activé après validation par le propriétaire.</div>
+        <div style="font-size:11px;color:#666;margin-top:4px;">Votre compte sera activé après validation. GIE, Véhicule, Ligne et Zone seront complétés par le propriétaire.</div>
+      </div>
+    </div>
+    <div id="fieldsOwner" style="display:none;">
+      <div class="input-wrap"><label class="input-label">Nom du GIE / Entreprise *</label><input class="input-field" id="authOwnerCompany" placeholder="GIE Dakar Express"/></div>
+      <div style="background:#7c3aed15;border:1.5px solid #7c3aed44;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#c4b5fd;line-height:1.6;">
+        ⚠️ La création d'un compte propriétaire nécessite une validation par l'administrateur.
+      </div>
+    </div>
+    <div id="fieldsDirecteur" style="display:none;">
+      <div class="input-wrap"><label class="input-label">Nom du GIE / Organisation *</label><input class="input-field" id="authDirecteurOrg" placeholder="AFTU Dakar Nord"/></div>
+      <div class="input-wrap"><label class="input-label">Numéro CNI *</label><input class="input-field" id="authDirecteurCNI" placeholder="1 234 567 890 12345" maxlength="20"/></div>
+      <div class="input-wrap"><label class="input-label">Adresse / Quartier *</label><input class="input-field" id="authDirecteurAddress" placeholder="ex: Plateau, Dakar"/></div>
+      <div style="background:#0ea5e915;border:1.5px solid #0ea5e944;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#7dd3fc;line-height:1.6;">
+        🏢 Le Directeur supervise plusieurs propriétaires de bus. Compte activé après validation admin.
       </div>
     </div>
     <div class="input-wrap"><label class="input-label">Mot de passe *</label><input class="input-field" id="authPass" type="password" placeholder="••••••••"/></div>
@@ -652,9 +664,14 @@ window.goAuth=(mode)=>{
 window.toggleAuthMode=()=>window.goAuth(S.isReg?'login':'register');
 window.setRole=async(r)=>{
   S.authRole=r;
-  document.getElementById('tabPassenger').style.cssText=`background:${r==='passenger'?'var(--g)':'transparent'};color:${r==='passenger'?'var(--w)':'#888'};`;
-  document.getElementById('tabReceiver').style.cssText=`background:${r==='receiver'?'var(--orange)':'transparent'};color:${r==='receiver'?'var(--w)':'#888'};`;
+  const colors={passenger:'var(--g)',receiver:'var(--orange)',owner:'#7c3aed',directeur:'#0ea5e9'};
+  ['passenger','receiver','owner','directeur'].forEach(role=>{
+    const btn=document.getElementById('tab'+role.charAt(0).toUpperCase()+role.slice(1));
+    if(btn)btn.style.cssText=`background:${role===r?colors[role]:'transparent'};color:${role===r?'var(--w)':'#888'};font-size:11px;`;
+  });
   document.getElementById('fieldsReceiver').style.display=(S.isReg&&r==='receiver')?'block':'none';
+  document.getElementById('fieldsOwner').style.display=(S.isReg&&r==='owner')?'block':'none';
+  document.getElementById('fieldsDirecteur').style.display=(S.isReg&&r==='directeur')?'block':'none';
   if(S.isReg&&r==='receiver'){await loadOwnerList();}
 };
 
@@ -698,26 +715,47 @@ window.doAuth=async()=>{
       if(document.getElementById('authPass2').value!==pass){loader('',false);notify('⚠️','Erreur','Mots de passe différents.');return;}
       const cred=await createUserWithEmailAndPassword(auth,email,pass);
       const uid=cred.user.uid;
-      const walletId=S.authRole==='passenger'?'TP-'+uid.slice(0,6).toUpperCase():'RV-'+uid.slice(0,6).toUpperCase();
-      let profile={walletId,name,email,phone:document.getElementById('authPhone').value.trim(),role:S.authRole,balance:0,createdAt:serverTimestamp()};
-      if(S.authRole==='receiver'){
-        const gie=document.getElementById('authGIE').value.trim();
-        const vehicle=document.getElementById('authVehicle').value.trim();
-        const ligne=document.getElementById('authLigne').value.trim();
-        const zone=document.getElementById('authZone').value.trim().toUpperCase();
+      const phone=document.getElementById('authPhone').value.trim();
+
+      if(S.authRole==='passenger'){
+        const walletId='TP-'+uid.slice(0,6).toUpperCase();
+        const profile={walletId,name,email,phone,role:'passenger',status:'approved',balance:0,createdAt:serverTimestamp()};
+        await setDoc(doc(db,'users',uid),profile);
+        await setDoc(doc(db,'wallets',walletId),{uid,role:'passenger'});
+
+      }else if(S.authRole==='receiver'){
         const ownerUid=document.getElementById('authOwnerSelect')?.value||'';
         const cni=document.getElementById('authCNI')?.value.trim()||'';
         const address=document.getElementById('authAddress')?.value.trim()||'';
         if(!cni){loader('',false);notify('⚠️','CNI','Entrez votre numéro de CNI.');return;}
         if(!address){loader('',false);notify('⚠️','Adresse','Entrez votre adresse / quartier.');return;}
-        if(!gie||!vehicle||!ligne||!zone){loader('',false);notify('⚠️','Champs receveur','Remplissez GIE, Véhicule, Ligne, Zone.');return;}
         if(!ownerUid){loader('',false);notify('⚠️','Propriétaire','Choisissez un propriétaire de bus.');return;}
-        Object.assign(profile,{gie,vehicle,ligne,zone,cni,address,today:0,count:0,ownerUid,status:'pending'});
-        // Notifier le propriétaire
-        await addDoc(collection(db,'notifications'),{toUid:ownerUid,type:'receiver_request',receiverUid:uid,receiverName:name,receiverEmail:email,gie,vehicle,cni,address,read:false,ts:serverTimestamp()});
+        const walletId='RV-'+uid.slice(0,6).toUpperCase();
+        const profile={walletId,name,email,phone,role:'receiver',status:'pending',ownerUid,cni,address,gie:'',vehicle:'',ligne:'',zone:'',today:0,count:0,balance:0,createdAt:serverTimestamp()};
+        await setDoc(doc(db,'users',uid),profile);
+        await setDoc(doc(db,'wallets',walletId),{uid,role:'receiver'});
+        await addDoc(collection(db,'notifications'),{toUid:ownerUid,type:'receiver_request',receiverUid:uid,receiverName:name,receiverEmail:email,phone,cni,address,read:false,ts:serverTimestamp()});
+
+      }else if(S.authRole==='owner'){
+        const company=document.getElementById('authOwnerCompany')?.value.trim()||'';
+        if(!company){loader('',false);notify('⚠️','Champs','Entrez le nom du GIE/Entreprise.');return;}
+        const walletId='OW-'+uid.slice(0,6).toUpperCase();
+        const profile={walletId,name,email,phone,role:'owner',status:'pending',company,balance:0,createdAt:serverTimestamp()};
+        await setDoc(doc(db,'users',uid),profile);
+        await addDoc(collection(db,'adminNotifications'),{type:'owner_request',ownerUid:uid,ownerName:name,ownerEmail:email,company,phone,read:false,ts:serverTimestamp()});
+
+      }else if(S.authRole==='directeur'){
+        const org=document.getElementById('authDirecteurOrg')?.value.trim()||'';
+        const cni=document.getElementById('authDirecteurCNI')?.value.trim()||'';
+        const address=document.getElementById('authDirecteurAddress')?.value.trim()||'';
+        if(!org){loader('',false);notify('⚠️','Champs','Entrez le nom du GIE/Organisation.');return;}
+        if(!cni){loader('',false);notify('⚠️','CNI','Entrez votre numéro de CNI.');return;}
+        if(!address){loader('',false);notify('⚠️','Adresse','Entrez votre adresse.');return;}
+        const walletId='DR-'+uid.slice(0,6).toUpperCase();
+        const profile={walletId,name,email,phone,role:'directeur',status:'pending',org,cni,address,balance:0,createdAt:serverTimestamp()};
+        await setDoc(doc(db,'users',uid),profile);
+        await addDoc(collection(db,'adminNotifications'),{type:'directeur_request',directeurUid:uid,directeurName:name,directeurEmail:email,org,cni,phone,read:false,ts:serverTimestamp()});
       }
-      await setDoc(doc(db,'users',uid),profile);
-      await setDoc(doc(db,'wallets',walletId),{uid,role:S.authRole});
       loader('',false);
     }else{
       await signInWithEmailAndPassword(auth,email,pass);
@@ -758,6 +796,27 @@ function detachListeners(){
 function loginUI(){
   const p=S.profile;
   detachListeners();
+
+  // ── Comptes en attente ──
+  if(p.status==='pending'){
+    const icons={owner:'🚌',directeur:'🏢',receiver:'🎫'};
+    const titles={owner:'Compte Propriétaire en attente',directeur:'Compte Directeur en attente',receiver:'En attente du propriétaire'};
+    const bodies={owner:'Votre demande a été envoyée à l\'administrateur. Votre compte sera activé après vérification.',directeur:'Votre demande a été envoyée à l\'administrateur. Votre compte Directeur sera activé après vérification.',receiver:'Votre demande a été envoyée au propriétaire de bus. Votre compte sera activé une fois accepté.'};
+    document.getElementById('pendingIcon').textContent=icons[p.role]||'⏳';
+    document.getElementById('pendingTitle').textContent=titles[p.role]||'Compte en attente';
+    document.getElementById('pendingBody').textContent=bodies[p.role]||'En attente de validation.';
+    show('screenPending');loader('',false);return;
+  }
+
+  // ── Comptes refusés ──
+  if(p.status==='rejected'){
+    document.getElementById('pendingIcon').textContent='❌';
+    document.getElementById('pendingTitle').textContent='Demande refusée';
+    document.getElementById('pendingBody').textContent='Votre demande a été refusée. Veuillez contacter l\'administrateur.';
+    show('screenPending');loader('',false);return;
+  }
+
+  // ── Passager ──
   if(S.role==='passenger'){
     document.getElementById('passGreet').textContent=p.name.split(' ')[0];
     document.getElementById('passWalletId').textContent=p.walletId;
@@ -769,9 +828,11 @@ function loginUI(){
     unsubBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;updateBalanceUI();}});
     loadPassHomeTx();loadPassTickets();
     show('screenPassenger');notify('✅','Bienvenue !',p.name+' — '+p.walletId);
-  }else{
+
+  // ── Receveur ──
+  }else if(S.role==='receiver'&&p.status==='approved'){
     document.getElementById('recvGreet').textContent=p.name;
-    document.getElementById('recvInfoLine').textContent=`GIE:${p.gie} · Ligne ${p.ligne} · Zone ${p.zone}`;
+    document.getElementById('recvInfoLine').textContent=`GIE:${p.gie||'—'} · Ligne ${p.ligne||'—'} · Zone ${p.zone||'—'}`;
     renderMerchantQR('recvBusQRWrap',p,160);
     refreshRecvStats();loadTrajets();loadRecvTickets();
     attachPendingListener();attachNotifListener();
@@ -782,7 +843,18 @@ function loginUI(){
         if(el)el.textContent=(S.profile.balance).toLocaleString('fr-FR');
       }
     });
-    show('screenReceiver');notify('✅','Connecté',p.name+' — '+p.vehicle);
+    show('screenReceiver');notify('✅','Connecté',p.name);
+
+  // ── Directeur (écran à construire — pour l'instant écran pending avec message spécial) ──
+  }else if(S.role==='directeur'&&p.status==='approved'){
+    document.getElementById('pendingIcon').textContent='🏢';
+    document.getElementById('pendingTitle').textContent='Bienvenue Directeur '+p.name;
+    document.getElementById('pendingBody').textContent='Votre espace Directeur est en cours de développement. Vous serez notifié à son activation.';
+    show('screenPending');
+
+  }else{
+    loader('',false);
+    show('screenSplash');
   }
   loader('',false);
 }
