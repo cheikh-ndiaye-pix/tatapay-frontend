@@ -41,6 +41,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
 .btn-danger{background:linear-gradient(135deg,var(--r),#B71C1C);color:var(--w);}
 .btn-orange{background:linear-gradient(135deg,var(--orange),#CC4400);color:var(--w);}
 .btn-purple{background:linear-gradient(135deg,#7c3aed,#4c1d95);color:var(--w);}
+.btn-cyan{background:linear-gradient(135deg,#0ea5e9,#0369a1);color:var(--w);}
 .btn-full{width:100%;}
 .input-wrap{margin-bottom:14px;}
 .input-label{font-size:13px;font-weight:700;color:#aaa;margin-bottom:5px;display:block;}
@@ -56,6 +57,11 @@ select.input-field option{background:#0c1f12;color:#fff;}
 .recv-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;font-size:10px;font-weight:600;padding:6px 0;font-family:'Space Grotesk',sans-serif;transition:color .2s;}
 .recv-nav-btn.active{color:var(--orange);}
 .recv-nav-btn:not(.active){color:#555;}
+/* DIRECTEUR NAV */
+.dir-nav{display:flex;background:#050d18;border-top:1px solid #0ea5e922;padding:8px 0 18px;position:sticky;bottom:0;z-index:10;}
+.dir-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;font-size:10px;font-weight:600;padding:6px 0;font-family:'Space Grotesk',sans-serif;transition:color .2s;}
+.dir-nav-btn.active{color:#0ea5e9;}
+.dir-nav-btn:not(.active){color:#555;}
 .modal-overlay{position:fixed;inset:0;background:#000000cc;z-index:200;display:flex;align-items:flex-end;justify-content:center;}
 .modal-box{background:#0c1f12;border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:92vh;overflow-y:auto;border:1px solid #009A4422;animation:slideUp .3s ease;}
 .modal-header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px 0;}
@@ -141,6 +147,12 @@ select.input-field option{background:#0c1f12;color:#fff;}
 .admin-search:focus{border-color:var(--g);}
 .admin-detail-overlay{position:fixed;inset:0;background:#000000dd;z-index:600;display:none;align-items:flex-end;justify-content:center;}
 .admin-detail-box{background:#0c1f12;border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:90vh;overflow-y:auto;border:1px solid #009A4422;animation:slideUp .3s ease;}
+/* DIR CARD */
+.dir-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.dir-stat{background:#050d18;border:1px solid #0ea5e922;border-radius:14px;padding:14px;text-align:center;}
+.dir-stat .val{font-size:22px;font-weight:900;color:#7dd3fc;}
+.dir-stat .lbl{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.dir-card{background:#050d18;border:1px solid #0ea5e922;border-radius:14px;padding:14px;margin-bottom:10px;}
 </style>
 </head>
 <body>
@@ -241,22 +253,20 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <div class="input-wrap"><label class="input-label">E-mail *</label><input class="input-field" id="authEmail" type="email" placeholder="exemple@email.com"/></div>
     <div id="fieldPhone" style="display:none"><div class="input-wrap"><label class="input-label">Téléphone *</label><input class="input-field" id="authPhone" type="tel" placeholder="77 123 45 67"/></div></div>
     <div id="fieldsReceiver" style="display:none;">
-      <div style="background:#FF6B0010;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FF6B00;line-height:1.6;">🎫 Vos informations. GIE/Bus assignés après validation du propriétaire.</div>
+      <div style="background:#FF6B0010;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FF6B00;line-height:1.6;">🎫 Vos informations. GIE/Bus assignés après validation du Directeur de GIE.</div>
       <div class="input-wrap"><label class="input-label">Numéro CNI *</label><input class="input-field" id="authCNI" placeholder="1 234 567 890 12345" maxlength="20"/></div>
       <div class="input-wrap"><label class="input-label">Adresse / Quartier *</label><input class="input-field" id="authAddress" placeholder="ex: Médina, Dakar"/></div>
       <div class="input-wrap">
-        <label class="input-label">Propriétaire de bus *</label>
-        <select class="input-field" id="authOwnerSelect"><option value="">— Choisir un propriétaire —</option></select>
+        <label class="input-label">Directeur de GIE *</label>
+        <select class="input-field" id="authDirecteurSelect"><option value="">— Choisir un directeur —</option></select>
       </div>
     </div>
     <div id="fieldsOwner" style="display:none;">
       <div class="input-wrap"><label class="input-label">Nom du GIE / Entreprise *</label><input class="input-field" id="authOwnerCompany" placeholder="GIE Dakar Express"/></div>
-      <div style="background:#7c3aed15;border:1.5px solid #7c3aed44;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#c4b5fd;line-height:1.6;">⚠️ Compte propriétaire nécessite validation admin.</div>
+      <div style="background:#7c3aed15;border:1.5px solid #7c3aed44;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#c4b5fd;line-height:1.6;">⚠️ Compte propriétaire nécessite validation du Directeur de GIE.</div>
     </div>
     <div id="fieldsDirecteur" style="display:none;">
       <div class="input-wrap"><label class="input-label">Nom du GIE / Organisation *</label><input class="input-field" id="authDirecteurOrg" placeholder="AFTU Dakar Nord"/></div>
-      <div class="input-wrap"><label class="input-label">Numéro CNI *</label><input class="input-field" id="authDirecteurCNI" placeholder="1 234 567 890 12345" maxlength="20"/></div>
-      <div class="input-wrap"><label class="input-label">Adresse / Quartier *</label><input class="input-field" id="authDirecteurAddress" placeholder="ex: Plateau, Dakar"/></div>
       <div style="background:#0ea5e915;border:1.5px solid #0ea5e944;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#7dd3fc;line-height:1.6;">🏢 Compte Directeur activé après validation admin.</div>
     </div>
     <div class="input-wrap"><label class="input-label">Mot de passe *</label><input class="input-field" id="authPass" type="password" placeholder="••••••••"/></div>
@@ -382,6 +392,12 @@ select.input-field option{background:#0c1f12;color:#fff;}
           <div style="font-weight:800;font-size:14px;margin-bottom:12px;">🚌 QR Marchand officiel</div>
           <div id="recvBusQRWrap"></div>
         </div>
+        <!-- INFO DIRECTEUR DU RECEVEUR -->
+        <div id="recvDirecteurInfo" style="display:none;background:#0ea5e910;border:1px solid #0ea5e933;border-radius:14px;padding:12px 16px;margin-bottom:16px;">
+          <div style="font-size:11px;color:#7dd3fc;font-weight:800;margin-bottom:4px;">🏢 Votre Directeur de GIE</div>
+          <div style="font-weight:900;font-size:14px;" id="recvDirecteurName">—</div>
+          <div style="color:#888;font-size:12px;" id="recvDirecteurOrg">—</div>
+        </div>
         <div style="font-weight:800;font-size:15px;margin-bottom:10px;">⏳ Demandes en attente</div>
         <div id="recvPending"><div style="text-align:center;color:#555;padding:16px 0;font-size:13px;">Aucune demande.</div></div>
       </div>
@@ -407,6 +423,59 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
+<!-- DIRECTEUR GIE SCREEN -->
+<div class="screen" id="screenDirecteur" style="background:#030b14;">
+  <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
+  <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #0ea5e922;background:#050d18;position:sticky;top:0;z-index:20;">
+    <div>
+      <div style="font-size:10px;color:#0ea5e988;letter-spacing:2px;font-family:'JetBrains Mono',monospace;">DIRECTEUR GIE</div>
+      <div style="font-weight:900;font-size:18px;" id="dirGreet">—</div>
+    </div>
+    <button onclick="doLogout()" style="background:#ffffff10;border:none;border-radius:10px;padding:7px 12px;color:#aaa;font-family:'Space Grotesk',sans-serif;font-size:12px;cursor:pointer;">Déco</button>
+  </div>
+  <div style="flex:1;overflow-y:auto;">
+    <!-- TAB HOME -->
+    <div class="tab-content active" id="dirTab-home" style="padding:18px 16px;">
+      <div style="background:linear-gradient(135deg,#050d18,#081525);border:2px solid #0ea5e933;border-radius:20px;padding:18px;margin-bottom:16px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
+        <div style="font-size:11px;color:#0ea5e988;margin-bottom:2px;">GIE / Organisation</div>
+        <div style="font-weight:900;font-size:20px;color:#7dd3fc;margin-bottom:4px;" id="dirOrgName">—</div>
+        <div style="font-size:12px;color:#555;" id="dirWalletId">—</div>
+      </div>
+      <div class="dir-stat-grid">
+        <div class="dir-stat"><div class="val" id="dirStatOwners">0</div><div class="lbl">Propriétaires</div></div>
+        <div class="dir-stat"><div class="val" id="dirStatReceivers">0</div><div class="lbl">Receveurs</div></div>
+        <div class="dir-stat"><div class="val" id="dirStatPending">0</div><div class="lbl">En attente</div></div>
+        <div class="dir-stat"><div class="val" id="dirStatApproved">0</div><div class="lbl">Approuvés</div></div>
+      </div>
+      <div style="font-weight:800;font-size:14px;color:#7dd3fc;margin-bottom:12px;">⏳ Demandes en attente</div>
+      <div id="dirPendingList"><div style="text-align:center;color:#555;padding:20px;font-size:13px;">Aucune demande.</div></div>
+    </div>
+    <!-- TAB PROPRIÉTAIRES -->
+    <div class="tab-content" id="dirTab-owners" style="padding:18px 16px;">
+      <div style="font-weight:900;font-size:20px;color:#7dd3fc;margin-bottom:16px;">🚌 Propriétaires de bus</div>
+      <div id="dirOwnersList"><div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun propriétaire.</div></div>
+    </div>
+    <!-- TAB RECEVEURS -->
+    <div class="tab-content" id="dirTab-receivers" style="padding:18px 16px;">
+      <div style="font-weight:900;font-size:20px;color:#7dd3fc;margin-bottom:16px;">🎫 Receveurs</div>
+      <div id="dirReceiversList"><div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun receveur.</div></div>
+    </div>
+  </div>
+  <div class="dir-nav" style="position:relative;">
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
+    <button class="dir-nav-btn active" id="dnav-home" onclick="switchDirTab('home')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Accueil
+    </button>
+    <button class="dir-nav-btn" id="dnav-owners" onclick="switchDirTab('owners')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8l5 3v5h-5V8z"/></svg>Propriétaires
+    </button>
+    <button class="dir-nav-btn" id="dnav-receivers" onclick="switchDirTab('receivers')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Receveurs
+    </button>
+  </div>
+</div>
+
 <!-- ADMIN -->
 <div class="screen" id="screenAdmin" style="background:#050f08;">
   <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
@@ -416,14 +485,12 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
   <div class="admin-nav">
     <button class="admin-nav-btn active" onclick="switchAdminTab('dashboard')">📊 Dashboard</button>
-    <button class="admin-nav-btn" onclick="switchAdminTab('owners')">🚌 Propriétaires</button>
     <button class="admin-nav-btn" onclick="switchAdminTab('directeurs')">🏢 Directeurs</button>
+    <button class="admin-nav-btn" onclick="switchAdminTab('owners')">🚌 Propriétaires</button>
     <button class="admin-nav-btn" onclick="switchAdminTab('users')">👥 Utilisateurs</button>
     <button class="admin-nav-btn" onclick="switchAdminTab('withdrawals')">💸 Retraits</button>
   </div>
   <div style="flex:1;overflow-y:auto;padding:16px;">
-
-    <!-- TAB: DASHBOARD -->
     <div class="admin-tab active" id="adminTab-dashboard">
       <div class="admin-stat-grid">
         <div class="admin-stat"><div class="val" id="aStat-total">—</div><div class="lbl">Utilisateurs</div></div>
@@ -435,25 +502,19 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div class="admin-stat"><div class="val" id="aStat-tickets">—</div><div class="lbl">Tickets émis</div></div>
         <div class="admin-stat"><div class="val" id="aStat-withdraws">—</div><div class="lbl">Retraits</div></div>
       </div>
-      <div style="font-weight:800;font-size:14px;margin-bottom:10px;color:#aaa;">⏰ Demandes en attente</div>
+      <div style="font-weight:800;font-size:14px;margin-bottom:10px;color:#aaa;">⏰ Demandes en attente (Directeurs)</div>
       <div id="adminDashPending"></div>
       <div style="margin-top:16px;font-weight:800;font-size:14px;color:#aaa;margin-bottom:10px;">🔔 Dernières activités</div>
       <div id="adminDashActivity"></div>
     </div>
-
-    <!-- TAB: OWNERS -->
-    <div class="admin-tab" id="adminTab-owners">
-      <input type="text" class="admin-search" id="ownerSearch" placeholder="🔍 Rechercher un propriétaire…" oninput="filterAdminList('owners')"/>
-      <div id="adminOwnersList"></div>
-    </div>
-
-    <!-- TAB: DIRECTEURS -->
     <div class="admin-tab" id="adminTab-directeurs">
       <input type="text" class="admin-search" id="directeurSearch" placeholder="🔍 Rechercher un directeur…" oninput="filterAdminList('directeurs')"/>
       <div id="adminDirecteursList"></div>
     </div>
-
-    <!-- TAB: USERS -->
+    <div class="admin-tab" id="adminTab-owners">
+      <input type="text" class="admin-search" id="ownerSearch" placeholder="🔍 Rechercher un propriétaire…" oninput="filterAdminList('owners')"/>
+      <div id="adminOwnersList"></div>
+    </div>
     <div class="admin-tab" id="adminTab-users">
       <input type="text" class="admin-search" id="userSearch" placeholder="🔍 Rechercher (nom, email, wallet)…" oninput="filterAdminList('users')"/>
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
@@ -463,8 +524,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
       </div>
       <div id="adminUsersList"></div>
     </div>
-
-    <!-- TAB: WITHDRAWALS -->
     <div class="admin-tab" id="adminTab-withdrawals">
       <div style="display:flex;gap:8px;margin-bottom:12px;">
         <button class="admin-action-btn" style="background:#FFD10022;color:#FFD100;border:1px solid #FFD10044;" onclick="filterWithdrawals('pending')">En attente</button>
@@ -614,7 +673,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- MODAL ASSIGNER BUS (OWNER → RECEIVER) -->
+<!-- MODAL ASSIGNER BUS (DIRECTEUR → RECEIVER) -->
 <div class="modal-overlay" id="modalAssignBus" style="display:none;" onclick="if(event.target===this)closeModal('modalAssignBus')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
@@ -670,7 +729,7 @@ function statusBadge(s){const map={pending:'badge-pending',approved:'badge-appro
 function roleBadge(r){const c={passenger:'#009A44',receiver:'#FF6B00',owner:'#7c3aed',directeur:'#0ea5e9'};const ic={passenger:'🧍',receiver:'🎫',owner:'🚌',directeur:'🏢'};return`<span style="font-size:11px;padding:3px 10px;border-radius:8px;background:${c[r]||'#444'}22;color:${c[r]||'#aaa'};border:1px solid ${c[r]||'#444'}44;font-weight:800;">${ic[r]||'👤'} ${r}</span>`;}
 
 // ═══════════════════════════════════════════════════════
-// AUTH SCREENS
+// AUTH
 // ═══════════════════════════════════════════════════════
 window.goSplash=()=>show('screenSplash');
 window.goAuth=(mode)=>{
@@ -694,22 +753,35 @@ window.setRole=async(r)=>{
   });
   ['fieldsReceiver','fieldsOwner','fieldsDirecteur'].forEach(id=>document.getElementById(id).style.display='none');
   if(S.isReg){
-    if(r==='receiver'){document.getElementById('fieldsReceiver').style.display='block';await loadOwnerList();}
+    if(r==='receiver'){document.getElementById('fieldsReceiver').style.display='block';await loadDirecteurList();}
     else if(r==='owner')document.getElementById('fieldsOwner').style.display='block';
     else if(r==='directeur')document.getElementById('fieldsDirecteur').style.display='block';
   }
 };
 
-async function loadOwnerList(){
-  const sel=document.getElementById('authOwnerSelect');if(!sel)return;
+// CHARGER LISTE DIRECTEURS (pour l'inscription du receveur)
+async function loadDirecteurList(){
+  const sel=document.getElementById('authDirecteurSelect');
+  if(!sel)return;
   sel.innerHTML='<option value="">Chargement…</option>';
   try{
-    const snap=await getDocs(query(collection(db,'users'),where('role','==','owner')));
-    const ok=snap.docs.filter(d=>['approved','active'].includes(d.data().status));
-    sel.innerHTML='<option value="">— Choisir un propriétaire —</option>';
-    ok.forEach(d=>{const u=d.data();const opt=document.createElement('option');opt.value=d.id;opt.textContent=`${u.name} — ${u.company||u.email}`;sel.appendChild(opt);});
-    if(!ok.length)sel.innerHTML='<option value="">Aucun propriétaire disponible</option>';
-  }catch(e){sel.innerHTML='<option value="">Erreur — réessayez</option>';}
+    const snap=await getDocs(query(collection(db,'users'),where('role','==','directeur'),where('status','==','approved')));
+    sel.innerHTML='<option value="">— Choisir un directeur —</option>';
+    if(snap.empty){
+      sel.innerHTML='<option value="">Aucun directeur disponible</option>';
+      return;
+    }
+    snap.docs.forEach(d=>{
+      const u=d.data();
+      const opt=document.createElement('option');
+      opt.value=d.id;
+      opt.textContent=`${u.name} — ${u.org||u.email}`;
+      sel.appendChild(opt);
+    });
+  }catch(e){
+    console.error('loadDirecteurList error:',e);
+    sel.innerHTML='<option value="">Erreur chargement — réessayez</option>';
+  }
 }
 
 window.doAuth=async()=>{
@@ -730,29 +802,35 @@ window.doAuth=async()=>{
         await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'passenger',status:'approved',balance:0,createdAt:serverTimestamp()});
         await setDoc(doc(db,'wallets',walletId),{uid,role:'passenger'});
       }else if(S.authRole==='receiver'){
-        const ownerUid=document.getElementById('authOwnerSelect')?.value||'';
+        // Receveur choisit un DIRECTEUR
+        const directeurUid=document.getElementById('authDirecteurSelect')?.value||'';
         const cni=document.getElementById('authCNI')?.value.trim()||'';
         const address=document.getElementById('authAddress')?.value.trim()||'';
         if(!cni){loader('',false);notify('⚠️','CNI','Entrez votre numéro de CNI.');return;}
-        if(!ownerUid){loader('',false);notify('⚠️','Propriétaire','Choisissez un propriétaire.');return;}
+        if(!directeurUid){loader('',false);notify('⚠️','Directeur','Choisissez un directeur de GIE.');return;}
         const walletId='RV-'+uid.slice(0,6).toUpperCase();
-        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'receiver',status:'pending',ownerUid,cni,address,gie:'',vehicle:'',ligne:'',zone:'',today:0,count:0,balance:0,createdAt:serverTimestamp()});
+        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'receiver',status:'pending',directeurUid,cni,address,gie:'',vehicle:'',ligne:'',zone:'',today:0,count:0,balance:0,createdAt:serverTimestamp()});
         await setDoc(doc(db,'wallets',walletId),{uid,role:'receiver'});
-        await addDoc(collection(db,'notifications'),{toUid:ownerUid,type:'receiver_request',receiverUid:uid,receiverName:name,receiverEmail:email,phone,cni,address,read:false,ts:serverTimestamp()});
+        // Notifier le DIRECTEUR
+        await addDoc(collection(db,'notifications'),{toUid:directeurUid,type:'receiver_request',receiverUid:uid,receiverName:name,receiverEmail:email,phone,cni,address,read:false,ts:serverTimestamp()});
       }else if(S.authRole==='owner'){
         const company=document.getElementById('authOwnerCompany')?.value.trim()||'';
         if(!company){loader('',false);notify('⚠️','Champs','Entrez le nom du GIE.');return;}
         const walletId='OW-'+uid.slice(0,6).toUpperCase();
         await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'owner',status:'pending',company,balance:0,createdAt:serverTimestamp()});
+        // Notifier les DIRECTEURS approuvés
+        const dirSnap=await getDocs(query(collection(db,'users'),where('role','==','directeur'),where('status','==','approved')));
+        const notifPromises=dirSnap.docs.map(d=>addDoc(collection(db,'notifications'),{toUid:d.id,type:'owner_request',ownerUid:uid,ownerName:name,ownerEmail:email,company,phone,read:false,ts:serverTimestamp()}));
+        await Promise.all(notifPromises);
+        // Aussi notif admin
         await addDoc(collection(db,'adminNotifications'),{type:'owner_request',ownerUid:uid,ownerName:name,ownerEmail:email,company,phone,read:false,ts:serverTimestamp()});
       }else if(S.authRole==='directeur'){
+        // Directeur: seulement nom + org (sans CNI ni quartier)
         const org=document.getElementById('authDirecteurOrg')?.value.trim()||'';
-        const cni=document.getElementById('authDirecteurCNI')?.value.trim()||'';
-        const address=document.getElementById('authDirecteurAddress')?.value.trim()||'';
-        if(!org||!cni){loader('',false);notify('⚠️','Champs','Organisation et CNI requis.');return;}
+        if(!org){loader('',false);notify('⚠️','Champs','Nom de l\'organisation requis.');return;}
         const walletId='DR-'+uid.slice(0,6).toUpperCase();
-        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'directeur',status:'pending',org,cni,address,balance:0,createdAt:serverTimestamp()});
-        await addDoc(collection(db,'adminNotifications'),{type:'directeur_request',directeurUid:uid,directeurName:name,directeurEmail:email,org,cni,phone,read:false,ts:serverTimestamp()});
+        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'directeur',status:'pending',org,balance:0,createdAt:serverTimestamp()});
+        await addDoc(collection(db,'adminNotifications'),{type:'directeur_request',directeurUid:uid,directeurName:name,directeurEmail:email,org,phone,read:false,ts:serverTimestamp()});
       }
     }else{
       await signInWithEmailAndPassword(auth,email,pass);
@@ -798,8 +876,8 @@ function loginUI(){
   const p=S.profile;detachListeners();
   if(p.status==='pending'){
     const icons={owner:'🚌',directeur:'🏢',receiver:'🎫'};
-    const titles={owner:'Compte Propriétaire en attente',directeur:'Compte Directeur en attente',receiver:'En attente du propriétaire'};
-    const bodies={owner:'Votre demande a été envoyée à l\'administrateur.',directeur:'Votre demande Directeur est en cours de validation.',receiver:'Le propriétaire va valider votre compte.'};
+    const titles={owner:'Compte Propriétaire en attente',directeur:'Compte Directeur en attente',receiver:'En attente du Directeur de GIE'};
+    const bodies={owner:'Votre demande a été envoyée au(x) Directeur(s) de GIE.',directeur:'Votre demande est en cours de validation admin.',receiver:'Le Directeur de GIE va valider votre compte.'};
     document.getElementById('pendingIcon').textContent=icons[p.role]||'⏳';
     document.getElementById('pendingTitle').textContent=titles[p.role]||'En attente';
     document.getElementById('pendingBody').textContent=bodies[p.role]||'En attente de validation.';
@@ -834,19 +912,240 @@ function loginUI(){
     renderMerchantQR('recvBusQRWrap',p,160);
     refreshRecvStats();loadTrajets();loadRecvTickets();
     attachPendingListener();attachNotifListener();
+    // Charger info directeur
+    loadRecvDirecteurInfo();
     unsubRecvBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;const el=document.getElementById('recvBalance');if(el)el.textContent=(S.profile.balance).toLocaleString('fr-FR');}});
     show('screenReceiver');notify('✅','Connecté',p.name);
   }else if(S.role==='directeur'&&p.status==='approved'){
-    document.getElementById('pendingIcon').textContent='🏢';
-    document.getElementById('pendingTitle').textContent='Bienvenue Directeur '+p.name;
-    document.getElementById('pendingBody').textContent='Votre espace Directeur est en cours de développement.';
-    show('screenPending');loader('',false);return;
+    // ESPACE DIRECTEUR
+    document.getElementById('dirGreet').textContent=p.name;
+    document.getElementById('dirOrgName').textContent=p.org||'—';
+    document.getElementById('dirWalletId').textContent=p.walletId||'—';
+    show('screenDirecteur');
+    loadDirDashboard();
+    notify('✅','Bienvenue Directeur',p.name);
   }else{show('screenSplash');}
   loader('',false);
 }
 
 // ═══════════════════════════════════════════════════════
-// ADMIN — DASHBOARD COMPLET
+// RECEVEUR — INFO DIRECTEUR
+// ═══════════════════════════════════════════════════════
+async function loadRecvDirecteurInfo(){
+  const p=S.profile;
+  if(!p.directeurUid)return;
+  try{
+    const snap=await getDoc(doc(db,'users',p.directeurUid));
+    if(snap.exists()){
+      const d=snap.data();
+      document.getElementById('recvDirecteurName').textContent=d.name||'—';
+      document.getElementById('recvDirecteurOrg').textContent=d.org||'—';
+      document.getElementById('recvDirecteurInfo').style.display='block';
+    }
+  }catch(e){console.error('loadRecvDirecteurInfo:',e);}
+}
+
+// ═══════════════════════════════════════════════════════
+// DIRECTEUR — DASHBOARD
+// ═══════════════════════════════════════════════════════
+window.switchDirTab=(tab)=>{
+  document.querySelectorAll('#screenDirecteur .tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.dir-nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('dirTab-'+tab)?.classList.add('active');
+  document.getElementById('dnav-'+tab)?.classList.add('active');
+  if(tab==='owners')loadDirOwners();
+  if(tab==='receivers')loadDirReceivers();
+};
+
+async function loadDirDashboard(){
+  loader('Chargement…');
+  try{
+    // Propriétaires en attente qui ont notifié ce directeur
+    const notifSnap=await getDocs(query(collection(db,'notifications'),where('toUid','==',S.uid),where('type','==','owner_request')));
+    const ownerReqs=notifSnap.docs.map(d=>({notifId:d.id,...d.data()}));
+
+    // Receveurs qui ont demandé à ce directeur
+    const recvSnap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('directeurUid','==',S.uid)));
+    const receivers=recvSnap.docs.map(d=>({id:d.id,...d.data()}));
+
+    // Propriétaires approuvés par ce directeur
+    const ownersSnap=await getDocs(query(collection(db,'users'),where('role','==','owner'),where('approvedByDir','==',S.uid)));
+    const owners=ownersSnap.docs.map(d=>({id:d.id,...d.data()}));
+
+    const pending=receivers.filter(r=>r.status==='pending').length + ownerReqs.filter(n=>!n.processed).length;
+    const approved=receivers.filter(r=>r.status==='approved').length;
+
+    document.getElementById('dirStatOwners').textContent=owners.length;
+    document.getElementById('dirStatReceivers').textContent=receivers.length;
+    document.getElementById('dirStatPending').textContent=pending;
+    document.getElementById('dirStatApproved').textContent=approved;
+
+    // Render pending list
+    const cont=document.getElementById('dirPendingList');
+    let html='';
+
+    // Demandes de receveurs
+    receivers.filter(r=>r.status==='pending').forEach(r=>{
+      html+=`<div class="dir-card" style="margin-bottom:10px;">
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
+          <div style="font-size:28px;">🎫</div>
+          <div style="flex:1;">
+            <div style="font-weight:900;font-size:14px;">${r.name||'—'}</div>
+            <div style="font-size:11px;color:#888;">${r.email||'—'}</div>
+            <div style="font-size:11px;color:#888;">CNI: ${r.cni||'—'} · ${r.address||'—'}</div>
+            <div style="margin-top:4px;">${statusBadge('pending')} ${roleBadge('receiver')}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="admin-action-btn btn-approve" onclick="dirApproveReceiver('${r.id}','${r.name||''}')">✅ Approuver + Assigner Bus</button>
+          <button class="admin-action-btn btn-reject" onclick="dirRejectUser('${r.id}','receiver')">❌ Refuser</button>
+        </div>
+      </div>`;
+    });
+
+    // Demandes de propriétaires (notifications)
+    for(const n of ownerReqs){
+      if(n.processed)continue;
+      html+=`<div class="dir-card" style="margin-bottom:10px;">
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
+          <div style="font-size:28px;">🚌</div>
+          <div style="flex:1;">
+            <div style="font-weight:900;font-size:14px;">${n.ownerName||'—'}</div>
+            <div style="font-size:11px;color:#888;">${n.ownerEmail||'—'}</div>
+            <div style="font-size:11px;color:#888;">GIE: ${n.company||'—'}</div>
+            <div style="margin-top:4px;">${statusBadge('pending')} ${roleBadge('owner')}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="admin-action-btn btn-approve" onclick="dirApproveOwner('${n.ownerUid}','${n.notifId}','${n.ownerName||''}')">✅ Approuver</button>
+          <button class="admin-action-btn btn-reject" onclick="dirRejectOwner('${n.ownerUid}','${n.notifId}')">❌ Refuser</button>
+        </div>
+      </div>`;
+    }
+
+    if(!html)html='<div style="text-align:center;color:#555;padding:24px;font-size:13px;">✅ Aucune demande en attente.</div>';
+    cont.innerHTML=html;
+    loader('',false);
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);console.error('loadDirDashboard:',e);}
+}
+
+async function loadDirOwners(){
+  const cont=document.getElementById('dirOwnersList');
+  try{
+    const snap=await getDocs(query(collection(db,'users'),where('role','==','owner'),where('approvedByDir','==',S.uid)));
+    if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun propriétaire approuvé.</div>';return;}
+    cont.innerHTML=snap.docs.map(d=>{const u={id:d.id,...d.data()};return`<div class="dir-card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <div><div style="font-weight:800;">${u.name||'—'}</div><div style="font-size:11px;color:#888;">GIE: ${u.company||'—'}</div><div style="font-size:11px;color:#888;">${u.email||'—'}</div></div>
+        <div>${statusBadge(u.status)}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${u.status==='approved'?`<button class="admin-action-btn btn-suspend" onclick="dirSuspendUser('${u.id}')">⚠️ Suspendre</button>`:''}
+        ${u.status==='suspended'?`<button class="admin-action-btn btn-approve" onclick="dirReactivateUser('${u.id}')">♻️ Réactiver</button>`:''}
+      </div>
+    </div>`;}).join('');
+  }catch(e){cont.innerHTML='<div style="color:#DF0024;padding:16px;">Erreur chargement.</div>';}
+}
+
+async function loadDirReceivers(){
+  const cont=document.getElementById('dirReceiversList');
+  try{
+    const snap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('directeurUid','==',S.uid)));
+    if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun receveur.</div>';return;}
+    cont.innerHTML=snap.docs.map(d=>{const u={id:d.id,...d.data()};return`<div class="dir-card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <div>
+          <div style="font-weight:800;">${u.name||'—'}</div>
+          <div style="font-size:11px;color:#888;">${u.email||'—'}</div>
+          ${u.gie?`<div style="font-size:11px;color:#0ea5e9;margin-top:2px;">🚌 ${u.gie} · ${u.vehicle} · Ligne ${u.ligne}</div>`:''}
+        </div>
+        <div>${statusBadge(u.status)}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="admin-action-btn btn-info" onclick="openAssignBusDir('${u.id}','${(u.name||'').replace(/'/g,'')}')">🚌 ${u.gie?'Modifier Bus':'Assigner Bus'}</button>
+        ${u.status==='approved'?`<button class="admin-action-btn btn-suspend" onclick="dirSuspendUser('${u.id}')">⚠️ Suspendre</button>`:''}
+        ${u.status==='suspended'?`<button class="admin-action-btn btn-approve" onclick="dirReactivateUser('${u.id}')">♻️ Réactiver</button>`:''}
+      </div>
+    </div>`;}).join('');
+  }catch(e){cont.innerHTML='<div style="color:#DF0024;padding:16px;">Erreur chargement.</div>';}
+}
+
+// Directeur approuve un receveur → ouvre modal assignation bus
+window.dirApproveReceiver=async(recvUid,recvName)=>{
+  document.getElementById('assignRecvName').textContent='Receveur: '+recvName;
+  document.getElementById('assignRecvUid').value=recvUid;
+  try{const snap=await getDoc(doc(db,'users',recvUid));const d=snap.data();document.getElementById('assignGIE').value=d.gie||S.profile.org||'';document.getElementById('assignVehicle').value=d.vehicle||'';document.getElementById('assignLigne').value=d.ligne||'';document.getElementById('assignZone').value=d.zone||'';}catch(e){}
+  openModal('modalAssignBus');
+};
+
+window.openAssignBusDir=async(recvUid,recvName)=>{
+  document.getElementById('assignRecvName').textContent='Receveur: '+recvName;
+  document.getElementById('assignRecvUid').value=recvUid;
+  try{const snap=await getDoc(doc(db,'users',recvUid));const d=snap.data();document.getElementById('assignGIE').value=d.gie||'';document.getElementById('assignVehicle').value=d.vehicle||'';document.getElementById('assignLigne').value=d.ligne||'';document.getElementById('assignZone').value=d.zone||'';}catch(e){}
+  openModal('modalAssignBus');
+};
+
+window.doAssignBus=async()=>{
+  const uid=document.getElementById('assignRecvUid').value;
+  const gie=document.getElementById('assignGIE').value.trim();
+  const vehicle=document.getElementById('assignVehicle').value.trim();
+  const ligne=document.getElementById('assignLigne').value.trim();
+  const zone=document.getElementById('assignZone').value.trim();
+  if(!gie||!vehicle||!ligne||!zone){notify('⚠️','Champs','Tous les champs sont requis.');return;}
+  loader('Assignation…');
+  try{
+    await updateDoc(doc(db,'users',uid),{gie,vehicle,ligne,zone,status:'approved'});
+    loader('',false);closeModal('modalAssignBus');
+    notify('✅','Bus assigné','Receveur activé avec les infos de bus.');
+    // Refresh
+    if(S.role==='directeur'){loadDirDashboard();loadDirReceivers();}
+    else loadAdminDashboard();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
+
+window.dirApproveOwner=async(ownerUid,notifId,ownerName)=>{
+  loader('Approbation…');
+  try{
+    await updateDoc(doc(db,'users',ownerUid),{status:'approved',approvedByDir:S.uid});
+    await updateDoc(doc(db,'notifications',notifId),{processed:true,read:true});
+    loader('',false);
+    notify('✅','Propriétaire approuvé',ownerName);
+    loadDirDashboard();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
+
+window.dirRejectOwner=async(ownerUid,notifId)=>{
+  loader('Refus…');
+  try{
+    await updateDoc(doc(db,'users',ownerUid),{status:'rejected'});
+    await updateDoc(doc(db,'notifications',notifId),{processed:true,read:true});
+    loader('',false);
+    notify('❌','Refusé','Propriétaire refusé.');
+    loadDirDashboard();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
+
+window.dirRejectUser=async(uid,role)=>{
+  loader('Refus…');
+  try{
+    await updateDoc(doc(db,'users',uid),{status:'rejected'});
+    loader('',false);notify('❌','Refusé','Compte refusé.');
+    loadDirDashboard();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
+
+window.dirSuspendUser=async(uid)=>{
+  try{await updateDoc(doc(db,'users',uid),{status:'suspended'});notify('⚠️','Suspendu','Compte suspendu.');loadDirDashboard();loadDirOwners();loadDirReceivers();}
+  catch(e){notify('❌','Erreur',e.message);}
+};
+
+window.dirReactivateUser=async(uid)=>{
+  try{await updateDoc(doc(db,'users',uid),{status:'approved'});notify('♻️','Réactivé','Compte réactivé.');loadDirDashboard();loadDirOwners();loadDirReceivers();}
+  catch(e){notify('❌','Erreur',e.message);}
+};
+
+// ═══════════════════════════════════════════════════════
+// ADMIN
 // ═══════════════════════════════════════════════════════
 let adminAllUsers=[],adminAllWithdrawals=[];
 let adminCurrentRoleFilter='all',adminCurrentWdFilter='pending';
@@ -887,17 +1186,18 @@ async function loadAdminDashboard(){
 }
 
 function renderDashPending(){
-  const pendingUsers=adminAllUsers.filter(u=>u.status==='pending');
+  // Seuls les DIRECTEURS en attente passent par admin
+  const pendingDirs=adminAllUsers.filter(u=>u.status==='pending'&&u.role==='directeur');
   const cont=document.getElementById('adminDashPending');
-  if(!pendingUsers.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:16px;font-size:13px;">Aucune demande en attente ✅</div>';return;}
-  cont.innerHTML=pendingUsers.slice(0,5).map(u=>renderAdminUserCard(u,true)).join('');
+  if(!pendingDirs.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:16px;font-size:13px;">Aucun directeur en attente ✅</div>';return;}
+  cont.innerHTML=pendingDirs.map(u=>renderAdminUserCard(u,true)).join('');
 }
 
 function renderAdminUserCard(u,compact=false){
   const date=u.createdAt?.toDate?.()?.toLocaleDateString('fr-FR')||'—';
   const extraInfo=u.role==='owner'?`<div style="font-size:11px;color:#888;">GIE: ${u.company||'—'}</div>`:
     u.role==='receiver'?`<div style="font-size:11px;color:#888;">CNI: ${u.cni||'—'} · ${u.address||'—'}</div>`:
-    u.role==='directeur'?`<div style="font-size:11px;color:#888;">Org: ${u.org||'—'} · CNI: ${u.cni||'—'}</div>`:'';
+    u.role==='directeur'?`<div style="font-size:11px;color:#888;">Org: ${u.org||'—'}</div>`:'';
   const busInfo=u.role==='receiver'&&u.gie?`<div style="font-size:11px;color:#009A44;margin-top:2px;">🚌 ${u.gie} · ${u.vehicle} · Ligne ${u.ligne}</div>`:'';
   const actions=buildAdminActions(u);
   return`<div class="admin-user-card">
@@ -942,23 +1242,13 @@ window.adminAction=async(action,uid,role,name='')=>{
   if(action==='delete'){if(!confirm(`Supprimer définitivement ${name} ? Cette action est irréversible.`))return;}
   loader(labels[action]+'…');
   try{
-    if(action==='approve'){
-      await updateDoc(doc(db,'users',uid),{status:'approved'});
-      notify('✅','Approuvé',`Compte activé.`);
-    }else if(action==='reject'){
-      await updateDoc(doc(db,'users',uid),{status:'rejected'});
-      notify('❌','Refusé','Compte refusé.');
-    }else if(action==='suspend'){
-      await updateDoc(doc(db,'users',uid),{status:'suspended'});
-      notify('⚠️','Suspendu','Compte suspendu.');
-    }else if(action==='reactivate'){
-      await updateDoc(doc(db,'users',uid),{status:'approved'});
-      notify('♻️','Réactivé','Compte réactivé.');
-    }else if(action==='delete'){
-      await deleteDoc(doc(db,'users',uid));
-      notify('🗑️','Supprimé','Utilisateur supprimé.');
-    }
+    if(action==='approve')await updateDoc(doc(db,'users',uid),{status:'approved'});
+    else if(action==='reject')await updateDoc(doc(db,'users',uid),{status:'rejected'});
+    else if(action==='suspend')await updateDoc(doc(db,'users',uid),{status:'suspended'});
+    else if(action==='reactivate')await updateDoc(doc(db,'users',uid),{status:'approved'});
+    else if(action==='delete')await deleteDoc(doc(db,'users',uid));
     loader('',false);
+    notify({approve:'✅',reject:'❌',suspend:'⚠️',reactivate:'♻️',delete:'🗑️'}[action]||'✅',labels[action],'Effectué.');
     await loadAdminDashboard();
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
@@ -970,22 +1260,6 @@ window.openAssignBusAdmin=async(recvUid,recvName)=>{
   openModal('modalAssignBus');
 };
 
-window.doAssignBus=async()=>{
-  const uid=document.getElementById('assignRecvUid').value;
-  const gie=document.getElementById('assignGIE').value.trim();
-  const vehicle=document.getElementById('assignVehicle').value.trim();
-  const ligne=document.getElementById('assignLigne').value.trim();
-  const zone=document.getElementById('assignZone').value.trim();
-  if(!gie||!vehicle||!ligne||!zone){notify('⚠️','Champs','Tous les champs sont requis.');return;}
-  loader('Assignation…');
-  try{
-    await updateDoc(doc(db,'users',uid),{gie,vehicle,ligne,zone,status:'approved'});
-    loader('',false);closeModal('modalAssignBus');
-    notify('✅','Bus assigné','Receveur activé avec les infos de bus.');
-    await loadAdminDashboard();
-  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
-};
-
 window.showAdminUserDetail=async(uid)=>{
   loader('Chargement…');
   try{
@@ -993,8 +1267,6 @@ window.showAdminUserDetail=async(uid)=>{
     const u={id:uid,...snap.data()};
     const histSnap=await getDocs(query(collection(db,'users',uid,'history'),orderBy('ts','desc'),limit(10)));
     const hist=histSnap.docs.map(d=>d.data());
-    const tickSnap=await getDocs(query(collection(db,'users',uid,'tickets'),orderBy('ts','desc'),limit(5)));
-    const ticks=tickSnap.docs.map(d=>d.data());
     const date=u.createdAt?.toDate?.()?.toLocaleDateString('fr-FR')||'—';
     let html=`<div style="text-align:center;margin-bottom:16px;">
       <div style="width:60px;height:60px;border-radius:30px;background:#009A4422;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 8px;">${{passenger:'🧍',receiver:'🎫',owner:'🚌',directeur:'🏢'}[u.role]||'👤'}</div>
@@ -1009,12 +1281,11 @@ window.showAdminUserDetail=async(uid)=>{
         <div><div style="font-size:10px;color:#666;text-transform:uppercase;">Tél.</div><div style="font-size:12px;">${u.phone||'—'}</div></div>
         <div><div style="font-size:10px;color:#666;text-transform:uppercase;">Inscrit</div><div style="font-size:12px;">${date}</div></div>
         ${u.role==='owner'?`<div><div style="font-size:10px;color:#666;text-transform:uppercase;">GIE</div><div style="font-size:12px;">${u.company||'—'}</div></div>`:''}
-        ${u.role==='receiver'?`<div><div style="font-size:10px;color:#666;text-transform:uppercase;">Bus</div><div style="font-size:12px;">${u.vehicle||'—'} · ${u.gie||'—'}</div></div><div><div style="font-size:10px;color:#666;text-transform:uppercase;">Ligne/Zone</div><div style="font-size:12px;">${u.ligne||'—'} · ${u.zone||'—'}</div></div>`:''}
         ${u.role==='directeur'?`<div><div style="font-size:10px;color:#666;text-transform:uppercase;">Org.</div><div style="font-size:12px;">${u.org||'—'}</div></div>`:''}
+        ${u.role==='receiver'?`<div><div style="font-size:10px;color:#666;text-transform:uppercase;">Bus</div><div style="font-size:12px;">${u.vehicle||'—'} · ${u.gie||'—'}</div></div><div><div style="font-size:10px;color:#666;text-transform:uppercase;">Ligne/Zone</div><div style="font-size:12px;">${u.ligne||'—'} · ${u.zone||'—'}</div></div>`:''}
       </div>
     </div>`;
     if(hist.length){html+=`<div style="font-weight:800;font-size:13px;margin-bottom:8px;color:#aaa;">Dernières transactions</div>`;hist.forEach(h=>{const pos=h.amount>0;html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #ffffff08;"><div style="font-size:12px;color:#aaa;">${h.label||'—'}</div><div style="font-weight:800;font-size:13px;color:${pos?'#009A44':'#DF0024'};">${pos?'+':''}${(h.amount||0).toLocaleString('fr-FR')} F</div></div>`;});}
-    if(ticks.length){html+=`<div style="font-weight:800;font-size:13px;margin-top:14px;margin-bottom:8px;color:#aaa;">Tickets récents</div>`;ticks.forEach(t=>{html+=`<div style="background:#ffffff08;border-radius:10px;padding:8px 12px;margin-bottom:6px;font-size:11px;"><div style="font-weight:700;">${t.from||'—'}→${t.to||'—'}</div><div style="color:#888;">${t.gie||'—'} · ${t.price||0} FCFA · ${t.date||'—'}</div></div>`;});}
     html+=`<div class="admin-action-row" style="margin-top:16px;">${buildAdminActions(u)}</div>`;
     document.getElementById('adminDetailContent').innerHTML=html;
     document.getElementById('adminDetailOverlay').style.display='flex';
@@ -1026,7 +1297,7 @@ window.closeAdminDetail=()=>document.getElementById('adminDetailOverlay').style.
 function renderOwnersList(){
   const owners=adminAllUsers.filter(u=>u.role==='owner');
   const q=(document.getElementById('ownerSearch')?.value||'').toLowerCase();
-  const filtered=q?owners.filter(u=>(u.name+u.email+u.company).toLowerCase().includes(q)):owners;
+  const filtered=q?owners.filter(u=>(u.name+u.email+(u.company||'')).toLowerCase().includes(q)):owners;
   const cont=document.getElementById('adminOwnersList');
   if(!filtered.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun propriétaire</div>';return;}
   cont.innerHTML=filtered.map(u=>renderAdminUserCard(u)).join('');
@@ -1076,7 +1347,6 @@ window.filterAdminList=(type)=>{
   else if(type==='directeurs')renderDirecteursList();
   else if(type==='users')renderUsersList();
 };
-
 window.filterByRole=(role)=>{adminCurrentRoleFilter=role;renderUsersList();};
 window.filterWithdrawals=(f)=>{adminCurrentWdFilter=f;renderWithdrawalsList();};
 
@@ -1085,15 +1355,15 @@ window.markWithdrawDone=async(docId)=>{
   catch(e){notify('❌','Erreur',e.message);}
 };
 window.rejectWithdraw=async(docId)=>{
-  try{await updateDoc(doc(db,'withdrawal_requests',docId),{status:'rejected',treatedAt:serverTimestamp()});notify('❌','Rejeté','Demande de retrait rejetée.');await loadAdminDashboard();}
+  try{await updateDoc(doc(db,'withdrawal_requests',docId),{status:'rejected',treatedAt:serverTimestamp()});notify('❌','Rejeté','Demande rejetée.');await loadAdminDashboard();}
   catch(e){notify('❌','Erreur',e.message);}
 };
 
 function startAdminRealtime(){
   if(unsubAdmin)unsubAdmin();
-  unsubAdmin=onSnapshot(query(collection(db,'users'),where('status','==','pending')),snap=>{
+  unsubAdmin=onSnapshot(query(collection(db,'users'),where('status','==','pending'),where('role','==','directeur')),snap=>{
     const n=snap.size;
-    document.querySelectorAll('.admin-nav-btn').forEach(b=>{if(b.textContent.includes('Dashboard')&&n>0)b.textContent=`📊 Dashboard (${n})`;else if(b.textContent.includes('Dashboard'))b.textContent='📊 Dashboard';});
+    document.querySelectorAll('.admin-nav-btn').forEach(b=>{if(b.textContent.includes('Dashboard'))b.textContent=n>0?`📊 Dashboard (${n})`:'📊 Dashboard';});
   });
 }
 
@@ -1128,7 +1398,6 @@ function hideDescendBtn(){document.getElementById('descendBtn').style.display='n
 window.demandDescendre=async()=>{if(!activeTicketData)return;await addDoc(collection(db,'notifications'),{toUid:activeTicketData.busUid,type:'descendre',passenger:S.profile.name,from:activeTicketData.from,to:activeTicketData.to,read:false,ts:serverTimestamp()});notify('🛑','Signal envoyé !','Le receveur a été prévenu.');};
 window.showActiveTicket=()=>{if(activeTicketData)showTicketData(activeTicketData);};
 
-// RETRAIT
 window.openWithdraw=()=>{resetWithdraw();document.getElementById('withdrawAvailable').textContent=(S.profile?.balance||0).toLocaleString('fr-FR')+' FCFA';openModal('modalWithdraw');};
 function resetWithdraw(){['wdStep1','wdStep2','wdStep3','wdStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const w=document.getElementById('wdAmt');if(w)w.value='';}
 window.wdGoStep2=()=>{const amt=parseInt(document.getElementById('wdAmt').value||0);const bal=S.profile?.balance||0;if(!amt||amt<500){notify('⚠️','Montant','Minimum 500 FCFA.');return;}if(amt>bal){notify('❌','Solde','Solde insuffisant ('+bal.toLocaleString('fr-FR')+' FCFA).');return;}S.wdAmt=amt;document.getElementById('wdAmtBig').textContent=amt.toLocaleString('fr-FR')+' FCFA';document.getElementById('wdStep1').style.display='none';document.getElementById('wdStep2').style.display='block';};
@@ -1146,7 +1415,6 @@ window.doWithdraw=async()=>{
   }catch(e){notify('❌','Erreur',e.message);document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep2').style.display='block';}
 };
 
-// RECHARGE
 window.openRecharge=()=>{resetRecharge();openModal('modalRecharge');};
 function resetRecharge(){['rgStep1','rgStep2','rgStep3','rgStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const amt=document.getElementById('rechargeAmt');if(amt)amt.value='';document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));}
 window.selQuickAmt=(v,btn)=>{document.getElementById('rechargeAmt').value=v;document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');};
@@ -1166,7 +1434,6 @@ window.rgPayWithPaytech=async()=>{
   }catch(e){notify('❌','Erreur',e.message);document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';}
 };
 
-// SEND
 window.openSend=()=>{clearFriend();document.getElementById('sendAmt').value='';openModal('modalSend');};
 window.clearFriend=()=>{S.friendTarget=null;document.getElementById('friendPreview').style.display='none';document.getElementById('friendManualWrap').style.display='block';document.getElementById('sendTarget').value='';};
 function setFriend(walletId,name){S.friendTarget={walletId,name};document.getElementById('friendName').textContent=name;document.getElementById('friendWalletId').textContent=walletId;document.getElementById('friendPreview').style.display='flex';document.getElementById('friendManualWrap').style.display='none';}
@@ -1192,7 +1459,6 @@ window.doSend=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-// RECV CHARGE
 window.openRecvCharge=()=>{document.getElementById('rcWalletId').value='';document.getElementById('rcAmt').value='';document.getElementById('rcPassengerPreview').style.display='none';document.getElementById('rcRecvBalance').textContent=(S.profile?.balance||0).toLocaleString('fr-FR')+' FCFA';openModal('modalRecvCharge');};
 window.rcClearPreview=()=>document.getElementById('rcPassengerPreview').style.display='none';
 window.doRecvCharge=async()=>{
@@ -1219,7 +1485,6 @@ window.doRecvCharge=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-// TRAJETS
 window.openAddTrajet=()=>{['trajetFrom','trajetTo','trajetSection','trajetPrice'].forEach(id=>document.getElementById(id).value='');openModal('modalAddTrajet');};
 window.doAddTrajet=async()=>{
   const from=document.getElementById('trajetFrom').value.trim();
@@ -1239,7 +1504,6 @@ async function loadTrajets(){
   if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;color:#555;">Aucune section. Cliquez + Ajouter.</div>';return;}
   cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div class="trajet-row"><div style="flex:1;"><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.from}-->${t.to}</div><div style="color:#888;font-size:11px;margin-top:2px;">Section: ${t.section} == <strong style="color:var(--y);">${t.price} FCFA</strong></div></div><button onclick="delTrajet('${d.id}')" style="background:#DF002422;border:1px solid #DF002444;border-radius:10px;padding:8px;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>`;}).join('');}
 
-// TICKET FLOW
 window.openTicketFlow=()=>{resetFlow();openModal('modalTicketFlow');};
 window.resetFlow=()=>{setDots(0);['ticketStep0','ticketStep1','ticketStep3'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('ticketStep0').style.display='block';S.ticketBus=null;S.ticketSection=null;document.getElementById('ticketPriceDisplay').textContent='— FCFA';document.getElementById('btnPayTicket').disabled=true;};
 function setDots(s){for(let i=0;i<3;i++){const d=document.getElementById('tdot'+i);if(d)d.className='step-dot'+(i<s?' done':i===s?' active':'');}}
@@ -1282,7 +1546,6 @@ window.goPay=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-// SCAN PASSAGER
 let currentScanReq=null;
 window.showScanPanel=async(walletId)=>{
   document.getElementById('scanPanelEl')?.remove();
@@ -1330,7 +1593,7 @@ window.confirmManualScan=async(paxUid,walletId,passengerName,paxBalance)=>{
 };
 
 window.confirmScan=async()=>{
-  if(!currentScanReq){notify('⚠️','Erreur','Aucune demande active.');return;}
+  if(!currentScanReq)return;
   const req=currentScanReq;loader('Validation ticket…');
   try{
     const paxSnap=await getDoc(doc(db,'users',req.paxUid));
@@ -1358,13 +1621,11 @@ window.rejectScan=async()=>{
   notify('❌','Rejeté','Demande annulée.');
 };
 
-// LISTENERS
 function attachPendingListener(){
   const q=query(collection(db,'pending'),where('busUid','==',S.uid));
   unsubPending=onSnapshot(q,snap=>{
     const items=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderPendingList(items);
-    document.getElementById('recvTicketCount').textContent=items.length||'0';
   });
 }
 
@@ -1475,7 +1736,7 @@ window.openNotifPanel=async()=>{
   const snap=await getDocs(q);
   const cont=document.getElementById('notifList');
   if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';}
-  else{cont.innerHTML=snap.docs.map(d=>{const n=d.data();let icon='🔔',title='Notification',body='',color='var(--orange)';if(n.type==='descendre'){icon='🛑';title='Passager veut descendre';body=`${n.passenger||'—'} · ${n.from||''}→${n.to||''}`;color='#DF0024';}else if(n.type==='ticket_request'){icon='🎫';title='Demande ticket';body=`${n.passenger||'—'} · ${n.price||0} FCFA`;color='var(--g)';}else if(n.type==='ticket_validated'){icon='✅';title='Ticket validé';body='Votre ticket a été validé !';color='var(--g)';}return`<div style="background:#ffffff08;border:1px solid ${color}33;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;"><div style="font-size:22px;">${icon}</div><div><div style="font-weight:800;font-size:13px;color:${color};">${title}</div><div style="font-size:12px;color:#ccc;margin-top:3px;">${body}</div></div></div>`;}).join('');}
+  else{cont.innerHTML=snap.docs.map(d=>{const n=d.data();let icon='🔔',title='Notification',body='',color='var(--orange)';if(n.type==='descendre'){icon='🛑';title='Passager veut descendre';body=`${n.passenger||'—'} · ${n.from||''}→${n.to||''}`;color='#DF0024';}else if(n.type==='ticket_request'){icon='🎫';title='Demande ticket';body=`${n.passenger||'—'} · ${n.price||0} FCFA`;color='var(--g)';}else if(n.type==='ticket_validated'){icon='✅';title='Ticket validé';body='Votre ticket a été validé !';color='var(--g)';}else if(n.type==='receiver_request'){icon='🎫';title='Nouveau receveur';body=`${n.receiverName||'—'}`;color='var(--orange)';}else if(n.type==='owner_request'){icon='🚌';title='Nouveau propriétaire';body=`${n.ownerName||'—'} — ${n.company||'—'}`;color='#7c3aed';}return`<div style="background:#ffffff08;border:1px solid ${color}33;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;"><div style="font-size:22px;">${icon}</div><div><div style="font-weight:800;font-size:13px;color:${color};">${title}</div><div style="font-size:12px;color:#ccc;margin-top:3px;">${body}</div></div></div>`;}).join('');}
   document.getElementById('notifPanel').style.display='flex';
 };
 
@@ -1550,11 +1811,8 @@ function handleQR(raw){
   else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}
 }
 
-// PWA
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').then(()=>{}).catch(()=>{});});}
 </script>
 </div>
 </body>
 </html>
-
-
