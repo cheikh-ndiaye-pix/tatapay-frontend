@@ -77,9 +77,10 @@ table tr:hover{background:var(--border);}
   .actions-grid{grid-template-columns:1fr;}
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-  import { getFirestore, collection, getDocs, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+  import { getFirestore, collection, getDocs, query, where, orderBy, limit, onSnapshot, updateDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
   import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
   const firebaseConfig = {
@@ -154,8 +155,8 @@ table tr:hover{background:var(--border);}
       </div>
     </div>
     <div class="card">
-      <div class="chart-container" id="revenueChart">
-        <div class="loading">Chargement...</div>
+      <div style="height:300px;">
+        <canvas id="revenueChart"></canvas>
       </div>
     </div>
   </div>
@@ -307,110 +308,161 @@ table tr:hover{background:var(--border);}
 </div>
 
 <script>
+let revenueChart = null;
+let unsubscribers = [];
+
 // Firebase Firestore - Remplacement de mockData par vraies requêtes
 // db et auth sont déjà exposés via window.firebaseDB et window.firebaseAuth
 
 // Fonction de formatage
 function formatCurrency(amount) {
-  return amount.toLocaleString('fr-FR') + ' FCFA';
+  return new Intl.NumberFormat('fr-FR').format(amount || 0) + ' FCFA';
 }
 
-// Charger les statistiques depuis Firestore
-async function loadStats() {
-  try {
-    const db = window.firebaseDB;
-    // Recettes depuis tickets
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 7);
+// Formatage date
+function formatDate(timestamp) {
+  if (!timestamp) return '—';
+  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  return date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+}
 
-    const ticketsRef = collection(db, 'tickets');
-    const todaySnapshot = await getDocs(query(ticketsRef, where('createdAt', '>=', today)));
-    const weekSnapshot = await getDocs(query(ticketsRef, where('createdAt', '>=', weekAgo)));
+// Initialiser Chart.js
+function initChart() {
+  const ctx = document.getElementById('revenueChart').getContext('2d');
+  revenueChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Recettes (FCFA)',
+        data: [],
+        borderColor: '#009A44',
+        backgroundColor: 'rgba(0, 154, 68, 0.1)',
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: { 
+          grid: { color: '#ffffff10' },
+          ticks: { color: '#888' }
+        },
+        y: { 
+          grid: { color: '#ffffff10' },
+          ticks: { color: '#888' }
+        }
+      }
+    }
+  });
+}
 
+// Charger les statistiques depuis Firestore (avec onSnapshot temps réel)
+function loadStats() {
+  const db = window.firebaseDB;
+  
+  // Recettes depuis tickets - temps réel
+  const ticketsRef = collection(db, 'tickets');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const weekAgo = new Date(today);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+
+  const ticketsUnsub = onSnapshot(query(ticketsRef, where('ts', '>=', weekAgo)), (snapshot) => {
     let todayRevenue = 0, weekRevenue = 0;
-    todaySnapshot.forEach(doc => todayRevenue += (doc.data().amount || 0));
-    weekSnapshot.forEach(doc => weekRevenue += (doc.data().amount || 0));
-
+    snapshot.forEach(doc => {
+      const ticket = doc.data();
+      const ticketDate = ticket.ts?.toDate?.() || new Date(ticket.ts);
+      const amount = ticket.price || ticket.amount || 0;
+      weekRevenue += amount;
+      if (ticketDate >= today) {
+        todayRevenue += amount;
+      }
+    });
     document.getElementById('revenueToday').textContent = formatCurrency(todayRevenue);
     document.getElementById('revenueWeek').textContent = formatCurrency(weekRevenue);
+  });
+  unsubscribers.push(ticketsUnsub);
 
-    // Bus actifs depuis users
-    const usersRef = collection(db, 'users');
-    const busQuery = query(usersRef, where('role', '==', 'bus'), where('status', '==', 'active'));
-    const busSnapshot = await getDocs(busQuery);
-    document.getElementById('activeBuses').textContent = busSnapshot.size;
+  // Bus actifs depuis users - temps réel
+  const usersRef = collection(db, 'users');
+  const busUnsub = onSnapshot(query(usersRef, where('role', '==', 'receiver'), where('status', '==', 'active')), (snapshot) => {
+    document.getElementById('activeBuses').textContent = snapshot.size;
+  });
+  unsubscribers.push(busUnsub);
 
-    // Receveurs actifs
-    const receiverQuery = query(usersRef, where('role', '==', 'receiver'), where('status', '==', 'active'));
-    const receiverSnapshot = await getDocs(receiverQuery);
-    document.getElementById('activeReceivers').textContent = receiverSnapshot.size;
-  } catch (error) {
-    console.error('Erreur loadStats:', error);
-  }
+  // Receveurs actifs - temps réel
+  const receiverUnsub = onSnapshot(query(usersRef, where('role', '==', 'receiver'), where('status', '==', 'active')), (snapshot) => {
+    document.getElementById('activeReceivers').textContent = snapshot.size;
+  });
+  unsubscribers.push(receiverUnsub);
 }
 
-// Charger le graphique depuis Firestore
+// Charger le graphique depuis Firestore avec Chart.js
 async function loadChart(period = 'week') {
-  try {
-    const db = window.firebaseDB;
-    const ticketsRef = collection(db, 'tickets');
-    let startDate = new Date();
-    if (period === 'week') {
-      startDate.setDate(startDate.getDate() - 7);
-    } else {
-      startDate.setDate(startDate.getDate() - 30);
-    }
-
-    const snapshot = await getDocs(query(ticketsRef, where('createdAt', '>=', startDate), orderBy('createdAt')));
-    
-    const dailyData = {};
-    snapshot.forEach(doc => {
-      const date = doc.data().createdAt.toDate().toLocaleDateString('fr-FR');
-      dailyData[date] = (dailyData[date] || 0) + (doc.data().amount || 0);
-    });
-
-    const data = Object.values(dailyData);
-    const labels = Object.keys(dailyData);
-    const maxValue = Math.max(...data, 1);
-
-    const chartHTML = data.map((value, index) => {
-      const height = (value / maxValue) * 180;
-      return `<div class="chart-bar" style="height: ${height}px;">
-        <div class="bar-value">${(value / 1000).toFixed(0)}k</div>
-        <div class="bar-label">${labels[index]}</div>
-      </div>`;
-    }).join('');
-
-    document.getElementById('revenueChart').innerHTML = chartHTML || '<div class="loading">Aucune donnée</div>';
-  } catch (error) {
-    console.error('Erreur loadChart:', error);
+  const db = window.firebaseDB;
+  const ticketsRef = collection(db, 'tickets');
+  let startDate = new Date();
+  if (period === 'week') {
+    startDate.setDate(startDate.getDate() - 7);
+  } else {
+    startDate.setDate(startDate.getDate() - 30);
   }
+
+  const snapshot = await getDocs(query(ticketsRef, where('ts', '>=', startDate), orderBy('ts', 'asc')));
+  
+  const dailyData = {};
+  for (let i = period === 'week' ? 6 : 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toLocaleDateString('fr-FR');
+    dailyData[key] = 0;
+  }
+  
+  snapshot.forEach(doc => {
+    const ticket = doc.data();
+    const date = ticket.ts?.toDate?.() || new Date(ticket.ts);
+    const key = date.toLocaleDateString('fr-FR');
+    if (dailyData[key] !== undefined) {
+      dailyData[key] += (ticket.price || ticket.amount || 0);
+    }
+  });
+
+  revenueChart.data.labels = Object.keys(dailyData);
+  revenueChart.data.datasets[0].data = Object.values(dailyData);
+  revenueChart.update();
 }
 
 function changeChartPeriod(period) {
   loadChart(period);
 }
 
-// Charger l'activité des bus depuis Firestore
-async function loadBusActivity() {
-  try {
-    const db = window.firebaseDB;
-    const usersRef = collection(db, 'users');
-    const busQuery = query(usersRef, where('role', '==', 'bus'));
-    const snapshot = await getDocs(busQuery);
-
+// Charger l'activité des bus depuis Firestore (temps réel)
+function loadBusActivity() {
+  const db = window.firebaseDB;
+  const usersRef = collection(db, 'users');
+  const busUnsub = onSnapshot(query(usersRef, where('role', '==', 'receiver')), (snapshot) => {
     const tbody = document.getElementById('busActivityTable');
+    if (snapshot.empty) {
+      tbody.innerHTML = '<tr><td colspan="7" class="loading">Aucun bus</td></tr>';
+      return;
+    }
     tbody.innerHTML = snapshot.docs.map(doc => {
       const bus = doc.data();
+      const statusClass = bus.status === 'active' ? 'active' : 'inactive';
+      const statusLabel = bus.status === 'active' ? 'Actif' : 'Inactif';
       return `<tr>
-        <td><strong>${bus.busId || doc.id}</strong></td>
-        <td>${bus.line || 'N/A'}</td>
-        <td>${bus.receiverName || 'N/A'}</td>
-        <td>${bus.trips || 0}</td>
-        <td>${formatCurrency(bus.revenue || 0)}</td>
-        <td><span class="status-badge ${bus.status || 'inactive'}">${bus.status === 'active' ? 'Actif' : 'Inactif'}</span></td>
+        <td><strong>${bus.vehicle || '—'}</strong></td>
+        <td>${bus.ligne || '—'}</td>
+        <td>${bus.name || '—'}</td>
+        <td>${bus.count || 0}</td>
+        <td>${formatCurrency(bus.today || 0)}</td>
+        <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
         <td><div style="display:flex;align-items:center;gap:8px;">
           <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
             <div style="width:${bus.performance || 0}%;height:100%;background:${bus.performance >= 90 ? 'var(--green)' : bus.performance >= 70 ? 'var(--yellow)' : 'var(--red)'};"></div>
@@ -418,130 +470,233 @@ async function loadBusActivity() {
           <span style="font-size:12px;font-weight:600;">${bus.performance || 0}%</span>
         </div></td>
       </tr>`;
-    }).join('') || '<tr><td colspan="7" class="loading">Aucun bus</td></tr>';
-  } catch (error) {
-    console.error('Erreur loadBusActivity:', error);
-  }
+    }).join('');
+  });
+  unsubscribers.push(busUnsub);
 }
 
-// Charger les receveurs depuis Firestore
-async function loadReceivers() {
-  try {
-    const db = window.firebaseDB;
-    const usersRef = collection(db, 'users');
-    const receiverQuery = query(usersRef, where('role', '==', 'receiver'));
-    const snapshot = await getDocs(receiverQuery);
-
+// Charger les receveurs depuis Firestore (temps réel avec boutons updateDoc)
+function loadReceivers() {
+  const db = window.firebaseDB;
+  const usersRef = collection(db, 'users');
+  const receiverUnsub = onSnapshot(query(usersRef, where('role', '==', 'receiver')), (snapshot) => {
     const tbody = document.getElementById('receiversTable');
+    if (snapshot.empty) {
+      tbody.innerHTML = '<tr><td colspan="7" class="loading">Aucun receveur</td></tr>';
+      return;
+    }
     tbody.innerHTML = snapshot.docs.map(doc => {
       const receiver = doc.data();
+      const statusClass = receiver.status === 'active' ? 'active' : 'inactive';
+      const statusLabel = receiver.status === 'active' ? 'Actif' : 'Suspendu';
       return `<tr>
-        <td><strong>${receiver.name || 'N/A'}</strong></td>
-        <td>${receiver.busId || 'N/A'}</td>
-        <td>${receiver.validations || 0}</td>
-        <td>${formatCurrency(receiver.revenue || 0)}</td>
+        <td><strong>${receiver.name || '—'}</strong></td>
+        <td>${receiver.vehicle || '—'}</td>
+        <td>${receiver.count || 0}</td>
+        <td>${formatCurrency(receiver.today || 0)}</td>
         <td><div style="display:flex;align-items:center;gap:8px;">
           <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
             <div style="width:${receiver.performance || 0}%;height:100%;background:${receiver.performance >= 90 ? 'var(--green)' : receiver.performance >= 70 ? 'var(--yellow)' : 'var(--red)'};"></div>
           </div>
           <span style="font-size:12px;font-weight:600;">${receiver.performance || 0}%</span>
         </div></td>
-        <td><span class="status-badge ${receiver.status || 'inactive'}">${receiver.status === 'active' ? 'Actif' : 'Suspendu'}</span></td>
+        <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
         <td>
           <button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;">Voir</button>
-          ${receiver.status === 'active' ? '<button class="btn btn-danger" style="padding:4px 8px;font-size:11px;">Suspendre</button>' : '<button class="btn btn-primary" style="padding:4px 8px;font-size:11px;">Activer</button>'}
+          ${receiver.status === 'active' ? `<button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="updateReceiverStatus('${doc.id}', 'suspended')">Suspendre</button>` : `<button class="btn btn-primary" style="padding:4px 8px;font-size:11px;" onclick="updateReceiverStatus('${doc.id}', 'active')">Activer</button>`}
         </td>
       </tr>`;
-    }).join('') || '<tr><td colspan="7" class="loading">Aucun receveur</td></tr>';
-  } catch (error) {
-    console.error('Erreur loadReceivers:', error);
-  }
+    }).join('');
+  });
+  unsubscribers.push(receiverUnsub);
 }
 
-// Charger les demandes depuis Firestore
-async function loadRequests() {
+// Mettre à jour statut receveur avec updateDoc
+window.updateReceiverStatus = async (docId, status) => {
+  const db = window.firebaseDB;
   try {
-    const db = window.firebaseDB;
-    const pendingRef = collection(db, 'pending');
-    const snapshot = await getDocs(pendingRef);
-
-    const container = document.getElementById('requestsList');
-    container.innerHTML = snapshot.docs.map(doc => {
-      const request = doc.data();
-      const icon = request.type === 'receiver' ? '👨‍✈️' : request.type === 'funds' ? '💰' : '⚠️';
-      return `<div class="alert-item">
-        <div class="alert-icon">${icon}</div>
-        <div class="alert-content">
-          <div class="alert-title">${request.name || 'Demande'}</div>
-          <div class="alert-desc">${request.description || 'N/A'} · ${request.createdAt?.toDate().toLocaleDateString('fr-FR') || 'N/A'}</div>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-primary" style="padding:6px 12px;font-size:12px;">✓ Valider</button>
-          <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;">✗ Refuser</button>
-        </div>
-      </div>`;
-    }).join('') || '<div class="loading">Aucune demande en attente</div>';
-  } catch (error) {
-    console.error('Erreur loadRequests:', error);
+    await updateDoc(doc(db, 'users', docId), { status });
+    alert('Statut mis à jour: ' + status);
+  } catch (e) {
+    alert('Erreur: ' + e.message);
   }
-}
+};
 
-// Charger les flux financiers depuis Firestore
-async function loadFinancialFlows() {
-  try {
-    const db = window.firebaseDB;
-    const withdrawalRef = collection(db, 'withdrawal_requests');
-    const snapshot = await getDocs(query(withdrawalRef, orderBy('createdAt', 'desc'), limit(10)));
-
-    const tbody = document.getElementById('financialFlowsTable');
-    tbody.innerHTML = snapshot.docs.map(doc => {
-      const flow = doc.data();
-      const isEncaissement = flow.type === 'encaissement';
-      return `<tr>
-        <td>${flow.createdAt?.toDate().toLocaleDateString('fr-FR') || 'N/A'}</td>
-        <td><span class="status-badge ${isEncaissement ? 'active' : 'blue'}">${isEncaissement ? 'Encaissement' : 'Versement'}</span></td>
-        <td>${flow.description || 'N/A'}</td>
-        <td style="font-weight:600;color:${isEncaissement ? 'var(--green)' : 'var(--yellow)'}">${isEncaissement ? '+' : '-'}${formatCurrency(flow.amount || 0)}</td>
-        <td><span class="status-badge ${flow.status || 'pending'}">${flow.status === 'completed' ? 'Complété' : 'En attente'}</span></td>
-      </tr>`;
-    }).join('') || '<tr><td colspan="5" class="loading">Aucun flux financier</td></tr>';
-  } catch (error) {
-    console.error('Erreur loadFinancialFlows:', error);
-  }
-}
-
-// Charger les alertes depuis Firestore
-async function loadAlerts() {
-  try {
-    const db = window.firebaseDB;
-    const usersRef = collection(db, 'users');
-    const snapshot = await getDocs(usersRef);
-
-    const alerts = [];
+// Charger les demandes depuis Firestore (temps réel avec users pending et withdrawal_requests)
+function loadRequests() {
+  const db = window.firebaseDB;
+  const container = document.getElementById('requestsList');
+  
+  // Users pending
+  const usersQ = query(collection(db, 'users'), where('status', '==', 'pending'));
+  const usersUnsub = onSnapshot(usersQ, (snapshot) => {
+    const items = [];
+    
     snapshot.docs.forEach(doc => {
-      const user = doc.data();
-      if (user.role === 'bus' && (!user.status || user.status === 'inactive')) {
-        alerts.push({ type: 'danger', title: 'Bus inactif', desc: `Bus ${user.busId || doc.id} inactif` });
+      const u = doc.data();
+      items.push({
+        type: 'user',
+        id: doc.id,
+        name: u.name || '—',
+        role: u.role || '—',
+        desc: u.role === 'receiver' ? 'Receveur' : u.role === 'owner' ? 'Propriétaire' : 'Utilisateur'
+      });
+    });
+    
+    // Withdrawal requests
+    const wdQ = query(collection(db, 'withdrawal_requests'), where('status', '==', 'pending'));
+    const wdUnsub = onSnapshot(wdQ, (wdSnapshot) => {
+      wdSnapshot.docs.forEach(doc => {
+        const w = doc.data();
+        items.push({
+          type: 'withdrawal',
+          id: doc.id,
+          name: w.name || '—',
+          role: 'Retrait',
+          desc: formatCurrency(w.amount || 0),
+          amount: w.amount
+        });
+      });
+      
+      if (items.length === 0) {
+        container.innerHTML = '<div class="loading">Aucune demande</div>';
+        return;
       }
-      if (user.role === 'receiver' && user.performance < 70) {
-        alerts.push({ type: 'warning', title: 'Performance faible', desc: `Receveur ${user.name} - Performance ${user.performance}%` });
+      
+      container.innerHTML = items.map(item => {
+        const icon = item.type === 'withdrawal' ? '�' : '👤';
+        return `<div class="alert-item">
+          <div class="alert-icon">${icon}</div>
+          <div class="alert-content">
+            <div class="alert-title">${item.name}</div>
+            <div class="alert-desc">${item.desc} · ${item.role}</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="approveRequest('${item.id}', '${item.type}', ${item.amount || 0})" class="btn btn-primary" style="padding:6px 12px;font-size:12px;">✓</button>
+            <button onclick="rejectRequest('${item.id}', '${item.type}')" class="btn btn-danger" style="padding:6px 12px;font-size:12px;">✗</button>
+          </div>
+        </div>`;
+      }).join('');
+    });
+    
+    unsubscribers.push(wdUnsub);
+  });
+  
+  unsubscribers.push(usersUnsub);
+}
+
+// Approuver demande avec updateDoc
+window.approveRequest = async (id, type, amount) => {
+  const db = window.firebaseDB;
+  try {
+    if (type === 'user') {
+      await updateDoc(doc(db, 'users', id), { status: 'approved' });
+    } else if (type === 'withdrawal') {
+      await updateDoc(doc(db, 'withdrawal_requests', id), { status: 'done', treatedAt: serverTimestamp() });
+    }
+    alert('Demande approuvée');
+  } catch (e) {
+    alert('Erreur: ' + e.message);
+  }
+};
+
+// Rejeter demande avec updateDoc
+window.rejectRequest = async (id, type) => {
+  const db = window.firebaseDB;
+  try {
+    if (type === 'user') {
+      await updateDoc(doc(db, 'users', id), { status: 'rejected' });
+    } else if (type === 'withdrawal') {
+      await updateDoc(doc(db, 'withdrawal_requests', id), { status: 'rejected', treatedAt: serverTimestamp() });
+    }
+    alert('Demande rejetée');
+  } catch (e) {
+    alert('Erreur: ' + e.message);
+  }
+};
+
+// Charger les flux financiers depuis Firestore (temps réel depuis tickets et withdrawal_requests)
+function loadFinancialFlows() {
+  const db = window.firebaseDB;
+  const tbody = document.getElementById('financialFlowsTable');
+  
+  // Tickets récents
+  const ticketsQ = query(collection(db, 'tickets'), orderBy('ts', 'desc'), limit(10));
+  const ticketsUnsub = onSnapshot(ticketsQ, (snapshot) => {
+    const rows = snapshot.docs.map(doc => {
+      const t = doc.data();
+      return `<tr>
+        <td>${formatDate(t.ts)}</td>
+        <td><span class="status-badge active">🎫 Ticket</span></td>
+        <td>${t.passenger || '—'}</td>
+        <td style="font-weight:600;color:var(--green);">+${formatCurrency(t.price || t.amount || 0)}</td>
+        <td><span class="status-badge active">Validé</span></td>
+      </tr>`;
+    }).join('');
+    
+    tbody.innerHTML = rows || '<tr><td colspan="5" class="loading">Aucun flux</td></tr>';
+  });
+  
+  unsubscribers.push(ticketsUnsub);
+}
+
+// Charger les alertes depuis Firestore (temps réel)
+function loadAlerts() {
+  const db = window.firebaseDB;
+  const container = document.getElementById('alertsList');
+  
+  const alerts = [];
+  
+  // Bus inactifs
+  const receiversQ = query(collection(db, 'users'), where('role', '==', 'receiver'));
+  const receiversUnsub = onSnapshot(receiversQ, (snapshot) => {
+    snapshot.docs.forEach(doc => {
+      const r = doc.data();
+      if (r.status !== 'active') {
+        alerts.push({
+          icon: '🚌',
+          title: 'Bus inactif',
+          desc: `${r.vehicle || '—'} (${r.name || '—'})`
+        });
       }
     });
-
-    const container = document.getElementById('alertsList');
-    container.innerHTML = alerts.map(alert => `
-      <div class="alert-item ${alert.type}">
-        <div class="alert-icon">${alert.type === 'warning' ? '⚠️' : '🔴'}</div>
+    
+    // Retraits en attente > 24h
+    const wdQ = query(collection(db, 'withdrawal_requests'), where('status', '==', 'pending'));
+    const wdUnsub = onSnapshot(wdQ, (snapshot) => {
+      const now = new Date();
+      snapshot.docs.forEach(doc => {
+        const w = doc.data();
+        const reqDate = w.requestedAt?.toDate?.() || new Date(w.requestedAt);
+        const hoursDiff = (now - reqDate) / (1000 * 60 * 60);
+        if (hoursDiff > 24) {
+          alerts.push({
+            icon: '⏰',
+            title: 'Retrait en attente > 24h',
+            desc: `${w.name || '—'} · ${formatCurrency(w.amount)}`
+          });
+        }
+      });
+      
+      if (alerts.length === 0) {
+        container.innerHTML = '<div class="loading">Aucune alerte</div>';
+        return;
+      }
+      
+      container.innerHTML = alerts.map(a => `<div class="alert-item warning">
+        <div class="alert-icon">${a.icon}</div>
         <div class="alert-content">
-          <div class="alert-title">${alert.title}</div>
-          <div class="alert-desc">${alert.desc}</div>
+          <div class="alert-title">${a.title}</div>
+          <div class="alert-desc">${a.desc}</div>
         </div>
         <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;">Ignorer</button>
-      </div>
-    `).join('') || '<div class="loading">Aucune alerte</div>';
-  } catch (error) {
-    console.error('Erreur loadAlerts:', error);
-  }
+      </div>`).join('');
+    });
+    
+    unsubscribers.push(wdUnsub);
+  });
+  
+  unsubscribers.push(receiversUnsub);
 }
 
 // Actions rapides
@@ -555,6 +710,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const checkFirebase = setInterval(() => {
     if (window.firebaseDB) {
       clearInterval(checkFirebase);
+      initChart();
       loadStats();
       loadChart('week');
       loadBusActivity();
@@ -564,6 +720,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       loadAlerts();
     }
   }, 100);
+});
+
+// Cleanup des listeners onSnapshot
+window.addEventListener('beforeunload', () => {
+  unsubscribers.forEach(unsub => unsub());
 });
 </script>
 </body>
