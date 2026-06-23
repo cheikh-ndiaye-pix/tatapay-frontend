@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -10,12 +11,12 @@
 <meta name="apple-mobile-web-app-title" content="TataPay"/>
 <link rel="manifest" href="/manifest.json"/>
 <title>TataPay</title>
-<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAA"/>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-:root{--g:#009A44;--gd:#007832;--y:#FDEF42;--bk:#06120a;--w:#fff;--r:#DF0024;--orange:#FF6B00;}
+:root{--g:#009A44;--gd:#007832;--y:#FDEF42;--bk:#06120a;--w:#fff;--r:#DF0024;--orange:#FF6B00;--blue:#0ea5e9;}
 body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);overflow-x:hidden;}
 #app{max-width:430px;margin:0 auto;min-height:100vh;position:relative;}
 .sn-stripe{height:4px;background:linear-gradient(90deg,#009A44 33.33%,#FDEF42 33.33% 66.66%,#DF0024 66.66%);}
@@ -30,6 +31,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
 @keyframes bellShake{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-15deg)}40%,80%{transform:rotate(15deg)}}
 @keyframes notifIn{0%{transform:translateX(110%);opacity:0}100%{transform:translateX(0);opacity:1}}
 @keyframes notifOut{0%{transform:translateX(0);opacity:1}100%{transform:translateX(110%);opacity:0}}
+@keyframes countUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .screen{display:none;flex-direction:column;min-height:100vh;}
 .screen.active{display:flex;}
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 24px;border-radius:14px;border:none;cursor:pointer;font-weight:700;font-size:15px;font-family:'Space Grotesk',sans-serif;transition:all .18s;}
@@ -59,7 +61,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
 .recv-nav-btn:not(.active){color:#555;}
 /* DIRECTEUR NAV */
 .dir-nav{display:flex;background:#050d18;border-top:1px solid #0ea5e922;padding:8px 0 18px;position:sticky;bottom:0;z-index:10;}
-.dir-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;font-size:10px;font-weight:600;padding:6px 0;font-family:'Space Grotesk',sans-serif;transition:color .2s;}
+.dir-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;font-size:9px;font-weight:600;padding:6px 0;font-family:'Space Grotesk',sans-serif;transition:color .2s;}
 .dir-nav-btn.active{color:#0ea5e9;}
 .dir-nav-btn:not(.active){color:#555;}
 .modal-overlay{position:fixed;inset:0;background:#000000cc;z-index:200;display:flex;align-items:flex-end;justify-content:center;}
@@ -147,12 +149,39 @@ select.input-field option{background:#0c1f12;color:#fff;}
 .admin-search:focus{border-color:var(--g);}
 .admin-detail-overlay{position:fixed;inset:0;background:#000000dd;z-index:600;display:none;align-items:flex-end;justify-content:center;}
 .admin-detail-box{background:#0c1f12;border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:90vh;overflow-y:auto;border:1px solid #009A4422;animation:slideUp .3s ease;}
-/* DIR CARD */
-.dir-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+/* DIR DASHBOARD */
+.dir-kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.dir-kpi{background:#050d18;border:1px solid #0ea5e922;border-radius:16px;padding:14px 12px;text-align:center;position:relative;overflow:hidden;}
+.dir-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-color,#0ea5e9);}
+.dir-kpi .k-val{font-size:24px;font-weight:900;color:var(--kpi-color,#7dd3fc);animation:countUp .5s ease;}
+.dir-kpi .k-lbl{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-top:3px;}
+.dir-kpi .k-sub{font-size:11px;color:#777;margin-top:2px;}
+.dir-section{margin-bottom:20px;}
+.dir-section-title{font-weight:900;font-size:14px;color:#7dd3fc;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.dir-card{background:#050d18;border:1px solid #0ea5e922;border-radius:14px;padding:14px;margin-bottom:10px;}
+.dir-bus-card{background:linear-gradient(135deg,#050d18,#061520);border:1px solid #0ea5e933;border-radius:16px;padding:14px;margin-bottom:10px;position:relative;overflow:hidden;}
+.dir-bus-card .status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.dir-bus-card .status-dot.active{background:#009A44;box-shadow:0 0 8px #009A44;}
+.dir-bus-card .status-dot.inactive{background:#FF6B00;box-shadow:0 0 8px #FF6B00;}
+.dir-alert{background:#DF002410;border:1px solid #DF002433;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;}
+.dir-alert.warn{background:#FF6B0010;border-color:#FF6B0033;}
+.dir-alert.info{background:#0ea5e910;border-color:#0ea5e933;}
+.dir-period-btns{display:flex;gap:6px;margin-bottom:12px;}
+.dir-period-btn{padding:6px 14px;border-radius:10px;border:1px solid #0ea5e933;background:transparent;color:#555;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;cursor:pointer;transition:all .2s;}
+.dir-period-btn.active{background:#0ea5e920;color:#0ea5e9;border-color:#0ea5e9;}
+.dir-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.dir-quick-action{background:#050d18;border:1px solid #0ea5e922;border-radius:14px;padding:14px 10px;cursor:pointer;text-align:center;transition:all .2s;font-family:'Space Grotesk',sans-serif;color:var(--w);}
+.dir-quick-action:hover{background:#0ea5e915;border-color:#0ea5e9;}
+.dir-quick-action:active{transform:scale(.97);}
+.dir-quick-action .qa-icon{font-size:26px;margin-bottom:6px;}
+.dir-quick-action .qa-label{font-size:11px;font-weight:800;color:#7dd3fc;}
+.chart-wrap{background:#050d18;border:1px solid #0ea5e922;border-radius:16px;padding:14px;margin-bottom:14px;}
+.progress-bar{height:6px;background:#ffffff10;border-radius:3px;overflow:hidden;margin-top:6px;}
+.progress-fill{height:100%;border-radius:3px;transition:width .6s ease;}
 .dir-stat{background:#050d18;border:1px solid #0ea5e922;border-radius:14px;padding:14px;text-align:center;}
 .dir-stat .val{font-size:22px;font-weight:900;color:#7dd3fc;}
 .dir-stat .lbl{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
-.dir-card{background:#050d18;border:1px solid #0ea5e922;border-radius:14px;padding:14px;margin-bottom:10px;}
+.dir-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
 </style>
 </head>
 <body>
@@ -247,13 +276,13 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <button class="sel-tab" id="tabPassenger" onclick="setRole('passenger')" style="background:var(--g);color:var(--w);font-size:11px;">🧍 Passager</button>
       <button class="sel-tab" id="tabReceiver" onclick="setRole('receiver')" style="background:transparent;color:#888;font-size:11px;">🎫 Receveur</button>
       <button class="sel-tab" id="tabOwner" onclick="setRole('owner')" style="background:transparent;color:#888;font-size:11px;">🚌 Proprio</button>
-      <button class="sel-tab" id="tabDirecteur" onclick="setRole('directeur')" style="background:transparent;color:#888;font-size:11px;">🏢 Directeur</button>
+      <button class="sel-tab" id="tabDirecteur" onclick="setRole('directeur')" style="background:transparent;color:#888;font-size:11px;">🏢 Dir.</button>
     </div>
     <div id="fieldName" style="display:none"><div class="input-wrap"><label class="input-label">Nom complet *</label><input class="input-field" id="authName" placeholder="Moussa Diallo"/></div></div>
     <div class="input-wrap"><label class="input-label">E-mail *</label><input class="input-field" id="authEmail" type="email" placeholder="exemple@email.com"/></div>
     <div id="fieldPhone" style="display:none"><div class="input-wrap"><label class="input-label">Téléphone *</label><input class="input-field" id="authPhone" type="tel" placeholder="77 123 45 67"/></div></div>
     <div id="fieldsReceiver" style="display:none;">
-      <div style="background:#FF6B0010;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FF6B00;line-height:1.6;">🎫 Vos informations. GIE/Bus assignés après validation du Directeur de GIE.</div>
+      <div style="background:#FF6B0010;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FF6B00;line-height:1.6;">🎫 GIE/Bus assignés après validation du Directeur.</div>
       <div class="input-wrap"><label class="input-label">Numéro CNI *</label><input class="input-field" id="authCNI" placeholder="1 234 567 890 12345" maxlength="20"/></div>
       <div class="input-wrap"><label class="input-label">Adresse / Quartier *</label><input class="input-field" id="authAddress" placeholder="ex: Médina, Dakar"/></div>
       <div class="input-wrap">
@@ -263,7 +292,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
     </div>
     <div id="fieldsOwner" style="display:none;">
       <div class="input-wrap"><label class="input-label">Nom du GIE / Entreprise *</label><input class="input-field" id="authOwnerCompany" placeholder="GIE Dakar Express"/></div>
-      <div style="background:#7c3aed15;border:1.5px solid #7c3aed44;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#c4b5fd;line-height:1.6;">⚠️ Compte propriétaire nécessite validation du Directeur de GIE.</div>
+      <div style="background:#7c3aed15;border:1.5px solid #7c3aed44;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#c4b5fd;line-height:1.6;">⚠️ Compte propriétaire validé par le Directeur de GIE.</div>
     </div>
     <div id="fieldsDirecteur" style="display:none;">
       <div class="input-wrap"><label class="input-label">Nom du GIE / Organisation *</label><input class="input-field" id="authDirecteurOrg" placeholder="AFTU Dakar Nord"/></div>
@@ -392,7 +421,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
           <div style="font-weight:800;font-size:14px;margin-bottom:12px;">🚌 QR Marchand officiel</div>
           <div id="recvBusQRWrap"></div>
         </div>
-        <!-- INFO DIRECTEUR DU RECEVEUR -->
         <div id="recvDirecteurInfo" style="display:none;background:#0ea5e910;border:1px solid #0ea5e933;border-radius:14px;padding:12px 16px;margin-bottom:16px;">
           <div style="font-size:11px;color:#7dd3fc;font-weight:800;margin-bottom:4px;">🏢 Votre Directeur de GIE</div>
           <div style="font-weight:900;font-size:14px;" id="recvDirecteurName">—</div>
@@ -423,55 +451,201 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- DIRECTEUR GIE SCREEN -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- DIRECTEUR GIE — TABLEAU DE BORD COMPLET -->
+<!-- ═══════════════════════════════════════════════════════ -->
 <div class="screen" id="screenDirecteur" style="background:#030b14;">
   <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
-  <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #0ea5e922;background:#050d18;position:sticky;top:0;z-index:20;">
+  <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #0ea5e922;background:#050d18;position:sticky;top:0;z-index:20;">
     <div>
-      <div style="font-size:10px;color:#0ea5e988;letter-spacing:2px;font-family:'JetBrains Mono',monospace;">DIRECTEUR GIE</div>
-      <div style="font-weight:900;font-size:18px;" id="dirGreet">—</div>
+      <div style="font-size:9px;color:#0ea5e988;letter-spacing:2px;font-family:'JetBrains Mono',monospace;">DIRECTEUR GIE</div>
+      <div style="font-weight:900;font-size:17px;" id="dirGreet">—</div>
     </div>
-    <button onclick="doLogout()" style="background:#ffffff10;border:none;border-radius:10px;padding:7px 12px;color:#aaa;font-family:'Space Grotesk',sans-serif;font-size:12px;cursor:pointer;">Déco</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <div id="dirAlertBadge" style="display:none;background:#DF0024;color:#fff;border-radius:10px;padding:3px 10px;font-size:11px;font-weight:900;">⚠️ 0</div>
+      <button onclick="doLogout()" style="background:#ffffff10;border:none;border-radius:10px;padding:7px 12px;color:#aaa;font-family:'Space Grotesk',sans-serif;font-size:12px;cursor:pointer;">Déco</button>
+    </div>
   </div>
   <div style="flex:1;overflow-y:auto;">
-    <!-- TAB HOME -->
-    <div class="tab-content active" id="dirTab-home" style="padding:18px 16px;">
-      <div style="background:linear-gradient(135deg,#050d18,#081525);border:2px solid #0ea5e933;border-radius:20px;padding:18px;margin-bottom:16px;position:relative;overflow:hidden;">
+
+    <!-- TAB HOME / DASHBOARD -->
+    <div class="tab-content active" id="dirTab-home" style="padding:16px;">
+
+      <!-- GIE Info Card -->
+      <div style="background:linear-gradient(135deg,#050d18,#081525);border:2px solid #0ea5e933;border-radius:20px;padding:16px;margin-bottom:14px;position:relative;overflow:hidden;">
         <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
-        <div style="font-size:11px;color:#0ea5e988;margin-bottom:2px;">GIE / Organisation</div>
-        <div style="font-weight:900;font-size:20px;color:#7dd3fc;margin-bottom:4px;" id="dirOrgName">—</div>
-        <div style="font-size:12px;color:#555;" id="dirWalletId">—</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div style="font-size:10px;color:#0ea5e988;margin-bottom:2px;">GIE / Organisation</div>
+            <div style="font-weight:900;font-size:18px;color:#7dd3fc;" id="dirOrgName">—</div>
+            <div style="font-size:11px;color:#555;margin-top:2px;" id="dirWalletId">—</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:10px;color:#888;">Mise à jour</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#0ea5e9;" id="dirLastUpdate">—</div>
+          </div>
+        </div>
       </div>
-      <div class="dir-stat-grid">
-        <div class="dir-stat"><div class="val" id="dirStatOwners">0</div><div class="lbl">Propriétaires</div></div>
-        <div class="dir-stat"><div class="val" id="dirStatReceivers">0</div><div class="lbl">Receveurs</div></div>
-        <div class="dir-stat"><div class="val" id="dirStatPending">0</div><div class="lbl">En attente</div></div>
-        <div class="dir-stat"><div class="val" id="dirStatApproved">0</div><div class="lbl">Approuvés</div></div>
+
+      <!-- Période selector -->
+      <div class="dir-period-btns" id="dirPeriodBtns">
+        <button class="dir-period-btn active" onclick="setDirPeriod('day',this)">Jour</button>
+        <button class="dir-period-btn" onclick="setDirPeriod('week',this)">Semaine</button>
+        <button class="dir-period-btn" onclick="setDirPeriod('month',this)">Mois</button>
+        <button class="dir-period-btn" onclick="setDirPeriod('total',this)">Total</button>
       </div>
-      <div style="font-weight:800;font-size:14px;color:#7dd3fc;margin-bottom:12px;">⏳ Demandes en attente</div>
-      <div id="dirPendingList"><div style="text-align:center;color:#555;padding:20px;font-size:13px;">Aucune demande.</div></div>
+
+      <!-- KPI Grid recettes -->
+      <div class="dir-kpi-grid">
+        <div class="dir-kpi" style="--kpi-color:#FDEF42;">
+          <div class="k-val" id="dirKpiRecettes">—</div>
+          <div class="k-lbl">Recettes</div>
+          <div class="k-sub" id="dirKpiRecettesSub">FCFA</div>
+        </div>
+        <div class="dir-kpi" style="--kpi-color:#009A44;">
+          <div class="k-val" id="dirKpiTickets">—</div>
+          <div class="k-lbl">Tickets</div>
+          <div class="k-sub">validés</div>
+        </div>
+        <div class="dir-kpi" style="--kpi-color:#FF6B00;">
+          <div class="k-val" id="dirKpiBusActifs">—</div>
+          <div class="k-lbl">Bus actifs</div>
+          <div class="k-sub" id="dirKpiBusSub">/ — total</div>
+        </div>
+        <div class="dir-kpi" style="--kpi-color:#DF0024;">
+          <div class="k-val" id="dirKpiPending">—</div>
+          <div class="k-lbl">En attente</div>
+          <div class="k-sub">demandes</div>
+        </div>
+      </div>
+
+      <!-- Alertes -->
+      <div class="dir-section" id="dirAlertsSection">
+        <div class="dir-section-title">⚠️ Alertes actives</div>
+        <div id="dirAlertsList"><div style="color:#555;font-size:13px;">Aucune alerte.</div></div>
+      </div>
+
+      <!-- Graphique recettes -->
+      <div class="dir-section">
+        <div class="dir-section-title">📈 Évolution des recettes</div>
+        <div class="chart-wrap">
+          <canvas id="dirRevenueChart" height="160"></canvas>
+        </div>
+      </div>
+
+      <!-- Actions rapides -->
+      <div class="dir-section">
+        <div class="dir-section-title">⚡ Actions rapides</div>
+        <div class="dir-action-grid">
+          <button class="dir-quick-action" onclick="switchDirTab('receivers')">
+            <div class="qa-icon">🎫</div>
+            <div class="qa-label">Valider receveur</div>
+          </button>
+          <button class="dir-quick-action" onclick="switchDirTab('owners')">
+            <div class="qa-icon">🚌</div>
+            <div class="qa-label">Gérer propriétaires</div>
+          </button>
+          <button class="dir-quick-action" onclick="openModal('modalAssignBus')">
+            <div class="qa-icon">🔧</div>
+            <div class="qa-label">Assigner bus</div>
+          </button>
+          <button class="dir-quick-action" onclick="switchDirTab('finances')">
+            <div class="qa-icon">💳</div>
+            <div class="qa-label">Flux financiers</div>
+          </button>
+          <button class="dir-quick-action" onclick="switchDirTab('buses')">
+            <div class="qa-icon">📊</div>
+            <div class="qa-label">Rapport bus</div>
+          </button>
+          <button class="dir-quick-action" onclick="loadDirDashboard()">
+            <div class="qa-icon">🔄</div>
+            <div class="qa-label">Actualiser</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Demandes en attente -->
+      <div class="dir-section">
+        <div class="dir-section-title">📥 Demandes à traiter</div>
+        <div id="dirPendingList"><div style="text-align:center;color:#555;padding:20px;font-size:13px;">Aucune demande.</div></div>
+      </div>
+
     </div>
+
+    <!-- TAB BUS / ACTIVITÉ -->
+    <div class="tab-content" id="dirTab-buses" style="padding:16px;">
+      <div style="font-weight:900;font-size:18px;color:#7dd3fc;margin-bottom:4px;">🚌 Activité des bus</div>
+      <div style="color:#555;font-size:12px;margin-bottom:16px;" id="dirBusSubtitle">—</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+        <div class="dir-stat"><div class="val" id="dirBusStat1">0</div><div class="lbl">Actifs</div></div>
+        <div class="dir-stat"><div class="val" style="color:#FF6B00;" id="dirBusStat2">0</div><div class="lbl">Inactifs</div></div>
+        <div class="dir-stat"><div class="val" style="color:#FDEF42;" id="dirBusStat3">0</div><div class="lbl">Total</div></div>
+      </div>
+      <div class="chart-wrap" style="margin-bottom:14px;">
+        <div style="font-size:11px;color:#7dd3fc;font-weight:800;margin-bottom:8px;">Performance par receveur</div>
+        <canvas id="dirBusChart" height="180"></canvas>
+      </div>
+      <div id="dirBusList"><div style="text-align:center;color:#555;padding:30px;font-size:13px;">Chargement…</div></div>
+    </div>
+
     <!-- TAB PROPRIÉTAIRES -->
-    <div class="tab-content" id="dirTab-owners" style="padding:18px 16px;">
-      <div style="font-weight:900;font-size:20px;color:#7dd3fc;margin-bottom:16px;">🚌 Propriétaires de bus</div>
+    <div class="tab-content" id="dirTab-owners" style="padding:16px;">
+      <div style="font-weight:900;font-size:18px;color:#7dd3fc;margin-bottom:16px;">🚌 Propriétaires de bus</div>
       <div id="dirOwnersList"><div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun propriétaire.</div></div>
     </div>
+
     <!-- TAB RECEVEURS -->
-    <div class="tab-content" id="dirTab-receivers" style="padding:18px 16px;">
-      <div style="font-weight:900;font-size:20px;color:#7dd3fc;margin-bottom:16px;">🎫 Receveurs</div>
+    <div class="tab-content" id="dirTab-receivers" style="padding:16px;">
+      <div style="font-weight:900;font-size:18px;color:#7dd3fc;margin-bottom:16px;">🎫 Receveurs</div>
       <div id="dirReceiversList"><div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun receveur.</div></div>
     </div>
+
+    <!-- TAB FINANCES -->
+    <div class="tab-content" id="dirTab-finances" style="padding:16px;">
+      <div style="font-weight:900;font-size:18px;color:#7dd3fc;margin-bottom:4px;">💳 Flux financiers</div>
+      <div style="color:#555;font-size:12px;margin-bottom:16px;">Encaissements et versements de votre GIE</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div class="dir-kpi" style="--kpi-color:#009A44;">
+          <div class="k-val" id="dirFinTotal">—</div>
+          <div class="k-lbl">Total encaissé</div>
+          <div class="k-sub">FCFA</div>
+        </div>
+        <div class="dir-kpi" style="--kpi-color:#DF0024;">
+          <div class="k-val" id="dirFinPendingWd">—</div>
+          <div class="k-lbl">Retraits en attente</div>
+          <div class="k-sub">FCFA</div>
+        </div>
+      </div>
+
+      <div class="chart-wrap" style="margin-bottom:14px;">
+        <div style="font-size:11px;color:#7dd3fc;font-weight:800;margin-bottom:8px;">Répartition par receveur</div>
+        <canvas id="dirFinChart" height="160"></canvas>
+      </div>
+
+      <div class="dir-section-title">📋 Historique des tickets</div>
+      <div id="dirFinHistory"><div style="text-align:center;color:#555;padding:30px;font-size:13px;">Chargement…</div></div>
+    </div>
+
   </div>
+
+  <!-- BOTTOM NAV DIRECTEUR -->
   <div class="dir-nav" style="position:relative;">
     <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
     <button class="dir-nav-btn active" id="dnav-home" onclick="switchDirTab('home')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Accueil
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Dashboard
+    </button>
+    <button class="dir-nav-btn" id="dnav-buses" onclick="switchDirTab('buses')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8l5 3v5h-5V8z"/></svg>Bus
     </button>
     <button class="dir-nav-btn" id="dnav-owners" onclick="switchDirTab('owners')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8l5 3v5h-5V8z"/></svg>Propriétaires
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Proprio
     </button>
     <button class="dir-nav-btn" id="dnav-receivers" onclick="switchDirTab('receivers')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Receveurs
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Receveurs
+    </button>
+    <button class="dir-nav-btn" id="dnav-finances" onclick="switchDirTab('finances')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Finances
     </button>
   </div>
 </div>
@@ -502,7 +676,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div class="admin-stat"><div class="val" id="aStat-tickets">—</div><div class="lbl">Tickets émis</div></div>
         <div class="admin-stat"><div class="val" id="aStat-withdraws">—</div><div class="lbl">Retraits</div></div>
       </div>
-      <div style="font-weight:800;font-size:14px;margin-bottom:10px;color:#aaa;">⏰ Demandes en attente (Directeurs)</div>
+      <div style="font-weight:800;font-size:14px;margin-bottom:10px;color:#aaa;">⏰ Directeurs en attente</div>
       <div id="adminDashPending"></div>
       <div style="margin-top:16px;font-weight:800;font-size:14px;color:#aaa;margin-bottom:10px;">🔔 Dernières activités</div>
       <div id="adminDashActivity"></div>
@@ -673,7 +847,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- MODAL ASSIGNER BUS (DIRECTEUR → RECEIVER) -->
+<!-- MODAL ASSIGNER BUS -->
 <div class="modal-overlay" id="modalAssignBus" style="display:none;" onclick="if(event.target===this)closeModal('modalAssignBus')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
@@ -702,9 +876,10 @@ const db=getFirestore(fbApp);
 
 const ADMIN_EMAIL='papacheikh900@gmail.com';
 
-let S={role:null,uid:null,profile:null,authRole:'passenger',isReg:false,camMode:null,ticketBus:null,ticketSection:null,stream:null,facing:'environment',scanning:false,friendTarget:null};
+let S={role:null,uid:null,profile:null,authRole:'passenger',isReg:false,camMode:null,ticketBus:null,ticketSection:null,stream:null,facing:'environment',scanning:false,friendTarget:null,dirPeriod:'day'};
 let activeTicketData=null;
 let unsubPending=null,unsubNotif=null,unsubBalance=null,unsubRecvBalance=null,unsubAdmin=null;
+let dirCharts={revenue:null,bus:null,fin:null};
 
 // ═══════════════════════════════════════════════════════
 // HELPERS
@@ -727,6 +902,8 @@ function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.re
 function statusBadge(s){const map={pending:'badge-pending',approved:'badge-approved',active:'badge-approved',rejected:'badge-rejected',suspended:'badge-suspended',done:'badge-done'};const label={pending:'En attente',approved:'Approuvé',active:'Actif',rejected:'Refusé',suspended:'Suspendu',done:'Traité'};return`<span class="admin-badge ${map[s]||'badge-pending'}">${label[s]||s}</span>`;}
 
 function roleBadge(r){const c={passenger:'#009A44',receiver:'#FF6B00',owner:'#7c3aed',directeur:'#0ea5e9'};const ic={passenger:'🧍',receiver:'🎫',owner:'🚌',directeur:'🏢'};return`<span style="font-size:11px;padding:3px 10px;border-radius:8px;background:${c[r]||'#444'}22;color:${c[r]||'#aaa'};border:1px solid ${c[r]||'#444'}44;font-weight:800;">${ic[r]||'👤'} ${r}</span>`;}
+
+function fmtMoney(v){return(v||0).toLocaleString('fr-FR');}
 
 // ═══════════════════════════════════════════════════════
 // AUTH
@@ -759,7 +936,6 @@ window.setRole=async(r)=>{
   }
 };
 
-// CHARGER LISTE DIRECTEURS (pour l'inscription du receveur)
 async function loadDirecteurList(){
   const sel=document.getElementById('authDirecteurSelect');
   if(!sel)return;
@@ -767,10 +943,7 @@ async function loadDirecteurList(){
   try{
     const snap=await getDocs(query(collection(db,'users'),where('role','==','directeur'),where('status','==','approved')));
     sel.innerHTML='<option value="">— Choisir un directeur —</option>';
-    if(snap.empty){
-      sel.innerHTML='<option value="">Aucun directeur disponible</option>';
-      return;
-    }
+    if(snap.empty){sel.innerHTML='<option value="">Aucun directeur disponible</option>';return;}
     snap.docs.forEach(d=>{
       const u=d.data();
       const opt=document.createElement('option');
@@ -778,10 +951,7 @@ async function loadDirecteurList(){
       opt.textContent=`${u.name} — ${u.org||u.email}`;
       sel.appendChild(opt);
     });
-  }catch(e){
-    console.error('loadDirecteurList error:',e);
-    sel.innerHTML='<option value="">Erreur chargement — réessayez</option>';
-  }
+  }catch(e){sel.innerHTML='<option value="">Erreur chargement</option>';}
 }
 
 window.doAuth=async()=>{
@@ -802,7 +972,6 @@ window.doAuth=async()=>{
         await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'passenger',status:'approved',balance:0,createdAt:serverTimestamp()});
         await setDoc(doc(db,'wallets',walletId),{uid,role:'passenger'});
       }else if(S.authRole==='receiver'){
-        // Receveur choisit un DIRECTEUR
         const directeurUid=document.getElementById('authDirecteurSelect')?.value||'';
         const cni=document.getElementById('authCNI')?.value.trim()||'';
         const address=document.getElementById('authAddress')?.value.trim()||'';
@@ -811,21 +980,17 @@ window.doAuth=async()=>{
         const walletId='RV-'+uid.slice(0,6).toUpperCase();
         await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'receiver',status:'pending',directeurUid,cni,address,gie:'',vehicle:'',ligne:'',zone:'',today:0,count:0,balance:0,createdAt:serverTimestamp()});
         await setDoc(doc(db,'wallets',walletId),{uid,role:'receiver'});
-        // Notifier le DIRECTEUR
         await addDoc(collection(db,'notifications'),{toUid:directeurUid,type:'receiver_request',receiverUid:uid,receiverName:name,receiverEmail:email,phone,cni,address,read:false,ts:serverTimestamp()});
       }else if(S.authRole==='owner'){
         const company=document.getElementById('authOwnerCompany')?.value.trim()||'';
         if(!company){loader('',false);notify('⚠️','Champs','Entrez le nom du GIE.');return;}
         const walletId='OW-'+uid.slice(0,6).toUpperCase();
         await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'owner',status:'pending',company,balance:0,createdAt:serverTimestamp()});
-        // Notifier les DIRECTEURS approuvés
         const dirSnap=await getDocs(query(collection(db,'users'),where('role','==','directeur'),where('status','==','approved')));
         const notifPromises=dirSnap.docs.map(d=>addDoc(collection(db,'notifications'),{toUid:d.id,type:'owner_request',ownerUid:uid,ownerName:name,ownerEmail:email,company,phone,read:false,ts:serverTimestamp()}));
         await Promise.all(notifPromises);
-        // Aussi notif admin
         await addDoc(collection(db,'adminNotifications'),{type:'owner_request',ownerUid:uid,ownerName:name,ownerEmail:email,company,phone,read:false,ts:serverTimestamp()});
       }else if(S.authRole==='directeur'){
-        // Directeur: seulement nom + org (sans CNI ni quartier)
         const org=document.getElementById('authDirecteurOrg')?.value.trim()||'';
         if(!org){loader('',false);notify('⚠️','Champs','Nom de l\'organisation requis.');return;}
         const walletId='DR-'+uid.slice(0,6).toUpperCase();
@@ -851,6 +1016,9 @@ window.doLogout=async()=>{
   await signOut(auth);
   S={...S,role:null,uid:null,profile:null};
   activeTicketData=null;hideDescendBtn();
+  // Destroy charts
+  Object.values(dirCharts).forEach(c=>{if(c)c.destroy();});
+  dirCharts={revenue:null,bus:null,fin:null};
   show('screenSplash');
 };
 
@@ -912,15 +1080,14 @@ function loginUI(){
     renderMerchantQR('recvBusQRWrap',p,160);
     refreshRecvStats();loadTrajets();loadRecvTickets();
     attachPendingListener();attachNotifListener();
-    // Charger info directeur
     loadRecvDirecteurInfo();
     unsubRecvBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;const el=document.getElementById('recvBalance');if(el)el.textContent=(S.profile.balance).toLocaleString('fr-FR');}});
     show('screenReceiver');notify('✅','Connecté',p.name);
   }else if(S.role==='directeur'&&p.status==='approved'){
-    // ESPACE DIRECTEUR
     document.getElementById('dirGreet').textContent=p.name;
     document.getElementById('dirOrgName').textContent=p.org||'—';
     document.getElementById('dirWalletId').textContent=p.walletId||'—';
+    document.getElementById('dirLastUpdate').textContent=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
     show('screenDirecteur');
     loadDirDashboard();
     notify('✅','Bienvenue Directeur',p.name);
@@ -946,7 +1113,7 @@ async function loadRecvDirecteurInfo(){
 }
 
 // ═══════════════════════════════════════════════════════
-// DIRECTEUR — DASHBOARD
+// DIRECTEUR — TAB SWITCH
 // ═══════════════════════════════════════════════════════
 window.switchDirTab=(tab)=>{
   document.querySelectorAll('#screenDirecteur .tab-content').forEach(t=>t.classList.remove('active'));
@@ -955,119 +1122,439 @@ window.switchDirTab=(tab)=>{
   document.getElementById('dnav-'+tab)?.classList.add('active');
   if(tab==='owners')loadDirOwners();
   if(tab==='receivers')loadDirReceivers();
+  if(tab==='buses')loadDirBuses();
+  if(tab==='finances')loadDirFinances();
 };
 
-async function loadDirDashboard(){
-  loader('Chargement…');
-  try{
-    // Propriétaires en attente qui ont notifié ce directeur
-    const notifSnap=await getDocs(query(collection(db,'notifications'),where('toUid','==',S.uid),where('type','==','owner_request')));
-    const ownerReqs=notifSnap.docs.map(d=>({notifId:d.id,...d.data()}));
+window.setDirPeriod=(period,btn)=>{
+  S.dirPeriod=period;
+  document.querySelectorAll('.dir-period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadDirKPIs();
+};
 
-    // Receveurs qui ont demandé à ce directeur
+// ═══════════════════════════════════════════════════════
+// DIRECTEUR — DASHBOARD PRINCIPAL
+// ═══════════════════════════════════════════════════════
+async function loadDirDashboard(){
+  loader('Chargement tableau de bord…');
+  try{
+    await Promise.all([loadDirKPIs(),loadDirPendingRequests(),loadDirAlerts(),loadDirRevenueChart()]);
+    loader('',false);
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);console.error('loadDirDashboard:',e);}
+}
+
+async function loadDirKPIs(){
+  try{
+    // Receveurs de ce directeur
     const recvSnap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('directeurUid','==',S.uid)));
     const receivers=recvSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const activeRecv=receivers.filter(r=>r.status==='approved');
 
-    // Propriétaires approuvés par ce directeur
-    const ownersSnap=await getDocs(query(collection(db,'users'),where('role','==','owner'),where('approvedByDir','==',S.uid)));
-    const owners=ownersSnap.docs.map(d=>({id:d.id,...d.data()}));
+    // Tickets de tous les receveurs de ce directeur
+    let totalRecettes=0,totalTickets=0;
+    const now=new Date();
+    const todayStr=now.toLocaleDateString('fr-FR');
+    const weekAgo=new Date(now-7*24*3600*1000);
+    const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
 
-    const pending=receivers.filter(r=>r.status==='pending').length + ownerReqs.filter(n=>!n.processed).length;
-    const approved=receivers.filter(r=>r.status==='approved').length;
+    for(const r of activeRecv){
+      const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','==',r.id)));
+      tkSnap.docs.forEach(d=>{
+        const t=d.data();
+        const ts=t.ts?.toDate?.();
+        let include=false;
+        if(S.dirPeriod==='day')include=t.date===todayStr;
+        else if(S.dirPeriod==='week')include=ts&&ts>=weekAgo;
+        else if(S.dirPeriod==='month')include=ts&&ts>=monthStart;
+        else include=true;
+        if(include){totalRecettes+=t.price||0;totalTickets++;}
+      });
+    }
 
-    document.getElementById('dirStatOwners').textContent=owners.length;
-    document.getElementById('dirStatReceivers').textContent=receivers.length;
-    document.getElementById('dirStatPending').textContent=pending;
-    document.getElementById('dirStatApproved').textContent=approved;
+    // Bus actifs (receveurs approuvés avec gie rempli)
+    const busActifs=activeRecv.filter(r=>r.gie&&r.vehicle).length;
+    const busTot=receivers.length;
 
-    // Render pending list
+    // Demandes en attente
+    const pendingRecv=receivers.filter(r=>r.status==='pending').length;
+    const notifSnap=await getDocs(query(collection(db,'notifications'),where('toUid','==',S.uid),where('type','==','owner_request')));
+    const pendingOwners=notifSnap.docs.filter(d=>!d.data().processed).length;
+    const totalPending=pendingRecv+pendingOwners;
+
+    const periodLabels={day:'Aujourd\'hui',week:'Cette semaine',month:'Ce mois',total:'Total'};
+
+    document.getElementById('dirKpiRecettes').textContent=totalRecettes>=1000?`${Math.round(totalRecettes/1000)}k`:totalRecettes;
+    document.getElementById('dirKpiRecettesSub').textContent=periodLabels[S.dirPeriod]+' · FCFA';
+    document.getElementById('dirKpiTickets').textContent=totalTickets;
+    document.getElementById('dirKpiBusActifs').textContent=busActifs;
+    document.getElementById('dirKpiBusSub').textContent=`/ ${busTot} total`;
+    document.getElementById('dirKpiPending').textContent=totalPending;
+
+    // Badge alertes
+    const alertBadge=document.getElementById('dirAlertBadge');
+    if(totalPending>0){alertBadge.textContent=`⚠️ ${totalPending}`;alertBadge.style.display='block';}
+    else alertBadge.style.display='none';
+
+  }catch(e){console.error('loadDirKPIs:',e);}
+}
+
+async function loadDirPendingRequests(){
+  try{
+    const recvSnap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('directeurUid','==',S.uid),where('status','==','pending')));
+    const receivers=recvSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const notifSnap=await getDocs(query(collection(db,'notifications'),where('toUid','==',S.uid),where('type','==','owner_request')));
+    const ownerReqs=notifSnap.docs.map(d=>({notifId:d.id,...d.data()})).filter(n=>!n.processed);
+
     const cont=document.getElementById('dirPendingList');
     let html='';
 
-    // Demandes de receveurs
-    receivers.filter(r=>r.status==='pending').forEach(r=>{
-      html+=`<div class="dir-card" style="margin-bottom:10px;">
+    receivers.forEach(r=>{
+      html+=`<div class="dir-card" style="border-color:#FDEF4244;margin-bottom:10px;">
         <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
           <div style="font-size:28px;">🎫</div>
           <div style="flex:1;">
-            <div style="font-weight:900;font-size:14px;">${r.name||'—'}</div>
+            <div style="font-weight:900;font-size:14px;color:#fff;">${r.name||'—'}</div>
             <div style="font-size:11px;color:#888;">${r.email||'—'}</div>
             <div style="font-size:11px;color:#888;">CNI: ${r.cni||'—'} · ${r.address||'—'}</div>
             <div style="margin-top:4px;">${statusBadge('pending')} ${roleBadge('receiver')}</div>
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="admin-action-btn btn-approve" onclick="dirApproveReceiver('${r.id}','${r.name||''}')">✅ Approuver + Assigner Bus</button>
-          <button class="admin-action-btn btn-reject" onclick="dirRejectUser('${r.id}','receiver')">❌ Refuser</button>
+          <button class="admin-action-btn btn-approve" onclick="dirApproveReceiver('${r.id}','${(r.name||'').replace(/'/g,'')}')">✅ Approuver + Assigner Bus</button>
+          <button class="admin-action-btn btn-reject" onclick="dirRejectUser('${r.id}')">❌ Refuser</button>
         </div>
       </div>`;
     });
 
-    // Demandes de propriétaires (notifications)
     for(const n of ownerReqs){
-      if(n.processed)continue;
-      html+=`<div class="dir-card" style="margin-bottom:10px;">
+      html+=`<div class="dir-card" style="border-color:#7c3aed44;margin-bottom:10px;">
         <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
           <div style="font-size:28px;">🚌</div>
           <div style="flex:1;">
-            <div style="font-weight:900;font-size:14px;">${n.ownerName||'—'}</div>
+            <div style="font-weight:900;font-size:14px;color:#fff;">${n.ownerName||'—'}</div>
             <div style="font-size:11px;color:#888;">${n.ownerEmail||'—'}</div>
             <div style="font-size:11px;color:#888;">GIE: ${n.company||'—'}</div>
             <div style="margin-top:4px;">${statusBadge('pending')} ${roleBadge('owner')}</div>
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="admin-action-btn btn-approve" onclick="dirApproveOwner('${n.ownerUid}','${n.notifId}','${n.ownerName||''}')">✅ Approuver</button>
+          <button class="admin-action-btn btn-approve" onclick="dirApproveOwner('${n.ownerUid}','${n.notifId}','${(n.ownerName||'').replace(/'/g,'')}')">✅ Approuver</button>
           <button class="admin-action-btn btn-reject" onclick="dirRejectOwner('${n.ownerUid}','${n.notifId}')">❌ Refuser</button>
         </div>
       </div>`;
     }
-
-    if(!html)html='<div style="text-align:center;color:#555;padding:24px;font-size:13px;">✅ Aucune demande en attente.</div>';
+    if(!html)html='<div style="text-align:center;color:#555;padding:24px;font-size:13px;border:1px solid #0ea5e922;border-radius:14px;">✅ Aucune demande en attente</div>';
     cont.innerHTML=html;
-    loader('',false);
-  }catch(e){loader('',false);notify('❌','Erreur',e.message);console.error('loadDirDashboard:',e);}
+  }catch(e){console.error('loadDirPendingRequests:',e);}
 }
 
+async function loadDirAlerts(){
+  try{
+    const cont=document.getElementById('dirAlertsList');
+    const alerts=[];
+    const recvSnap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('directeurUid','==',S.uid)));
+    const receivers=recvSnap.docs.map(d=>({id:d.id,...d.data()}));
+
+    // Bus sans assignation
+    const sansbus=receivers.filter(r=>r.status==='approved'&&(!r.gie||!r.vehicle));
+    if(sansbus.length>0)alerts.push({type:'error',icon:'🚌',msg:`${sansbus.length} receveur(s) approuvé(s) sans bus assigné`});
+
+    // Receveurs suspendus
+    const susp=receivers.filter(r=>r.status==='suspended');
+    if(susp.length>0)alerts.push({type:'warn',icon:'⚠️',msg:`${susp.length} compte(s) suspendu(s)`});
+
+    // Retraits en attente
+    const wdSnap=await getDocs(query(collection(db,'withdrawal_requests'),where('status','==','pending')));
+    const myWdPending=wdSnap.docs.filter(d=>{
+      const uid=d.data().uid;
+      return receivers.some(r=>r.id===uid);
+    });
+    if(myWdPending.length>0)alerts.push({type:'info',icon:'💸',msg:`${myWdPending.length} demande(s) de retrait en attente`});
+
+    // Receveurs inactifs aujourd'hui
+    const todayStr=new Date().toLocaleDateString('fr-FR');
+    let inactifCount=0;
+    for(const r of receivers.filter(rv=>rv.status==='approved'&&rv.gie)){
+      const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','==',r.id)));
+      const todayTickets=tkSnap.docs.filter(d=>d.data().date===todayStr);
+      if(todayTickets.length===0)inactifCount++;
+    }
+    if(inactifCount>0)alerts.push({type:'warn',icon:'😴',msg:`${inactifCount} bus sans ticket aujourd'hui`});
+
+    if(!alerts.length){cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">✅ Aucune alerte</div>';return;}
+    cont.innerHTML=alerts.map(a=>`<div class="dir-alert ${a.type}"><div style="font-size:20px;flex-shrink:0;">${a.icon}</div><div style="font-size:13px;font-weight:700;">${a.msg}</div></div>`).join('');
+  }catch(e){console.error('loadDirAlerts:',e);}
+}
+
+async function loadDirRevenueChart(){
+  try{
+    const recvSnap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('directeurUid','==',S.uid),where('status','==','approved')));
+    const receivers=recvSnap.docs.map(d=>({id:d.id,...d.data()}));
+
+    // Construire les 7 derniers jours
+    const days=[];const labels=[];
+    for(let i=6;i>=0;i--){
+      const d=new Date();d.setDate(d.getDate()-i);
+      days.push(d.toLocaleDateString('fr-FR'));
+      labels.push(d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'}));
+    }
+    const data=new Array(7).fill(0);
+
+    for(const r of receivers){
+      const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','==',r.id)));
+      tkSnap.docs.forEach(d=>{
+        const t=d.data();
+        const idx=days.indexOf(t.date);
+        if(idx!==-1)data[idx]+=t.price||0;
+      });
+    }
+
+    const canvas=document.getElementById('dirRevenueChart');
+    if(!canvas)return;
+    if(dirCharts.revenue){dirCharts.revenue.destroy();}
+    dirCharts.revenue=new Chart(canvas,{
+      type:'bar',
+      data:{
+        labels,
+        datasets:[{label:'Recettes (FCFA)',data,backgroundColor:'rgba(0,154,68,0.6)',borderColor:'#009A44',borderWidth:2,borderRadius:6}]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{ticks:{color:'#666',font:{size:9}},grid:{display:false}},
+          y:{ticks:{color:'#666',font:{size:9},callback:v=>v>=1000?Math.round(v/1000)+'k':v},grid:{color:'#ffffff08'}}
+        }
+      }
+    });
+  }catch(e){console.error('loadDirRevenueChart:',e);}
+}
+
+// ═══════════════════════════════════════════════════════
+// DIRECTEUR — ONGLET BUS
+// ═══════════════════════════════════════════════════════
+async function loadDirBuses(){
+  loader('Chargement bus…');
+  try{
+    const recvSnap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('directeurUid','==',S.uid)));
+    const receivers=recvSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const todayStr=new Date().toLocaleDateString('fr-FR');
+
+    const busData=[];
+    for(const r of receivers){
+      if(!r.status||r.status==='rejected')continue;
+      const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','==',r.id)));
+      const todayTickets=tkSnap.docs.filter(d=>d.data().date===todayStr);
+      const totalTickets=tkSnap.size;
+      const todayRecettes=todayTickets.reduce((s,d)=>s+(d.data().price||0),0);
+      const totalRecettes=tkSnap.docs.reduce((s,d)=>s+(d.data().price||0),0);
+      busData.push({...r,todayTickets:todayTickets.length,totalTickets,todayRecettes,totalRecettes});
+    }
+
+    const actifs=busData.filter(b=>b.status==='approved'&&b.gie).length;
+    const inactifs=busData.filter(b=>b.status!=='approved'||!b.gie).length;
+    document.getElementById('dirBusStat1').textContent=actifs;
+    document.getElementById('dirBusStat2').textContent=inactifs;
+    document.getElementById('dirBusStat3').textContent=busData.length;
+    document.getElementById('dirBusSubtitle').textContent=`GIE ${S.profile.org||'—'} · ${actifs} bus actifs`;
+
+    // Chart bus performance
+    const activeOnes=busData.filter(b=>b.gie&&b.vehicle);
+    const canvas=document.getElementById('dirBusChart');
+    if(canvas&&activeOnes.length){
+      if(dirCharts.bus)dirCharts.bus.destroy();
+      dirCharts.bus=new Chart(canvas,{
+        type:'horizontalBar'||'bar',
+        data:{
+          labels:activeOnes.map(b=>b.vehicle||b.name||'—'),
+          datasets:[{label:"Tickets aujourd'hui",data:activeOnes.map(b=>b.todayTickets),backgroundColor:'rgba(254,223,66,0.7)',borderColor:'#FDEF42',borderWidth:1,borderRadius:4}]
+        },
+        options:{
+          indexAxis:'y',responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:false}},
+          scales:{
+            x:{ticks:{color:'#666',font:{size:9}},grid:{color:'#ffffff08'}},
+            y:{ticks:{color:'#aaa',font:{size:10}},grid:{display:false}}
+          }
+        }
+      });
+    }
+
+    // Bus list
+    const cont=document.getElementById('dirBusList');
+    if(!busData.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;">Aucun receveur.</div>';loader('',false);return;}
+
+    const maxRecettes=Math.max(...busData.map(b=>b.todayRecettes),1);
+    cont.innerHTML=busData.map(b=>{
+      const isActive=b.status==='approved'&&b.gie&&b.vehicle;
+      const pct=Math.round((b.todayRecettes/maxRecettes)*100);
+      return`<div class="dir-bus-card">
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
+          <div class="status-dot ${isActive?'active':'inactive'}"></div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <div>
+                <div style="font-weight:900;font-size:14px;">${b.name||'—'}</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7dd3fc;margin-top:2px;">${b.vehicle||'—'} · ${b.gie||'Non assigné'} · Ligne ${b.ligne||'—'}</div>
+              </div>
+              <div>${statusBadge(b.status)}</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px;text-align:center;">
+              <div style="background:#009A4415;border-radius:8px;padding:6px 4px;"><div style="font-weight:900;font-size:14px;color:#009A44;">${b.todayTickets}</div><div style="font-size:9px;color:#555;">tickets/jour</div></div>
+              <div style="background:#FDEF4215;border-radius:8px;padding:6px 4px;"><div style="font-weight:900;font-size:14px;color:#FDEF42;">${b.todayRecettes>=1000?Math.round(b.todayRecettes/1000)+'k':b.todayRecettes}</div><div style="font-size:9px;color:#555;">FCFA/jour</div></div>
+              <div style="background:#0ea5e915;border-radius:8px;padding:6px 4px;"><div style="font-weight:900;font-size:14px;color:#0ea5e9;">${b.totalTickets}</div><div style="font-size:9px;color:#555;">total tickets</div></div>
+            </div>
+            <div style="margin-top:8px;">
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:#555;margin-bottom:3px;"><span>Performance jour</span><span>${pct}%</span></div>
+              <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct>60?'#009A44':pct>30?'#FDEF42':'#DF0024'};"></div></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="admin-action-btn btn-info" onclick="openAssignBusDir('${b.id}','${(b.name||'').replace(/'/g,'')}')">🔧 Modifier bus</button>
+          ${b.status==='approved'?`<button class="admin-action-btn btn-suspend" onclick="dirSuspendUser('${b.id}')">⚠️ Suspendre</button>`:''}
+          ${b.status==='suspended'?`<button class="admin-action-btn btn-approve" onclick="dirReactivateUser('${b.id}')">♻️ Réactiver</button>`:''}
+        </div>
+      </div>`;
+    }).join('');
+    loader('',false);
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);console.error('loadDirBuses:',e);}
+}
+
+// ═══════════════════════════════════════════════════════
+// DIRECTEUR — ONGLET FINANCES
+// ═══════════════════════════════════════════════════════
+async function loadDirFinances(){
+  loader('Chargement finances…');
+  try{
+    const recvSnap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('directeurUid','==',S.uid)));
+    const receivers=recvSnap.docs.map(d=>({id:d.id,...d.data()}));
+
+    let allTickets=[];
+    const perReceiver={};
+
+    for(const r of receivers){
+      const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','==',r.id),orderBy('ts','desc')));
+      const rTickets=tkSnap.docs.map(d=>({...d.data(),id:d.id,recvName:r.name,vehicle:r.vehicle}));
+      allTickets=[...allTickets,...rTickets];
+      perReceiver[r.id]={name:r.name,vehicle:r.vehicle||'—',total:rTickets.reduce((s,t)=>s+(t.price||0),0),count:rTickets.length};
+    }
+
+    const totalEncaisse=allTickets.reduce((s,t)=>s+(t.price||0),0);
+
+    // Retraits en attente de ce GIE
+    const wdSnap=await getDocs(query(collection(db,'withdrawal_requests'),where('status','==','pending')));
+    const myWd=wdSnap.docs.filter(d=>receivers.some(r=>r.id===d.data().uid));
+    const totalWdPending=myWd.reduce((s,d)=>s+(d.data().amount||0),0);
+
+    document.getElementById('dirFinTotal').textContent=totalEncaisse>=1000?Math.round(totalEncaisse/1000)+'k':totalEncaisse;
+    document.getElementById('dirFinPendingWd').textContent=totalWdPending>=1000?Math.round(totalWdPending/1000)+'k':totalWdPending;
+
+    // Pie chart per receiver
+    const canvas=document.getElementById('dirFinChart');
+    if(canvas&&Object.keys(perReceiver).length){
+      if(dirCharts.fin)dirCharts.fin.destroy();
+      const labels=Object.values(perReceiver).map(r=>`${r.vehicle} (${r.name.split(' ')[0]})`);
+      const dataVals=Object.values(perReceiver).map(r=>r.total);
+      const colors=['#009A44','#FDEF42','#0ea5e9','#FF6B00','#7c3aed','#DF0024','#34d399'];
+      dirCharts.fin=new Chart(canvas,{
+        type:'doughnut',
+        data:{labels,datasets:[{data:dataVals,backgroundColor:colors.slice(0,labels.length),borderWidth:2,borderColor:'#050d18'}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#888',font:{size:10},padding:8}}}}
+      });
+    }
+
+    // History
+    const cont=document.getElementById('dirFinHistory');
+    if(!allTickets.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;">Aucun ticket.</div>';loader('',false);return;}
+    allTickets.sort((a,b)=>(b.ts?.seconds||0)-(a.ts?.seconds||0));
+    cont.innerHTML=allTickets.slice(0,40).map(t=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #ffffff08;">
+      <div style="width:36px;height:36px;border-radius:10px;background:#009A4420;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🎫</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:13px;">${t.recvName||'—'} · ${t.vehicle||'—'}</div>
+        <div style="font-size:11px;color:#666;font-family:'JetBrains Mono',monospace;">${t.from||'—'}→${t.to||'—'} · ${t.date||'—'}</div>
+      </div>
+      <div style="font-weight:900;color:#FDEF42;font-size:14px;">+${fmtMoney(t.price)} F</div>
+    </div>`).join('');
+    loader('',false);
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);console.error('loadDirFinances:',e);}
+}
+
+// ═══════════════════════════════════════════════════════
+// DIRECTEUR — PROPRIÉTAIRES & RECEVEURS
+// ═══════════════════════════════════════════════════════
 async function loadDirOwners(){
   const cont=document.getElementById('dirOwnersList');
   try{
-    const snap=await getDocs(query(collection(db,'users'),where('role','==','owner'),where('approvedByDir','==',S.uid)));
-    if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun propriétaire approuvé.</div>';return;}
-    cont.innerHTML=snap.docs.map(d=>{const u={id:d.id,...d.data()};return`<div class="dir-card">
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-        <div><div style="font-weight:800;">${u.name||'—'}</div><div style="font-size:11px;color:#888;">GIE: ${u.company||'—'}</div><div style="font-size:11px;color:#888;">${u.email||'—'}</div></div>
+    // FIX: chercher par approvedByDir OU par notification
+    const notifSnap=await getDocs(query(collection(db,'notifications'),where('toUid','==',S.uid),where('type','==','owner_request')));
+    const ownerUids=notifSnap.docs.map(d=>d.data().ownerUid).filter(Boolean);
+
+    let owners=[];
+    // Récupérer par approvedByDir
+    const snap1=await getDocs(query(collection(db,'users'),where('role','==','owner'),where('approvedByDir','==',S.uid)));
+    owners=[...snap1.docs.map(d=>({id:d.id,...d.data()}))];
+
+    // Ajouter ceux par notification (qui ne sont pas encore dedans)
+    for(const uid of ownerUids){
+      if(!owners.some(o=>o.id===uid)){
+        try{const s=await getDoc(doc(db,'users',uid));if(s.exists())owners.push({id:uid,...s.data()});}catch(e){}
+      }
+    }
+
+    if(!owners.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;">Aucun propriétaire.</div>';return;}
+    cont.innerHTML=owners.map(u=>`<div class="dir-card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+        <div><div style="font-weight:800;font-size:14px;">${u.name||'—'}</div><div style="font-size:11px;color:#888;">GIE: ${u.company||'—'}</div><div style="font-size:11px;color:#888;">${u.email||'—'} · ${u.phone||'—'}</div><div style="font-size:11px;color:#555;margin-top:2px;">Solde: ${fmtMoney(u.balance)} FCFA</div></div>
         <div>${statusBadge(u.status)}</div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
         ${u.status==='approved'?`<button class="admin-action-btn btn-suspend" onclick="dirSuspendUser('${u.id}')">⚠️ Suspendre</button>`:''}
         ${u.status==='suspended'?`<button class="admin-action-btn btn-approve" onclick="dirReactivateUser('${u.id}')">♻️ Réactiver</button>`:''}
+        ${u.status==='pending'?`<button class="admin-action-btn btn-approve" onclick="dirApproveOwnerDirect('${u.id}','${(u.name||'').replace(/'/g,'')}')">✅ Approuver</button><button class="admin-action-btn btn-reject" onclick="dirRejectUser('${u.id}')">❌ Refuser</button>`:''}
       </div>
-    </div>`;}).join('');
-  }catch(e){cont.innerHTML='<div style="color:#DF0024;padding:16px;">Erreur chargement.</div>';}
+    </div>`).join('');
+  }catch(e){cont.innerHTML='<div style="color:#DF0024;padding:16px;">Erreur chargement.</div>';console.error('loadDirOwners:',e);}
 }
 
 async function loadDirReceivers(){
   const cont=document.getElementById('dirReceiversList');
   try{
     const snap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('directeurUid','==',S.uid)));
-    if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun receveur.</div>';return;}
-    cont.innerHTML=snap.docs.map(d=>{const u={id:d.id,...d.data()};return`<div class="dir-card">
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-        <div>
-          <div style="font-weight:800;">${u.name||'—'}</div>
+    if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;">Aucun receveur.</div>';return;}
+    const receivers=snap.docs.map(d=>({id:d.id,...d.data()}));
+    const todayStr=new Date().toLocaleDateString('fr-FR');
+
+    // Stats par receveur
+    const withStats=await Promise.all(receivers.map(async r=>{
+      const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','==',r.id)));
+      const today=tkSnap.docs.filter(d=>d.data().date===todayStr);
+      return{...r,todayCount:today.length,todayAmt:today.reduce((s,d)=>s+(d.data().price||0),0),totalCount:tkSnap.size};
+    }));
+
+    cont.innerHTML=withStats.map(u=>`<div class="dir-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div style="flex:1;">
+          <div style="font-weight:800;font-size:14px;">${u.name||'—'}</div>
           <div style="font-size:11px;color:#888;">${u.email||'—'}</div>
-          ${u.gie?`<div style="font-size:11px;color:#0ea5e9;margin-top:2px;">🚌 ${u.gie} · ${u.vehicle} · Ligne ${u.ligne}</div>`:''}
+          ${u.gie?`<div style="font-size:11px;color:#7dd3fc;margin-top:2px;">🚌 ${u.gie} · ${u.vehicle} · Ligne ${u.ligne} · Zone ${u.zone}</div>`:'<div style="font-size:11px;color:#FF6B00;margin-top:2px;">⚠️ Pas de bus assigné</div>'}
         </div>
-        <div>${statusBadge(u.status)}</div>
+        <div style="text-align:right;">${statusBadge(u.status)}</div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${u.status==='approved'?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;text-align:center;">
+        <div style="background:#009A4415;border-radius:8px;padding:6px;"><div style="font-weight:900;font-size:14px;color:#009A44;">${u.todayCount}</div><div style="font-size:9px;color:#555;">tickets</div></div>
+        <div style="background:#FDEF4215;border-radius:8px;padding:6px;"><div style="font-weight:900;font-size:13px;color:#FDEF42;">${u.todayAmt>=1000?Math.round(u.todayAmt/1000)+'k':u.todayAmt}F</div><div style="font-size:9px;color:#555;">recettes</div></div>
+        <div style="background:#0ea5e915;border-radius:8px;padding:6px;"><div style="font-weight:900;font-size:14px;color:#0ea5e9;">${u.totalCount}</div><div style="font-size:9px;color:#555;">total</div></div>
+      </div>`:''}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <button class="admin-action-btn btn-info" onclick="openAssignBusDir('${u.id}','${(u.name||'').replace(/'/g,'')}')">🚌 ${u.gie?'Modifier Bus':'Assigner Bus'}</button>
         ${u.status==='approved'?`<button class="admin-action-btn btn-suspend" onclick="dirSuspendUser('${u.id}')">⚠️ Suspendre</button>`:''}
         ${u.status==='suspended'?`<button class="admin-action-btn btn-approve" onclick="dirReactivateUser('${u.id}')">♻️ Réactiver</button>`:''}
+        ${u.status==='pending'?`<button class="admin-action-btn btn-approve" onclick="dirApproveReceiver('${u.id}','${(u.name||'').replace(/'/g,'')}')">✅ Approuver</button><button class="admin-action-btn btn-reject" onclick="dirRejectUser('${u.id}')">❌ Refuser</button>`:''}
       </div>
-    </div>`;}).join('');
-  }catch(e){cont.innerHTML='<div style="color:#DF0024;padding:16px;">Erreur chargement.</div>';}
+    </div>`).join('');
+  }catch(e){cont.innerHTML='<div style="color:#DF0024;padding:16px;">Erreur chargement.</div>';console.error('loadDirReceivers:',e);}
 }
 
 // Directeur approuve un receveur → ouvre modal assignation bus
@@ -1092,14 +1579,13 @@ window.doAssignBus=async()=>{
   const ligne=document.getElementById('assignLigne').value.trim();
   const zone=document.getElementById('assignZone').value.trim();
   if(!gie||!vehicle||!ligne||!zone){notify('⚠️','Champs','Tous les champs sont requis.');return;}
+  if(!uid){notify('⚠️','Erreur','Aucun receveur sélectionné.');return;}
   loader('Assignation…');
   try{
     await updateDoc(doc(db,'users',uid),{gie,vehicle,ligne,zone,status:'approved'});
     loader('',false);closeModal('modalAssignBus');
     notify('✅','Bus assigné','Receveur activé avec les infos de bus.');
-    // Refresh
-    if(S.role==='directeur'){loadDirDashboard();loadDirReceivers();}
-    else loadAdminDashboard();
+    loadDirDashboard();loadDirBuses();loadDirReceivers();
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
@@ -1108,9 +1594,17 @@ window.dirApproveOwner=async(ownerUid,notifId,ownerName)=>{
   try{
     await updateDoc(doc(db,'users',ownerUid),{status:'approved',approvedByDir:S.uid});
     await updateDoc(doc(db,'notifications',notifId),{processed:true,read:true});
-    loader('',false);
-    notify('✅','Propriétaire approuvé',ownerName);
+    loader('',false);notify('✅','Propriétaire approuvé',ownerName);
     loadDirDashboard();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
+
+window.dirApproveOwnerDirect=async(ownerUid,ownerName)=>{
+  loader('Approbation…');
+  try{
+    await updateDoc(doc(db,'users',ownerUid),{status:'approved',approvedByDir:S.uid});
+    loader('',false);notify('✅','Propriétaire approuvé',ownerName);
+    loadDirOwners();loadDirDashboard();
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
@@ -1119,28 +1613,27 @@ window.dirRejectOwner=async(ownerUid,notifId)=>{
   try{
     await updateDoc(doc(db,'users',ownerUid),{status:'rejected'});
     await updateDoc(doc(db,'notifications',notifId),{processed:true,read:true});
-    loader('',false);
-    notify('❌','Refusé','Propriétaire refusé.');
+    loader('',false);notify('❌','Refusé','Propriétaire refusé.');
     loadDirDashboard();
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-window.dirRejectUser=async(uid,role)=>{
+window.dirRejectUser=async(uid)=>{
   loader('Refus…');
   try{
     await updateDoc(doc(db,'users',uid),{status:'rejected'});
     loader('',false);notify('❌','Refusé','Compte refusé.');
-    loadDirDashboard();
+    loadDirDashboard();loadDirReceivers();loadDirOwners();
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
 window.dirSuspendUser=async(uid)=>{
-  try{await updateDoc(doc(db,'users',uid),{status:'suspended'});notify('⚠️','Suspendu','Compte suspendu.');loadDirDashboard();loadDirOwners();loadDirReceivers();}
+  try{await updateDoc(doc(db,'users',uid),{status:'suspended'});notify('⚠️','Suspendu','Compte suspendu.');loadDirDashboard();loadDirBuses();loadDirOwners();loadDirReceivers();}
   catch(e){notify('❌','Erreur',e.message);}
 };
 
 window.dirReactivateUser=async(uid)=>{
-  try{await updateDoc(doc(db,'users',uid),{status:'approved'});notify('♻️','Réactivé','Compte réactivé.');loadDirDashboard();loadDirOwners();loadDirReceivers();}
+  try{await updateDoc(doc(db,'users',uid),{status:'approved'});notify('♻️','Réactivé','Compte réactivé.');loadDirDashboard();loadDirBuses();loadDirOwners();loadDirReceivers();}
   catch(e){notify('❌','Erreur',e.message);}
 };
 
@@ -1177,16 +1670,11 @@ async function loadAdminDashboard(){
     const wdSnap=await getDocs(collection(db,'withdrawal_requests'));
     adminAllWithdrawals=wdSnap.docs.map(d=>({id:d.id,...d.data()}));
     document.getElementById('aStat-withdraws').textContent=adminAllWithdrawals.filter(w=>w.status==='pending').length;
-    renderDashPending();
-    renderOwnersList();
-    renderDirecteursList();
-    renderUsersList();
-    renderWithdrawalsList();
+    renderDashPending();renderOwnersList();renderDirecteursList();renderUsersList();renderWithdrawalsList();
   }catch(e){console.error('Admin dashboard error:',e);}
 }
 
 function renderDashPending(){
-  // Seuls les DIRECTEURS en attente passent par admin
   const pendingDirs=adminAllUsers.filter(u=>u.status==='pending'&&u.role==='directeur');
   const cont=document.getElementById('adminDashPending');
   if(!pendingDirs.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:16px;font-size:13px;">Aucun directeur en attente ✅</div>';return;}
@@ -1206,7 +1694,7 @@ function renderAdminUserCard(u,compact=false){
         <div style="font-weight:800;font-size:14px;">${u.name||'—'}</div>
         <div style="font-size:11px;color:#888;">${u.email||'—'}</div>
         ${extraInfo}${busInfo}
-        <div style="font-size:11px;color:#666;margin-top:2px;">📅 ${date} · Solde: ${(u.balance||0).toLocaleString('fr-FR')} FCFA</div>
+        <div style="font-size:11px;color:#666;margin-top:2px;">📅 ${date} · Solde: ${fmtMoney(u.balance)} FCFA</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
         ${statusBadge(u.status)}
@@ -1223,23 +1711,21 @@ function buildAdminActions(u){
   if(u.status==='pending'){
     btns+=`<button class="admin-action-btn btn-approve" onclick="adminAction('approve','${u.id}','${u.role}')">✅ Approuver</button>`;
     btns+=`<button class="admin-action-btn btn-reject" onclick="adminAction('reject','${u.id}','${u.role}')">❌ Refuser</button>`;
-    if(u.role==='receiver'){btns+=`<button class="admin-action-btn btn-info" onclick="openAssignBusAdmin('${u.id}','${u.name||''}')">🚌 Assigner Bus</button>`;}
+    if(u.role==='receiver'){btns+=`<button class="admin-action-btn btn-info" onclick="openAssignBusAdmin('${u.id}','${(u.name||'').replace(/'/g,'')}')">🚌 Assigner Bus</button>`;}
   }
   if(u.status==='approved'||u.status==='active'){
     btns+=`<button class="admin-action-btn btn-suspend" onclick="adminAction('suspend','${u.id}','${u.role}')">⚠️ Suspendre</button>`;
-    if(u.role==='receiver'){btns+=`<button class="admin-action-btn btn-info" onclick="openAssignBusAdmin('${u.id}','${u.name||''}')">🚌 Modifier Bus</button>`;}
+    if(u.role==='receiver'){btns+=`<button class="admin-action-btn btn-info" onclick="openAssignBusAdmin('${u.id}','${(u.name||'').replace(/'/g,'')}')">🚌 Modifier Bus</button>`;}
   }
-  if(u.status==='suspended'){
-    btns+=`<button class="admin-action-btn btn-approve" onclick="adminAction('reactivate','${u.id}','${u.role}')">♻️ Réactiver</button>`;
-  }
+  if(u.status==='suspended'){btns+=`<button class="admin-action-btn btn-approve" onclick="adminAction('reactivate','${u.id}','${u.role}')">♻️ Réactiver</button>`;}
   btns+=`<button class="admin-action-btn btn-info" onclick="showAdminUserDetail('${u.id}')">👁️ Détail</button>`;
-  btns+=`<button class="admin-action-btn btn-delete" onclick="adminAction('delete','${u.id}','${u.role}','${u.name||''}')">🗑️ Supprimer</button>`;
+  btns+=`<button class="admin-action-btn btn-delete" onclick="adminAction('delete','${u.id}','${u.role}','${(u.name||'').replace(/'/g,'')}')">🗑️ Supprimer</button>`;
   return btns;
 }
 
 window.adminAction=async(action,uid,role,name='')=>{
   const labels={approve:'Approuver',reject:'Refuser',suspend:'Suspendre',reactivate:'Réactiver',delete:'Supprimer'};
-  if(action==='delete'){if(!confirm(`Supprimer définitivement ${name} ? Cette action est irréversible.`))return;}
+  if(action==='delete'){if(!confirm(`Supprimer définitivement ${name} ?`))return;}
   loader(labels[action]+'…');
   try{
     if(action==='approve')await updateDoc(doc(db,'users',uid),{status:'approved'});
@@ -1277,7 +1763,7 @@ window.showAdminUserDetail=async(uid)=>{
     <div style="background:#0f2016;border-radius:14px;padding:14px;margin-bottom:14px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <div><div style="font-size:10px;color:#666;text-transform:uppercase;">Wallet</div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;">${u.walletId||'—'}</div></div>
-        <div><div style="font-size:10px;color:#666;text-transform:uppercase;">Solde</div><div style="font-weight:900;font-size:16px;color:#FDEF42;">${(u.balance||0).toLocaleString('fr-FR')} F</div></div>
+        <div><div style="font-size:10px;color:#666;text-transform:uppercase;">Solde</div><div style="font-weight:900;font-size:16px;color:#FDEF42;">${fmtMoney(u.balance)} F</div></div>
         <div><div style="font-size:10px;color:#666;text-transform:uppercase;">Tél.</div><div style="font-size:12px;">${u.phone||'—'}</div></div>
         <div><div style="font-size:10px;color:#666;text-transform:uppercase;">Inscrit</div><div style="font-size:12px;">${date}</div></div>
         ${u.role==='owner'?`<div><div style="font-size:10px;color:#666;text-transform:uppercase;">GIE</div><div style="font-size:12px;">${u.company||'—'}</div></div>`:''}
@@ -1285,7 +1771,7 @@ window.showAdminUserDetail=async(uid)=>{
         ${u.role==='receiver'?`<div><div style="font-size:10px;color:#666;text-transform:uppercase;">Bus</div><div style="font-size:12px;">${u.vehicle||'—'} · ${u.gie||'—'}</div></div><div><div style="font-size:10px;color:#666;text-transform:uppercase;">Ligne/Zone</div><div style="font-size:12px;">${u.ligne||'—'} · ${u.zone||'—'}</div></div>`:''}
       </div>
     </div>`;
-    if(hist.length){html+=`<div style="font-weight:800;font-size:13px;margin-bottom:8px;color:#aaa;">Dernières transactions</div>`;hist.forEach(h=>{const pos=h.amount>0;html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #ffffff08;"><div style="font-size:12px;color:#aaa;">${h.label||'—'}</div><div style="font-weight:800;font-size:13px;color:${pos?'#009A44':'#DF0024'};">${pos?'+':''}${(h.amount||0).toLocaleString('fr-FR')} F</div></div>`;});}
+    if(hist.length){html+=`<div style="font-weight:800;font-size:13px;margin-bottom:8px;color:#aaa;">Dernières transactions</div>`;hist.forEach(h=>{const pos=h.amount>0;html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #ffffff08;"><div style="font-size:12px;color:#aaa;">${h.label||'—'}</div><div style="font-weight:800;font-size:13px;color:${pos?'#009A44':'#DF0024'};">${pos?'+':''}${fmtMoney(h.amount)} F</div></div>`;});}
     html+=`<div class="admin-action-row" style="margin-top:16px;">${buildAdminActions(u)}</div>`;
     document.getElementById('adminDetailContent').innerHTML=html;
     document.getElementById('adminDetailOverlay').style.display='flex';
@@ -1319,7 +1805,7 @@ function renderUsersList(){
   if(q)users=users.filter(u=>(u.name+u.email+(u.walletId||'')).toLowerCase().includes(q));
   const cont=document.getElementById('adminUsersList');
   cont.innerHTML=`<div style="color:#888;font-size:12px;margin-bottom:12px;">${users.length} utilisateur(s)</div>`;
-  if(!users.length){cont.innerHTML+='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun utilisateur</div>';return;}
+  if(!users.length){cont.innerHTML+='<div style="text-align:center;color:#555;padding:30px;">Aucun utilisateur</div>';return;}
   cont.innerHTML+=users.map(u=>renderAdminUserCard(u)).join('');
 }
 
@@ -1329,24 +1815,20 @@ function renderWithdrawalsList(){
   wds.sort((a,b)=>(b.requestedAt?.seconds||0)-(a.requestedAt?.seconds||0));
   const cont=document.getElementById('adminWithdrawList');
   cont.innerHTML=`<div style="color:#888;font-size:12px;margin-bottom:12px;">${wds.length} demande(s)</div>`;
-  if(!wds.length){cont.innerHTML+='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucune demande</div>';return;}
+  if(!wds.length){cont.innerHTML+='<div style="text-align:center;color:#555;padding:30px;">Aucune demande</div>';return;}
   cont.innerHTML+=wds.map(w=>{
     const date=w.requestedAt?.toDate?.()?.toLocaleDateString('fr-FR')||'—';
     return`<div class="admin-user-card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
         <div><div style="font-weight:800;">${w.name||'—'}</div><div style="font-size:11px;color:#888;">${w.walletId||'—'}</div><div style="font-size:11px;color:#888;">Ref: ${w.ref||'—'} · ${date}</div></div>
-        <div style="text-align:right;"><div style="font-weight:900;font-size:18px;color:#FDEF42;">${(w.amount||0).toLocaleString('fr-FR')} F</div>${statusBadge(w.status)}</div>
+        <div style="text-align:right;"><div style="font-weight:900;font-size:18px;color:#FDEF42;">${fmtMoney(w.amount)} F</div>${statusBadge(w.status)}</div>
       </div>
       ${w.status==='pending'?`<div class="admin-action-row"><button class="admin-action-btn btn-approve" onclick="markWithdrawDone('${w.id}')">✅ Marquer traité</button><button class="admin-action-btn btn-reject" onclick="rejectWithdraw('${w.id}')">❌ Refuser</button></div>`:''}
     </div>`;
   }).join('');
 }
 
-window.filterAdminList=(type)=>{
-  if(type==='owners')renderOwnersList();
-  else if(type==='directeurs')renderDirecteursList();
-  else if(type==='users')renderUsersList();
-};
+window.filterAdminList=(type)=>{if(type==='owners')renderOwnersList();else if(type==='directeurs')renderDirecteursList();else if(type==='users')renderUsersList();};
 window.filterByRole=(role)=>{adminCurrentRoleFilter=role;renderUsersList();};
 window.filterWithdrawals=(f)=>{adminCurrentWdFilter=f;renderWithdrawalsList();};
 
@@ -1391,16 +1873,16 @@ window.switchRecvTab=(tab)=>{
 window.openModal=(id)=>document.getElementById(id).style.display='flex';
 window.closeModal=(id)=>{document.getElementById(id).style.display='none';if(id==='modalTicketFlow')resetFlow();if(id==='modalWithdraw')resetWithdraw();if(id==='modalRecharge')resetRecharge();};
 
-function updateBalanceUI(){document.getElementById('passBalance').textContent=(S.profile?.balance||0).toLocaleString('fr-FR');}
+function updateBalanceUI(){document.getElementById('passBalance').textContent=fmtMoney(S.profile?.balance||0);}
 
 function showDescendBtn(t){activeTicketData=t;document.getElementById('descendInfo').textContent=`${t.from}→${t.to} · ${t.price} FCFA`;document.getElementById('descendBtn').style.display='block';document.getElementById('activeTicketBanner').style.display='block';document.getElementById('activeTicketLabel').textContent=`🚌 ${t.gie}/${t.vehicle} — ${t.from}→${t.to}`;}
 function hideDescendBtn(){document.getElementById('descendBtn').style.display='none';document.getElementById('activeTicketBanner').style.display='none';activeTicketData=null;}
 window.demandDescendre=async()=>{if(!activeTicketData)return;await addDoc(collection(db,'notifications'),{toUid:activeTicketData.busUid,type:'descendre',passenger:S.profile.name,from:activeTicketData.from,to:activeTicketData.to,read:false,ts:serverTimestamp()});notify('🛑','Signal envoyé !','Le receveur a été prévenu.');};
 window.showActiveTicket=()=>{if(activeTicketData)showTicketData(activeTicketData);};
 
-window.openWithdraw=()=>{resetWithdraw();document.getElementById('withdrawAvailable').textContent=(S.profile?.balance||0).toLocaleString('fr-FR')+' FCFA';openModal('modalWithdraw');};
+window.openWithdraw=()=>{resetWithdraw();document.getElementById('withdrawAvailable').textContent=fmtMoney(S.profile?.balance||0)+' FCFA';openModal('modalWithdraw');};
 function resetWithdraw(){['wdStep1','wdStep2','wdStep3','wdStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const w=document.getElementById('wdAmt');if(w)w.value='';}
-window.wdGoStep2=()=>{const amt=parseInt(document.getElementById('wdAmt').value||0);const bal=S.profile?.balance||0;if(!amt||amt<500){notify('⚠️','Montant','Minimum 500 FCFA.');return;}if(amt>bal){notify('❌','Solde','Solde insuffisant ('+bal.toLocaleString('fr-FR')+' FCFA).');return;}S.wdAmt=amt;document.getElementById('wdAmtBig').textContent=amt.toLocaleString('fr-FR')+' FCFA';document.getElementById('wdStep1').style.display='none';document.getElementById('wdStep2').style.display='block';};
+window.wdGoStep2=()=>{const amt=parseInt(document.getElementById('wdAmt').value||0);const bal=S.profile?.balance||0;if(!amt||amt<500){notify('⚠️','Montant','Minimum 500 FCFA.');return;}if(amt>bal){notify('❌','Solde','Solde insuffisant ('+fmtMoney(bal)+' FCFA).');return;}S.wdAmt=amt;document.getElementById('wdAmtBig').textContent=fmtMoney(amt)+' FCFA';document.getElementById('wdStep1').style.display='none';document.getElementById('wdStep2').style.display='block';};
 window.doWithdraw=async()=>{
   const amt=S.wdAmt;if(!amt)return;
   document.getElementById('wdStep2').style.display='none';document.getElementById('wdStep3').style.display='block';
@@ -1410,7 +1892,7 @@ window.doWithdraw=async()=>{
     await setDoc(doc(collection(db,'withdrawal_requests')),{uid:S.uid,name:S.profile.name,walletId:S.profile.walletId,amount:amt,status:'pending',ref,requestedAt:serverTimestamp()});
     await addDoc(collection(db,'users',S.uid,'history'),{type:'withdraw_request',label:'Demande de retrait — '+ref,amount:-amt,ref,ts:serverTimestamp()});
     document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep4').style.display='block';
-    document.getElementById('wdSuccessDesc').textContent=amt.toLocaleString('fr-FR')+' FCFA demandés';
+    document.getElementById('wdSuccessDesc').textContent=fmtMoney(amt)+' FCFA demandés';
     document.getElementById('wdSuccessRef').textContent='Ref: '+ref;
   }catch(e){notify('❌','Erreur',e.message);document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep2').style.display='block';}
 };
@@ -1418,7 +1900,7 @@ window.doWithdraw=async()=>{
 window.openRecharge=()=>{resetRecharge();openModal('modalRecharge');};
 function resetRecharge(){['rgStep1','rgStep2','rgStep3','rgStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const amt=document.getElementById('rechargeAmt');if(amt)amt.value='';document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));}
 window.selQuickAmt=(v,btn)=>{document.getElementById('rechargeAmt').value=v;document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');};
-window.rgGoStep2=()=>{const v=parseInt(document.getElementById('rechargeAmt').value);if(!v||v<100){notify('⚠️','Montant','Min 100 FCFA.');return;}S.rgAmt=v;document.getElementById('rgAmtBig').textContent=v.toLocaleString('fr-FR')+' FCFA';document.getElementById('rgStep1').style.display='none';document.getElementById('rgStep2').style.display='block';};
+window.rgGoStep2=()=>{const v=parseInt(document.getElementById('rechargeAmt').value);if(!v||v<100){notify('⚠️','Montant','Min 100 FCFA.');return;}S.rgAmt=v;document.getElementById('rgAmtBig').textContent=fmtMoney(v)+' FCFA';document.getElementById('rgStep1').style.display='none';document.getElementById('rgStep2').style.display='block';};
 window.rgPayWithPaytech=async()=>{
   const amt=S.rgAmt;if(!amt)return;
   document.getElementById('rgStep2').style.display='none';document.getElementById('rgStep3').style.display='block';
@@ -1428,9 +1910,9 @@ window.rgPayWithPaytech=async()=>{
     await updateDoc(doc(db,'users',S.uid),{balance:increment(amt)});
     await addDoc(collection(db,'users',S.uid,'history'),{type:'recharge',label:'Recharge simulée — '+ref,amount:amt,ref,ts:serverTimestamp()});
     document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep4').style.display='block';
-    document.getElementById('rgSuccessDesc').textContent='+'+amt.toLocaleString('fr-FR')+' FCFA ajoutés';
+    document.getElementById('rgSuccessDesc').textContent='+'+fmtMoney(amt)+' FCFA ajoutés';
     closeModal('modalRecharge');
-    notify('✅','Recharge réussie','+'+amt.toLocaleString('fr-FR')+' FCFA');
+    notify('✅','Recharge réussie','+'+fmtMoney(amt)+' FCFA');
   }catch(e){notify('❌','Erreur',e.message);document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';}
 };
 
@@ -1455,11 +1937,11 @@ window.doSend=async()=>{
     await addDoc(collection(db,'users',S.uid,'history'),{type:'transfer_out',label:'Transfert → '+dest.name,amount:-amt,ts:serverTimestamp()});
     await addDoc(collection(db,'users',destUid,'history'),{type:'transfer_in',label:'Reçu de '+S.profile.name,amount:amt,ts:serverTimestamp()});
     loader('',false);closeModal('modalSend');clearFriend();
-    notify('✅','Envoyé',amt.toLocaleString('fr-FR')+' FCFA → '+dest.name);
+    notify('✅','Envoyé',fmtMoney(amt)+' FCFA → '+dest.name);
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-window.openRecvCharge=()=>{document.getElementById('rcWalletId').value='';document.getElementById('rcAmt').value='';document.getElementById('rcPassengerPreview').style.display='none';document.getElementById('rcRecvBalance').textContent=(S.profile?.balance||0).toLocaleString('fr-FR')+' FCFA';openModal('modalRecvCharge');};
+window.openRecvCharge=()=>{document.getElementById('rcWalletId').value='';document.getElementById('rcAmt').value='';document.getElementById('rcPassengerPreview').style.display='none';document.getElementById('rcRecvBalance').textContent=fmtMoney(S.profile?.balance||0)+' FCFA';openModal('modalRecvCharge');};
 window.rcClearPreview=()=>document.getElementById('rcPassengerPreview').style.display='none';
 window.doRecvCharge=async()=>{
   const walletId=document.getElementById('rcWalletId').value.trim().toUpperCase();
@@ -1480,7 +1962,7 @@ window.doRecvCharge=async()=>{
     await addDoc(collection(db,'users',S.uid,'history'),{type:'recharge_given',label:'Recharge → '+pax.name,amount:-amt,ts:serverTimestamp()});
     await addDoc(collection(db,'users',paxUid,'history'),{type:'recharge',label:'Recharge par '+S.profile.name,amount:amt,ts:serverTimestamp()});
     loader('',false);closeModal('modalRecvCharge');
-    notify('✅','Recharge effectuée',pax.name+' +'+amt.toLocaleString('fr-FR')+' FCFA');
+    notify('✅','Recharge effectuée',pax.name+' +'+fmtMoney(amt)+' FCFA');
     refreshRecvStats();
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
@@ -1522,7 +2004,7 @@ async function loadBusInFlow(walletId){
     const destSnap=await getDocs(collection(db,'users',recvUid,'destinations'));
     const destList=document.getElementById('destList');destList.innerHTML='';
     if(destSnap.empty){destList.innerHTML='<div style="background:#FFD10015;border:1px solid #FFD10044;border-radius:12px;padding:12px;color:#888;font-size:13px;text-align:center;">Aucune section définie par ce receveur.</div>';}
-    else{destSnap.docs.forEach(d=>{const t=d.data();const chip=document.createElement('div');chip.style.cssText='background:#ffffff0d;border:1.5px solid #2a3a2a;border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .2s;';chip.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.from}-->${t.to}</div><div style="color:#888;font-size:11px;">Section ${t.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${t.price} F</div></div>`;chip.onclick=()=>{S.ticketSection={...t,docId:d.id};destList.querySelectorAll('div').forEach(c=>{c.style.background='#ffffff0d';c.style.borderColor='#2a3a2a';});chip.style.background='#00A65033';chip.style.borderColor='var(--g)';document.getElementById('ticketPriceDisplay').textContent=t.price.toLocaleString('fr-FR')+' FCFA';document.getElementById('btnPayTicket').disabled=false;};destList.appendChild(chip);});}
+    else{destSnap.docs.forEach(d=>{const t=d.data();const chip=document.createElement('div');chip.style.cssText='background:#ffffff0d;border:1.5px solid #2a3a2a;border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .2s;';chip.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.from}-->${t.to}</div><div style="color:#888;font-size:11px;">Section ${t.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${t.price} F</div></div>`;chip.onclick=()=>{S.ticketSection={...t,docId:d.id};destList.querySelectorAll('div').forEach(c=>{c.style.background='#ffffff0d';c.style.borderColor='#2a3a2a';});chip.style.background='#00A65033';chip.style.borderColor='var(--g)';document.getElementById('ticketPriceDisplay').textContent=fmtMoney(t.price)+' FCFA';document.getElementById('btnPayTicket').disabled=false;};destList.appendChild(chip);});}
     loader('',false);
     document.getElementById('ticketStep0').style.display='none';
     document.getElementById('ticketStep1').style.display='block';
@@ -1566,7 +2048,7 @@ window.showScanPanel=async(walletId)=>{
       const req=currentScanReq;
       div.innerHTML=`<div style="background:#00A65015;border:2px solid #00A65044;border-radius:14px;padding:14px;margin-bottom:12px;"><div style="font-weight:900;font-size:15px;">${pax.name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;margin-top:4px;">${req.from}→${req.to} · S${req.section} · <strong style="color:var(--y);">${req.price} FCFA</strong></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button onclick="rejectScan()" style="background:linear-gradient(135deg,var(--r),#B71C1C);border:none;border-radius:14px;padding:14px;color:#fff;font-weight:800;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;">✗ Rejeter</button><button onclick="confirmScan()" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:14px;padding:14px;color:#fff;font-weight:800;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;">✅ Valider</button></div>`;
     }else{
-      div.innerHTML=`<div style="background:#1a56db15;border:2px solid #1a56db44;border-radius:14px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;"><div style="width:44px;height:44px;border-radius:22px;background:linear-gradient(135deg,var(--g),var(--gd));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🧍</div><div><div style="font-weight:900;font-size:15px;">${pax.name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;">${walletId}</div><div style="color:var(--y);font-weight:800;font-size:13px;margin-top:2px;">Solde : ${(pax.balance||0).toLocaleString('fr-FR')} FCFA</div></div></div><div class="input-wrap"><label class="input-label">Destination *</label><input id="manualDest" class="input-field" type="text" placeholder="Ex: Liberté 6…"/></div><div class="quick-grid"><button class="quick-btn" onclick="document.getElementById('manualAmt').value=150">150</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=200">200</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=300">300</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=500">500</button></div><input id="manualAmt" class="input-field" type="number" placeholder="Montant en FCFA" style="margin-bottom:14px;font-size:20px;font-weight:900;text-align:center;"/><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button onclick="document.getElementById('scanPanelEl').remove()" style="background:#ffffff10;border:none;border-radius:14px;padding:14px;color:#888;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">✕ Annuler</button><button onclick="confirmManualScan('${paxUid}','${walletId}','${pax.name.replace(/'/g,'')}',${pax.balance||0})" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:14px;padding:14px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;">✅ Encaisser</button></div>`;
+      div.innerHTML=`<div style="background:#1a56db15;border:2px solid #1a56db44;border-radius:14px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;"><div style="width:44px;height:44px;border-radius:22px;background:linear-gradient(135deg,var(--g),var(--gd));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🧍</div><div><div style="font-weight:900;font-size:15px;">${pax.name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;">${walletId}</div><div style="color:var(--y);font-weight:800;font-size:13px;margin-top:2px;">Solde : ${fmtMoney(pax.balance)} FCFA</div></div></div><div class="input-wrap"><label class="input-label">Destination *</label><input id="manualDest" class="input-field" type="text" placeholder="Ex: Liberté 6…"/></div><div class="quick-grid"><button class="quick-btn" onclick="document.getElementById('manualAmt').value=150">150</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=200">200</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=300">300</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=500">500</button></div><input id="manualAmt" class="input-field" type="number" placeholder="Montant en FCFA" style="margin-bottom:14px;font-size:20px;font-weight:900;text-align:center;"/><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button onclick="document.getElementById('scanPanelEl').remove()" style="background:#ffffff10;border:none;border-radius:14px;padding:14px;color:#888;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">✕ Annuler</button><button onclick="confirmManualScan('${paxUid}','${walletId}','${(pax.name||'').replace(/'/g,'')}',${pax.balance||0})" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:14px;padding:14px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;">✅ Encaisser</button></div>`;
     }
     document.body.appendChild(div);
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
@@ -1576,7 +2058,7 @@ window.confirmManualScan=async(paxUid,walletId,passengerName,paxBalance)=>{
   const amt=parseInt(document.getElementById('manualAmt')?.value||0);
   const dest=(document.getElementById('manualDest')?.value||'').trim()||'—';
   if(!amt||amt<50){notify('⚠️','Montant','Entrez un montant valide (min 50 FCFA).');return;}
-  if(paxBalance<amt){notify('❌','Solde insuffisant',`Le passager n'a que ${paxBalance.toLocaleString('fr-FR')} FCFA.`);return;}
+  if(paxBalance<amt){notify('❌','Solde insuffisant',`Le passager n'a que ${fmtMoney(paxBalance)} FCFA.`);return;}
   loader('Encaissement…');
   try{
     const now=new Date();const sn=`${walletId.replace('TP-','')}*M${Math.floor(1000+Math.random()*9000)}`;
@@ -1588,7 +2070,7 @@ window.confirmManualScan=async(paxUid,walletId,passengerName,paxBalance)=>{
     await addDoc(collection(db,'users',paxUid,'tickets'),{...ticket,ticketId:tkRef.id});
     loader('',false);document.getElementById('scanPanelEl')?.remove();
     refreshRecvStats();loadRecvTickets();showTicketData({...ticket,id:tkRef.id});
-    notify('✅','Encaissé !',amt.toLocaleString('fr-FR')+' FCFA de '+passengerName);
+    notify('✅','Encaissé !',fmtMoney(amt)+' FCFA de '+passengerName);
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
@@ -1610,7 +2092,7 @@ window.confirmScan=async()=>{
     await addDoc(collection(db,'notifications'),{toUid:req.paxUid,type:'ticket_validated',passenger:req.passengerName,read:false,ts:serverTimestamp()});
     loader('',false);document.getElementById('scanPanelEl')?.remove();currentScanReq=null;
     refreshRecvStats();loadRecvTickets();showTicketData({...ticket,id:tkRef.id});
-    notify('✅','Ticket validé !',req.price.toLocaleString('fr-FR')+' FCFA encaissés.');
+    notify('✅','Ticket validé !',fmtMoney(req.price)+' FCFA encaissés.');
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
@@ -1656,7 +2138,7 @@ function showRecvToast(type,data){
 function renderPendingList(items){
   const cont=document.getElementById('recvPending');
   if(!items.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:16px 0;font-size:13px;">Aucune demande en attente.</div>';return;}
-  cont.innerHTML=items.map(req=>`<div style="background:#FFD10010;border:1px solid #FFD10044;border-radius:18px;padding:14px 16px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><div style="font-size:28px;">⏳</div><div style="flex:1;"><div style="font-weight:900;font-size:14px;">${req.passengerName||'Passager'}</div><div style="color:#888;font-size:11px;font-family:'JetBrains Mono',monospace;">${req.from}→${req.to} · S${req.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${req.price} F</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><button onclick="recvRejectTicket('${req.id}')" style="background:linear-gradient(135deg,#DF0024,#B71C1C);border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✗ Annuler</button><button onclick="recvConfirmTicket('${req.id}','${req.passengerUid}','${req.passengerId}','${req.passengerName}','${req.from}','${req.to}','${req.section}',${req.price},'${req.busUid||S.uid}')" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✅ Confirmer</button></div></div>`).join('');
+  cont.innerHTML=items.map(req=>`<div style="background:#FFD10010;border:1px solid #FFD10044;border-radius:18px;padding:14px 16px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><div style="font-size:28px;">⏳</div><div style="flex:1;"><div style="font-weight:900;font-size:14px;">${req.passengerName||'Passager'}</div><div style="color:#888;font-size:11px;font-family:'JetBrains Mono',monospace;">${req.from}→${req.to} · S${req.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${req.price} F</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><button onclick="recvRejectTicket('${req.id}')" style="background:linear-gradient(135deg,#DF0024,#B71C1C);border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✗ Annuler</button><button onclick="recvConfirmTicket('${req.id}','${req.passengerUid}','${req.passengerId}','${(req.passengerName||'').replace(/'/g,'')}','${req.from}','${req.to}','${req.section}',${req.price},'${req.busUid||S.uid}')" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✅ Confirmer</button></div></div>`).join('');
 }
 
 window.recvConfirmTicket=async(pendingId,paxUid,passengerId,passengerName,from,to,section,price,busUid)=>{
@@ -1674,7 +2156,7 @@ window.recvConfirmTicket=async(pendingId,paxUid,passengerId,passengerName,from,t
     await deleteDoc(doc(db,'pending',pendingId));
     await addDoc(collection(db,'notifications'),{toUid:paxUid,type:'ticket_validated',passenger:passengerName,read:false,ts:serverTimestamp()});
     loader('',false);refreshRecvStats();loadRecvTickets();showTicketData({...ticket,id:tkRef.id});
-    notify('✅','Ticket validé !',price.toLocaleString('fr-FR')+' FCFA encaissés.');
+    notify('✅','Ticket validé !',fmtMoney(price)+' FCFA encaissés.');
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
@@ -1685,9 +2167,9 @@ async function refreshRecvStats(){
   const snap=await getDoc(doc(db,'users',S.uid));
   if(!snap.exists())return;
   const u=snap.data();S.profile={...S.profile,...u};
-  document.getElementById('recvTotalToday').textContent=(u.today||0).toLocaleString('fr-FR')+' F';
+  document.getElementById('recvTotalToday').textContent=fmtMoney(u.today||0)+' F';
   document.getElementById('recvTicketCount').textContent=u.count||0;
-  const rb=document.getElementById('recvBalance');if(rb)rb.textContent=(u.balance||0).toLocaleString('fr-FR');
+  const rb=document.getElementById('recvBalance');if(rb)rb.textContent=fmtMoney(u.balance||0);
 }
 
 async function loadRecvTickets(){
@@ -1713,7 +2195,7 @@ async function loadPassHistory(){
   if(snap.empty){cont.innerHTML='<div style="color:#555;text-align:center;padding:40px 0;">Aucune transaction.</div>';return;}
   cont.innerHTML=snap.docs.map(d=>txRow(d.data())).join('');
 }
-function txRow(h){const icons={recharge:'💳',transfer_out:'↗️',transfer_in:'↙️',ticket:'🎫',withdraw:'💸',recharge_given:'💳',withdraw_request:'📤'};const pos=h.amount>0;return`<div class="tx-row"><div style="width:36px;height:36px;border-radius:12px;background:${pos?'#00A65022':'#DF002422'};display:flex;align-items:center;justify-content:center;font-size:16px;">${icons[h.type]||'💼'}</div><div style="flex:1;margin-left:4px;"><div style="font-weight:700;font-size:14px;">${h.label}</div></div><div style="color:${pos?'var(--g)':'var(--r)'};font-weight:800;font-size:14px;">${pos?'+':''}${(h.amount||0).toLocaleString('fr-FR')} F</div></div>`;}
+function txRow(h){const icons={recharge:'💳',transfer_out:'↗️',transfer_in:'↙️',ticket:'🎫',withdraw:'💸',recharge_given:'💳',withdraw_request:'📤'};const pos=h.amount>0;return`<div class="tx-row"><div style="width:36px;height:36px;border-radius:12px;background:${pos?'#00A65022':'#DF002422'};display:flex;align-items:center;justify-content:center;font-size:16px;">${icons[h.type]||'💼'}</div><div style="flex:1;margin-left:4px;"><div style="font-weight:700;font-size:14px;">${h.label}</div></div><div style="color:${pos?'var(--g)':'var(--r)'};font-weight:800;font-size:14px;">${pos?'+':''}${fmtMoney(h.amount)} F</div></div>`;}
 
 async function loadPassTickets(){
   if(S.role!=='passenger')return;
@@ -1736,83 +2218,4 @@ window.openNotifPanel=async()=>{
   const snap=await getDocs(q);
   const cont=document.getElementById('notifList');
   if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';}
-  else{cont.innerHTML=snap.docs.map(d=>{const n=d.data();let icon='🔔',title='Notification',body='',color='var(--orange)';if(n.type==='descendre'){icon='🛑';title='Passager veut descendre';body=`${n.passenger||'—'} · ${n.from||''}→${n.to||''}`;color='#DF0024';}else if(n.type==='ticket_request'){icon='🎫';title='Demande ticket';body=`${n.passenger||'—'} · ${n.price||0} FCFA`;color='var(--g)';}else if(n.type==='ticket_validated'){icon='✅';title='Ticket validé';body='Votre ticket a été validé !';color='var(--g)';}else if(n.type==='receiver_request'){icon='🎫';title='Nouveau receveur';body=`${n.receiverName||'—'}`;color='var(--orange)';}else if(n.type==='owner_request'){icon='🚌';title='Nouveau propriétaire';body=`${n.ownerName||'—'} — ${n.company||'—'}`;color='#7c3aed';}return`<div style="background:#ffffff08;border:1px solid ${color}33;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;"><div style="font-size:22px;">${icon}</div><div><div style="font-weight:800;font-size:13px;color:${color};">${title}</div><div style="font-size:12px;color:#ccc;margin-top:3px;">${body}</div></div></div>`;}).join('');}
-  document.getElementById('notifPanel').style.display='flex';
-};
-
-window.clearNotifs=async()=>{
-  const q=query(collection(db,'notifications'),where('toUid','==',S.uid));
-  const snap=await getDocs(q);
-  await Promise.all(snap.docs.map(d=>deleteDoc(doc(db,'notifications',d.id))));
-  document.getElementById('notifList').innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';
-  const b=document.getElementById('bellBadge');if(b)b.className='bell-badge';
-};
-
-// CAMERA
-let detector=null;
-if('BarcodeDetector' in window){try{detector=new BarcodeDetector({formats:['qr_code']});}catch(e){}}
-let scanCanvas=null,scanCtx=null;
-
-window.openCamera=async(mode)=>{
-  S.camMode=mode;S.scanning=false;
-  const labels={bus:'Scanner QR Bus',recv:'Scanner Passager',friend:'Scanner Ami 📷','wallet-scan':'Scanner Wallet'};
-  document.getElementById('camTitle').textContent=labels[mode]||'Scanner QR';
-  document.getElementById('camError').style.display='none';
-  document.getElementById('manualPanel')?.remove();
-  document.getElementById('cameraScreen').classList.add('open');
-  try{
-    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:S.facing},audio:false});
-    S.stream=stream;const video=document.getElementById('cameraVideo');video.srcObject=stream;await video.play();
-    if(!scanCanvas){scanCanvas=document.createElement('canvas');scanCtx=scanCanvas.getContext('2d',{willReadFrequently:true});}
-    S.scanning=true;scanLoop();
-  }catch(e){
-    let msg='Caméra inaccessible.';if(e.name==='NotAllowedError')msg='Permission caméra refusée.';
-    document.getElementById('camError').style.display='block';document.getElementById('camError').textContent='⚠️ '+msg;
-    showManualPanel();
-  }
-};
-
-function showManualPanel(){
-  document.getElementById('manualPanel')?.remove();
-  const div=Object.assign(document.createElement('div'),{id:'manualPanel'});
-  div.style.cssText='position:absolute;left:0;right:0;bottom:90px;padding:0 20px;pointer-events:all;';
-  div.innerHTML=`<div style="background:#0c1f12;border:1px solid #009A4444;border-radius:14px;padding:14px;"><div style="color:#aaa;font-size:12px;margin-bottom:8px;">Entrez l'ID manuellement :</div><input id="manualQrInput" class="input-field" placeholder="TP-... ou RV-..."/><button class="btn btn-primary btn-full" style="margin-top:10px;" onclick="submitManual()">Valider</button></div>`;
-  document.querySelector('#cameraScreen .camera-overlay').appendChild(div);
-}
-window.submitManual=()=>{const v=document.getElementById('manualQrInput')?.value.trim();if(v)handleQR(v);};
-
-function scanLoop(){
-  if(!S.scanning)return;
-  const video=document.getElementById('cameraVideo');
-  if(video.readyState!==video.HAVE_ENOUGH_DATA){requestAnimationFrame(scanLoop);return;}
-  if(detector){detector.detect(video).then(codes=>{if(codes?.length){handleQR(codes[0].rawValue);return;}scanWithJsQR(video);}).catch(()=>scanWithJsQR(video));}
-  else{scanWithJsQR(video);}
-}
-function scanWithJsQR(video){
-  if(!S.scanning)return;
-  if(typeof jsQR==='function'){
-    const w=video.videoWidth,h=video.videoHeight;
-    if(w&&h){scanCanvas.width=w;scanCanvas.height=h;scanCtx.drawImage(video,0,0,w,h);try{const img=scanCtx.getImageData(0,0,w,h);const code=jsQR(img.data,w,h,{inversionAttempts:'dontInvert'});if(code?.data){handleQR(code.data);return;}}catch(e){}}
-  }
-  requestAnimationFrame(scanLoop);
-}
-window.stopCamera=()=>{S.scanning=false;document.getElementById('cameraScreen').classList.remove('open');document.getElementById('manualPanel')?.remove();if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null;}};
-window.flipCamera=async()=>{S.facing=S.facing==='environment'?'user':'environment';if(S.stream)S.stream.getTracks().forEach(t=>t.stop());await window.openCamera(S.camMode);};
-
-function handleQR(raw){
-  stopCamera();raw=(raw||'').trim();
-  const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);
-  const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);
-  const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);
-  const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);
-  if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Contenu: '+raw.slice(0,40));return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}
-  else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId);}
-  else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}
-  else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}
-}
-
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').then(()=>{}).catch(()=>{});});}
-</script>
-</div>
-</body>
-</html>
+  else{cont.innerHTML=snap.docs.map(d=>{const n=d.data();let icon='🔔',title='Notification',body='',color='var(--orange)';if(n.type==='descendre'){icon='🛑';title='Passager veut descendre';body=`${n.passenger||'—'} · ${n.from||''}→${n.to||''}`;color='#
