@@ -315,11 +315,11 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <div id="fieldPass2" style="display:none"><div class="input-wrap"><label class="input-label">Confirmer *</label><input class="input-field" id="authPass2" type="password" placeholder="••••••••"/></div></div>
     <button class="btn btn-primary btn-full" onclick="doAuth()" id="authSubmitBtn">Se connecter</button>
     <div style="text-align:center;margin-top:12px;"><span onclick="forgotPassword()" style="color:#888;font-size:13px;cursor:pointer;text-decoration:underline;">Mot de passe oublié ?</span></div>
-    <div style="text-align:center;margin-top:12px;color:#666;font-size:14px;">
-      <span id="authSwitchText">Pas de compte ?</span>
-      <span onclick="toggleAuthMode()" style="color:var(--g);font-weight:700;cursor:pointer;margin-left:4px;" id="authSwitchLink">S'inscrire</span>
-    </div>
-  </div>
+ async function loadDirecteurList(){
+  const sel=document.getElementById('authDirecteurSelect');if(!sel)return;
+  sel.innerHTML='<option value="">Chargement…</option>';
+  try{const snap=await getDocs(query(collection(db,'users'),where('role','==','directeur'),where('status','==','approved')));sel.innerHTML='<option value="">— Choisir un directeur —</option>';if(snap.empty){sel.innerHTML='<option value="">Aucun directeur disponible</option>';return;}snap.docs.forEach(d=>{const u=d.data();const opt=document.createElement('option');opt.value=d.id;opt.textContent=`${u.name} — ${u.org||u.email}`;sel.appendChild(opt);});}catch(e){sel.innerHTML='<option value="">Erreur — réessayez</option>';}
+}
 </div>
 
 <!-- PENDING -->
