@@ -323,20 +323,15 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <button class="sel-tab" id="tabPassenger" onclick="setRole('passenger')" style="background:var(--g);color:var(--w);font-size:11px;">🧍 Passager</button>
       <button class="sel-tab" id="tabReceiver" onclick="setRole('receiver')" style="background:transparent;color:#888;font-size:11px;">🎫 Receveur</button>
       <button class="sel-tab" id="tabOwner" onclick="setRole('owner')" style="background:transparent;color:#888;font-size:11px;">🚌 Proprio</button>
-      <button class="sel-tab" id="tabChauffeur" onclick="setRole('chauffeur')" style="background:transparent;color:#888;font-size:10px;">👨‍✈️ Chauffeur</button>
       <button class="sel-tab" id="tabDirecteur" onclick="setRole('directeur')" style="background:transparent;color:#888;font-size:11px;">🏢 Directeur</button>
     </div>
     <div id="fieldName" style="display:none"><div class="input-wrap"><label class="input-label">Nom complet *</label><input class="input-field" id="authName" placeholder="Moussa Diallo"/></div></div>
     <div class="input-wrap"><label class="input-label">E-mail *</label><input class="input-field" id="authEmail" type="email" placeholder="exemple@email.com"/></div>
     <div id="fieldPhone" style="display:none"><div class="input-wrap"><label class="input-label">Téléphone *</label><input class="input-field" id="authPhone" type="tel" placeholder="77 123 45 67"/></div></div>
     <div id="fieldsReceiver" style="display:none;">
-      <div style="background:#FF6B0010;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FF6B00;line-height:1.6;">🎫 GIE/Bus assignés après validation du Directeur de GIE.</div>
+      <div style="background:#FF6B0010;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FF6B00;line-height:1.6;">🎫 Après validation de votre email, vous choisirez un ou plusieurs propriétaires de bus pour envoyer votre candidature.</div>
       <div class="input-wrap"><label class="input-label">Numéro CNI *</label><input class="input-field" id="authCNI" placeholder="1 234 567 890 12345" maxlength="20"/></div>
       <div class="input-wrap"><label class="input-label">Adresse / Quartier *</label><input class="input-field" id="authAddress" placeholder="ex: Médina, Dakar"/></div>
-      <div class="input-wrap">
-        <label class="input-label">Directeur de GIE *</label>
-        <select class="input-field" id="authDirecteurSelect"><option value="">— Choisir un directeur —</option></select>
-      </div>
     </div>
     <div id="fieldsOwner" style="display:none;">
       <div class="input-wrap"><label class="input-label">Nom du GIE / Entreprise *</label><input class="input-field" id="authOwnerCompany" placeholder="GIE Dakar Express"/></div>
@@ -362,6 +357,24 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <div style="text-align:center;margin-top:12px;color:#666;font-size:14px;">
       <span id="authSwitchText">Pas de compte ?</span>
       <span onclick="toggleAuthMode()" style="color:var(--g);font-weight:700;cursor:pointer;margin-left:4px;" id="authSwitchLink">S'inscrire</span>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RECEVEUR — SÉLECTION PROPRIÉTAIRES -->
+<div class="modal-overlay" id="modalRecvOwners" style="display:none;" onclick="if(event.target===this)closeModal('modalRecvOwners')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">🎫 Choisir les propriétaires</div><button class="modal-close" onclick="closeModal('modalRecvOwners')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body">
+      <div style="background:#FF6B0010;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FF6B00;line-height:1.6;">Sélectionnez un ou plusieurs propriétaires de bus. Votre candidature sera envoyée à chacun d'eux.</div>
+      <div class="input-wrap"><label class="input-label">Propriétaires sélectionnés <span id="modalOwnerSelCount" style="color:#009A44;font-weight:800;">(0)</span></label>
+        <div id="modalOwnerList" style="max-height:320px;overflow-y:auto;background:#0f1a0a;border:1.5px solid #ffffff15;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;">
+          <div style="color:#666;font-size:12px;text-align:center;padding:14px;">Chargement…</div>
+        </div>
+      </div>
+      <input type="hidden" id="modalRecvPendingUid"/>
+      <button class="btn btn-primary btn-full" onclick="doSubmitReceiverCandidature()" id="modalRecvSubmitBtn">📤 Envoyer ma candidature</button>
     </div>
   </div>
 </div>
@@ -1086,17 +1099,38 @@ window.goAuth=(mode)=>{
 window.toggleAuthMode=()=>window.goAuth(S.isReg?'login':'register');
 window.setRole=async(r)=>{
   S.authRole=r;
-  const colors={passenger:'var(--g)',receiver:'var(--orange)',owner:'#7c3aed',chauffeur:'#059669',directeur:'#0ea5e9'};
-  const tabIds={passenger:'tabPassenger',receiver:'tabReceiver',owner:'tabOwner',chauffeur:'tabChauffeur',directeur:'tabDirecteur'};
-  Object.entries(tabIds).forEach(([role,id])=>{const btn=document.getElementById(id);if(btn)btn.style.cssText=`background:${role===r?colors[role]:'transparent'};color:${role===r?'var(--w)':'#888'};font-size:${role==='chauffeur'?'10px':'11px'};`;});
+  const colors={passenger:'var(--g)',receiver:'var(--orange)',owner:'#7c3aed',directeur:'#0ea5e9'};
+  const tabIds={passenger:'tabPassenger',receiver:'tabReceiver',owner:'tabOwner',directeur:'tabDirecteur'};
+  Object.entries(tabIds).forEach(([role,id])=>{const btn=document.getElementById(id);if(btn)btn.style.cssText=`background:${role===r?colors[role]:'transparent'};color:${role===r?'var(--w)':'#888'};font-size:11px;`;if(btn)btn.style.display='inline-block';});
   ['fieldsReceiver','fieldsOwner','fieldsDirecteur','fieldsChauffeur'].forEach(id=>document.getElementById(id).style.display='none');
-  if(S.isReg){if(r==='receiver'){document.getElementById('fieldsReceiver').style.display='block';await loadDirecteurList();}else if(r==='owner')document.getElementById('fieldsOwner').style.display='block';else if(r==='directeur')document.getElementById('fieldsDirecteur').style.display='block';else if(r==='chauffeur'){document.getElementById('fieldsChauffeur').style.display='block';await loadDirecteurList();}}
+  if(S.isReg){if(r==='receiver'){document.getElementById('fieldsReceiver').style.display='block';}else if(r==='owner')document.getElementById('fieldsOwner').style.display='block';else if(r==='directeur')document.getElementById('fieldsDirecteur').style.display='block';}
 };
 async function loadDirecteurList(){
   const sels=[document.getElementById('authDirecteurSelect'),document.getElementById('authChDirecteurSelect')].filter(Boolean);
   if(!sels.length)return;
   sels.forEach(sel=>sel.innerHTML='<option value="">Chargement…</option>');
   try{const snap=await getDocs(query(collection(db,'users'),where('role','==','directeur'),where('status','==','approved')));sels.forEach(sel=>{sel.innerHTML='<option value="">— Choisir un directeur —</option>';if(snap.empty){sel.innerHTML='<option value="">Aucun directeur disponible</option>';return;}snap.docs.forEach(d=>{const u=d.data();const opt=document.createElement('option');opt.value=d.id;opt.textContent=`${u.name} — ${u.org||u.email}`;sel.appendChild(opt);});});}catch(e){sels.forEach(sel=>sel.innerHTML='<option value="">Erreur — réessayez</option>');}
+}
+window.authSelectedOwners=new Set();
+window.modalSelectedOwners=new Set();
+window.pendingReceiverData=null;
+
+async function loadModalOwnerList(){
+  const cont=document.getElementById('modalOwnerList');
+  if(!cont)return;
+  window.modalSelectedOwners=new Set();
+  const updateCount=()=>{const el=document.getElementById('modalOwnerSelCount');if(el)el.textContent='('+window.modalSelectedOwners.size+')';};
+  updateCount();
+  cont.innerHTML='<div style="color:#666;font-size:12px;text-align:center;padding:14px;">Chargement des propriétaires…</div>';
+  try{
+    let docs=[];
+    try{const s=await getDocs(query(collection(db,'users'),where('role','==','owner')));docs=s.docs;}
+    catch(e1){const s=await getDocs(collection(db,'users'));docs=s.docs.filter(d=>d.data().role==='owner');}
+    const owners=docs.map(d=>({id:d.id,...d.data()})).filter(o=>!o.status||o.status==='approved'||o.status==='pending');
+    if(!owners.length){cont.innerHTML='<div style="color:#FF6B00;font-size:12px;text-align:center;padding:14px;">Aucun propriétaire disponible pour le moment.</div>';return;}
+    cont.innerHTML=owners.map(o=>{const initials=(o.name||o.company||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();return`<div class="modal-owner-row" data-uid="${o.id}" style="display:flex;align-items:center;gap:10px;padding:10px;background:#0a1407;border:1.5px solid #ffffff15;border-radius:12px;cursor:pointer;transition:all .2s;"><div style="width:38px;height:38px;border-radius:19px;background:linear-gradient(135deg,#7c3aed33,#4c1d9533);border:1px solid #7c3aed55;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#c4b5fd;flex-shrink:0;">${initials}</div><div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13px;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.company||o.name||'—'}</div><div style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.name||''}${o.status==='pending'?' · ⏳ en attente':''}</div></div><div class="modal-owner-check" style="width:24px;height:24px;border-radius:12px;border:2px solid #ffffff33;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;color:#fff;font-weight:900;"></div></div>`;}).join('');
+    cont.querySelectorAll('.modal-owner-row').forEach(row=>{row.addEventListener('click',()=>{const uid=row.dataset.uid;const check=row.querySelector('.modal-owner-check');if(window.modalSelectedOwners.has(uid)){window.modalSelectedOwners.delete(uid);row.style.background='#0a1407';row.style.borderColor='#ffffff15';check.style.background='transparent';check.style.borderColor='#ffffff33';check.textContent='';}else{window.modalSelectedOwners.add(uid);row.style.background='#009A4415';row.style.borderColor='#009A44';check.style.background='#009A44';check.style.borderColor='#009A44';check.textContent='✓';}updateCount();});});
+  }catch(e){console.error('[loadModalOwnerList]',e);cont.innerHTML='<div style="color:#DF0024;font-size:12px;text-align:center;padding:14px;">Erreur de chargement. <button onclick="loadModalOwnerList()" style="background:#009A44;border:none;border-radius:8px;padding:6px 12px;color:#fff;font-weight:700;cursor:pointer;margin-left:6px;">🔄 Réessayer</button></div>';}
 }
 window.doAuth=async()=>{
   const email=document.getElementById('authEmail').value.trim().toLowerCase();
@@ -1116,15 +1150,20 @@ window.doAuth=async()=>{
         await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'passenger',status:'approved',balance:0,createdAt:serverTimestamp()});
         await setDoc(doc(db,'wallets',walletId),{uid,role:'passenger'});
       }else if(S.authRole==='receiver'){
-        const directeurUid=document.getElementById('authDirecteurSelect')?.value||'';
         const cni=document.getElementById('authCNI')?.value.trim()||'';
         const address=document.getElementById('authAddress')?.value.trim()||'';
         if(!cni){loader('',false);notify('⚠️','CNI','Entrez votre numéro de CNI.');return;}
-        if(!directeurUid){loader('',false);notify('⚠️','Directeur','Choisissez un directeur de GIE.');return;}
+        if(!address){loader('',false);notify('⚠️','Adresse','Entrez votre adresse.');return;}
         const walletId='RV-'+uid.slice(0,6).toUpperCase();
-        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'receiver',status:'pending',directeurUid,cni,address,gie:'',vehicle:'',ligne:'',zone:'',today:0,count:0,balance:0,linkedOwnerUids:[],createdAt:serverTimestamp()});
+        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'receiver',status:'pending',directeurUid:'',cni,address,gie:'',vehicle:'',ligne:'',zone:'',today:0,count:0,balance:0,linkedOwnerUids:[],pendingOwnerUids:[],approvedOwnerUids:[],createdAt:serverTimestamp()});
         await setDoc(doc(db,'wallets',walletId),{uid,role:'receiver'});
-        await addDoc(collection(db,'notifications'),{toUid:directeurUid,type:'receiver_request',receiverUid:uid,receiverName:name,receiverEmail:email,phone,cni,address,read:false,ts:serverTimestamp()});
+        window.pendingReceiverData={uid,name,email,phone,cni,address};
+        const muid=document.getElementById('modalRecvPendingUid');if(muid)muid.value=uid;
+        loader('',false);
+        window.modalSelectedOwners=new Set();
+        await loadModalOwnerList();
+        openModal('modalRecvOwners');
+        return;
       }else if(S.authRole==='owner'){
         const company=document.getElementById('authOwnerCompany')?.value.trim()||'';
         if(!company){loader('',false);notify('⚠️','Champs','Entrez le nom du GIE.');return;}
@@ -1155,6 +1194,28 @@ window.doAuth=async()=>{
     loader('',false);
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
+window.doSubmitReceiverCandidature=async()=>{
+  const data=window.pendingReceiverData;
+  if(!data){notify('⚠️','Erreur','Aucune inscription en cours.');return;}
+  const ownerUids=Array.from(window.modalSelectedOwners||[]);
+  if(!ownerUids.length){notify('⚠️','Propriétaires','Sélectionnez au moins un propriétaire de bus.');return;}
+  const {uid,name,email,phone,cni,address}=data;
+  loader('Envoi de votre candidature…');
+  try{
+    await updateDoc(doc(db,'users',uid),{pendingOwnerUids:ownerUids});
+    for(const ouid of ownerUids){
+      try{await addDoc(collection(db,'notifications'),{toUid:ouid,type:'receiver_candidature',receiverUid:uid,receiverName:name,receiverEmail:email,phone,cni,address,read:false,ts:serverTimestamp()});}
+      catch(err){console.warn('[notif owner]',ouid,err);}
+    }
+    window.pendingReceiverData=null;
+    closeModal('modalRecvOwners');
+    loader('',false);
+    show('screenPending');
+    document.getElementById('pendingIcon').textContent='🎫';
+    document.getElementById('pendingTitle').textContent='Candidature en attente';
+    document.getElementById('pendingBody').textContent='Le(s) propriétaire(s) de bus vont valider votre candidature.';
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
 window.forgotPassword=async()=>{const email=document.getElementById('authEmail').value.trim().toLowerCase();if(!email){notify('⚠️','Email requis','Entrez votre email.');return;}try{await sendPasswordResetEmail(auth,email);notify('✅','Email envoyé','Vérifiez votre boîte mail.');}catch(e){notify('❌','Erreur',e.message);}};
 window.doLogout=async()=>{detachListeners();await signOut(auth);S={...S,role:null,uid:null,profile:null};activeTicketData=null;hideDescendBtn();show('screenSplash');};
 
@@ -1170,8 +1231,8 @@ function loginUI(){
   const p=S.profile;detachListeners();
   if(p.status==='pending'){
     const icons={owner:'🚌',directeur:'🏢',receiver:'🎫',chauffeur:'👨‍✈️'};
-    const titles={owner:'Compte Propriétaire en attente',directeur:'Compte Directeur en attente',receiver:'En attente du Directeur de GIE',chauffeur:'En attente du Directeur de GIE'};
-    const bodies={owner:'Demande envoyée au(x) Directeur(s) de GIE.',directeur:'Demande en cours de validation admin.',receiver:'Le Directeur de GIE va valider votre compte.',chauffeur:'Le Directeur va vous assigner un bus et un receveur.'};
+    const titles={owner:'Compte Propriétaire en attente',directeur:'Compte Directeur en attente',receiver:'Candidature en attente',chauffeur:'En attente du Directeur de GIE'};
+    const bodies={owner:'Demande envoyée au(x) Directeur(s) de GIE.',directeur:'Demande en cours de validation admin.',receiver:'Le(s) propriétaire(s) de bus vont valider votre candidature.',chauffeur:'Le Directeur va vous assigner un bus et un receveur.'};
     document.getElementById('pendingIcon').textContent=icons[p.role]||'⏳';
     document.getElementById('pendingTitle').textContent=titles[p.role]||'En attente';
     document.getElementById('pendingBody').textContent=bodies[p.role]||'En attente de validation.';
@@ -1232,19 +1293,39 @@ async function loadRecvDirecteurInfo(){
  */
 async function loadRecvAvailableBus(){
   const cont=document.getElementById('recvAvailableBusList');
+  if(!cont)return;
   cont.innerHTML=`<div style="text-align:center;padding:40px 20px;"><div class="spinner" style="margin:0 auto 14px;"></div><div style="color:#555;font-size:13px;">Chargement…</div></div>`;
   try{
-    // 1. Tous les owners approved
-    const snap=await getDocs(query(collection(db,'users'),where('role','==','owner'),where('status','==','approved')));
-    allAvailableOwners=snap.docs.map(d=>({id:d.id,...d.data()}));
+    // 1. Charger les propriétaires (une seule clause where pour éviter tout besoin d'index composite)
+    let owners=[];
+    try{
+      const snap=await getDocs(query(collection(db,'users'),where('role','==','owner')));
+      owners=snap.docs.map(d=>({id:d.id,...d.data()}));
+    }catch(err1){
+      console.warn('[loadRecvAvailableBus] fallback full scan:',err1);
+      const snapAll=await getDocs(collection(db,'users'));
+      owners=snapAll.docs.map(d=>({id:d.id,...d.data()})).filter(u=>u.role==='owner');
+    }
+    // Filtre statut côté client (approved + tolérance si statut absent)
+    allAvailableOwners=owners.filter(o=>!o.status||o.status==='approved');
 
     // 2. Refresh sélection depuis Firestore
-    const mySnap=await getDoc(doc(db,'users',S.uid));
-    if(mySnap.exists()){recvBusSelection=new Set(mySnap.data().linkedOwnerUids||[]);}
+    try{
+      const mySnap=await getDoc(doc(db,'users',S.uid));
+      if(mySnap.exists()){recvBusSelection=new Set(mySnap.data().linkedOwnerUids||[]);}
+    }catch(err2){console.warn('[loadRecvAvailableBus] my profile:',err2);}
 
     renderRecvBusList();
     renderMyBusSection();
-  }catch(e){cont.innerHTML=`<div style="color:#DF0024;padding:20px;text-align:center;">Erreur : ${e.message}</div>`;}
+  }catch(e){
+    console.error('[loadRecvAvailableBus]',e);
+    cont.innerHTML=`<div style="padding:30px 20px;text-align:center;">
+      <div style="font-size:42px;margin-bottom:10px;">⚠️</div>
+      <div style="color:#DF0024;font-weight:800;margin-bottom:6px;">Impossible de charger les propriétaires</div>
+      <div style="color:#888;font-size:12px;margin-bottom:14px;">${(e&&e.message)||'Erreur inconnue'}</div>
+      <button onclick="loadRecvAvailableBus()" style="background:#009A44;border:none;border-radius:12px;padding:10px 18px;color:#fff;font-weight:800;font-family:'Space Grotesk',sans-serif;cursor:pointer;">🔄 Réessayer</button>
+    </div>`;
+  }
 }
 
 function renderRecvBusList(){
@@ -1948,4 +2029,3 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 </div>
 </body>
 </html>
-
