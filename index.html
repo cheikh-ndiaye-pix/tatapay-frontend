@@ -650,6 +650,10 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <!-- RECEVEUR -->
     <div class="tab-content" id="chTab-receveur" style="padding:18px 16px;">
       <div style="font-weight:900;font-size:20px;color:#34d399;margin-bottom:16px;">🎫 Receveur affecté</div>
+      <div id="chCandSection" style="display:none;margin-bottom:20px;">
+        <div style="font-size:11px;font-weight:800;color:#FF6B00;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">📥 Candidatures reçues <span id="chCandCount" style="color:#FF6B00;">(0)</span></div>
+        <div id="chCandList"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune candidature en attente.</div></div>
+      </div>
       <div class="ch-card" id="chRecvCard">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
           <div style="width:52px;height:52px;border-radius:26px;background:#05966922;border:1.5px solid #05966944;display:flex;align-items:center;justify-content:center;font-size:24px;">🎫</div>
@@ -1061,6 +1065,7 @@ let S={role:null,uid:null,profile:null,authRole:'passenger',isReg:false,camMode:
 let activeTicketData=null;
 let unsubPending=null,unsubNotif=null,unsubBalance=null,unsubRecvBalance=null,unsubAdmin=null;
 let unsubChProfile=null,unsubChReceiver=null,unsubChTickets=null,unsubChNotif=null,unsubChVersements=null;
+let unsubChCandidatures=null;
 let dirRevChartInst=null,dirLineChartInst=null,chRevChartInst=null,chPerfChartInst=null;
 let chCurrentPeriod='jour';
 let chLastTickets=[];
@@ -1267,12 +1272,12 @@ function loginUI(){
     show('screenDirecteur');
     loadDirFullDashboard();
     notify('✅','Bienvenue Directeur',p.name);
-  }else if(S.role==='chauffeur'&&p.status==='approved'){
+  }else if((S.role==='chauffeur'||S.role==='owner')&&p.status==='approved'){
     document.getElementById('chGreet').textContent=p.name;
     document.getElementById('chWalletId').textContent=p.walletId||'—';
     show('screenChauffeur');
     initChauffeurDashboard();
-    notify('✅','Bienvenue Chauffeur',p.name);
+    notify('✅',S.role==='owner'?'Bienvenue Propriétaire':'Bienvenue Chauffeur',p.name);
   }else{show('screenSplash');}
   loader('',false);
 }
@@ -1631,6 +1636,7 @@ function initChauffeurDashboard(){
   loadChVersements();
   loadChAlerts();
   attachChListeners();
+  if(S.role==='owner')attachChCandidaturesListener();
 }
 function updateChHomeUI(p){
   const bs=p.busStatus||'hors_service';const ts=p.techStatus||'actif';const rs=p.receiverStatus||'absent';
@@ -1704,6 +1710,7 @@ window.chSetPeriod=(p,btn)=>{chCurrentPeriod=p;document.querySelectorAll('.ch-pt
 function loadChRecettes(){loadChVersements();}
 async function loadChReceveur(){
   const p=S.profile;const cont=document.getElementById('chRecvPerfList');
+  if(S.role==='owner')loadChCandidatures();
   if(!p.receiverUid){document.getElementById('chRecvName').textContent='—';document.getElementById('chRecvEmail').textContent='Non assigné';document.getElementById('chRecvStatusBadge').innerHTML='<span class="ch-badge ch-badge-pend">Non assigné</span>';document.getElementById('chRecvDetails').textContent='En attente d\'assignation par le directeur.';if(cont)cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune donnée.</div>';return;}
   try{
     const snap=await getDoc(doc(db,'users',p.receiverUid));if(!snap.exists())return;
@@ -1730,6 +1737,80 @@ function loadChBusPanel(){
   document.getElementById('chBusTechBadge').innerHTML=`<span class="ch-badge ${tCls}">${tLbl}</span>`;
   document.getElementById('chBusOpBadge').innerHTML=`<span class="ch-badge ${bs==='en_service'?'ch-badge-ok':'ch-badge-warn'}">${bs==='en_service'?'En service':'Hors service'}</span>`;
 }
+// ══════════════════════════════════════════════
+// PROPRIÉTAIRE — CANDIDATURES RECEVEURS
+// ══════════════════════════════════════════════
+function attachChCandidaturesListener(){
+  if(unsubChCandidatures)unsubChCandidatures();
+  try{
+    const q=query(collection(db,'notifications'),where('toUid','==',S.uid),where('type','==','receiver_candidature'));
+    unsubChCandidatures=onSnapshot(q,snap=>{
+      const items=snap.docs.map(d=>({id:d.id,...d.data()})).filter(n=>!n.accepted&&!n.rejected);
+      renderChCandidatures(items);
+    });
+  }catch(e){console.warn('[cand listener]',e);}
+}
+async function loadChCandidatures(){
+  try{
+    const snap=await getDocs(query(collection(db,'notifications'),where('toUid','==',S.uid),where('type','==','receiver_candidature')));
+    const items=snap.docs.map(d=>({id:d.id,...d.data()})).filter(n=>!n.accepted&&!n.rejected);
+    renderChCandidatures(items);
+  }catch(e){console.warn('[cand load]',e);}
+}
+function renderChCandidatures(items){
+  const sec=document.getElementById('chCandSection');
+  const list=document.getElementById('chCandList');
+  const cnt=document.getElementById('chCandCount');
+  if(!sec||!list)return;
+  if(S.role!=='owner'){sec.style.display='none';return;}
+  sec.style.display='block';
+  if(cnt)cnt.textContent=`(${items.length})`;
+  if(!items.length){list.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune candidature en attente.</div>';return;}
+  list.innerHTML=items.map(n=>{
+    const initials=(n.receiverName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    return `<div class="ch-card" style="border:1.5px solid #FF6B0033;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <div style="width:46px;height:46px;border-radius:23px;background:#FF6B0022;border:1.5px solid #FF6B0055;display:flex;align-items:center;justify-content:center;font-weight:900;color:#FF6B00;">${initials}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:900;font-size:15px;color:#e2e8f0;">${n.receiverName||'—'}</div>
+          <div style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.receiverEmail||'—'}</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#aaa;line-height:1.7;margin-bottom:12px;">
+        📞 ${n.phone||'—'}<br>
+        🪪 CNI: ${n.cni||'—'}<br>
+        📍 ${n.address||'—'}
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" style="flex:1;font-size:13px;padding:10px;" onclick="acceptChCandidature('${n.id}','${n.receiverUid}','${(n.receiverName||'').replace(/'/g,"\\'")}')">✅ Accepter</button>
+        <button class="btn btn-danger" style="flex:1;font-size:13px;padding:10px;" onclick="rejectChCandidature('${n.id}','${n.receiverUid}')">❌ Refuser</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+window.acceptChCandidature=async(notifId,receiverUid,receiverName)=>{
+  if(!confirm(`Accepter la candidature de ${receiverName} ?`))return;
+  loader('Validation de la candidature…');
+  try{
+    await updateDoc(doc(db,'users',receiverUid),{status:'approved',approvedOwnerUid:S.uid,approvedAt:serverTimestamp()});
+    await updateDoc(doc(db,'users',S.uid),{receiverUid:receiverUid,receiverStatus:'actif'});
+    await updateDoc(doc(db,'notifications',notifId),{accepted:true,read:true,acceptedAt:serverTimestamp()});
+    try{await addDoc(collection(db,'notifications'),{toUid:receiverUid,type:'candidature_accepted',ownerUid:S.uid,ownerName:S.profile?.name||'Propriétaire',read:false,ts:serverTimestamp()});}catch(e){}
+    loader('',false);
+    notify('✅','Candidature acceptée',`${receiverName} est maintenant votre receveur.`);
+    S.profile.receiverUid=receiverUid;
+    loadChReceveur();attachChReceiverListener();attachChTicketsListener();
+  }catch(e){loader('',false);notify('⚠️','Erreur',e.message||'Impossible d\'accepter.');}
+};
+window.rejectChCandidature=async(notifId,receiverUid)=>{
+  if(!confirm('Refuser cette candidature ?'))return;
+  loader('Refus en cours…');
+  try{
+    await updateDoc(doc(db,'notifications',notifId),{rejected:true,read:true,rejectedAt:serverTimestamp()});
+    try{await addDoc(collection(db,'notifications'),{toUid:receiverUid,type:'candidature_rejected',ownerUid:S.uid,ownerName:S.profile?.name||'Propriétaire',read:false,ts:serverTimestamp()});}catch(e){}
+    loader('',false);notify('❌','Candidature refusée','Le receveur a été notifié.');
+  }catch(e){loader('',false);notify('⚠️','Erreur',e.message||'Impossible de refuser.');}
+};
 async function loadChAlerts(recvData){
   const p=S.profile;const cont=document.getElementById('chAlertsList');if(!cont)return;
   const alerts=[];const recv=recvData||{};
