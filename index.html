@@ -1103,6 +1103,7 @@ window.startBusGps=async function(){
           ligne:p.ligne||'',
           zone:p.zone||'',
           directeurUid:p.directeurUid||'',
+          approvedByDir:p.approvedByDir||'',
           ownerUid:p.ownerUid||'',
           lat:pos.coords.latitude,
           lng:pos.coords.longitude,
@@ -1163,7 +1164,7 @@ function subscribeBusLocations(filter){
       if(!b.lat||!b.lng)return false;
       const updMs=b.updatedAt?.toMillis?.()||0;
       if(updMs&&now-updMs>10*60*1000)return false;
-      if(filter?.directeurUid&&b.directeurUid!==filter.directeurUid)return false;
+      if(filter?.directeurUid && b.directeurUid!==filter.directeurUid && b.approvedByDir!==filter.directeurUid)return false;
       return b.busStatus!=='hors_service';
     });
     renderNearbyBuses();
@@ -1173,7 +1174,7 @@ function subscribeBusLocations(filter){
 function renderDirBusLive(){
   const cont=document.getElementById('dirBusLiveList');if(!cont)return;
   const dirUid=S.uid;
-  const buses=nearbyBusesCache.filter(b=>!dirUid||b.directeurUid===dirUid);
+  const buses=nearbyBusesCache.filter(b=>!dirUid||b.directeurUid===dirUid||b.approvedByDir===dirUid);
   if(!buses.length){cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:14px;">Aucun bus en direct.</div>';return;}
   cont.innerHTML=buses.map(b=>{
     const updMs=b.updatedAt?.toMillis?.()||0;
