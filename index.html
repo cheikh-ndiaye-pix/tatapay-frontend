@@ -332,6 +332,9 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div style="background:#FF6B0010;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FF6B00;line-height:1.6;">🎫 Après validation de votre email, vous choisirez un ou plusieurs propriétaires de bus pour envoyer votre candidature.</div>
       <div class="input-wrap"><label class="input-label">Numéro CNI *</label><input class="input-field" id="authCNI" placeholder="1 234 567 890 12345" maxlength="20"/></div>
       <div class="input-wrap"><label class="input-label">Adresse / Quartier *</label><input class="input-field" id="authAddress" placeholder="ex: Médina, Dakar"/></div>
+      <div class="input-wrap"><label class="input-label">📷 Photo d'identité (selfie) *</label><input class="input-field" id="authRecvPhoto" type="file" accept="image/*" capture="user" style="padding:10px;"/></div>
+      <div class="input-wrap"><label class="input-label">🪪 Photocopie carte d'identité (recto/verso) *</label><input class="input-field" id="authRecvCNIDoc" type="file" accept="image/*,application/pdf" style="padding:10px;"/></div>
+      <div class="input-wrap"><label class="input-label">📄 CV (PDF ou image) *</label><input class="input-field" id="authRecvCV" type="file" accept="application/pdf,image/*" style="padding:10px;"/></div>
     </div>
     <div id="fieldsOwner" style="display:none;">
       <div class="input-wrap"><label class="input-label">Nom du GIE / Entreprise *</label><input class="input-field" id="authOwnerCompany" placeholder="GIE Dakar Express"/></div>
@@ -420,6 +423,8 @@ select.input-field option{background:#0c1f12;color:#fff;}
           <div style="font-weight:900;font-size:15px;" id="activeTicketLabel">—</div>
           <div style="color:#ff8888;font-size:12px;margin-top:2px;">Appuyez pour voir · Bouton descendre en bas 👇</div>
         </div>
+        <div style="font-weight:800;font-size:15px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">🚌 Bus à proximité <button onclick="startPassengerGps()" style="background:#009A4422;border:1px solid #009A4455;border-radius:8px;padding:4px 10px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📍 Activer GPS</button></div>
+        <div id="passNearbyBuses" style="margin-bottom:18px;"><div style="color:#888;font-size:12px;text-align:center;padding:14px;">📍 Activez votre GPS pour voir les bus en approche.</div></div>
         <div style="font-weight:800;font-size:15px;margin-bottom:12px;">Dernières transactions</div>
         <div id="passHomeTx"></div>
       </div>
@@ -686,6 +691,12 @@ select.input-field option{background:#0c1f12;color:#fff;}
           <span style="font-size:13px;color:#888;">Statut opérationnel</span>
           <span id="chBusOpBadge"><span class="ch-badge ch-badge-warn">Hors service</span></span>
         </div>
+        <div style="border-top:1px solid #05966915;padding-top:14px;margin-top:6px;">
+          <div style="font-size:11px;font-weight:800;color:#34d399;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">📍 Localisation GPS du bus</div>
+          <div style="font-size:11px;color:#888;margin-bottom:8px;" id="chGpsStatus">Désactivé</div>
+          <button id="chGpsBtn" class="btn btn-emerald btn-full" onclick="toggleBusGps()">📍 Partager ma position GPS</button>
+          <div style="font-size:10px;color:#666;margin-top:6px;line-height:1.5;">Permet aux passagers et au directeur de voir votre bus en direct.</div>
+        </div>
       </div>
       <button class="btn btn-danger btn-full" style="margin-top:8px;" onclick="openModal('modalChReport')">🔧 Signaler un problème</button>
     </div>
@@ -761,6 +772,10 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div class="dir-card" style="margin-bottom:16px;" id="dir-bus-list-card">
         <div style="font-size:12px;font-weight:800;color:#7dd3fc;margin-bottom:8px;">Performance par bus</div>
         <div id="dir-bus-perf-list"><div style="color:#555;font-size:13px;text-align:center;padding:16px;">Chargement…</div></div>
+      </div>
+      <div class="dir-card" style="margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:800;color:#7dd3fc;margin-bottom:8px;">📍 Bus en direct (GPS)</div>
+        <div id="dirBusLiveList"><div style="color:#555;font-size:13px;text-align:center;padding:14px;">Aucun bus en direct.</div></div>
       </div>
       <div class="dir-card" style="margin-bottom:16px;">
         <div style="font-size:12px;font-weight:800;color:#7dd3fc;margin-bottom:8px;">📊 Recettes par ligne</div>
@@ -1054,11 +1069,119 @@ select.input-field option{background:#0c1f12;color:#fff;}
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import{getFirestore,doc,setDoc,getDoc,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getStorage,ref as storageRef,uploadBytes,getDownloadURL}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:265d82fbda0db1b09b0b6d"};
 const fbApp=initializeApp(FC);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
+const storage=getStorage(fbApp);
+// ── KYC upload helper ─────────────────────────────────────
+async function uploadKyc(uid,kind,file){
+  if(!file)return'';
+  const ext=(file.name.split('.').pop()||'bin').toLowerCase();
+  const path=`kyc/${uid}/${kind}_${Date.now()}.${ext}`;
+  const r=storageRef(storage,path);
+  await uploadBytes(r,file,{contentType:file.type||'application/octet-stream'});
+  return await getDownloadURL(r);
+}
+// ── GPS bus tracking (chauffeur) ──────────────────────────
+let busWatchId=null;
+window.startBusGps=async function(){
+  if(!navigator.geolocation){notify('⚠️','GPS','Géolocalisation indisponible.');return;}
+  if(busWatchId!==null){return;}
+  const uid=S.uid;if(!uid)return;
+  try{
+    busWatchId=navigator.geolocation.watchPosition(async(pos)=>{
+      const p=S.profile||{};
+      try{
+        await setDoc(doc(db,'busLocations',uid),{
+          uid,
+          name:p.name||'',
+          gie:p.gie||'',
+          vehicle:p.vehicle||'',
+          ligne:p.ligne||'',
+          zone:p.zone||'',
+          directeurUid:p.directeurUid||'',
+          ownerUid:p.ownerUid||'',
+          lat:pos.coords.latitude,
+          lng:pos.coords.longitude,
+          accuracy:pos.coords.accuracy,
+          speed:pos.coords.speed||0,
+          heading:pos.coords.heading||0,
+          busStatus:p.busStatus||'en_service',
+          updatedAt:serverTimestamp()
+        },{merge:true});
+        const btn=document.getElementById('chGpsBtn');
+        if(btn){btn.textContent='📍 GPS actif — Arrêter';btn.style.background='#DF0024';}
+        const stat=document.getElementById('chGpsStatus');
+        if(stat)stat.textContent='En direct · '+pos.coords.latitude.toFixed(5)+', '+pos.coords.longitude.toFixed(5);
+      }catch(e){console.warn('[gps push]',e);}
+    },(err)=>{notify('❌','GPS',err.message);busWatchId=null;},{enableHighAccuracy:true,maximumAge:5000,timeout:15000});
+    notify('📍','GPS','Partage de position démarré.');
+  }catch(e){notify('❌','GPS',e.message);}
+};
+window.stopBusGps=async function(){
+  if(busWatchId!==null){navigator.geolocation.clearWatch(busWatchId);busWatchId=null;}
+  const btn=document.getElementById('chGpsBtn');
+  if(btn){btn.textContent='📍 Partager ma position GPS';btn.style.background='';}
+  const stat=document.getElementById('chGpsStatus');if(stat)stat.textContent='Désactivé';
+  if(S.uid){try{await updateDoc(doc(db,'busLocations',S.uid),{busStatus:'hors_service',updatedAt:serverTimestamp()});}catch(e){}}
+  notify('🛑','GPS','Partage arrêté.');
+};
+window.toggleBusGps=function(){if(busWatchId===null)window.startBusGps();else window.stopBusGps();};
+// ── GPS passenger / director ──────────────────────────────
+let passengerPos=null,passengerWatchId=null;
+function startPassengerGps(){
+  if(!navigator.geolocation||passengerWatchId!==null)return;
+  passengerWatchId=navigator.geolocation.watchPosition((pos)=>{
+    passengerPos={lat:pos.coords.latitude,lng:pos.coords.longitude};
+    renderNearbyBuses();
+  },()=>{},{enableHighAccuracy:true,maximumAge:10000,timeout:15000});
+}
+function stopPassengerGps(){if(passengerWatchId!==null){navigator.geolocation.clearWatch(passengerWatchId);passengerWatchId=null;}}
+function distKm(a,b){if(!a||!b)return null;const R=6371;const dLat=(b.lat-a.lat)*Math.PI/180;const dLng=(b.lng-a.lng)*Math.PI/180;const la1=a.lat*Math.PI/180,la2=b.lat*Math.PI/180;const x=Math.sin(dLat/2)**2+Math.sin(dLng/2)**2*Math.cos(la1)*Math.cos(la2);return 2*R*Math.asin(Math.sqrt(x));}
+let unsubNearbyBuses=null,nearbyBusesCache=[];
+function renderNearbyBuses(){
+  const cont=document.getElementById('passNearbyBuses');if(!cont)return;
+  if(!passengerPos){cont.innerHTML='<div style="color:#888;font-size:12px;text-align:center;padding:14px;">📍 Activez votre GPS pour voir les bus à proximité.<br><button onclick="startPassengerGps()" style="margin-top:8px;background:var(--g);border:none;border-radius:10px;padding:8px 14px;color:#fff;font-weight:700;cursor:pointer;font-family:inherit;">Activer GPS</button></div>';return;}
+  if(!nearbyBusesCache.length){cont.innerHTML='<div style="color:#888;font-size:12px;text-align:center;padding:14px;">Aucun bus en direct pour l\'instant.</div>';return;}
+  const enriched=nearbyBusesCache.map(b=>({...b,dist:distKm(passengerPos,{lat:b.lat,lng:b.lng})})).filter(b=>b.dist!=null).sort((a,b)=>a.dist-b.dist).slice(0,8);
+  cont.innerHTML=enriched.map(b=>{
+    const km=b.dist<1?Math.round(b.dist*1000)+' m':b.dist.toFixed(1)+' km';
+    const etaMin=Math.max(1,Math.round((b.dist/25)*60));
+    const arriving=b.dist<1.5?'🟢 Arrive bientôt':(b.dist<5?'🟡 En approche':'⚪ Loin');
+    return`<div style="display:flex;align-items:center;gap:10px;padding:10px;background:#0a1407;border:1px solid #009A4422;border-radius:12px;margin-bottom:8px;"><div style="width:38px;height:38px;border-radius:19px;background:#009A4422;display:flex;align-items:center;justify-content:center;font-size:18px;">🚌</div><div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13px;color:#fff;">${b.gie||'Bus'} · ${b.vehicle||'—'}</div><div style="font-size:11px;color:#888;">Ligne ${b.ligne||'—'} · ${km} · ~${etaMin} min</div></div><div style="font-size:11px;font-weight:800;color:${b.dist<1.5?'#34d399':(b.dist<5?'#FDEF42':'#888')};">${arriving}</div></div>`;
+  }).join('');
+}
+function subscribeBusLocations(filter){
+  if(unsubNearbyBuses){unsubNearbyBuses();unsubNearbyBuses=null;}
+  let q=collection(db,'busLocations');
+  unsubNearbyBuses=onSnapshot(q,(snap)=>{
+    const now=Date.now();
+    nearbyBusesCache=snap.docs.map(d=>d.data()).filter(b=>{
+      if(!b.lat||!b.lng)return false;
+      const updMs=b.updatedAt?.toMillis?.()||0;
+      if(updMs&&now-updMs>10*60*1000)return false;
+      if(filter?.directeurUid&&b.directeurUid!==filter.directeurUid)return false;
+      return b.busStatus!=='hors_service';
+    });
+    renderNearbyBuses();
+    renderDirBusLive();
+  });
+}
+function renderDirBusLive(){
+  const cont=document.getElementById('dirBusLiveList');if(!cont)return;
+  const dirUid=S.uid;
+  const buses=nearbyBusesCache.filter(b=>!dirUid||b.directeurUid===dirUid);
+  if(!buses.length){cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:14px;">Aucun bus en direct.</div>';return;}
+  cont.innerHTML=buses.map(b=>{
+    const updMs=b.updatedAt?.toMillis?.()||0;
+    const ago=updMs?Math.round((Date.now()-updMs)/1000):'?';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:10px;background:#050d18;border:1px solid #0ea5e933;border-radius:12px;margin-bottom:8px;"><div style="width:8px;height:8px;border-radius:4px;background:#34d399;animation:pulse 1.5s infinite;"></div><div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13px;color:#7dd3fc;">${b.vehicle||'—'} · ${b.gie||''}</div><div style="font-size:11px;color:#888;font-family:'JetBrains Mono',monospace;">${b.lat.toFixed(4)}, ${b.lng.toFixed(4)} · il y a ${ago}s</div></div><a href="https://www.google.com/maps?q=${b.lat},${b.lng}" target="_blank" style="background:#0ea5e922;border:1px solid #0ea5e955;border-radius:8px;padding:6px 10px;color:#7dd3fc;font-size:11px;font-weight:700;text-decoration:none;">🗺️ Carte</a></div>`;
+  }).join('');
+}
+window.startPassengerGps=startPassengerGps;
 const ADMIN_EMAIL='papacheikh900@gmail.com';
 
 let S={role:null,uid:null,profile:null,authRole:'passenger',isReg:false,camMode:null,ticketBus:null,ticketSection:null,stream:null,facing:'environment',scanning:false,friendTarget:null};
@@ -1255,6 +1378,7 @@ function loginUI(){
     updateBalanceUI();clearFriend();
     unsubBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;updateBalanceUI();}});
     loadPassHomeTx();loadPassTickets();show('screenPassenger');notify('✅','Bienvenue !',p.name);
+    subscribeBusLocations();startPassengerGps();
   }else if(S.role==='receiver'&&p.status==='approved'){
     document.getElementById('recvGreet').textContent=p.name;
     document.getElementById('recvInfoLine').textContent=`GIE:${p.gie||'—'} · Ligne ${p.ligne||'—'} · Zone ${p.zone||'—'}`;
@@ -1271,6 +1395,7 @@ function loginUI(){
     document.getElementById('dirWalletId').textContent=p.walletId||'—';
     show('screenDirecteur');
     loadDirFullDashboard();
+    subscribeBusLocations({directeurUid:S.uid});
     notify('✅','Bienvenue Directeur',p.name);
   }else if((S.role==='chauffeur'||S.role==='owner')&&p.status==='approved'){
     document.getElementById('chGreet').textContent=p.name;
