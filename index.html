@@ -423,7 +423,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
           <div style="font-weight:900;font-size:15px;" id="activeTicketLabel">—</div>
           <div style="color:#ff8888;font-size:12px;margin-top:2px;">Appuyez pour voir · Bouton descendre en bas 👇</div>
         </div>
-        <div style="font-weight:800;font-size:15px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">🚌 Bus à proximité <button onclick="startPassengerGps()" style="background:#009A4422;border:1px solid #009A4455;border-radius:8px;padding:4px 10px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📍 Activer GPS</button></div>
+        <div style="font-weight:800;font-size:15px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:6px;">🚌 Bus à proximité <div style="display:flex;gap:6px;"><button onclick="openSeeBus()" style="background:#1a56db22;border:1px solid #4d8aff55;border-radius:8px;padding:4px 10px;color:#7dd3fc;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">👁️ Voir le bus</button><button onclick="startPassengerGps()" style="background:#009A4422;border:1px solid #009A4455;border-radius:8px;padding:4px 10px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📍 GPS</button></div></div>
         <div id="passNearbyBuses" style="margin-bottom:18px;"><div style="color:#888;font-size:12px;text-align:center;padding:14px;">📍 Activez votre GPS pour voir les bus en approche.</div></div>
         <div style="font-weight:800;font-size:15px;margin-bottom:12px;">Dernières transactions</div>
         <div id="passHomeTx"></div>
@@ -620,8 +620,14 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div style="font-size:11px;color:#05966988;margin-bottom:2px;">Wallet chauffeur</div>
         <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#888;margin-bottom:12px;" id="chWalletId">—</div>
         <div style="font-size:11px;color:#05966988;margin-bottom:4px;">Recettes du jour (receveur)</div>
-        <div style="font-weight:900;font-size:32px;color:#34d399;margin-bottom:14px;"><span id="chTodayRev">0</span> <span style="font-size:14px;color:#05966988;">FCFA</span></div>
-        <button class="btn btn-emerald btn-full" onclick="chToggleBusStatus()" id="chToggleServiceBtn">🚌 Mettre en service</button>
+        <div style="font-weight:900;font-size:32px;color:#34d399;margin-bottom:6px;"><span id="chTodayRev">0</span> <span style="font-size:14px;color:#05966988;">FCFA</span></div>
+        <div style="font-size:11px;color:#05966988;margin-bottom:4px;">Solde wallet</div>
+        <div style="font-weight:900;font-size:22px;color:#FDEF42;margin-bottom:14px;"><span id="chWalletBal">0</span> <span style="font-size:12px;color:#FDEF4288;">FCFA</span></div>
+        <button class="btn btn-emerald btn-full" onclick="chToggleBusStatus()" id="chToggleServiceBtn" style="margin-bottom:8px;">🚌 Mettre en service</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button onclick="openChCashout()" style="background:linear-gradient(135deg,#FDEF42,#f59e0b);border:none;border-radius:12px;padding:12px;cursor:pointer;color:#1a1a1a;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;">💰 Retirer</button>
+          <button onclick="openChMomoSetup()" style="background:#05966922;border:1px solid #05966955;border-radius:12px;padding:12px;cursor:pointer;color:#34d399;font-weight:800;font-size:12px;font-family:'Space Grotesk',sans-serif;">⚙️ Mobile Money</button>
+        </div>
       </div>
       <div class="ch-stat-grid">
         <div class="ch-stat"><div class="val" id="chTripCount">0</div><div class="lbl">Trajets aujourd'hui</div></div>
@@ -1068,6 +1074,21 @@ const fbApp=initializeApp(FC);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
 const storage=getStorage(fbApp);
+// ── PayTech config (clés marchand) ────────────────────────
+const PAYTECH_API_KEY='3851bb674d7d6886b9b703009b9975e655941285b97fe266da8763731236c56b';
+const PAYTECH_API_SECRET='a4076e0f31f9ce15d87abd1b85550a4c3d02e8548a0452fa134e1406e9425a10';
+const PAYTECH_ENV='test'; // 'test' ou 'prod'
+async function paytechTransfer({amount, operator, recipient, ref, description}){
+  // Appel best-effort à PayTech (peut échouer CORS sans backend proxy)
+  try{
+    const r=await fetch('https://paytech.sn/api/payment/request-payment',{
+      method:'POST',mode:'cors',
+      headers:{'Content-Type':'application/json','Accept':'application/json','API_KEY':PAYTECH_API_KEY,'API_SECRET':PAYTECH_API_SECRET},
+      body:JSON.stringify({item_name:description||'Versement TataPay',item_price:amount,currency:'XOF',ref_command:ref,command_name:description||'Versement chauffeur',env:PAYTECH_ENV,ipn_url:location.origin+'/ipn',success_url:location.origin+'/ok',cancel_url:location.origin+'/ko',custom_field:JSON.stringify({operator,recipient})})
+    });
+    return await r.json();
+  }catch(e){return{success:0,error:e.message};}
+}
 // ── KYC upload helper ─────────────────────────────────────
 async function uploadKyc(uid,kind,file){
   if(!file)return'';
@@ -1601,12 +1622,51 @@ window.switchDirTab=(tab)=>{
   if(tab==='receivers')loadDirReceivers();
 };
 
-const DIR_PERIODS={
-  jour:{enc:845000,tix:1240,vers:680000,net:74000,labels:['8h','10h','12h','14h','16h','18h','20h'],data:[62000,98000,145000,178000,192000,110000,60000]},
-  semaine:{enc:5320000,tix:8140,vers:4256000,net:520000,labels:['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'],data:[845000,920000,780000,960000,1050000,640000,125000]},
-  mois:{enc:21400000,tix:32600,vers:17120000,net:2100000,labels:['S1','S2','S3','S4'],data:[5200000,5800000,5100000,5300000]},
-  total:{enc:148000000,tix:224000,vers:118400000,net:14600000,labels:['Jan','Fév','Mar','Avr','Mai','Jun'],data:[22000000,24500000,21800000,26000000,27500000,26200000]},
+let DIR_PERIODS={
+  jour:{enc:0,tix:0,vers:0,net:0,labels:['8h','10h','12h','14h','16h','18h','20h'],data:[0,0,0,0,0,0,0]},
+  semaine:{enc:0,tix:0,vers:0,net:0,labels:['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'],data:[0,0,0,0,0,0,0]},
+  mois:{enc:0,tix:0,vers:0,net:0,labels:['S1','S2','S3','S4'],data:[0,0,0,0]},
+  total:{enc:0,tix:0,vers:0,net:0,labels:[],data:[]},
 };
+async function recomputeDirPeriods(){
+  if(S.role!=='directeur')return;
+  try{
+    const recvSnap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('directeurUid','==',S.uid)));
+    const recvUids=recvSnap.docs.map(d=>d.id);
+    if(!recvUids.length)return;
+    // Firestore 'in' max 30, chunker
+    const chunks=[];for(let i=0;i<recvUids.length;i+=30)chunks.push(recvUids.slice(i,i+30));
+    let tickets=[],versements=[];
+    for(const c of chunks){
+      const ts=await getDocs(query(collection(db,'tickets'),where('busUid','in',c)));
+      tickets=tickets.concat(ts.docs.map(d=>d.data()));
+      const vs=await getDocs(query(collection(db,'versements'),where('receiverUid','in',c)));
+      versements=versements.concat(vs.docs.map(d=>d.data()));
+    }
+    const now=new Date();
+    const startDay=new Date(now);startDay.setHours(0,0,0,0);
+    const startWeek=new Date(now);startWeek.setDate(now.getDate()-now.getDay());startWeek.setHours(0,0,0,0);
+    const startMonth=new Date(now.getFullYear(),now.getMonth(),1);
+    const tsOf=t=>(t.ts&&t.ts.toDate)?t.ts.toDate():new Date(t.ts||0);
+    const sumIn=(arr,from)=>arr.filter(x=>tsOf(x)>=from);
+    const buildPeriod=(filteredT,filteredV,labels,bucketFn)=>{
+      const enc=filteredT.reduce((a,t)=>a+(t.price||t.amount||0),0);
+      const tix=filteredT.length;
+      const vers=filteredV.reduce((a,v)=>a+(v.amount||0),0);
+      const buckets=new Array(labels.length).fill(0);
+      filteredT.forEach(t=>{const i=bucketFn(tsOf(t));if(i>=0&&i<buckets.length)buckets[i]+=(t.price||t.amount||0);});
+      return{enc,tix,vers,net:enc-vers,labels,data:buckets};
+    };
+    DIR_PERIODS.jour=buildPeriod(sumIn(tickets,startDay),sumIn(versements,startDay),
+      ['8h','10h','12h','14h','16h','18h','20h'],d=>Math.max(0,Math.min(6,Math.floor((d.getHours()-8)/2))));
+    DIR_PERIODS.semaine=buildPeriod(sumIn(tickets,startWeek),sumIn(versements,startWeek),
+      ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'],d=>d.getDay());
+    DIR_PERIODS.mois=buildPeriod(sumIn(tickets,startMonth),sumIn(versements,startMonth),
+      ['S1','S2','S3','S4'],d=>Math.min(3,Math.floor((d.getDate()-1)/7)));
+    DIR_PERIODS.total=buildPeriod(tickets,versements,
+      ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'],d=>d.getMonth());
+  }catch(e){console.warn('recomputeDirPeriods',e);}
+}
 let dirCurrentPeriod='jour';
 
 window.dirSetPeriod=(k,btn)=>{
@@ -1668,6 +1728,7 @@ async function loadDirFullDashboard(){
     if(dirLineChartInst)dirLineChartInst.destroy();
     const lCtx=document.getElementById('dirLineChart');
     if(lCtx&&ligneLabels.length){dirLineChartInst=new Chart(lCtx,{type:'bar',indexAxis:'y',data:{labels:ligneLabels,datasets:[{label:'FCFA',data:ligneData,backgroundColor:ligneData.map(v=>v>100000?'#009A44':v>0?'#FF6B00':'#DF0024'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10},callback:v=>fmt(v/1000)+'k'},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#7dd3fc',font:{size:11}},grid:{display:false},border:{display:false}}}}});}
+    await recomputeDirPeriods();
     const pd=DIR_PERIODS['jour'];
     document.getElementById('dir-enc').textContent=fmt(pd.enc);document.getElementById('dir-tix').textContent=fmt(pd.tix);document.getElementById('dir-vers').textContent=fmt(pd.vers);document.getElementById('dir-net').textContent=fmt(pd.net);document.getElementById('dir-flux-enc').textContent='+'+fmt(pd.enc)+' F';document.getElementById('dir-flux-vers').textContent='−'+fmt(pd.vers)+' F';document.getElementById('dir-flux-ret').textContent='−'+fmt(Math.round(pd.enc*0.05))+' F';document.getElementById('dir-flux-net').textContent='+'+fmt(pd.net)+' F';
     if(dirRevChartInst)dirRevChartInst.destroy();
@@ -2086,16 +2147,75 @@ window.closeModal=(id)=>{document.getElementById(id).style.display='none';if(id=
 function updateBalanceUI(){document.getElementById('passBalance').textContent=fmt(S.profile?.balance||0);}
 function showDescendBtn(t){activeTicketData=t;document.getElementById('descendInfo').textContent=`${t.from}→${t.to} · ${t.price} FCFA`;document.getElementById('descendBtn').style.display='block';document.getElementById('activeTicketBanner').style.display='block';document.getElementById('activeTicketLabel').textContent=`🚌 ${t.gie}/${t.vehicle} — ${t.from}→${t.to}`;}
 function hideDescendBtn(){document.getElementById('descendBtn').style.display='none';document.getElementById('activeTicketBanner').style.display='none';activeTicketData=null;}
-window.demandDescendre=async()=>{if(!activeTicketData)return;await addDoc(collection(db,'notifications'),{toUid:activeTicketData.busUid,type:'descendre',passenger:S.profile.name,from:activeTicketData.from,to:activeTicketData.to,read:false,ts:serverTimestamp()});notify('🛑','Signal envoyé !','Le receveur a été prévenu.');};
+window.demandDescendre=async()=>{
+  if(!activeTicketData)return;
+  // Prévenir le receveur
+  await addDoc(collection(db,'notifications'),{toUid:activeTicketData.busUid,type:'descendre',passenger:S.profile.name,from:activeTicketData.from,to:activeTicketData.to,read:false,ts:serverTimestamp()});
+  // Prévenir aussi directement le chauffeur si connu
+  try{
+    const recvSnap=await getDoc(doc(db,'users',activeTicketData.busUid));
+    if(recvSnap.exists()){
+      const chUid=recvSnap.data().chauffeurUid;
+      if(chUid){await addDoc(collection(db,'notifications'),{toUid:chUid,type:'descendre_chauffeur',passenger:S.profile.name,from:activeTicketData.from,to:activeTicketData.to,read:false,ts:serverTimestamp()});}
+    }
+  }catch(e){}
+  notify('🛑','Signal envoyé !','Le receveur et le chauffeur ont été prévenus.');
+};
+window.alertChauffeurDescente=async(passenger,from,to)=>{
+  const chUid=S.profile?.chauffeurUid;
+  if(!chUid){notify('⚠️','Chauffeur','Aucun chauffeur lié.');return;}
+  try{await addDoc(collection(db,'notifications'),{toUid:chUid,type:'descendre_chauffeur',passenger,from,to,fromReceiverUid:S.uid,read:false,ts:serverTimestamp()});notify('🔔','Chauffeur prévenu',passenger+' veut descendre à '+to);}
+  catch(e){notify('❌','Erreur',e.message);}
+};
 window.showActiveTicket=()=>{if(activeTicketData)showTicketData(activeTicketData);};
 window.openWithdraw=()=>{resetWithdraw();document.getElementById('withdrawAvailable').textContent=fmt(S.profile?.balance||0)+' FCFA';openModal('modalWithdraw');};
 function resetWithdraw(){['wdStep1','wdStep2','wdStep3','wdStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const w=document.getElementById('wdAmt');if(w)w.value='';}
 window.wdGoStep2=()=>{const amt=parseInt(document.getElementById('wdAmt').value||0);const bal=S.profile?.balance||0;if(!amt||amt<500){notify('⚠️','Montant','Minimum 500 FCFA.');return;}if(amt>bal){notify('❌','Solde','Solde insuffisant ('+fmt(bal)+' FCFA).');return;}S.wdAmt=amt;document.getElementById('wdAmtBig').textContent=fmt(amt)+' FCFA';document.getElementById('wdStep1').style.display='none';document.getElementById('wdStep2').style.display='block';};
 window.doWithdraw=async()=>{
   const amt=S.wdAmt;if(!amt)return;
+  const chUid=S.profile.chauffeurUid;
+  if(!chUid){notify('⚠️','Chauffeur','Aucun chauffeur lié à votre bus. Demandez au directeur d\'en assigner un.');return;}
   document.getElementById('wdStep2').style.display='none';document.getElementById('wdStep3').style.display='block';
-  try{await new Promise(r=>setTimeout(r,1200));const ref='WD-'+Date.now();await setDoc(doc(collection(db,'withdrawal_requests')),{uid:S.uid,name:S.profile.name,walletId:S.profile.walletId,amount:amt,status:'pending',ref,requestedAt:serverTimestamp()});await addDoc(collection(db,'users',S.uid,'history'),{type:'withdraw_request',label:'Demande de retrait — '+ref,amount:-amt,ref,ts:serverTimestamp()});document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep4').style.display='block';document.getElementById('wdSuccessDesc').textContent=fmt(amt)+' FCFA versés';document.getElementById('wdSuccessRef').textContent='Ref: '+ref;}
+  try{
+    const ref='VRS-'+Date.now();
+    // 1) Mouvement interne wallet receveur -> chauffeur
+    await updateDoc(doc(db,'users',S.uid),{balance:increment(-amt)});
+    await updateDoc(doc(db,'users',chUid),{balance:increment(amt)});
+    await addDoc(collection(db,'versements'),{ref,receiverUid:S.uid,receiverName:S.profile.name,chauffeurUid:chUid,amount:amt,status:'pending_confirm',directeurUid:S.profile.directeurUid||'',ts:serverTimestamp()});
+    await addDoc(collection(db,'users',S.uid,'history'),{type:'versement_chauffeur',label:'Versement → chauffeur ('+ref+')',amount:-amt,ref,ts:serverTimestamp()});
+    await addDoc(collection(db,'users',chUid,'history'),{type:'versement_recu',label:'Versement reçu du receveur ('+ref+')',amount:amt,ref,ts:serverTimestamp()});
+    // 2) Notif au chauffeur pour qu'il confirme la bonne réception
+    await addDoc(collection(db,'notifications'),{toUid:chUid,type:'versement_recu',versementRef:ref,amount:amt,fromName:S.profile.name,fromUid:S.uid,read:false,ts:serverTimestamp()});
+    // 3) Best-effort : déclencher le payout PayTech vers l'opérateur du chauffeur
+    try{
+      const chSnap=await getDoc(doc(db,'users',chUid));
+      const ch=chSnap.exists()?chSnap.data():{};
+      if(ch.momoNumber){
+        const pt=await paytechTransfer({amount,operator:ch.momoOperator||'orange-money-senegal',recipient:ch.momoNumber,ref,description:'Versement TataPay '+ref});
+        await addDoc(collection(db,'paytech_logs'),{ref,response:pt,ts:serverTimestamp()});
+      }
+    }catch(e){console.warn('paytech',e);}
+    document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep4').style.display='block';
+    document.getElementById('wdSuccessDesc').textContent=fmt(amt)+' FCFA versés au chauffeur';
+    document.getElementById('wdSuccessRef').textContent='Ref: '+ref;
+  }
   catch(e){notify('❌','Erreur',e.message);document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep2').style.display='block';}
+};
+window.confirmVersementRecu=async(notifId,ref)=>{
+  try{await updateDoc(doc(db,'notifications',notifId),{read:true,confirmed:true});
+    const vs=await getDocs(query(collection(db,'versements'),where('ref','==',ref)));
+    vs.forEach(async d=>{await updateDoc(doc(db,'versements',d.id),{status:'confirmed',confirmedAt:serverTimestamp()});});
+    notify('✅','Confirmé','Vous avez confirmé avoir reçu l\'argent.');
+  }catch(e){notify('❌','Erreur',e.message);}
+};
+window.rejectVersementRecu=async(notifId,ref,receiverUid)=>{
+  try{await updateDoc(doc(db,'notifications',notifId),{read:true,confirmed:false});
+    const vs=await getDocs(query(collection(db,'versements'),where('ref','==',ref)));
+    vs.forEach(async d=>{await updateDoc(doc(db,'versements',d.id),{status:'disputed',disputedAt:serverTimestamp()});});
+    // Alerter le directeur
+    if(S.profile.directeurUid){await addDoc(collection(db,'notifications'),{toUid:S.profile.directeurUid,type:'versement_litige',ref,chauffeurUid:S.uid,chauffeurName:S.profile.name,receiverUid,read:false,ts:serverTimestamp()});}
+    notify('⚠️','Signalé','Le directeur a été alerté du litige.');
+  }catch(e){notify('❌','Erreur',e.message);}
 };
 window.openRecharge=()=>{resetRecharge();openModal('modalRecharge');};
 function resetRecharge(){['rgStep1','rgStep2','rgStep3','rgStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const amt=document.getElementById('rechargeAmt');if(amt)amt.value='';document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));}
@@ -2198,7 +2318,7 @@ function txRow(h){const icons={recharge:'💳',transfer_out:'↗️',transfer_in
 async function loadPassTickets(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'tickets'),orderBy('ts','desc'),limit(30));const snap=await getDocs(q);const cont=document.getElementById('passTicketsContainer');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;"><div style="font-size:56px;opacity:.4;margin-bottom:16px;">🎫</div><div style="color:#555;font-weight:800;">Aucun ticket</div><button class="btn btn-purple" style="margin-top:16px;" onclick="openTicketFlow()">🎫 Acheter un ticket</button></div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:12px;line-height:1.9;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}<br>✅ Validé</div></div></div>`;}).join('');}
 window.showTicketData=(t)=>{if(typeof t==='string')t=JSON.parse(t);document.getElementById('ticketThermalContent').innerHTML=`<div class="t-header">🚌 TATAPAY</div><div style="font-size:13px;line-height:2;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}<br>✅ Validé · ${t.passenger}</div>`;document.getElementById('ticketOverlay').style.display='flex';if(S.role==='passenger')showDescendBtn(t);};
 window.closeTicket=()=>document.getElementById('ticketOverlay').style.display='none';
-window.openNotifPanel=async()=>{const q=query(collection(db,'notifications'),where('toUid','==',S.uid),orderBy('ts','desc'),limit(20));const snap=await getDocs(q);const cont=document.getElementById('notifList');if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';}else{cont.innerHTML=snap.docs.map(d=>{const n=d.data();let icon='🔔',title='Notification',body='',color='var(--orange)';if(n.type==='descendre'){icon='🛑';title='Passager veut descendre';body=`${n.passenger||'—'} · ${n.from||''}→${n.to||''}`;color='#DF0024';}else if(n.type==='ticket_request'){icon='🎫';title='Demande ticket';body=`${n.passenger||'—'} · ${n.price||0} FCFA`;color='var(--g)';}else if(n.type==='ticket_validated'){icon='✅';title='Ticket validé';body='Votre ticket a été validé !';color='var(--g)';}else if(n.type==='receiver_request'){icon='🎫';title='Nouveau receveur';body=`${n.receiverName||'—'}`;color='var(--orange)';}else if(n.type==='owner_request'){icon='🚌';title='Nouveau propriétaire';body=`${n.ownerName||'—'} — ${n.company||'—'}`;color='#7c3aed';}else if(n.type==='chauffeur_request'){icon='👨‍✈️';title='Nouveau chauffeur';body=`${n.chauffeurName||'—'}`;color='#059669';}else if(n.type==='versement_alert'){icon='💸';title='Versement manquant';body=n.message||'Le receveur n\'a pas versé les recettes.';color='#DF0024';}else if(n.type==='fraud_alert'){icon='⚠️';title='Anomalie détectée';body=n.message||'Activité suspecte sur votre bus.';color='#FF6B00';}else if(n.type==='bus_panne'){icon='🔧';title='Panne signalée';body=n.message||'Problème technique sur le bus.';color='#DF0024';}else if(n.type==='bus_report'){icon='📋';title='Signalement bus';body=n.message||'—';color='#059669';}return`<div style="background:#ffffff08;border:1px solid ${color}33;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;"><div style="font-size:22px;">${icon}</div><div><div style="font-weight:800;font-size:13px;color:${color};">${title}</div><div style="font-size:12px;color:#ccc;margin-top:3px;">${body}</div></div></div>`;}).join('');}document.getElementById('notifPanel').style.display='flex';};
+window.openNotifPanel=async()=>{const q=query(collection(db,'notifications'),where('toUid','==',S.uid),orderBy('ts','desc'),limit(20));const snap=await getDocs(q);const cont=document.getElementById('notifList');if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';}else{cont.innerHTML=snap.docs.map(d=>{const n=d.data();let icon='🔔',title='Notification',body='',color='var(--orange)';if(n.type==='descendre'){icon='🛑';title='Passager veut descendre';body=`${n.passenger||'—'} · ${n.from||''}→${n.to||''}`;color='#DF0024';}else if(n.type==='ticket_request'){icon='🎫';title='Demande ticket';body=`${n.passenger||'—'} · ${n.price||0} FCFA`;color='var(--g)';}else if(n.type==='ticket_validated'){icon='✅';title='Ticket validé';body='Votre ticket a été validé !';color='var(--g)';}else if(n.type==='receiver_request'){icon='🎫';title='Nouveau receveur';body=`${n.receiverName||'—'}`;color='var(--orange)';}else if(n.type==='owner_request'){icon='🚌';title='Nouveau propriétaire';body=`${n.ownerName||'—'} — ${n.company||'—'}`;color='#7c3aed';}else if(n.type==='chauffeur_request'){icon='👨‍✈️';title='Nouveau chauffeur';body=`${n.chauffeurName||'—'}`;color='#059669';}else if(n.type==='versement_alert'){icon='💸';title='Versement manquant';body=n.message||'Le receveur n\'a pas versé les recettes.';color='#DF0024';}else if(n.type==='fraud_alert'){icon='⚠️';title='Anomalie détectée';body=n.message||'Activité suspecte sur votre bus.';color='#FF6B00';}else if(n.type==='bus_panne'){icon='🔧';title='Panne signalée';body=n.message||'Problème technique sur le bus.';color='#DF0024';}else if(n.type==='bus_report'){icon='📋';title='Signalement bus';body=n.message||'—';color='#059669';}else if(n.type==='versement_recu'){icon='💸';title='Versement reçu';body=(n.fromName||'Receveur')+' a versé '+fmt(n.amount||0)+' FCFA. Confirmez-vous ?';color='var(--g)';}else if(n.type==='descendre_chauffeur'){icon='🛑';title='Passager veut descendre';body=(n.passenger||'—')+' · arrêt: '+(n.to||'');color='#DF0024';}else if(n.type==='versement_litige'){icon='⚠️';title='Litige versement';body='Chauffeur '+(n.chauffeurName||'—')+' conteste le versement '+(n.ref||'');color='#FF6B00';}return`<div style="background:#ffffff08;border:1px solid ${color}33;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;"><div style="font-size:22px;">${icon}</div><div><div style="font-weight:800;font-size:13px;color:${color};">${title}</div><div style="font-size:12px;color:#ccc;margin-top:3px;">${body}</div></div></div>`;}).join('');}document.getElementById('notifPanel').style.display='flex';};
 window.clearNotifs=async()=>{const q=query(collection(db,'notifications'),where('toUid','==',S.uid));const snap=await getDocs(q);await Promise.all(snap.docs.map(d=>deleteDoc(doc(db,'notifications',d.id))));document.getElementById('notifList').innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';const b=document.getElementById('bellBadge');if(b)b.className='bell-badge';const cb=document.getElementById('chBellBadge');if(cb)cb.className='bell-badge';};
 
 // ── CAMERA ────────────────────────────────────────────────
@@ -2224,8 +2344,132 @@ window.flipCamera=async()=>{S.facing=S.facing==='environment'?'user':'environmen
 function handleQR(raw){stopCamera();raw=(raw||'').trim();const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Contenu: '+raw.slice(0,40));return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId);}else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}}
 
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').catch(()=>{});});}
+
+// ── Chauffeur self-cashout (mobile money) ───────────────────
+function updateChWalletUI(){
+  const el=document.getElementById('chWalletBal');
+  if(el)el.textContent=fmt(S.profile?.balance||0);
+}
+window.openChCashout=function(){
+  if(!S.profile?.momoNumber){notify('⚠️','Mobile Money','Configurez d\'abord votre numéro Mobile Money.');openChMomoSetup();return;}
+  const bal=S.profile?.balance||0;
+  document.getElementById('chCashoutBal').textContent=fmt(bal)+' FCFA';
+  document.getElementById('chCashoutOp').textContent=({'orange-money-senegal':'Orange Money','wave-senegal':'Wave','free-money-senegal':'Free Money','wizall-senegal':'Wizall'})[S.profile.momoOperator]||S.profile.momoOperator||'—';
+  document.getElementById('chCashoutNum').textContent=S.profile.momoNumber;
+  document.getElementById('chCashoutAmt').value=bal;
+  openModal('modalChCashout');
+};
+window.doChCashout=async function(){
+  const amt=parseInt(document.getElementById('chCashoutAmt').value||'0',10);
+  const bal=S.profile?.balance||0;
+  if(!amt||amt<500){notify('❌','Montant','Minimum 500 FCFA.');return;}
+  if(amt>bal){notify('❌','Solde','Solde insuffisant.');return;}
+  const btn=document.getElementById('chCashoutBtn');btn.disabled=true;btn.textContent='⏳ Envoi…';
+  const ref='CO-'+Date.now();
+  try{
+    await updateDoc(doc(db,'users',S.uid),{balance:(bal-amt)});
+    await addDoc(collection(db,'users',S.uid,'cashouts'),{amount:amt,ref,operator:S.profile.momoOperator,recipient:S.profile.momoNumber,status:'pending',ts:serverTimestamp()});
+    const pt=await paytechTransfer({amount:amt,operator:S.profile.momoOperator||'orange-money-senegal',recipient:S.profile.momoNumber,ref,description:'Retrait chauffeur TataPay'});
+    await addDoc(collection(db,'paytech_logs'),{uid:S.uid,kind:'cashout',ref,amount:amt,response:pt||{},ts:serverTimestamp()});
+    notify('✅','Retrait','Demande envoyée. L\'argent arrivera sur '+S.profile.momoNumber+'.');
+    closeModal('modalChCashout');
+  }catch(e){notify('❌','Retrait',e.message);}
+  finally{btn.disabled=false;btn.textContent='💰 Retirer maintenant';}
+};
+window.openChMomoSetup=function(){
+  document.getElementById('chMomoNum').value=S.profile?.momoNumber||'';
+  document.getElementById('chMomoOp').value=S.profile?.momoOperator||'orange-money-senegal';
+  openModal('modalChMomo');
+};
+window.saveChMomo=async function(){
+  const num=document.getElementById('chMomoNum').value.trim();
+  const op=document.getElementById('chMomoOp').value;
+  if(!/^(\+?221)?7\d{8}$/.test(num.replace(/\s/g,''))){notify('❌','Numéro','Numéro sénégalais invalide (ex: 77 123 45 67).');return;}
+  try{
+    await updateDoc(doc(db,'users',S.uid),{momoNumber:num,momoOperator:op});
+    S.profile.momoNumber=num;S.profile.momoOperator=op;
+    notify('✅','Mobile Money','Numéro enregistré.');
+    closeModal('modalChMomo');
+  }catch(e){notify('❌','Erreur',e.message);}
+};
+
+// Hook chauffeur profile snapshot to refresh wallet display
+(function hookChWallet(){
+  const orig=window.updateChHomeUI;
+  if(typeof orig==='function'){
+    window.updateChHomeUI=function(p){orig(p);updateChWalletUI();};
+  }
+})();
+
+// ── Passenger "Voir le bus" ─────────────────────────────────
+window.openSeeBus=function(){
+  startPassengerGps();
+  let lignes=[];
+  if(activeTicketData?.ligne)lignes.push(activeTicketData.ligne);
+  const cont=document.getElementById('seeBusList');
+  function render(){
+    let buses=nearbyBusesCache.slice();
+    if(lignes.length)buses=buses.filter(b=>lignes.includes(b.ligne));
+    if(!buses.length){cont.innerHTML='<div style="color:#888;font-size:13px;text-align:center;padding:20px;">Aucun bus en direct'+(lignes.length?' sur la ligne '+lignes.join(', '):'')+'.</div>';return;}
+    if(passengerPos){buses=buses.map(b=>({...b,dist:distKm(passengerPos,{lat:b.lat,lng:b.lng})})).sort((a,b)=>(a.dist||999)-(b.dist||999));}
+    cont.innerHTML=buses.map(b=>{
+      const dist=b.dist!=null?(b.dist<1?Math.round(b.dist*1000)+' m':b.dist.toFixed(1)+' km'):'—';
+      const eta=b.dist!=null?'~'+Math.max(1,Math.round((b.dist/25)*60))+' min':'';
+      return`<div style="padding:12px;background:#0a1407;border:1px solid #009A4433;border-radius:12px;margin-bottom:10px;"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div><div style="font-weight:900;font-size:14px;">🚌 ${b.gie||'Bus'} · ${b.vehicle||'—'}</div><div style="font-size:11px;color:#888;">Ligne ${b.ligne||'—'} · ${dist} ${eta}</div></div><a href="https://www.google.com/maps?q=${b.lat},${b.lng}" target="_blank" style="background:#009A4422;border:1px solid #009A4455;border-radius:8px;padding:6px 10px;color:#34d399;font-size:11px;font-weight:700;text-decoration:none;">🗺️ Carte</a></div></div>`;
+    }).join('');
+  }
+  render();
+  window._seeBusInt=setInterval(render,4000);
+  openModal('modalSeeBus');
+};
+window.closeSeeBus=function(){if(window._seeBusInt){clearInterval(window._seeBusInt);window._seeBusInt=null;}closeModal('modalSeeBus');};
 </script>
+
+<div class="modal-overlay" id="modalChCashout" style="display:none;" onclick="if(event.target===this)closeModal('modalChCashout')">
+  <div class="modal">
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">💰 Retirer mon argent</div><button class="modal-close" onclick="closeModal('modalChCashout')">✕</button></div>
+    <div class="modal-body">
+      <div style="background:#05966915;border:1px solid #05966944;border-radius:12px;padding:12px;margin-bottom:14px;">
+        <div style="font-size:11px;color:#888;">Solde disponible</div>
+        <div style="font-weight:900;font-size:22px;color:#34d399;" id="chCashoutBal">0 FCFA</div>
+        <div style="font-size:11px;color:#888;margin-top:6px;">Vers : <b id="chCashoutOp">—</b> · <span id="chCashoutNum" style="font-family:'JetBrains Mono',monospace;">—</span></div>
+      </div>
+      <label style="font-size:12px;color:#888;">Montant à retirer (FCFA)</label>
+      <input class="input-field" id="chCashoutAmt" type="number" min="500" placeholder="0"/>
+      <button class="btn btn-primary btn-full" id="chCashoutBtn" onclick="doChCashout()" style="margin-top:12px;">💰 Retirer maintenant</button>
+      <div style="font-size:10px;color:#666;text-align:center;margin-top:10px;">L'argent est envoyé directement sur votre Mobile Money via PayTech.</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalChMomo" style="display:none;" onclick="if(event.target===this)closeModal('modalChMomo')">
+  <div class="modal">
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">⚙️ Mobile Money</div><button class="modal-close" onclick="closeModal('modalChMomo')">✕</button></div>
+    <div class="modal-body">
+      <label style="font-size:12px;color:#888;">Opérateur</label>
+      <select class="input-field" id="chMomoOp">
+        <option value="orange-money-senegal">Orange Money</option>
+        <option value="wave-senegal">Wave</option>
+        <option value="free-money-senegal">Free Money</option>
+        <option value="wizall-senegal">Wizall</option>
+      </select>
+      <label style="font-size:12px;color:#888;margin-top:10px;display:block;">Numéro (Sénégal)</label>
+      <input class="input-field" id="chMomoNum" type="tel" placeholder="77 123 45 67"/>
+      <button class="btn btn-primary btn-full" onclick="saveChMomo()" style="margin-top:14px;">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalSeeBus" style="display:none;" onclick="if(event.target===this)closeSeeBus()">
+  <div class="modal">
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">👁️ Voir le bus</div><button class="modal-close" onclick="closeSeeBus()">✕</button></div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:#888;margin-bottom:10px;">Bus en circulation sur votre ligne, mis à jour en direct.</div>
+      <div id="seeBusList"></div>
+    </div>
+  </div>
+</div>
+
 </div>
 </body>
 </html>
-   
