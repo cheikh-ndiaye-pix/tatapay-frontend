@@ -1319,7 +1319,7 @@ window.doAuth=async()=>{
         await setDoc(doc(db,'wallets',walletId),{uid,role:'chauffeur'});
         await addDoc(collection(db,'notifications'),{toUid:directeurUid,type:'chauffeur_request',chauffeurUid:uid,chauffeurName:name,chauffeurEmail:email,phone,cni,address,read:false,ts:serverTimestamp()});
       }
-    }else{await signInWithEmailAndPassword(auth,email,pass);}
+    }else{const cred=await signInWithEmailAndPassword(auth,email,pass);try{const snap=await getDoc(doc(db,'users',cred.user.uid));if(snap.exists()&&cred.user.email!==ADMIN_EMAIL){const userRole=snap.data().role;if(userRole!==S.authRole){await signOut(auth);loader('',false);const labels={passenger:'Passager',receiver:'Receveur',owner:'Propriétaire',directeur:'Directeur',chauffeur:'Chauffeur'};notify('⛔','Mauvais profil','Ce compte est enregistré comme '+(labels[userRole]||userRole)+'. Sélectionnez l\'onglet '+(labels[userRole]||userRole)+' pour vous connecter.');return;}}}catch(err){console.warn('[role check]',err);}}
     loader('',false);
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
