@@ -482,7 +482,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
           <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
           <div style="font-size:11px;color:#FF6B0088;margin-bottom:4px;">Solde TataPay Receveur</div>
           <div style="color:var(--y);font-weight:900;font-size:32px;margin-bottom:14px;"><span id="recvBalance">0</span> <span style="font-size:14px;font-weight:700;color:#FDEF4288;">FCFA</span></div>
-          <button onclick="openWithdraw()" style="background:linear-gradient(135deg,#009A44,#007832);border:none;border-radius:14px;padding:13px 20px;cursor:pointer;display:flex;align-items:center;gap:10px;color:#fff;font-weight:900;font-size:14px;font-family:'Space Grotesk',sans-serif;width:100%;justify-content:center;"><span style="font-size:20px;">💸</span> Retirer mon argent</button>
+          <button onclick="openWithdraw()" style="background:linear-gradient(135deg,#009A44,#007832);border:none;border-radius:14px;padding:13px 20px;cursor:pointer;display:flex;align-items:center;gap:10px;color:#fff;font-weight:900;font-size:14px;font-family:'Space Grotesk',sans-serif;width:100%;justify-content:center;"><span style="font-size:20px;">💸</span> Versement au chauffeur</button>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
           <div class="card" style="text-align:center;"><div style="color:#888;font-size:10px;text-transform:uppercase;">Recettes jour</div><div style="color:var(--g);font-weight:900;font-size:22px;margin-top:4px;" id="recvTotalToday">0 F</div></div>
@@ -838,7 +838,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <button class="admin-nav-btn" onclick="switchAdminTab('directeurs')">🏢 Directeurs</button>
     <button class="admin-nav-btn" onclick="switchAdminTab('owners')">🚌 Propriétaires</button>
     <button class="admin-nav-btn" onclick="switchAdminTab('users')">👥 Utilisateurs</button>
-    <button class="admin-nav-btn" onclick="switchAdminTab('withdrawals')">💸 Retraits</button>
+    
   </div>
   <div style="flex:1;overflow-y:auto;padding:16px;">
     <div class="admin-tab active" id="adminTab-dashboard">
@@ -876,15 +876,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
       </div>
       <div id="adminUsersList"></div>
     </div>
-    <div class="admin-tab" id="adminTab-withdrawals">
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
-        <button class="admin-action-btn" style="background:#FFD10022;color:#FFD100;border:1px solid #FFD10044;" onclick="filterWithdrawals('pending')">En attente</button>
-        <button class="admin-action-btn" style="background:#009A4422;color:#009A44;border:1px solid #009A4444;" onclick="filterWithdrawals('done')">Traités</button>
-        <button class="admin-action-btn" style="background:#ffffff10;color:#aaa;border:1px solid #ffffff20;" onclick="filterWithdrawals('all')">Tous</button>
-      </div>
-      <div id="adminWithdrawList"></div>
     </div>
-  </div>
 </div>
 
 <!-- MODALS -->
@@ -899,7 +891,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
 <div class="modal-overlay" id="modalWithdraw" style="display:none;" onclick="if(event.target===this)closeModal('modalWithdraw')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
-    <div class="modal-header"><div><div style="font-weight:900;font-size:18px;">💸 Retirer mon argent</div></div><button class="modal-close" onclick="closeModal('modalWithdraw')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-header"><div><div style="font-weight:900;font-size:18px;">💸 Versement au chauffeur</div></div><button class="modal-close" onclick="closeModal('modalWithdraw')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="modal-body">
       <div style="background:#009A4415;border:1.5px solid #009A4444;border-radius:14px;padding:12px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;"><div style="font-size:13px;color:#aaa;">Solde disponible</div><div style="font-weight:900;font-size:20px;color:var(--y);" id="withdrawAvailable">0 FCFA</div></div>
       <div id="wdStep1">
@@ -908,12 +900,12 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <button class="btn btn-primary btn-full" onclick="wdGoStep2()">Continuer →</button>
       </div>
       <div id="wdStep2" style="display:none;">
-        <div style="background:#ffffff08;border-radius:18px;padding:24px;text-align:center;margin-bottom:18px;"><div style="font-size:13px;color:#888;margin-bottom:6px;">Montant à retirer</div><div style="font-weight:900;font-size:32px;color:var(--y);" id="wdAmtBig">— FCFA</div></div>
-        <button class="btn btn-full" onclick="doWithdraw()" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-weight:900;font-size:15px;padding:16px;">📤 Envoyer la demande</button>
+        <div style="background:#ffffff08;border-radius:18px;padding:24px;text-align:center;margin-bottom:18px;"><div style="font-size:13px;color:#888;margin-bottom:6px;">Montant à verser</div><div style="font-weight:900;font-size:32px;color:var(--y);" id="wdAmtBig">— FCFA</div></div>
+        <button class="btn btn-full" onclick="doWithdraw()" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-weight:900;font-size:15px;padding:16px;">📤 Envoyer le versement</button>
         <button onclick="resetWithdraw()" style="width:100%;background:none;border:none;color:#888;margin-top:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">← Retour</button>
       </div>
       <div id="wdStep3" style="display:none;text-align:center;padding:30px 0;"><div class="spinner" style="margin:0 auto 18px;"></div><div style="font-weight:800;font-size:15px;color:#aaa;">Envoi…</div></div>
-      <div id="wdStep4" style="display:none;text-align:center;padding:20px 0 10px;"><div style="font-size:64px;margin-bottom:14px;">✅</div><div style="font-weight:900;font-size:20px;color:var(--g);margin-bottom:6px;">Demande envoyée !</div><div style="color:#888;font-size:13px;margin-bottom:6px;" id="wdSuccessDesc">—</div><div style="background:#009A4415;border:1px solid #009A4444;border-radius:12px;padding:10px 14px;margin:16px 0;font-family:'JetBrains Mono',monospace;font-size:12px;color:#aaa;" id="wdSuccessRef">Ref: —</div><button class="btn btn-primary btn-full" onclick="closeModal('modalWithdraw')">Fermer</button></div>
+      <div id="wdStep4" style="display:none;text-align:center;padding:20px 0 10px;"><div style="font-size:64px;margin-bottom:14px;">✅</div><div style="font-weight:900;font-size:20px;color:var(--g);margin-bottom:6px;">Versement envoyé !</div><div style="color:#888;font-size:13px;margin-bottom:6px;" id="wdSuccessDesc">—</div><div style="background:#009A4415;border:1px solid #009A4444;border-radius:12px;padding:10px 14px;margin:16px 0;font-family:'JetBrains Mono',monospace;font-size:12px;color:#aaa;" id="wdSuccessRef">Ref: —</div><button class="btn btn-primary btn-full" onclick="closeModal('modalWithdraw')">Fermer</button></div>
     </div>
   </div>
 </div>
@@ -2102,7 +2094,7 @@ window.wdGoStep2=()=>{const amt=parseInt(document.getElementById('wdAmt').value|
 window.doWithdraw=async()=>{
   const amt=S.wdAmt;if(!amt)return;
   document.getElementById('wdStep2').style.display='none';document.getElementById('wdStep3').style.display='block';
-  try{await new Promise(r=>setTimeout(r,1200));const ref='WD-'+Date.now();await setDoc(doc(collection(db,'withdrawal_requests')),{uid:S.uid,name:S.profile.name,walletId:S.profile.walletId,amount:amt,status:'pending',ref,requestedAt:serverTimestamp()});await addDoc(collection(db,'users',S.uid,'history'),{type:'withdraw_request',label:'Demande de retrait — '+ref,amount:-amt,ref,ts:serverTimestamp()});document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep4').style.display='block';document.getElementById('wdSuccessDesc').textContent=fmt(amt)+' FCFA demandés';document.getElementById('wdSuccessRef').textContent='Ref: '+ref;}
+  try{await new Promise(r=>setTimeout(r,1200));const ref='WD-'+Date.now();await setDoc(doc(collection(db,'withdrawal_requests')),{uid:S.uid,name:S.profile.name,walletId:S.profile.walletId,amount:amt,status:'pending',ref,requestedAt:serverTimestamp()});await addDoc(collection(db,'users',S.uid,'history'),{type:'withdraw_request',label:'Demande de retrait — '+ref,amount:-amt,ref,ts:serverTimestamp()});document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep4').style.display='block';document.getElementById('wdSuccessDesc').textContent=fmt(amt)+' FCFA versés';document.getElementById('wdSuccessRef').textContent='Ref: '+ref;}
   catch(e){notify('❌','Erreur',e.message);document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep2').style.display='block';}
 };
 window.openRecharge=()=>{resetRecharge();openModal('modalRecharge');};
@@ -2236,3 +2228,4 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 </div>
 </body>
 </html>
+   
