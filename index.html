@@ -2066,9 +2066,9 @@ function attachBusLocationListener(){
 window.openRecvVersement=async()=>{
   const today=S.profile?.today||0;
   const p=S.profile||{};
-  const ownerUid=p.approvedOwnerUid||'';
-  if(!ownerUid||!p.vehicle||!p.ligne){
-    notify('🔒','Versement bloqué','Vous devez d\'abord être approuvé par un propriétaire qui vous liera à un bus (Mon Bus).');
+  const ownerUid=p.approvedOwnerUid||(p.linkedOwnerUids||[])[0]||'';
+  if(!ownerUid){
+    notify('🔒','Versement bloqué','Vous devez d\'abord être approuvé par un propriétaire (section Mon Bus).');
     return;
   }
   document.getElementById('recvVersToday').textContent=fmt(today);
