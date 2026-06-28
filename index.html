@@ -810,6 +810,30 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
+<!-- OWNER (Propriétaire de bus) -->
+<div class="screen" id="screenOwner" style="background:#0a0612;">
+  <div style="height:3px;background:linear-gradient(90deg,#7c3aed,#a78bfa,#7c3aed);"></div>
+  <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ffffff10;background:#0a0612;position:sticky;top:0;z-index:20;">
+    <div>
+      <div style="font-weight:900;font-size:16px;color:#c4b5fd;">🚌 Propriétaire</div>
+      <div id="ownerGreet" style="font-size:11px;color:#888;">—</div>
+    </div>
+    <button onclick="doLogout()" style="background:#ffffff10;border:none;border-radius:10px;padding:7px 12px;color:#aaa;font-family:'Space Grotesk',sans-serif;font-size:12px;cursor:pointer;">Déco</button>
+  </div>
+  <div style="padding:18px 16px;">
+    <div style="background:linear-gradient(135deg,#7c3aed22,#4c1d9522);border:1.5px solid #7c3aed44;border-radius:16px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:11px;color:#a78bfa;letter-spacing:1.5px;text-transform:uppercase;font-weight:800;">Entreprise / GIE</div>
+      <div id="ownerCompany" style="font-weight:900;font-size:20px;color:#e2e8f0;margin-top:4px;">—</div>
+      <div style="display:flex;gap:14px;margin-top:10px;">
+        <div><div style="font-size:10px;color:#888;text-transform:uppercase;">Wallet</div><div id="ownerWalletId" style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:#c4b5fd;">—</div></div>
+        <div><div style="font-size:10px;color:#888;text-transform:uppercase;">Solde</div><div id="ownerBalance" style="font-weight:900;font-size:14px;color:#FDEF42;">0 F</div></div>
+      </div>
+    </div>
+    <div style="font-weight:900;font-size:15px;color:#c4b5fd;margin-bottom:10px;">🎫 Receveurs liés à mes bus</div>
+    <div id="ownerRecvList"><div style="text-align:center;color:#555;padding:30px;font-size:13px;">Chargement…</div></div>
+  </div>
+</div>
+
 <!-- ADMIN -->
 <div class="screen" id="screenAdmin" style="background:#050f08;">
   <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
@@ -1293,6 +1317,14 @@ function loginUI(){
     show('screenChauffeur');
     initChauffeurDashboard();
     notify('✅','Bienvenue Chauffeur',p.name);
+  }else if(S.role==='owner'&&p.status==='approved'){
+    document.getElementById('ownerGreet').textContent=p.name||'—';
+    document.getElementById('ownerCompany').textContent=p.company||'—';
+    document.getElementById('ownerWalletId').textContent=p.walletId||'—';
+    document.getElementById('ownerBalance').textContent=fmt(p.balance||0)+' F';
+    show('screenOwner');
+    loadOwnerReceivers();
+    notify('✅','Bienvenue Propriétaire',p.name);
   }else{show('screenSplash');}
   loader('',false);
 }
@@ -2238,6 +2270,33 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
     if(unsubOne){unsubOne();unsubOne=null;}
   };
 })();
+
+/* AJOUT — Dashboard Propriétaire (ne modifie rien d'existant) */
+async function loadOwnerReceivers(){
+  const cont=document.getElementById('ownerRecvList');
+  if(!cont)return;
+  cont.innerHTML='<div style="text-align:center;color:#666;padding:20px;font-size:12px;">Chargement…</div>';
+  try{
+    let docs;
+    try{const s=await getDocs(query(collection(db,'users'),where('role','==','receiver')));docs=s.docs;}
+    catch(e){const s=await getDocs(collection(db,'users'));docs=s.docs.filter(d=>d.data().role==='receiver');}
+    const mine=docs.map(d=>({id:d.id,...d.data()})).filter(r=>{
+      const linked=r.linkedOwnerUids||[],pending=r.pendingOwnerUids||[],approved=r.approvedOwnerUids||[];
+      return linked.includes(S.uid)||pending.includes(S.uid)||approved.includes(S.uid);
+    });
+    if(!mine.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun receveur lié pour le moment.</div>';return;}
+    cont.innerHTML=mine.map(r=>{
+      const initials=(r.name||'??').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const isApproved=(r.approvedOwnerUids||[]).includes(S.uid);
+      const isPending=(r.pendingOwnerUids||[]).includes(S.uid)&&!isApproved;
+      const badge=isApproved?'<span style="font-size:10px;padding:3px 8px;border-radius:8px;background:#009A4422;color:#009A44;border:1px solid #009A4444;font-weight:800;">✓ Approuvé</span>':isPending?'<span style="font-size:10px;padding:3px 8px;border-radius:8px;background:#FF6B0022;color:#FF6B00;border:1px solid #FF6B0044;font-weight:800;">⏳ En attente</span>':'<span style="font-size:10px;padding:3px 8px;border-radius:8px;background:#444;color:#aaa;font-weight:800;">Lié</span>';
+      const actions=isPending?`<div style="display:flex;gap:6px;margin-top:8px;"><button onclick="ownerApproveRecv('${r.id}')" style="flex:1;background:#009A44;border:none;border-radius:10px;padding:8px;color:#fff;font-weight:800;cursor:pointer;font-size:12px;">✓ Approuver</button><button onclick="ownerRejectRecv('${r.id}')" style="flex:1;background:#DF002433;border:1px solid #DF002466;border-radius:10px;padding:8px;color:#ff6b6b;font-weight:800;cursor:pointer;font-size:12px;">✕ Refuser</button></div>`:'';
+      return`<div style="background:#150a25;border:1.5px solid #7c3aed33;border-radius:14px;padding:12px;margin-bottom:10px;"><div style="display:flex;align-items:center;gap:10px;"><div style="width:40px;height:40px;border-radius:20px;background:linear-gradient(135deg,#7c3aed44,#4c1d9544);display:flex;align-items:center;justify-content:center;font-weight:800;color:#c4b5fd;">${initials}</div><div style="flex:1;min-width:0;"><div style="font-weight:800;color:#e2e8f0;">${r.name||'—'}</div><div style="font-size:11px;color:#888;">${r.gie||'—'} · ${r.vehicle||'Sans bus'}</div></div>${badge}</div>${actions}</div>`;
+    }).join('');
+  }catch(e){console.error('[loadOwnerReceivers]',e);cont.innerHTML='<div style="color:#DF0024;font-size:12px;text-align:center;padding:14px;">Erreur de chargement.</div>';}
+}
+window.ownerApproveRecv=async(uid)=>{loader('Approbation…');try{const snap=await getDoc(doc(db,'users',uid));if(!snap.exists())throw new Error('Receveur introuvable');const r=snap.data();const approved=Array.from(new Set([...(r.approvedOwnerUids||[]),S.uid]));const pending=(r.pendingOwnerUids||[]).filter(x=>x!==S.uid);const linked=Array.from(new Set([...(r.linkedOwnerUids||[]),S.uid]));await updateDoc(doc(db,'users',uid),{approvedOwnerUids:approved,pendingOwnerUids:pending,linkedOwnerUids:linked});loader('',false);notify('✅','Approuvé',r.name||'');loadOwnerReceivers();}catch(e){loader('',false);notify('❌','Erreur',e.message);}};
+window.ownerRejectRecv=async(uid)=>{loader('Refus…');try{const snap=await getDoc(doc(db,'users',uid));if(!snap.exists())throw new Error('Receveur introuvable');const r=snap.data();const pending=(r.pendingOwnerUids||[]).filter(x=>x!==S.uid);const linked=(r.linkedOwnerUids||[]).filter(x=>x!==S.uid);await updateDoc(doc(db,'users',uid),{pendingOwnerUids:pending,linkedOwnerUids:linked});loader('',false);notify('❌','Refusé',r.name||'');loadOwnerReceivers();}catch(e){loader('',false);notify('❌','Erreur',e.message);}};
 </script>
 </div>
 </body>
