@@ -1093,7 +1093,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div id="recvVersOwnerInfo" style="font-size:12px;color:#888;margin-top:6px;">Propriétaire: <span id="recvVersOwnerName">—</span></div>
       </div>
       <div class="input-wrap"><label class="input-label">Montant à verser (FCFA) *</label><input type="number" min="100" class="input-field" id="recvVersAmount" placeholder="ex: 25000"/></div>
-      
+      <div class="input-wrap"><label class="input-label">Mode de paiement</label><select class="input-field" id="recvVersMode"><option value="cash">💵 Espèces (remise main)</option><option value="orange">🟠 Orange Money</option><option value="wave">🌊 Wave</option><option value="virement">🏦 Virement bancaire</option></select></div>
       <div class="input-wrap"><label class="input-label">Référence / Note</label><input class="input-field" id="recvVersNote" placeholder="ex: REF-OM-AB12C"/></div>
       <button class="btn btn-purple btn-full" onclick="doRecvVersement()">📤 Confirmer le versement</button>
     </div>
@@ -1146,7 +1146,7 @@ import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut
 import{getFirestore,doc,setDoc,getDoc,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-const FC={apiKey:"@secret:GOOGLE_API_KEY",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:265d82fbda0db1b09b0b6d"};
+const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:265d82fbda0db1b09b0b6d"};
 const fbApp=initializeApp(FC);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
@@ -2084,7 +2084,7 @@ window.openRecvVersement=async()=>{
 };
 window.doRecvVersement=async()=>{
   const amount=parseInt(document.getElementById('recvVersAmount').value||'0',10);
-  const mode='wallet';
+  const mode=document.getElementById('recvVersMode').value;
   const note=(document.getElementById('recvVersNote').value||'').trim();
   if(!amount||amount<100){notify('⚠️','Montant','Minimum 100 FCFA.');return;}
   const p=S.profile||{};
