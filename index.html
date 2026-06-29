@@ -8,16 +8,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="TataPay"/>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<meta http-equiv="Pragma" content="no-cache"/>
-<meta http-equiv="Expires" content="0"/>
 <link rel="manifest" href="/manifest.json"/>
 <title>TataPay</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 :root{--g:#009A44;--gd:#007832;--y:#FDEF42;--bk:#06120a;--w:#fff;--r:#DF0024;--orange:#FF6B00;}
@@ -333,11 +328,14 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <div id="fieldName" style="display:none"><div class="input-wrap"><label class="input-label">Nom complet *</label><input class="input-field" id="authName" placeholder="Moussa Diallo"/></div></div>
     <div class="input-wrap"><label class="input-label">E-mail *</label><input class="input-field" id="authEmail" type="email" placeholder="exemple@email.com"/></div>
     <div id="fieldPhone" style="display:none"><div class="input-wrap"><label class="input-label">Téléphone *</label><input class="input-field" id="authPhone" type="tel" placeholder="77 123 45 67"/></div></div>
-    <div id="fieldsReceiver" style="display:none;">
-      <div style="background:#FF6B0010;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FF6B00;line-height:1.6;">🎫 Après validation de votre email, vous choisirez un ou plusieurs propriétaires de bus pour envoyer votre candidature.</div>
-      <div class="input-wrap"><label class="input-label">Numéro CNI *</label><input class="input-field" id="authCNI" placeholder="1 234 567 890 12345" maxlength="20"/></div>
-      <div class="input-wrap"><label class="input-label">Adresse / Quartier *</label><input class="input-field" id="authAddress" placeholder="ex: Médina, Dakar"/></div>
-    </div>
+     <div id="fieldsReceiver" style="display:none;">
+       <div style="background:#FF6B0010;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FF6B00;line-height:1.6;">🎫 Après validation de votre email, vous choisirez un ou plusieurs propriétaires de bus pour envoyer votre candidature.</div>
+       <div class="input-wrap"><label class="input-label">Numéro CNI *</label><input class="input-field" id="authCNI" placeholder="1 234 567 890 12345" maxlength="20"/></div>
+       <div class="input-wrap"><label class="input-label">Adresse / Quartier *</label><input class="input-field" id="authAddress" placeholder="ex: Médina, Dakar"/></div>
+       <div class="input-wrap"><label class="input-label">📷 Photocopie CNI (image) *</label><input class="input-field" id="authCNIFile" type="file" accept="image/*"/></div>
+       <div class="input-wrap"><label class="input-label">🤳 Votre photo (image) *</label><input class="input-field" id="authPhotoFile" type="file" accept="image/*"/></div>
+       <div class="input-wrap"><label class="input-label">📄 CV (PDF ou Word) *</label><input class="input-field" id="authCVFile" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"/></div>
+     </div>
     <div id="fieldsOwner" style="display:none;">
       <div class="input-wrap"><label class="input-label">Nom du GIE / Entreprise *</label><input class="input-field" id="authOwnerCompany" placeholder="GIE Dakar Express"/></div>
       <div style="background:#7c3aed15;border:1.5px solid #7c3aed44;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#c4b5fd;line-height:1.6;">⚠️ Compte propriétaire nécessite validation du Directeur de GIE.</div>
@@ -468,7 +466,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
             <div style="font-size:10px;color:#FF6B0088;letter-spacing:2px;font-family:'JetBrains Mono',monospace;">== TRANSPAY == AFTU ==</div>
             <div style="font-weight:900;font-size:18px;margin-top:4px;" id="recvGreet">—</div>
             <div style="overflow:hidden;width:160px;"><div style="color:#888;font-size:12px;font-family:'JetBrains Mono',monospace;white-space:nowrap;" class="recv-info-marquee" id="recvInfoLine">—</div></div>
-            <div id="recvOnlineDot" style="margin-top:6px;font-size:10px;font-weight:800;color:#34d399;display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#34d399;display:inline-block;"></span>En ligne</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
             <button onclick="openNotifPanel()" style="background:#FF6B0022;border:1px solid #FF6B0044;border-radius:12px;padding:10px;cursor:pointer;">
@@ -489,7 +486,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
           <div class="card" style="text-align:center;"><div style="color:#888;font-size:10px;text-transform:uppercase;">Recettes jour</div><div style="color:var(--g);font-weight:900;font-size:22px;margin-top:4px;" id="recvTotalToday">0 F</div></div>
           <div class="card" style="text-align:center;"><div style="color:#888;font-size:10px;text-transform:uppercase;">Tickets validés</div><div style="color:var(--orange);font-weight:900;font-size:22px;margin-top:4px;" id="recvTicketCount">0</div></div>
         </div>
-        <button onclick="openRecvVersement()" id="recvVerserBtn" style="width:100%;background:linear-gradient(135deg,#7c3aed,#4c1d95);border:none;border-radius:14px;padding:14px;color:#fff;font-weight:900;font-size:14px;font-family:'Space Grotesk',sans-serif;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:10px;"><span style="font-size:20px;">📤</span> Verser au propriétaire</button>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
           <button onclick="openCamera('recv')" style="background:linear-gradient(135deg,#009A44,#007832);border:none;border-radius:16px;padding:16px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;color:#fff;font-weight:900;font-size:12px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:28px;">📷</div>Scanner Passager</button>
           <button onclick="openRecvCharge()" style="background:linear-gradient(135deg,#1a56db,#0d3a8c);border:none;border-radius:16px;padding:16px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;color:#fff;font-weight:900;font-size:12px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:28px;">💳</div>Recharger Wallet</button>
@@ -653,18 +649,10 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div class="ch-card" id="chLivePayments"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucun paiement récent.</div></div>
       <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;margin-top:16px;">📤 Historique versements</div>
       <div id="chVersementsList"><div style="color:#555;font-size:13px;text-align:center;padding:20px;">Aucun versement enregistré.</div></div>
-      <div id="chPendingVersSection" style="display:none;margin-top:18px;">
-        <div style="font-size:11px;font-weight:800;color:#FF6B00;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">⏳ Versements à confirmer <span id="chPendingVersCount" style="color:#FF6B00;">(0)</span></div>
-        <div id="chPendingVersList"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucun versement en attente.</div></div>
-      </div>
     </div>
     <!-- RECEVEUR -->
     <div class="tab-content" id="chTab-receveur" style="padding:18px 16px;">
       <div style="font-weight:900;font-size:20px;color:#34d399;margin-bottom:16px;">🎫 Receveur affecté</div>
-      <div id="chCandSection" style="display:none;margin-bottom:20px;">
-        <div style="font-size:11px;font-weight:800;color:#FF6B00;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">📥 Candidatures reçues <span id="chCandCount" style="color:#FF6B00;">(0)</span></div>
-        <div id="chCandList"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune candidature en attente.</div></div>
-      </div>
       <div class="ch-card" id="chRecvCard">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
           <div style="width:52px;height:52px;border-radius:26px;background:#05966922;border:1.5px solid #05966944;display:flex;align-items:center;justify-content:center;font-size:24px;">🎫</div>
@@ -699,18 +687,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
         </div>
       </div>
       <button class="btn btn-danger btn-full" style="margin-top:8px;" onclick="openModal('modalChReport')">🔧 Signaler un problème</button>
-      <div id="chGeoSection" style="margin-top:16px;">
-        <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">📍 Géolocalisation</div>
-        <div class="ch-card">
-          <div id="chGeoStatus" style="font-size:13px;color:#888;margin-bottom:10px;">GPS désactivé</div>
-          <button id="chGeoBtn" class="btn btn-primary btn-full" onclick="chToggleGeo()">📡 Démarrer le partage GPS</button>
-        </div>
-        <div id="chOwnerMapSection" style="display:none;margin-top:12px;">
-          <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">🗺️ Position du bus en direct</div>
-          <div id="chBusMap" style="height:260px;border-radius:14px;overflow:hidden;border:1px solid #05966944;background:#0a1e15;"></div>
-          <div id="chBusMapInfo" style="font-size:11px;color:#888;margin-top:6px;text-align:center;">En attente de position…</div>
-        </div>
-      </div>
     </div>
     <!-- STATS -->
     <div class="tab-content" id="chTab-stats" style="padding:18px 16px;">
@@ -831,6 +807,30 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <button class="dir-nav-btn active" id="dnav-home" onclick="switchDirTab('home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Dashboard</button>
     <button class="dir-nav-btn" id="dnav-owners" onclick="switchDirTab('owners')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8l5 3v5h-5V8z"/></svg>Propriétaires</button>
     <button class="dir-nav-btn" id="dnav-receivers" onclick="switchDirTab('receivers')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Receveurs</button>
+  </div>
+</div>
+
+<!-- OWNER (Propriétaire de bus) -->
+<div class="screen" id="screenOwner" style="background:#0a0612;">
+  <div style="height:3px;background:linear-gradient(90deg,#7c3aed,#a78bfa,#7c3aed);"></div>
+  <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ffffff10;background:#0a0612;position:sticky;top:0;z-index:20;">
+    <div>
+      <div style="font-weight:900;font-size:16px;color:#c4b5fd;">🚌 Propriétaire</div>
+      <div id="ownerGreet" style="font-size:11px;color:#888;">—</div>
+    </div>
+    <button onclick="doLogout()" style="background:#ffffff10;border:none;border-radius:10px;padding:7px 12px;color:#aaa;font-family:'Space Grotesk',sans-serif;font-size:12px;cursor:pointer;">Déco</button>
+  </div>
+  <div style="padding:18px 16px;">
+    <div style="background:linear-gradient(135deg,#7c3aed22,#4c1d9522);border:1.5px solid #7c3aed44;border-radius:16px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:11px;color:#a78bfa;letter-spacing:1.5px;text-transform:uppercase;font-weight:800;">Entreprise / GIE</div>
+      <div id="ownerCompany" style="font-weight:900;font-size:20px;color:#e2e8f0;margin-top:4px;">—</div>
+      <div style="display:flex;gap:14px;margin-top:10px;">
+        <div><div style="font-size:10px;color:#888;text-transform:uppercase;">Wallet</div><div id="ownerWalletId" style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:#c4b5fd;">—</div></div>
+        <div><div style="font-size:10px;color:#888;text-transform:uppercase;">Solde</div><div id="ownerBalance" style="font-weight:900;font-size:14px;color:#FDEF42;">0 F</div></div>
+      </div>
+    </div>
+    <div style="font-weight:900;font-size:15px;color:#c4b5fd;margin-bottom:10px;">🎫 Receveurs liés à mes bus</div>
+    <div id="ownerRecvList"><div style="text-align:center;color:#555;padding:30px;font-size:13px;">Chargement…</div></div>
   </div>
 </div>
 
@@ -1073,70 +1073,24 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- ── MODAL VERSEMENT RECEVEUR → PROPRIÉTAIRE ───────────── -->
-<div class="modal-overlay" id="modalRecvVersement" style="display:none;" onclick="if(event.target===this)closeModal('modalRecvVersement')">
-  <div class="modal-box" onclick="event.stopPropagation()">
-    <div style="height:3px;background:linear-gradient(90deg,#7c3aed,#a855f7,#4c1d95);border-radius:24px 24px 0 0;"></div>
-    <div class="modal-header"><div style="font-weight:900;font-size:18px;">📤 Verser au propriétaire</div><button class="modal-close" onclick="closeModal('modalRecvVersement')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-    <div class="modal-body">
-      <div style="background:#7c3aed15;border:1px solid #7c3aed44;border-radius:14px;padding:14px;margin-bottom:14px;">
-        <div style="font-size:11px;color:#a78bfa;font-weight:800;margin-bottom:4px;">Recettes du jour</div>
-        <div style="font-weight:900;font-size:24px;color:#fff;"><span id="recvVersToday">0</span> FCFA</div>
-        <div id="recvVersOwnerInfo" style="font-size:12px;color:#888;margin-top:6px;">Propriétaire: <span id="recvVersOwnerName">—</span></div>
-      </div>
-      <div class="input-wrap"><label class="input-label">Montant à verser (FCFA) *</label><input type="number" min="100" class="input-field" id="recvVersAmount" placeholder="ex: 25000"/></div>
-      <div class="input-wrap"><label class="input-label">Mode de paiement</label><select class="input-field" id="recvVersMode"><option value="cash">💵 Espèces (remise main)</option><option value="orange">🟠 Orange Money</option><option value="wave">🌊 Wave</option><option value="virement">🏦 Virement bancaire</option></select></div>
-      <div class="input-wrap"><label class="input-label">Référence / Note</label><input class="input-field" id="recvVersNote" placeholder="ex: REF-OM-AB12C"/></div>
-      <button class="btn btn-purple btn-full" onclick="doRecvVersement()">📤 Confirmer le versement</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── MODAL APPROBATION CANDIDATURE (PROPRIÉTAIRE) ──────── -->
-<div class="modal-overlay" id="modalApproveCandidature" style="display:none;" onclick="if(event.target===this)closeModal('modalApproveCandidature')">
-  <div class="modal-box" onclick="event.stopPropagation()">
-    <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
-    <div class="modal-header"><div style="font-weight:900;font-size:18px;">✅ Approuver le receveur</div><button class="modal-close" onclick="closeModal('modalApproveCandidature')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-    <div class="modal-body">
-      <div style="background:#FF6B0015;border:1px solid #FF6B0044;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FFB97A;line-height:1.6;">📋 Renseignez les infos du bus que ce receveur va exploiter. Elles apparaîtront sur ses tickets.</div>
-      <div style="background:#05966915;border:1px solid #05966944;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#aaa;" id="approveCandName">Receveur: —</div>
-      <div class="input-wrap"><label class="input-label">GIE *</label><input class="input-field" id="apprGIE" placeholder="ex: DPL"/></div>
-      <div class="input-wrap"><label class="input-label">Immatriculation *</label><input class="input-field" id="apprVehicle" placeholder="ex: AA809ST"/></div>
-      <div class="input-wrap"><label class="input-label">Ligne *</label><input class="input-field" id="apprLigne" placeholder="ex: 72"/></div>
-      <div class="input-wrap"><label class="input-label">Trajet *</label><input class="input-field" id="apprTrajet" placeholder="ex: Guediawaye → Kounoune"/></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="input-wrap"><label class="input-label">Section *</label><input class="input-field" id="apprSection" type="number" placeholder="1"/></div>
-        <div class="input-wrap"><label class="input-label">Prix (FCFA) *</label><input class="input-field" id="apprPrix" type="number" placeholder="150"/></div>
-      </div>
-      <div class="input-wrap"><label class="input-label">Zone *</label><input class="input-field" id="apprZone" placeholder="ex: B"/></div>
-      <input type="hidden" id="apprNotifId"/>
-      <input type="hidden" id="apprReceiverUid"/>
-      <input type="hidden" id="apprReceiverName"/>
-      <button class="btn btn-primary btn-full" onclick="doApproveCandidature()">✅ Valider et activer le receveur</button>
-    </div>
-  </div>
-</div>
-
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import{getFirestore,doc,setDoc,getDoc,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getStorage,ref as storageRef,uploadBytes,getDownloadURL}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:265d82fbda0db1b09b0b6d"};
 const fbApp=initializeApp(FC);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
-// Persistance offline (best-effort, ignore si déjà initialisé / multi-onglet)
-try{enableIndexedDbPersistence(db).catch(e=>console.warn('[persistence]',e.code||e.message));}catch(e){}
+const storage=getStorage(fbApp);
+async function uploadReceiverFile(uid,file,kind){const ext=(file.name.split('.').pop()||'bin').toLowerCase();const r=storageRef(storage,`receivers/${uid}/${kind}.${ext}`);await uploadBytes(r,file,{contentType:file.type||'application/octet-stream'});return await getDownloadURL(r);}
 const ADMIN_EMAIL='papacheikh900@gmail.com';
 
 let S={role:null,uid:null,profile:null,authRole:'passenger',isReg:false,camMode:null,ticketBus:null,ticketSection:null,stream:null,facing:'environment',scanning:false,friendTarget:null};
 let activeTicketData=null;
 let unsubPending=null,unsubNotif=null,unsubBalance=null,unsubRecvBalance=null,unsubAdmin=null;
 let unsubChProfile=null,unsubChReceiver=null,unsubChTickets=null,unsubChNotif=null,unsubChVersements=null;
-let unsubChCandidatures=null,unsubChPendingVers=null,unsubBusLoc=null;
-let chMap=null,chMapMarker=null,chGeoWatchId=null,chGeoLastWrite=0;
 let dirRevChartInst=null,dirLineChartInst=null,chRevChartInst=null,chPerfChartInst=null;
 let chCurrentPeriod='jour';
 let chLastTickets=[];
@@ -1228,12 +1182,26 @@ window.doAuth=async()=>{
       }else if(S.authRole==='receiver'){
         const cni=document.getElementById('authCNI')?.value.trim()||'';
         const address=document.getElementById('authAddress')?.value.trim()||'';
+        const cniFile=document.getElementById('authCNIFile')?.files?.[0]||null;
+        const photoFile=document.getElementById('authPhotoFile')?.files?.[0]||null;
+        const cvFile=document.getElementById('authCVFile')?.files?.[0]||null;
         if(!cni){loader('',false);notify('⚠️','CNI','Entrez votre numéro de CNI.');return;}
         if(!address){loader('',false);notify('⚠️','Adresse','Entrez votre adresse.');return;}
+        if(!cniFile){loader('',false);notify('⚠️','Photocopie CNI','Joignez la photo de votre CNI.');return;}
+        if(!photoFile){loader('',false);notify('⚠️','Photo','Joignez votre photo.');return;}
+        if(!cvFile){loader('',false);notify('⚠️','CV','Joignez votre CV (PDF ou Word).');return;}
         const walletId='RV-'+uid.slice(0,6).toUpperCase();
         await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'receiver',status:'pending',directeurUid:'',cni,address,gie:'',vehicle:'',ligne:'',zone:'',today:0,count:0,balance:0,linkedOwnerUids:[],pendingOwnerUids:[],approvedOwnerUids:[],createdAt:serverTimestamp()});
         await setDoc(doc(db,'wallets',walletId),{uid,role:'receiver'});
-        window.pendingReceiverData={uid,name,email,phone,cni,address};
+        loader('Téléversement des documents…');
+        let cniURL='',photoURL='',cvURL='';
+        try{
+          cniURL=await uploadReceiverFile(uid,cniFile,'cni');
+          photoURL=await uploadReceiverFile(uid,photoFile,'photo');
+          cvURL=await uploadReceiverFile(uid,cvFile,'cv');
+        }catch(upErr){console.error('[upload]',upErr);loader('',false);notify('❌','Upload',upErr.message||'Échec du téléversement.');return;}
+        await updateDoc(doc(db,'users',uid),{cniFileURL:cniURL,photoURL,cvURL,cvFileName:cvFile.name});
+        window.pendingReceiverData={uid,name,email,phone,cni,address,cniFileURL:cniURL,photoURL,cvURL};
         const muid=document.getElementById('modalRecvPendingUid');if(muid)muid.value=uid;
         loader('',false);
         window.modalSelectedOwners=new Set();
@@ -1275,12 +1243,12 @@ window.doSubmitReceiverCandidature=async()=>{
   if(!data){notify('⚠️','Erreur','Aucune inscription en cours.');return;}
   const ownerUids=Array.from(window.modalSelectedOwners||[]);
   if(!ownerUids.length){notify('⚠️','Propriétaires','Sélectionnez au moins un propriétaire de bus.');return;}
-  const {uid,name,email,phone,cni,address}=data;
+  const {uid,name,email,phone,cni,address,cniFileURL,photoURL,cvURL}=data;
   loader('Envoi de votre candidature…');
   try{
     await updateDoc(doc(db,'users',uid),{pendingOwnerUids:ownerUids});
     for(const ouid of ownerUids){
-      try{await addDoc(collection(db,'notifications'),{toUid:ouid,type:'receiver_candidature',receiverUid:uid,receiverName:name,receiverEmail:email,phone,cni,address,read:false,ts:serverTimestamp()});}
+      try{await addDoc(collection(db,'notifications'),{toUid:ouid,type:'receiver_candidature',receiverUid:uid,receiverName:name,receiverEmail:email,phone,cni,address,cniFileURL:cniFileURL||'',photoURL:photoURL||'',cvURL:cvURL||'',read:false,ts:serverTimestamp()});}
       catch(err){console.warn('[notif owner]',ouid,err);}
     }
     window.pendingReceiverData=null;
@@ -1301,7 +1269,7 @@ onAuthStateChanged(auth,async user=>{
   }else{show('screenSplash');loader('',false);}
 });
 
-function detachListeners(){[unsubPending,unsubNotif,unsubBalance,unsubRecvBalance,unsubAdmin,unsubChProfile,unsubChReceiver,unsubChTickets,unsubChNotif,unsubChVersements,unsubChCandidatures,unsubChPendingVers,unsubBusLoc].forEach(u=>{if(u)u();});unsubPending=unsubNotif=unsubBalance=unsubRecvBalance=unsubAdmin=unsubChProfile=unsubChReceiver=unsubChTickets=unsubChNotif=unsubChVersements=unsubChCandidatures=unsubChPendingVers=unsubBusLoc=null;if(chRevChartInst){chRevChartInst.destroy();chRevChartInst=null;}if(chPerfChartInst){chPerfChartInst.destroy();chPerfChartInst=null;}if(chGeoWatchId!=null){try{navigator.geolocation.clearWatch(chGeoWatchId);}catch(e){}chGeoWatchId=null;}if(chMap){try{chMap.remove();}catch(e){}chMap=null;chMapMarker=null;}}
+function detachListeners(){[unsubPending,unsubNotif,unsubBalance,unsubRecvBalance,unsubAdmin,unsubChProfile,unsubChReceiver,unsubChTickets,unsubChNotif,unsubChVersements].forEach(u=>{if(u)u();});unsubPending=unsubNotif=unsubBalance=unsubRecvBalance=unsubAdmin=unsubChProfile=unsubChReceiver=unsubChTickets=unsubChNotif=unsubChVersements=null;if(chRevChartInst){chRevChartInst.destroy();chRevChartInst=null;}if(chPerfChartInst){chPerfChartInst.destroy();chPerfChartInst=null;}}
 
 function loginUI(){
   const p=S.profile;detachListeners();
@@ -1328,16 +1296,7 @@ function loginUI(){
     loadPassHomeTx();loadPassTickets();show('screenPassenger');notify('✅','Bienvenue !',p.name);
   }else if(S.role==='receiver'&&p.status==='approved'){
     document.getElementById('recvGreet').textContent=p.name;
-    document.getElementById('recvInfoLine').textContent=`GIE:${p.gie||'—'} = ${p.vehicle||'—'} = Ligne:${p.ligne||'—'} · ${p.trajet||''} · Zone:${p.zone||'—'}`;
-    // Versement libre — aucune approbation requise
-    const verserBtn=document.getElementById('recvVerserBtn');
-    if(verserBtn){
-      verserBtn.disabled=false;
-      verserBtn.style.opacity='1';
-      verserBtn.style.cursor='pointer';
-      verserBtn.title='';
-      verserBtn.innerHTML='<span style="font-size:20px;">📤</span> Verser au chauffeur';
-    }
+    document.getElementById('recvInfoLine').textContent=`GIE:${p.gie||'—'} · Ligne ${p.ligne||'—'} · Zone ${p.zone||'—'}`;
     renderMerchantQR('recvBusQRWrap',p,160);
     refreshRecvStats();loadTrajets();loadRecvTickets();
     attachPendingListener();attachNotifListener();loadRecvDirecteurInfo();
@@ -1352,12 +1311,20 @@ function loginUI(){
     show('screenDirecteur');
     loadDirFullDashboard();
     notify('✅','Bienvenue Directeur',p.name);
-  }else if((S.role==='chauffeur'||S.role==='owner')&&p.status==='approved'){
+  }else if(S.role==='chauffeur'&&p.status==='approved'){
     document.getElementById('chGreet').textContent=p.name;
     document.getElementById('chWalletId').textContent=p.walletId||'—';
     show('screenChauffeur');
     initChauffeurDashboard();
-    notify('✅',S.role==='owner'?'Bienvenue Propriétaire':'Bienvenue Chauffeur',p.name);
+    notify('✅','Bienvenue Chauffeur',p.name);
+  }else if(S.role==='owner'&&p.status==='approved'){
+    document.getElementById('ownerGreet').textContent=p.name||'—';
+    document.getElementById('ownerCompany').textContent=p.company||'—';
+    document.getElementById('ownerWalletId').textContent=p.walletId||'—';
+    document.getElementById('ownerBalance').textContent=fmt(p.balance||0)+' F';
+    show('screenOwner');
+    loadOwnerReceivers();
+    notify('✅','Bienvenue Propriétaire',p.name);
   }else{show('screenSplash');}
   loader('',false);
 }
@@ -1655,9 +1622,9 @@ async function loadDirOwners(){
 async function loadDirReceivers(){
   const cont=document.getElementById('dirReceiversList');
   try{
-    const snap=await getDocs(query(collection(db,'users'),where('role','==','receiver')));
+    const snap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('directeurUid','==',S.uid)));
     if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun receveur.</div>';return;}
-    cont.innerHTML=snap.docs.map(d=>{const u={id:d.id,...d.data()};const initials=(u.name||'??').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();const linkedCount=(u.linkedOwnerUids||[]).length;const approved=!!u.approvedOwnerUid;return`<div class="dir-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><div class="dir-recv-avatar">${initials}</div><div style="flex:1;min-width:0;"><div style="font-weight:800;color:#e2e8f0;">${u.name||'—'}</div><div style="font-size:11px;color:#888;">${u.email||'—'} · ${u.phone||'—'}</div><div style="font-size:11px;color:#888;">🪪 ${u.cni||'—'} · 📍 ${u.address||'—'}</div>${u.gie?`<div style="font-size:11px;color:#0ea5e9;margin-top:2px;">🚌 ${u.gie} · ${u.vehicle} · Ligne ${u.ligne} · Zone ${u.zone||'—'}</div><div style="font-size:11px;color:#7dd3fc;">🛣️ ${u.trajet||'—'} · Section ${u.section||'—'} · ${fmt(u.prix||0)} F</div>`:'<div style="font-size:11px;color:#FF6B00;">⚠️ Aucun bus assigné</div>'}<div style="font-size:11px;color:${approved?'#34d399':'#FF6B00'};margin-top:2px;">${approved?'✅ Approuvé par propriétaire':'⏳ En attente d\'approbation propriétaire'} · 🔗 ${linkedCount} proprio${linkedCount>1?'s':''}</div><div style="font-size:11px;color:#888;margin-top:2px;">💳 ${u.walletId||'—'} · Recettes jour: <strong style="color:#34d399;">${fmt(u.today||0)} F</strong> · Solde: <strong style="color:#FDEF42;">${fmt(u.balance||0)} F</strong></div></div><div>${statusBadge(u.status)}</div></div><div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="admin-action-btn btn-info" onclick="openAssignBusDir('${u.id}','${(u.name||'').replace(/'/g,'')}')">🚌 ${u.gie?'Modifier Bus':'Assigner Bus'}</button>${u.status==='approved'?`<button class="admin-action-btn btn-suspend" onclick="dirSuspendUser('${u.id}')">⚠️ Suspendre</button>`:''} ${u.status==='suspended'?`<button class="admin-action-btn btn-approve" onclick="dirReactivateUser('${u.id}')">♻️ Réactiver</button>`:''}</div></div>`;}).join('');
+    cont.innerHTML=snap.docs.map(d=>{const u={id:d.id,...d.data()};const initials=(u.name||'??').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();const linkedCount=(u.linkedOwnerUids||[]).length;return`<div class="dir-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><div class="dir-recv-avatar">${initials}</div><div style="flex:1;"><div style="font-weight:800;color:#e2e8f0;">${u.name||'—'}</div><div style="font-size:11px;color:#888;">${u.email||'—'}</div>${u.gie?`<div style="font-size:11px;color:#0ea5e9;margin-top:2px;">🚌 ${u.gie} · ${u.vehicle} · Ligne ${u.ligne}</div>`:'<div style="font-size:11px;color:#FF6B00;">⚠️ Aucun bus assigné</div>'}<div style="font-size:11px;color:#009A44;margin-top:2px;">🔗 ${linkedCount} proprio${linkedCount>1?'s':''} lié${linkedCount>1?'s':''}</div></div><div>${statusBadge(u.status)}</div></div><div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="admin-action-btn btn-info" onclick="openAssignBusDir('${u.id}','${(u.name||'').replace(/'/g,'')}')">🚌 ${u.gie?'Modifier Bus':'Assigner Bus'}</button>${u.status==='approved'?`<button class="admin-action-btn btn-suspend" onclick="dirSuspendUser('${u.id}')">⚠️ Suspendre</button>`:''} ${u.status==='suspended'?`<button class="admin-action-btn btn-approve" onclick="dirReactivateUser('${u.id}')">♻️ Réactiver</button>`:''}</div></div>`;}).join('');
   }catch(e){cont.innerHTML='<div style="color:#DF0024;padding:16px;">Erreur chargement receveurs.</div>';}
 }
 
@@ -1707,7 +1674,7 @@ window.switchChauffeurTab=(tab)=>{
   document.getElementById('cnav-'+tab)?.classList.add('active');
   if(tab==='recettes')loadChRecettes();
   if(tab==='receveur')loadChReceveur();
-  if(tab==='bus'){loadChBusPanel();if(S.role==='owner')initChBusMap();}
+  if(tab==='bus')loadChBusPanel();
   if(tab==='stats')loadChStats();
 };
 function initChauffeurDashboard(){
@@ -1716,7 +1683,6 @@ function initChauffeurDashboard(){
   loadChVersements();
   loadChAlerts();
   attachChListeners();
-  if(S.role==='owner'){attachChCandidaturesListener();attachChPendingVersListener();}
 }
 function updateChHomeUI(p){
   const bs=p.busStatus||'hors_service';const ts=p.techStatus||'actif';const rs=p.receiverStatus||'absent';
@@ -1761,7 +1727,7 @@ function attachChNotifListener(){
   unsubChNotif=onSnapshot(q,snap=>{
     const badge=document.getElementById('chBellBadge');
     if(badge){badge.textContent=snap.size;badge.className='bell-badge'+(snap.size>0?' show':'');}
-    snap.docChanges().forEach(ch=>{if(ch.type!=='added')return;const d=ch.doc.data();showChToast(d.type,d);playNotifSound();pushNative('TataPay — '+(d.type||'Notification'),d.message||d.receiverName||'');updateDoc(doc(db,'notifications',ch.doc.id),{read:true}).catch(()=>{});});
+    snap.docs.forEach(d=>{showChToast(d.data().type,d.data());updateDoc(doc(db,'notifications',d.id),{read:true});});
   });
 }
 function renderChPayments(tickets,contId){
@@ -1790,7 +1756,6 @@ window.chSetPeriod=(p,btn)=>{chCurrentPeriod=p;document.querySelectorAll('.ch-pt
 function loadChRecettes(){loadChVersements();}
 async function loadChReceveur(){
   const p=S.profile;const cont=document.getElementById('chRecvPerfList');
-  if(S.role==='owner')loadChCandidatures();
   if(!p.receiverUid){document.getElementById('chRecvName').textContent='—';document.getElementById('chRecvEmail').textContent='Non assigné';document.getElementById('chRecvStatusBadge').innerHTML='<span class="ch-badge ch-badge-pend">Non assigné</span>';document.getElementById('chRecvDetails').textContent='En attente d\'assignation par le directeur.';if(cont)cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune donnée.</div>';return;}
   try{
     const snap=await getDoc(doc(db,'users',p.receiverUid));if(!snap.exists())return;
@@ -1800,13 +1765,7 @@ async function loadChReceveur(){
     const badgeMap={actif:['ch-badge-ok','Actif'],absent:['ch-badge-warn','Absent'],remplace:['ch-badge-err','Remplacé']};
     const [cls,lbl]=badgeMap[rs]||badgeMap.actif;
     document.getElementById('chRecvStatusBadge').innerHTML=`<span class="ch-badge ${cls}">${lbl}</span>`;
-    document.getElementById('chRecvDetails').innerHTML=`
-      📞 ${r.phone||'—'} &nbsp;·&nbsp; 🪪 CNI: ${r.cni||'—'}<br>
-      📍 ${r.address||'—'}<br>
-      💳 Wallet: <code style="color:#FF6B00;">${r.walletId||'—'}</code><br>
-      🚌 ${r.gie||p.gie||'—'} · ${r.vehicle||p.vehicle||'—'} · Ligne ${r.ligne||p.ligne||'—'} · Zone ${r.zone||p.zone||'—'}<br>
-      🛣️ Trajet: ${r.trajet||p.trajet||'—'} · Section ${r.section||p.section||'—'} · Prix ${fmt(r.prix||p.prix||0)} F<br>
-      📊 Recettes jour: <strong style="color:#34d399;">${fmt(r.today||0)} FCFA</strong> · Tickets: <strong>${r.count||0}</strong> · Solde: <strong style="color:#FDEF42;">${fmt(r.balance||0)} F</strong>`;
+    document.getElementById('chRecvDetails').innerHTML=`🚌 ${r.gie||p.gie||'—'} · ${r.vehicle||p.vehicle||'—'}<br>Ligne ${r.ligne||p.ligne||'—'} · Zone ${r.zone||p.zone||'—'}<br>Recettes jour: <strong style="color:#34d399;">${fmt(r.today||0)} FCFA</strong> · Tickets: <strong>${r.count||0}</strong>`;
     const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','==',p.receiverUid),orderBy('ts','desc'),limit(7)));
     if(cont){if(!tkSnap.size){cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune activité récente.</div>';}else{cont.innerHTML=tkSnap.docs.map(d=>{const t=d.data();const dt=t.ts?.toDate?.()?.toLocaleDateString('fr-FR')||'—';return`<div class="ch-live-row"><div style="flex:1;"><div style="font-weight:700;font-size:13px;">${dt} · ${t.from||'—'}→${t.to||'—'}</div></div><div style="font-weight:800;color:#34d399;">${fmt(t.price)} F</div></div>`;}).join('');}}
   }catch(e){if(cont)cont.innerHTML='<div style="color:#DF0024;padding:12px;">Erreur chargement.</div>';}
@@ -1822,112 +1781,7 @@ function loadChBusPanel(){
   const [tCls,tLbl]=(techMap[ts]||techMap.actif);
   document.getElementById('chBusTechBadge').innerHTML=`<span class="ch-badge ${tCls}">${tLbl}</span>`;
   document.getElementById('chBusOpBadge').innerHTML=`<span class="ch-badge ${bs==='en_service'?'ch-badge-ok':'ch-badge-warn'}">${bs==='en_service'?'En service':'Hors service'}</span>`;
-  // Section géo: chauffeur partage, owner consulte
-  const geoCard=document.getElementById('chGeoBtn')?.closest('.ch-card');
-  if(geoCard)geoCard.style.display=S.role==='chauffeur'?'block':'none';
-  const mapSec=document.getElementById('chOwnerMapSection');
-  if(mapSec)mapSec.style.display=S.role==='owner'?'block':'none';
 }
-// ══════════════════════════════════════════════
-// PROPRIÉTAIRE — CANDIDATURES RECEVEURS
-// ══════════════════════════════════════════════
-function attachChCandidaturesListener(){
-  if(unsubChCandidatures)unsubChCandidatures();
-  try{
-    const q=query(collection(db,'notifications'),where('toUid','==',S.uid),where('type','==','receiver_candidature'));
-    unsubChCandidatures=onSnapshot(q,snap=>{
-      const items=snap.docs.map(d=>({id:d.id,...d.data()})).filter(n=>!n.accepted&&!n.rejected);
-      renderChCandidatures(items);
-    });
-  }catch(e){console.warn('[cand listener]',e);}
-}
-async function loadChCandidatures(){
-  try{
-    const snap=await getDocs(query(collection(db,'notifications'),where('toUid','==',S.uid),where('type','==','receiver_candidature')));
-    const items=snap.docs.map(d=>({id:d.id,...d.data()})).filter(n=>!n.accepted&&!n.rejected);
-    renderChCandidatures(items);
-  }catch(e){console.warn('[cand load]',e);}
-}
-function renderChCandidatures(items){
-  const sec=document.getElementById('chCandSection');
-  const list=document.getElementById('chCandList');
-  const cnt=document.getElementById('chCandCount');
-  if(!sec||!list)return;
-  if(S.role!=='owner'){sec.style.display='none';return;}
-  sec.style.display='block';
-  if(cnt)cnt.textContent=`(${items.length})`;
-  if(!items.length){list.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune candidature en attente.</div>';return;}
-  list.innerHTML=items.map(n=>{
-    const initials=(n.receiverName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    return `<div class="ch-card" style="border:1.5px solid #FF6B0033;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-        <div style="width:46px;height:46px;border-radius:23px;background:#FF6B0022;border:1.5px solid #FF6B0055;display:flex;align-items:center;justify-content:center;font-weight:900;color:#FF6B00;">${initials}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:900;font-size:15px;color:#e2e8f0;">${n.receiverName||'—'}</div>
-          <div style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.receiverEmail||'—'}</div>
-        </div>
-      </div>
-      <div style="font-size:12px;color:#aaa;line-height:1.7;margin-bottom:12px;">
-        📞 ${n.phone||'—'}<br>
-        🪪 CNI: ${n.cni||'—'}<br>
-        📍 ${n.address||'—'}
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-primary" style="flex:1;font-size:13px;padding:10px;" onclick="acceptChCandidature('${n.id}','${n.receiverUid}','${(n.receiverName||'').replace(/'/g,"\\'")}')">✅ Accepter</button>
-        <button class="btn btn-danger" style="flex:1;font-size:13px;padding:10px;" onclick="rejectChCandidature('${n.id}','${n.receiverUid}')">❌ Refuser</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-window.acceptChCandidature=async(notifId,receiverUid,receiverName)=>{
-  document.getElementById('approveCandName').textContent='Receveur: '+receiverName;
-  document.getElementById('apprNotifId').value=notifId;
-  document.getElementById('apprReceiverUid').value=receiverUid;
-  document.getElementById('apprReceiverName').value=receiverName;
-  // Pré-remplir avec les infos du bus du propriétaire si déjà connues
-  const p=S.profile||{};
-  document.getElementById('apprGIE').value=p.gie||p.company||'';
-  document.getElementById('apprVehicle').value=p.vehicle||'';
-  document.getElementById('apprLigne').value=p.ligne||'';
-  document.getElementById('apprTrajet').value=p.trajet||'';
-  document.getElementById('apprSection').value=p.section||'1';
-  document.getElementById('apprPrix').value=p.prix||'150';
-  document.getElementById('apprZone').value=p.zone||'';
-  openModal('modalApproveCandidature');
-};
-window.doApproveCandidature=async()=>{
-  const notifId=document.getElementById('apprNotifId').value;
-  const receiverUid=document.getElementById('apprReceiverUid').value;
-  const receiverName=document.getElementById('apprReceiverName').value;
-  const gie=document.getElementById('apprGIE').value.trim();
-  const vehicle=document.getElementById('apprVehicle').value.trim();
-  const ligne=document.getElementById('apprLigne').value.trim();
-  const trajet=document.getElementById('apprTrajet').value.trim();
-  const section=parseInt(document.getElementById('apprSection').value||'1',10);
-  const prix=parseInt(document.getElementById('apprPrix').value||'0',10);
-  const zone=document.getElementById('apprZone').value.trim();
-  if(!gie||!vehicle||!ligne||!trajet||!zone||!prix){notify('⚠️','Champs','Renseignez tous les champs du bus.');return;}
-  loader('Validation de la candidature…');
-  try{
-    await updateDoc(doc(db,'users',receiverUid),{status:'approved',approvedOwnerUid:S.uid,approvedAt:serverTimestamp(),gie,vehicle,ligne,trajet,section,prix,zone,linkedOwnerUids:arrayUnion(S.uid),approvedOwnerUids:arrayUnion(S.uid)});
-    await updateDoc(doc(db,'users',S.uid),{receiverUid,receiverStatus:'actif',gie,vehicle,ligne,trajet,section,prix,zone});
-    S.profile.gie=gie;S.profile.vehicle=vehicle;S.profile.ligne=ligne;S.profile.trajet=trajet;S.profile.section=section;S.profile.prix=prix;S.profile.zone=zone;S.profile.receiverUid=receiverUid;
-    await updateDoc(doc(db,'notifications',notifId),{accepted:true,read:true,acceptedAt:serverTimestamp()});
-    try{await addDoc(collection(db,'notifications'),{toUid:receiverUid,type:'candidature_accepted',ownerUid:S.uid,ownerName:S.profile?.name||'Propriétaire',gie,vehicle,ligne,trajet,section,prix,zone,read:false,ts:serverTimestamp()});}catch(e){}
-    loader('',false);closeModal('modalApproveCandidature');
-    notify('✅','Candidature acceptée',`${receiverName} est activé sur ${vehicle} · Ligne ${ligne}.`);
-    loadChReceveur();attachChReceiverListener();attachChTicketsListener();
-  }catch(e){loader('',false);notify('⚠️','Erreur',e.message||'Impossible d\'accepter.');}
-};
-window.rejectChCandidature=async(notifId,receiverUid)=>{
-  if(!confirm('Refuser cette candidature ?'))return;
-  loader('Refus en cours…');
-  try{
-    await updateDoc(doc(db,'notifications',notifId),{rejected:true,read:true,rejectedAt:serverTimestamp()});
-    try{await addDoc(collection(db,'notifications'),{toUid:receiverUid,type:'candidature_rejected',ownerUid:S.uid,ownerName:S.profile?.name||'Propriétaire',read:false,ts:serverTimestamp()});}catch(e){}
-    loader('',false);notify('❌','Candidature refusée','Le receveur a été notifié.');
-  }catch(e){loader('',false);notify('⚠️','Erreur',e.message||'Impossible de refuser.');}
-};
 async function loadChAlerts(recvData){
   const p=S.profile;const cont=document.getElementById('chAlertsList');if(!cont)return;
   const alerts=[];const recv=recvData||{};
@@ -1981,180 +1835,6 @@ window.chSubmitReport=async()=>{
     notify('✅','Signalement envoyé','Le directeur a été prévenu.');
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
-
-// ══════════════════════════════════════════════════════════
-// GEOLOCATION + LEAFLET MAP (chauffeur partage, owner voit)
-// ══════════════════════════════════════════════════════════
-window.chToggleGeo=()=>{
-  const btn=document.getElementById('chGeoBtn');const st=document.getElementById('chGeoStatus');
-  if(chGeoWatchId!=null){
-    navigator.geolocation.clearWatch(chGeoWatchId);chGeoWatchId=null;
-    btn.textContent='📡 Démarrer le partage GPS';btn.classList.remove('btn-danger');btn.classList.add('btn-primary');
-    st.textContent='GPS désactivé';st.style.color='#888';
-    notify('🛰️','GPS','Partage de position arrêté.');
-    return;
-  }
-  if(!navigator.geolocation){notify('⚠️','GPS','Géolocalisation non supportée.');return;}
-  st.textContent='Activation…';st.style.color='#FF6B00';
-  chGeoWatchId=navigator.geolocation.watchPosition(async pos=>{
-    const now=Date.now();if(now-chGeoLastWrite<15000)return;chGeoLastWrite=now;
-    const {latitude:lat,longitude:lng,accuracy}=pos.coords;
-    st.innerHTML=`🟢 Actif · ${lat.toFixed(4)}, ${lng.toFixed(4)} <span style="color:#555;">(±${Math.round(accuracy)}m)</span>`;st.style.color='#34d399';
-    try{await setDoc(doc(db,'bus_locations',S.uid),{lat,lng,accuracy,updatedAt:serverTimestamp(),ownerUid:S.uid,vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||''});}catch(e){console.warn('[geo write]',e);}
-  },err=>{st.textContent='Erreur GPS: '+err.message;st.style.color='#DF0024';chGeoWatchId=null;btn.textContent='📡 Réessayer';},{enableHighAccuracy:true,maximumAge:10000,timeout:15000});
-  btn.textContent='🛑 Arrêter le partage GPS';btn.classList.remove('btn-primary');btn.classList.add('btn-danger');
-  notify('📡','GPS','Partage de position démarré.');
-};
-function initChBusMap(){
-  const sec=document.getElementById('chOwnerMapSection');if(!sec)return;
-  if(S.role!=='owner'){sec.style.display='none';return;}
-  sec.style.display='block';
-  setTimeout(()=>{
-    const el=document.getElementById('chBusMap');if(!el||typeof L==='undefined')return;
-    if(!chMap){chMap=L.map(el,{zoomControl:true,attributionControl:false}).setView([14.6928,-17.4467],12);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(chMap);}
-    else{chMap.invalidateSize();}
-    attachBusLocationListener();
-  },120);
-}
-function attachBusLocationListener(){
-  if(unsubBusLoc)unsubBusLoc();
-  // Owner regarde sa propre position bus (clé = ownerUid)
-  const targetUid=S.uid;
-  unsubBusLoc=onSnapshot(doc(db,'bus_locations',targetUid),snap=>{
-    const info=document.getElementById('chBusMapInfo');
-    if(!snap.exists()){if(info)info.textContent='Aucune position partagée par le chauffeur.';return;}
-    const d=snap.data();const t=d.updatedAt?.toDate?.()?.toLocaleTimeString('fr-FR')||'—';
-    if(info)info.textContent=`🛰️ Dernière position: ${t} · ±${Math.round(d.accuracy||0)}m`;
-    if(chMap){
-      const ll=[d.lat,d.lng];
-      if(!chMapMarker){chMapMarker=L.marker(ll).addTo(chMap).bindPopup(`🚌 ${d.vehicle||'Bus'}`);}
-      else{chMapMarker.setLatLng(ll);}
-      chMap.setView(ll,15);
-    }
-  });
-}
-
-// ══════════════════════════════════════════════════════════
-// VERSEMENT RECEVEUR → PROPRIÉTAIRE
-// ══════════════════════════════════════════════════════════
-window.openRecvVersement=async()=>{
-  const today=S.profile?.today||0;
-  const p=S.profile||{};
-  const ownerUid=p.approvedOwnerUid||(p.linkedOwnerUids||[])[0]||'';
-  document.getElementById('recvVersToday').textContent=fmt(today);
-  document.getElementById('recvVersAmount').value=today>0?today:'';
-  document.getElementById('recvVersNote').value='';
-  let ownerName='—';
-  if(ownerUid){try{const o=await getDoc(doc(db,'users',ownerUid));if(o.exists()){const od=o.data();ownerName=`${od.name||'—'} · ${od.company||od.gie||''}`;}}catch(e){}}
-  document.getElementById('recvVersOwnerName').textContent=ownerName;
-  openModal('modalRecvVersement');
-};
-window.doRecvVersement=async()=>{
-  const amount=parseInt(document.getElementById('recvVersAmount').value||'0',10);
-  const mode=document.getElementById('recvVersMode').value;
-  const note=(document.getElementById('recvVersNote').value||'').trim();
-  if(!amount||amount<100){notify('⚠️','Montant','Minimum 100 FCFA.');return;}
-  const ownerUid=S.profile?.approvedOwnerUid||(S.profile?.linkedOwnerUids||[])[0]||'';
-  const bal=S.profile?.balance||0;
-  if(amount>bal){notify('⚠️','Solde insuffisant',`Votre solde est de ${fmt(bal)} FCFA.`);return;}
-  loader('Versement en cours…');
-  try{
-    const ref='VRS-'+Date.now().toString(36).toUpperCase();
-    const date=new Date().toLocaleDateString('fr-FR');
-    // Débit immédiat du receveur
-    await updateDoc(doc(db,'users',S.uid),{balance:increment(-amount)});
-    await addDoc(collection(db,'users',S.uid,'history'),{type:'versement_out',label:'Versement chauffeur — '+ref,amount:-amount,ref,ts:serverTimestamp()});
-    // Crédit immédiat du chauffeur/propriétaire si lié
-    if(ownerUid){
-      await updateDoc(doc(db,'users',ownerUid),{balance:increment(amount)});
-      await addDoc(collection(db,'users',ownerUid,'history'),{type:'versement_in',label:'Versement reçu de '+(S.profile?.name||'receveur'),amount,ref,ts:serverTimestamp()});
-      await addDoc(collection(db,'notifications'),{toUid:ownerUid,type:'versement_confirmed',fromUid:S.uid,receiverName:S.profile?.name||'',amount,ref,mode,read:false,ts:serverTimestamp()});
-    }
-    await addDoc(collection(db,'versements'),{amount,mode,note,ref,date,receiverUid:S.uid,receiverName:S.profile?.name||'',ownerUid:ownerUid||'',status:'confirmed',ts:serverTimestamp()});
-    loader('',false);closeModal('modalRecvVersement');
-    notify('✅','Versement effectué',`${fmt(amount)} FCFA débités${ownerUid?' et crédités au chauffeur':''}.`);
-  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
-};
-
-// ══════════════════════════════════════════════════════════
-// PROPRIÉTAIRE — versements en attente de confirmation
-// ══════════════════════════════════════════════════════════
-function attachChPendingVersListener(){
-  if(unsubChPendingVers)unsubChPendingVers();
-  if(S.role!=='owner')return;
-  try{
-    const q=query(collection(db,'versements'),where('ownerUid','==',S.uid),where('status','==','pending'));
-    unsubChPendingVers=onSnapshot(q,snap=>{
-      const items=snap.docs.map(d=>({id:d.id,...d.data()}));renderChPendingVers(items);
-    });
-  }catch(e){console.warn('[pending vers]',e);}
-}
-function renderChPendingVers(items){
-  const sec=document.getElementById('chPendingVersSection');const list=document.getElementById('chPendingVersList');const cnt=document.getElementById('chPendingVersCount');
-  if(!sec||!list)return;
-  if(S.role!=='owner'){sec.style.display='none';return;}
-  sec.style.display='block';if(cnt)cnt.textContent=`(${items.length})`;
-  if(!items.length){list.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucun versement en attente.</div>';return;}
-  list.innerHTML=items.map(v=>{
-    const t=v.ts?.toDate?.()?.toLocaleString('fr-FR')||'—';
-    return `<div class="ch-card" style="border:1.5px solid #FF6B0044;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-        <div><div style="font-weight:900;font-size:14px;">${v.receiverName||'Receveur'}</div><div style="font-size:11px;color:#888;">${t} · ${v.mode||'cash'} · Ref: ${v.ref||'—'}</div>${v.note?`<div style="font-size:11px;color:#aaa;margin-top:3px;">📝 ${v.note}</div>`:''}</div>
-        <div style="font-weight:900;font-size:18px;color:#FF6B00;">${fmt(v.amount)} F</div>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-primary" style="flex:1;font-size:13px;padding:10px;" onclick="confirmChVers('${v.id}','${v.receiverUid}',${v.amount})">✅ Confirmer</button>
-        <button class="btn btn-danger" style="flex:1;font-size:13px;padding:10px;" onclick="disputeChVers('${v.id}','${v.receiverUid}',${v.amount})">❌ Contester</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-window.confirmChVers=async(id,receiverUid,amount)=>{
-  if(!confirm(`Confirmer la réception de ${fmt(amount)} FCFA ?`))return;
-  loader('Confirmation…');
-  try{
-    await updateDoc(doc(db,'versements',id),{status:'confirmed',confirmedAt:serverTimestamp()});
-    await addDoc(collection(db,'notifications'),{toUid:receiverUid,type:'versement_confirmed',amount,ownerUid:S.uid,read:false,ts:serverTimestamp()});
-    loader('',false);notify('✅','Versement confirmé',`${fmt(amount)} FCFA reçus.`);
-  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
-};
-window.disputeChVers=async(id,receiverUid,amount)=>{
-  const reason=prompt('Raison de la contestation ?');if(!reason)return;
-  loader('Contestation…');
-  try{
-    await updateDoc(doc(db,'versements',id),{status:'disputed',disputeReason:reason,disputedAt:serverTimestamp()});
-    await addDoc(collection(db,'notifications'),{toUid:receiverUid,type:'versement_disputed',amount,reason,ownerUid:S.uid,read:false,ts:serverTimestamp()});
-    loader('',false);notify('⚠️','Versement contesté','Le receveur a été notifié.');
-  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
-};
-
-// ══════════════════════════════════════════════════════════
-// Notif push native + son
-// ══════════════════════════════════════════════════════════
-function playNotifSound(){
-  try{
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
-    const o=ctx.createOscillator();const g=ctx.createGain();
-    o.type='sine';o.frequency.setValueAtTime(880,ctx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(440,ctx.currentTime+.22);
-    g.gain.setValueAtTime(.18,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.3);
-    o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+.3);
-  }catch(e){}
-}
-function pushNative(title,body){
-  try{if('Notification' in window && Notification.permission==='granted' && document.visibilityState!=='visible'){new Notification(title,{body,icon:'/icon-192.png'});}}catch(e){}
-}
-try{if('Notification' in window && Notification.permission==='default')Notification.requestPermission();}catch(e){}
-
-// ══════════════════════════════════════════════════════════
-// Indicateur online / offline
-// ══════════════════════════════════════════════════════════
-function setOnlineIndicator(on){
-  ['recvOnlineDot'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=on?'<span style="width:8px;height:8px;border-radius:50%;background:#34d399;display:inline-block;"></span>En ligne':'<span style="width:8px;height:8px;border-radius:50%;background:#DF0024;display:inline-block;"></span>Hors-ligne (sync en attente)';el.style.color=on?'#34d399':'#DF0024';});
-}
-window.addEventListener('online',()=>{setOnlineIndicator(true);notify('🟢','En ligne','Synchronisation des données…');});
-window.addEventListener('offline',()=>{setOnlineIndicator(false);notify('🔴','Hors-ligne','Les paiements seront synchronisés au retour du réseau.');});
-
 function showChToast(type,data){
   const stack=document.getElementById('chToastStack');if(!stack)return;
   const div=document.createElement('div');div.className='ch-toast';
@@ -2163,10 +1843,6 @@ function showChToast(type,data){
   else if(type==='fraud_alert'){icon='⚠️';title='Anomalie';body=data.message||'Activité suspecte.';color='#FF6B00';}
   else if(type==='bus_panne'){icon='🔧';title='Panne';body=data.message||'Problème bus.';color='#DF0024';}
   else if(type==='bus_report'){icon='📋';title='Signalement';body=data.message||'—';}
-  else if(type==='versement_received'){icon='💰';title='Nouveau versement';body=`${data.receiverName||'Receveur'} a versé ${fmt(data.amount||0)} FCFA (${data.mode||'cash'}).`;color='#7c3aed';}
-  else if(type==='versement_confirmed'){icon='✅';title='Versement confirmé';body=`${fmt(data.amount||0)} FCFA confirmés par le propriétaire.`;color='#34d399';}
-  else if(type==='versement_disputed'){icon='⚠️';title='Versement contesté';body=data.reason||'Le propriétaire a contesté ce versement.';color='#DF0024';}
-  else if(type==='receiver_candidature'){icon='📥';title='Nouvelle candidature';body=`${data.receiverName||'Receveur'} souhaite rejoindre votre bus.`;color='#FF6B00';}
   div.innerHTML=`<button onclick="this.closest('.ch-toast').remove()" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:#888;font-size:14px;">✕</button><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="font-size:18px;">${icon}</span><div style="font-weight:900;font-size:13px;color:${color};">${title}</div></div><div style="font-size:12px;color:#ccc;line-height:1.5;">${body}</div>`;
   stack.appendChild(div);setTimeout(()=>{div.classList.add('out');setTimeout(()=>div.remove(),300);},6000);
 }
@@ -2400,7 +2076,295 @@ window.stopCamera=()=>{S.scanning=false;document.getElementById('cameraScreen').
 window.flipCamera=async()=>{S.facing=S.facing==='environment'?'user':'environment';if(S.stream)S.stream.getTracks().forEach(t=>t.stop());await window.openCamera(S.camMode);};
 function handleQR(raw){stopCamera();raw=(raw||'').trim();const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Contenu: '+raw.slice(0,40));return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId);}else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}}
 
-if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const regs=await navigator.serviceWorker.getRegistrations();for(const r of regs)await r.unregister();if(window.caches){const keys=await caches.keys();for(const k of keys)await caches.delete(k);}}catch(e){}});}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').catch(()=>{});});}
+
+/* ============================================================
+   AJOUT — Suivi GPS des bus (ne modifie rien d'existant)
+   - Chauffeur diffuse sa position (busLocations/{vehicle})
+   - Passager : bouton "Voir bus map" + recherche par n° de bus
+   - Directeur : bouton "Voir tous mes bus" sur la carte
+   ============================================================ */
+(function(){
+  // Leaflet CSS+JS chargés à la demande
+  let leafletReady=null;
+  function loadLeaflet(){
+    if(leafletReady)return leafletReady;
+    leafletReady=new Promise(res=>{
+      const css=document.createElement('link');
+      css.rel='stylesheet';css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(css);
+      const s=document.createElement('script');
+      s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      s.onload=()=>res(window.L);
+      document.head.appendChild(s);
+    });
+    return leafletReady;
+  }
+
+  // Modal de la carte (injecté dynamiquement)
+  const modalHTML=`
+  <div class="modal-overlay" id="modalBusMap" style="display:none;z-index:9999;" onclick="if(event.target===this)window.closeBusMap()">
+    <div class="modal-box" onclick="event.stopPropagation()" style="max-width:430px;width:96%;">
+      <div class="modal-header">
+        <div style="font-weight:900;font-size:18px;">📍 Suivi des bus</div>
+        <button class="modal-close" onclick="window.closeBusMap()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="busMapSearchWrap" class="input-wrap">
+          <label class="input-label">Numéro / immatriculation du bus</label>
+          <div style="display:flex;gap:8px;">
+            <input class="input-field" id="busMapNumInput" placeholder="ex: DK-1234-AB" style="flex:1;"/>
+            <button class="btn btn-primary" onclick="window.searchBus()" style="padding:0 16px;">🔍</button>
+          </div>
+        </div>
+        <div id="busMapStatus" style="font-size:12px;color:#888;margin-bottom:10px;min-height:18px;">Entrez un n° de bus pour voir s'il arrive.</div>
+        <div id="busMapDiv" style="width:100%;height:380px;border-radius:14px;overflow:hidden;background:#0f1a0a;border:1.5px solid #ffffff15;"></div>
+        <div id="busMapList" style="margin-top:10px;max-height:160px;overflow-y:auto;"></div>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend',modalHTML);
+
+  // FAB passager
+  const fabPass=document.createElement('button');
+  fabPass.id='fabBusMapPass';
+  fabPass.innerHTML='📍 Voir bus map';
+  fabPass.style.cssText='display:none;position:fixed;bottom:78px;left:50%;transform:translateX(-50%);z-index:500;background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;border:2px solid #7dd3fc66;border-radius:24px;padding:10px 18px;font-weight:900;font-size:13px;font-family:"Space Grotesk",sans-serif;cursor:pointer;box-shadow:0 6px 18px #0ea5e955;';
+  fabPass.onclick=()=>window.openBusMap();
+  document.body.appendChild(fabPass);
+
+  // FAB directeur
+  const fabDir=document.createElement('button');
+  fabDir.id='fabBusMapDir';
+  fabDir.innerHTML='🗺️ Voir tous mes bus';
+  fabDir.style.cssText='display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:500;background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;border:2px solid #7dd3fc66;border-radius:24px;padding:10px 18px;font-weight:900;font-size:13px;font-family:"Space Grotesk",sans-serif;cursor:pointer;box-shadow:0 6px 18px #0ea5e955;';
+  fabDir.onclick=()=>window.openBusMap({directeurMode:true});
+  document.body.appendChild(fabDir);
+
+  // Afficher/cacher les FAB selon l'écran actif
+  setInterval(()=>{
+    const passActive=document.getElementById('screenPassenger')?.classList.contains('active');
+    const dirActive=document.getElementById('screenDirecteur')?.classList.contains('active');
+    fabPass.style.display=passActive?'block':'none';
+    fabDir.style.display=dirActive?'block':'none';
+  },600);
+
+  // === Chauffeur / Receveur : diffusion GPS ===
+  let watchId=null,lastPush=0;
+  async function pushPos(pos){
+    try{
+      const role=S.role,p=S.profile;if(!p)return;
+      // On considère "chauffeur" et "receveur" comme conducteurs du bus
+      if(role!=='chauffeur'&&role!=='receiver')return;
+      const vehicle=(p.vehicle||'').trim();
+      if(!vehicle)return;
+      const now=Date.now();if(now-lastPush<5000)return;lastPush=now;
+      await setDoc(doc(db,'busLocations',vehicle),{
+        vehicle,
+        lat:pos.coords.latitude,
+        lng:pos.coords.longitude,
+        accuracy:pos.coords.accuracy||0,
+        speed:pos.coords.speed||0,
+        heading:pos.coords.heading||0,
+        ligne:p.ligne||'',
+        gie:p.gie||'',
+        directeurUid:p.directeurUid||'',
+        ownerUids:p.approvedOwnerUids||[],
+        driverUid:S.uid,
+        driverRole:role,
+        driverName:p.name||'',
+        updatedAt:serverTimestamp(),
+        ts:now
+      },{merge:true});
+    }catch(e){console.warn('GPS push failed',e);}
+  }
+  function startBroadcast(){
+    if(watchId!=null)return;
+    if(!navigator.geolocation)return;
+    watchId=navigator.geolocation.watchPosition(pushPos,err=>{console.warn('GPS err',err);},{enableHighAccuracy:true,maximumAge:5000,timeout:15000});
+  }
+  function stopBroadcast(){if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null;}}
+  setInterval(()=>{
+    if(!S||!S.profile){stopBroadcast();return;}
+    if((S.role==='chauffeur'||S.role==='receiver')&&S.profile.status==='approved'&&S.profile.vehicle){startBroadcast();}
+    else stopBroadcast();
+  },4000);
+
+  // === Lecture côté passager/directeur ===
+  let map=null,markers={},unsubAll=null,unsubOne=null;
+  function clearMarkers(){Object.values(markers).forEach(m=>map.removeLayer(m));markers={};}
+  function busIcon(L){return L.divIcon({className:'bus-marker',html:'<div style="background:#0ea5e9;border:3px solid #fff;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px #000a;">🚌</div>',iconSize:[34,34],iconAnchor:[17,17]});}
+  function placeMarker(L,id,data){
+    const lat=data.lat,lng=data.lng;if(typeof lat!=='number'||typeof lng!=='number')return;
+    const age=(Date.now()-(data.ts||0))/1000;
+    const ageStr=age<60?Math.round(age)+'s':Math.round(age/60)+'min';
+    const html=`<div style="font-family:'Space Grotesk',sans-serif;"><b>🚌 ${data.vehicle||id}</b><br>Ligne: ${data.ligne||'—'}<br>Conducteur: ${data.driverName||'—'}<br>MAJ: il y a ${ageStr}</div>`;
+    if(markers[id]){markers[id].setLatLng([lat,lng]).setPopupContent(html);}
+    else{markers[id]=L.marker([lat,lng],{icon:busIcon(L)}).addTo(map).bindPopup(html);}
+  }
+  function fitMarkers(L){const arr=Object.values(markers);if(!arr.length)return;const g=L.featureGroup(arr);map.fitBounds(g.getBounds().pad(0.3));}
+
+  window.openBusMap=async function(opts){
+    opts=opts||{};
+    openModal('modalBusMap');
+    const status=document.getElementById('busMapStatus');
+    const listEl=document.getElementById('busMapList');
+    const searchWrap=document.getElementById('busMapSearchWrap');
+    listEl.innerHTML='';
+    searchWrap.style.display=opts.directeurMode?'none':'block';
+    status.textContent=opts.directeurMode?'Chargement de tous vos bus…':'Entrez un n° de bus pour voir s\'il arrive.';
+    const L=await loadLeaflet();
+    if(!map){
+      map=L.map('busMapDiv').setView([14.6928,-17.4467],12); // Dakar
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OSM'}).addTo(map);
+    }
+    setTimeout(()=>map.invalidateSize(),200);
+    if(unsubAll){unsubAll();unsubAll=null;}
+    if(unsubOne){unsubOne();unsubOne=null;}
+    clearMarkers();
+
+    if(opts.directeurMode&&S.role==='directeur'){
+      unsubAll=onSnapshot(query(collection(db,'busLocations'),where('directeurUid','==',S.uid)),snap=>{
+        clearMarkers();
+        const items=[];
+        snap.forEach(d=>{const x=d.data();placeMarker(L,d.id,x);items.push(x);});
+        status.textContent=items.length?`${items.length} bus en ligne`:'Aucun bus en ligne pour le moment.';
+        listEl.innerHTML=items.map(x=>{
+          const age=Math.max(0,Math.round((Date.now()-(x.ts||0))/1000));
+          const ageStr=age<60?age+'s':Math.round(age/60)+'min';
+          const live=age<120;
+          return `<div style="background:#0f1a0a;border:1px solid #ffffff15;border-radius:12px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-weight:900;font-size:13px;">🚌 ${x.vehicle||'—'}</div><div style="font-size:11px;color:#888;">Ligne ${x.ligne||'—'} · ${x.driverName||''}</div></div><div style="font-size:11px;color:${live?'#34d399':'#888'};font-weight:800;">${live?'● EN LIGNE':'○ '+ageStr}</div></div>`;
+        }).join('');
+        fitMarkers(L);
+      });
+    }
+  };
+
+  window.searchBus=async function(){
+    const v=(document.getElementById('busMapNumInput').value||'').trim();
+    const status=document.getElementById('busMapStatus');
+    if(!v){status.textContent='Entrez un n° de bus.';return;}
+    const L=await loadLeaflet();
+    if(unsubOne){unsubOne();unsubOne=null;}
+    clearMarkers();
+    status.textContent='Recherche du bus '+v+'…';
+    unsubOne=onSnapshot(doc(db,'busLocations',v),snap=>{
+      if(!snap.exists()){status.innerHTML='❌ Bus <b>'+v+'</b> introuvable ou hors ligne.';return;}
+      const x=snap.data();
+      const age=Math.max(0,Math.round((Date.now()-(x.ts||0))/1000));
+      const live=age<120;
+      placeMarker(L,v,x);
+      map.setView([x.lat,x.lng],15);
+      const ageStr=age<60?age+'s':Math.round(age/60)+'min';
+      status.innerHTML=live
+        ?`✅ Bus <b>${v}</b> en route — MAJ il y a ${ageStr} · ligne ${x.ligne||'—'}`
+        :`⚠️ Bus <b>${v}</b> n'est pas en ligne (dernière position il y a ${ageStr}).`;
+    },err=>{status.textContent='Erreur: '+err.message;});
+  };
+
+  window.closeBusMap=function(){
+    closeModal('modalBusMap');
+    if(unsubAll){unsubAll();unsubAll=null;}
+    if(unsubOne){unsubOne();unsubOne=null;}
+  };
+})();
+
+/* AJOUT — Dashboard Propriétaire (ne modifie rien d'existant) */
+async function loadOwnerReceivers(){
+  const cont=document.getElementById('ownerRecvList');
+  if(!cont)return;
+  cont.innerHTML='<div style="text-align:center;color:#666;padding:20px;font-size:12px;">Chargement…</div>';
+  try{
+    let docs;
+    try{const s=await getDocs(query(collection(db,'users'),where('role','==','receiver')));docs=s.docs;}
+    catch(e){const s=await getDocs(collection(db,'users'));docs=s.docs.filter(d=>d.data().role==='receiver');}
+    const mine=docs.map(d=>({id:d.id,...d.data()})).filter(r=>{
+      const linked=r.linkedOwnerUids||[],pending=r.pendingOwnerUids||[],approved=r.approvedOwnerUids||[];
+      return linked.includes(S.uid)||pending.includes(S.uid)||approved.includes(S.uid);
+    });
+    if(!mine.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun receveur lié pour le moment.</div>';return;}
+    cont.innerHTML=mine.map(r=>{
+      const initials=(r.name||'??').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const isApproved=(r.approvedOwnerUids||[]).includes(S.uid);
+      const isPending=(r.pendingOwnerUids||[]).includes(S.uid)&&!isApproved;
+      const badge=isApproved?'<span style="font-size:10px;padding:3px 8px;border-radius:8px;background:#009A4422;color:#009A44;border:1px solid #009A4444;font-weight:800;">✓ Approuvé</span>':isPending?'<span style="font-size:10px;padding:3px 8px;border-radius:8px;background:#FF6B0022;color:#FF6B00;border:1px solid #FF6B0044;font-weight:800;">⏳ En attente</span>':'<span style="font-size:10px;padding:3px 8px;border-radius:8px;background:#444;color:#aaa;font-weight:800;">Lié</span>';
+      const actions=isPending?`<div style="display:flex;gap:6px;margin-top:8px;"><button onclick="ownerApproveRecv('${r.id}')" style="flex:1;background:#009A44;border:none;border-radius:10px;padding:8px;color:#fff;font-weight:800;cursor:pointer;font-size:12px;">✓ Approuver</button><button onclick="ownerRejectRecv('${r.id}')" style="flex:1;background:#DF002433;border:1px solid #DF002466;border-radius:10px;padding:8px;color:#ff6b6b;font-weight:800;cursor:pointer;font-size:12px;">✕ Refuser</button></div>`:'';
+      return`<div style="background:#150a25;border:1.5px solid #7c3aed33;border-radius:14px;padding:12px;margin-bottom:10px;"><div style="display:flex;align-items:center;gap:10px;"><div style="width:40px;height:40px;border-radius:20px;background:linear-gradient(135deg,#7c3aed44,#4c1d9544);display:flex;align-items:center;justify-content:center;font-weight:800;color:#c4b5fd;">${initials}</div><div style="flex:1;min-width:0;"><div style="font-weight:800;color:#e2e8f0;">${r.name||'—'}</div><div style="font-size:11px;color:#888;">${r.gie||'—'} · ${r.vehicle||'Sans bus'}</div></div>${badge}</div>${actions}</div>`;
+    }).join('');
+  }catch(e){console.error('[loadOwnerReceivers]',e);cont.innerHTML='<div style="color:#DF0024;font-size:12px;text-align:center;padding:14px;">Erreur de chargement.</div>';}
+}
+window.ownerApproveRecv=async(uid)=>{loader('Approbation…');try{const snap=await getDoc(doc(db,'users',uid));if(!snap.exists())throw new Error('Receveur introuvable');const r=snap.data();const approved=Array.from(new Set([...(r.approvedOwnerUids||[]),S.uid]));const pending=(r.pendingOwnerUids||[]).filter(x=>x!==S.uid);const linked=Array.from(new Set([...(r.linkedOwnerUids||[]),S.uid]));await updateDoc(doc(db,'users',uid),{approvedOwnerUids:approved,pendingOwnerUids:pending,linkedOwnerUids:linked});loader('',false);notify('✅','Approuvé',r.name||'');loadOwnerReceivers();}catch(e){loader('',false);notify('❌','Erreur',e.message);}};
+window.ownerRejectRecv=async(uid)=>{loader('Refus…');try{const snap=await getDoc(doc(db,'users',uid));if(!snap.exists())throw new Error('Receveur introuvable');const r=snap.data();const pending=(r.pendingOwnerUids||[]).filter(x=>x!==S.uid);const linked=(r.linkedOwnerUids||[]).filter(x=>x!==S.uid);await updateDoc(doc(db,'users',uid),{pendingOwnerUids:pending,linkedOwnerUids:linked});loader('',false);notify('❌','Refusé',r.name||'');loadOwnerReceivers();}catch(e){loader('',false);notify('❌','Erreur',e.message);}};
+
+/* ═══════════════ VERSEMENT RECEVEUR → CHAUFFEUR (sans assignation) ═══════════════ */
+(function(){
+  function injectVersementBtn(){
+    if(document.getElementById('btnRecvVersement'))return;
+    const recvBal=document.getElementById('recvBalance');
+    if(!recvBal)return;
+    const card=recvBal.closest('div[style*="border-radius:20px"]');
+    if(!card)return;
+    const btn=document.createElement('button');
+    btn.id='btnRecvVersement';
+    btn.onclick=openRecvVersement;
+    btn.style.cssText='margin-top:10px;background:linear-gradient(135deg,#FF6B00,#c2410c);border:none;border-radius:14px;padding:13px 20px;cursor:pointer;display:flex;align-items:center;gap:10px;color:#fff;font-weight:900;font-size:14px;font-family:\'Space Grotesk\',sans-serif;width:100%;justify-content:center;';
+    btn.innerHTML='<span style="font-size:20px;">💸</span> Versement chauffeur';
+    card.appendChild(btn);
+  }
+  function injectModal(){
+    if(document.getElementById('modalRecvVersement'))return;
+    const m=document.createElement('div');
+    m.className='modal-overlay';m.id='modalRecvVersement';m.style.display='none';
+    m.onclick=(e)=>{if(e.target===m)m.style.display='none';};
+    m.innerHTML=`<div class="modal-content" style="background:#1a0a00;border:1.5px solid #FF6B0044;">
+      <div class="modal-header"><div style="font-weight:900;font-size:18px;color:#FF6B00;">💸 Versement chauffeur</div><button class="modal-close" onclick="document.getElementById('modalRecvVersement').style.display='none'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+      <div style="background:#FF6B0015;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FFB380;line-height:1.5;">Aucune assignation requise. Saisissez le téléphone ou Wallet ID du chauffeur — son compte sera crédité instantanément.</div>
+      <div class="input-wrap"><label class="input-label">Téléphone ou Wallet ID du chauffeur *</label><input class="input-field" id="rvChId" placeholder="ex: 77XXXXXXX ou TP-XXXX"/></div>
+      <div class="input-wrap"><label class="input-label">Montant (FCFA) *</label><input class="input-field" id="rvAmt" type="number" placeholder="ex: 25000"/></div>
+      <button class="btn btn-full" onclick="doRecvVersement()" style="background:linear-gradient(135deg,#FF6B00,#c2410c);color:#fff;">✅ Verser au chauffeur</button>
+    </div>`;
+    document.body.appendChild(m);
+  }
+  window.openRecvVersement=function(){injectModal();document.getElementById('rvChId').value='';document.getElementById('rvAmt').value='';document.getElementById('modalRecvVersement').style.display='flex';};
+  window.doRecvVersement=async function(){
+    const idRaw=(document.getElementById('rvChId').value||'').trim();
+    const amt=parseInt(document.getElementById('rvAmt').value||'0',10);
+    if(!idRaw)return notify('❌','Champ requis','Saisir le téléphone ou Wallet ID.');
+    if(!amt||amt<=0)return notify('❌','Montant invalide','Saisir un montant > 0.');
+    if((S.profile.balance||0)<amt)return notify('❌','Solde insuffisant',fmt(S.profile.balance||0)+' F disponibles.');
+    loader('Versement en cours…');
+    try{
+      let chUid=null,chData=null;
+      if(/^TP-/i.test(idRaw)){
+        const ws=await getDoc(doc(db,'wallets',idRaw.toUpperCase()));
+        if(!ws.exists())throw new Error('Wallet introuvable');
+        chUid=ws.data().uid;
+      }else{
+        const qy=query(collection(db,'users'),where('phone','==',idRaw),where('role','==','chauffeur'),limit(1));
+        const snap=await getDocs(qy);
+        if(snap.empty)throw new Error('Chauffeur introuvable pour ce téléphone');
+        chUid=snap.docs[0].id;chData=snap.docs[0].data();
+      }
+      if(!chData){const ds=await getDoc(doc(db,'users',chUid));if(!ds.exists())throw new Error('Chauffeur introuvable');chData=ds.data();}
+      if(chData.role!=='chauffeur')throw new Error('Le destinataire n\'est pas un chauffeur');
+      const ref='VRS-'+Date.now();
+      await updateDoc(doc(db,'users',S.uid),{balance:increment(-amt)});
+      await updateDoc(doc(db,'users',chUid),{balance:increment(amt)});
+      await addDoc(collection(db,'users',S.uid,'history'),{type:'versement_out',label:'Versement → '+(chData.name||'Chauffeur'),amount:-amt,ref,ts:serverTimestamp()});
+      await addDoc(collection(db,'users',chUid,'history'),{type:'versement_in',label:'Versement de '+(S.profile.name||'Receveur'),amount:amt,ref,ts:serverTimestamp()});
+      await addDoc(collection(db,'users',chUid,'versements'),{amount:amt,ref,fromUid:S.uid,fromName:S.profile.name||'',date:new Date().toLocaleDateString('fr-FR'),ts:serverTimestamp()});
+      await addDoc(collection(db,'notifications'),{toUid:chUid,type:'versement_recu',message:'Versement reçu: '+fmt(amt)+' F de '+(S.profile.name||'Receveur'),read:false,ts:serverTimestamp()});
+      loader('',false);
+      document.getElementById('modalRecvVersement').style.display='none';
+      notify('✅','Versement effectué',fmt(amt)+' F → '+(chData.name||'Chauffeur'));
+    }catch(e){loader('',false);notify('❌','Erreur',e.message||'Échec versement.');}
+  };
+  const mo=new MutationObserver(()=>{if(document.getElementById('screenReceiver')?.classList.contains('active'))injectVersementBtn();});
+  mo.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
+  setInterval(injectVersementBtn,1500);
+})();
 </script>
 </div>
 </body>
