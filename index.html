@@ -521,62 +521,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <div class="tab-content" id="recvTab-tickets">
       <div style="padding:20px;"><div style="font-weight:900;font-size:22px;margin-bottom:18px;">🎫 Tickets Émis</div><div id="recvTicketsList"></div></div>
     </div>
-
-    <!-- ══════════════════════════════════════
-         NOUVEL ONGLET : MES BUS DISPONIBLES
-    ══════════════════════════════════════════ -->
-    <div class="tab-content" id="recvTab-bus">
-      <div class="sn-stripe"></div>
-      <div style="padding:20px;">
-
-        <!-- Titre + compteur -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <div style="font-weight:900;font-size:22px;">🚌 Mes Bus</div>
-          <div style="background:#009A4422;border:1px solid #009A4444;border-radius:10px;padding:4px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;color:#009A44;" id="recvBusSelectedCount">0 sélectionné(s)</div>
-        </div>
-        <div style="color:#888;font-size:13px;margin-bottom:18px;line-height:1.5;">Sélectionnez le(s) bus de votre propriétaire approuvé auquel vous êtes rattaché(e).</div>
-
-        <!-- Bus actuellement assignés -->
-        <div id="recvMyBusSection" style="display:none;margin-bottom:20px;">
-          <div style="font-size:11px;font-weight:800;color:#009A44;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">✅ Vos bus actuels</div>
-          <div id="recvMyBusList"></div>
-        </div>
-
-        <!-- Séparateur -->
-        <div style="font-size:11px;font-weight:800;color:#aaa;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">🔍 Propriétaires disponibles</div>
-
-        <!-- Filtres -->
-        <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;">
-          <button class="recv-bus-filter active" id="rbf-all" onclick="filterRecvBus('all',this)" style="flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid #FF6B0044;background:#FF6B0015;color:#FF6B00;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;cursor:pointer;white-space:nowrap;">Tous</button>
-          <button class="recv-bus-filter" id="rbf-gieDir" onclick="filterRecvBus('gieDir',this)" style="flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid #ffffff20;background:transparent;color:#555;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;cursor:pointer;white-space:nowrap;">Mon Directeur</button>
-          <button class="recv-bus-filter" id="rbf-autres" onclick="filterRecvBus('autres',this)" style="flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid #ffffff20;background:transparent;color:#555;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;cursor:pointer;white-space:nowrap;">Autres GIE</button>
-        </div>
-
-        <!-- Barre de recherche -->
-        <div style="position:relative;margin-bottom:16px;">
-          <input class="input-field" id="recvBusSearch" placeholder="🔍 Rechercher GIE, véhicule, ligne…" oninput="searchRecvBus()" style="padding-left:16px;"/>
-        </div>
-
-        <!-- Liste des propriétaires -->
-        <div id="recvAvailableBusList">
-          <div style="text-align:center;padding:40px 20px;">
-            <div class="spinner" style="margin:0 auto 14px;"></div>
-            <div style="color:#555;font-size:13px;">Chargement des bus disponibles…</div>
-          </div>
-        </div>
-
-        <!-- Bouton de sauvegarde flottant -->
-        <div id="recvBusSaveBtn" style="display:none;position:sticky;bottom:16px;padding:0 0 8px;">
-          <button onclick="saveRecvBusSelection()" style="width:100%;background:linear-gradient(135deg,#009A44,#007832);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:900;font-size:15px;font-family:'Space Grotesk',sans-serif;cursor:pointer;box-shadow:0 6px 24px #009A4466;display:flex;align-items:center;justify-content:center;gap:10px;">
-            <span style="font-size:20px;">💾</span>
-            <span>Enregistrer ma sélection</span>
-          </button>
-        </div>
-
-      </div>
-    </div>
-    <!-- FIN ONGLET MES BUS -->
-
   </div>
 
   <!-- Nav receveur (4 onglets maintenant) -->
