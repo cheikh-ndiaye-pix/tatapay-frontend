@@ -590,6 +590,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <button class="recv-nav-btn active" id="rnav-home" onclick="switchRecvTab('home')">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Accueil
     </button>
+    <button class="recv-nav-btn" id="rnav-bus" onclick="switchRecvTab('bus')">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8l5 3v5h-5V8z"/></svg>Mes Bus
     </button>
     <button class="recv-nav-btn" id="rnav-trajets" onclick="switchRecvTab('trajets')">
@@ -1092,6 +1093,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div id="recvVersOwnerInfo" style="font-size:12px;color:#888;margin-top:6px;">Propriétaire: <span id="recvVersOwnerName">—</span></div>
       </div>
       <div class="input-wrap"><label class="input-label">Montant à verser (FCFA) *</label><input type="number" min="100" class="input-field" id="recvVersAmount" placeholder="ex: 25000"/></div>
+      
       <div class="input-wrap"><label class="input-label">Référence / Note</label><input class="input-field" id="recvVersNote" placeholder="ex: REF-OM-AB12C"/></div>
       <button class="btn btn-purple btn-full" onclick="doRecvVersement()">📤 Confirmer le versement</button>
     </div>
@@ -1144,7 +1146,7 @@ import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut
 import{getFirestore,doc,setDoc,getDoc,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:265d82fbda0db1b09b0b6d"};
+const FC={apiKey:"@secret:GOOGLE_API_KEY",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:265d82fbda0db1b09b0b6d"};
 const fbApp=initializeApp(FC);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
@@ -2082,7 +2084,7 @@ window.openRecvVersement=async()=>{
 };
 window.doRecvVersement=async()=>{
   const amount=parseInt(document.getElementById('recvVersAmount').value||'0',10);
-  const mode=document.getElementById('recvVersMode').value;
+  const mode='wallet';
   const note=(document.getElementById('recvVersNote').value||'').trim();
   if(!amount||amount<100){notify('⚠️','Montant','Minimum 100 FCFA.');return;}
   const p=S.profile||{};
