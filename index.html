@@ -521,20 +521,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <div class="tab-content" id="recvTab-tickets">
       <div style="padding:20px;"><div style="font-weight:900;font-size:22px;margin-bottom:18px;">🎫 Tickets Émis</div><div id="recvTicketsList"></div></div>
     </div>
-
-    <!-- HISTORIQUE RECEVEUR -->
-    <div class="tab-content" id="recvTab-historique">
-      <div style="padding:20px;">
-        <div style="font-weight:900;font-size:22px;margin-bottom:6px;">📜 Historique</div>
-        <div style="color:#888;font-size:12px;margin-bottom:14px;">Tous vos versements et toutes vos actions.</div>
-        <div style="display:flex;gap:6px;margin-bottom:14px;">
-          <button class="recv-hist-tab active" data-htab="all" onclick="filterRecvHistory('all',this)" style="flex:1;background:#FF6B0022;border:1px solid #FF6B0066;border-radius:10px;padding:8px;color:#FF6B00;font-weight:800;font-size:11px;font-family:'Space Grotesk',sans-serif;cursor:pointer;">Tout</button>
-          <button class="recv-hist-tab" data-htab="versement" onclick="filterRecvHistory('versement',this)" style="flex:1;background:transparent;border:1px solid #333;border-radius:10px;padding:8px;color:#888;font-weight:800;font-size:11px;font-family:'Space Grotesk',sans-serif;cursor:pointer;">Versements</button>
-          <button class="recv-hist-tab" data-htab="action" onclick="filterRecvHistory('action',this)" style="flex:1;background:transparent;border:1px solid #333;border-radius:10px;padding:8px;color:#888;font-weight:800;font-size:11px;font-family:'Space Grotesk',sans-serif;cursor:pointer;">Actions</button>
-        </div>
-        <div id="recvHistoryList"><div style="text-align:center;color:#555;padding:40px 0;font-size:13px;">Chargement…</div></div>
-      </div>
-    </div>
   </div>
 
   <!-- Nav receveur (4 onglets maintenant) -->
@@ -548,9 +534,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
     </button>
     <button class="recv-nav-btn" id="rnav-tickets" onclick="switchRecvTab('tickets')">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a2 2 0 012-2h16a2 2 0 012 2v2a2 2 0 000 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 000-4V9z"/></svg>Tickets
-    </button>
-    <button class="recv-nav-btn" id="rnav-historique" onclick="switchRecvTab('historique')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Historique
     </button>
   </div>
 </div>
@@ -1103,7 +1086,7 @@ import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut
 import{getFirestore,doc,setDoc,getDoc,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-const FC={apiKey:"@secret:GOOGLE_API_KEY",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:265d82fbda0db1b09b0b6d"};
+const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:265d82fbda0db1b09b0b6d"};
 const fbApp=initializeApp(FC);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
@@ -2178,8 +2161,7 @@ function showChToast(type,data){
   const stack=document.getElementById('chToastStack');if(!stack)return;
   const div=document.createElement('div');div.className='ch-toast';
   let icon='🔔',title='Alerte',body='',color='#059669';
-  if(type==='descendre'){icon='🛑';title='ALARME — Passager veut descendre';body=`${data.passenger||'—'} · ${data.from||''}→${data.to||''}`;color='#DF0024';playDescendreSound();try{if(navigator.vibrate)navigator.vibrate([300,100,300,100,500]);}catch(e){}}
-  else if(type==='versement_alert'){icon='💸';title='Versement manquant';body=data.message||'Recettes non versées.';color='#DF0024';}
+  if(type==='versement_alert'){icon='💸';title='Versement manquant';body=data.message||'Recettes non versées.';color='#DF0024';}
   else if(type==='fraud_alert'){icon='⚠️';title='Anomalie';body=data.message||'Activité suspecte.';color='#FF6B00';}
   else if(type==='bus_panne'){icon='🔧';title='Panne';body=data.message||'Problème bus.';color='#DF0024';}
   else if(type==='bus_report'){icon='📋';title='Signalement';body=data.message||'—';}
@@ -2276,60 +2258,6 @@ window.switchRecvTab=(tab)=>{
   if(tab==='trajets')loadTrajets();
   if(tab==='tickets')loadRecvTickets();
   if(tab==='bus')loadRecvAvailableBus(); // ← Nouveau
-  if(tab==='historique')loadRecvHistory();
-};
-
-let recvHistoryCache=[];
-let recvHistoryFilter='all';
-async function loadRecvHistory(){
-  const cont=document.getElementById('recvHistoryList');if(!cont)return;
-  cont.innerHTML='<div style="text-align:center;color:#555;padding:40px 0;font-size:13px;">Chargement…</div>';
-  try{
-    const items=[];
-    // 1) Historique générique (versements, recharges, etc.)
-    try{
-      const hs=await getDocs(query(collection(db,'users',S.uid,'history'),orderBy('ts','desc'),limit(80)));
-      hs.docs.forEach(d=>{const v=d.data();items.push({kind:(v.type||'').startsWith('versement')?'versement':'action',icon:(v.type==='versement_out'?'📤':v.type==='versement_in'?'💰':'📝'),title:v.label||v.type||'Action',amount:v.amount||0,ref:v.ref||'',ts:v.ts?.toDate?.()||null});});
-    }catch(e){}
-    // 2) Versements depuis la collection globale
-    try{
-      const vs=await getDocs(query(collection(db,'versements'),where('receiverUid','==',S.uid),orderBy('ts','desc'),limit(50)));
-      vs.docs.forEach(d=>{const v=d.data();items.push({kind:'versement',icon:'📤',title:`Versement ${v.mode||'cash'} → propriétaire`,amount:-(v.amount||0),ref:v.ref||'',status:v.status||'',ts:v.ts?.toDate?.()||null});});
-    }catch(e){}
-    // 3) Tickets émis (action)
-    try{
-      const ts=await getDocs(query(collection(db,'tickets'),where('busUid','==',S.uid),orderBy('ts','desc'),limit(50)));
-      ts.docs.forEach(d=>{const t=d.data();items.push({kind:'action',icon:'🎫',title:`Ticket émis · ${t.passenger||'Passager'}`,sub:`${t.from||''}→${t.to||''} · S${t.section||'-'}`,amount:t.price||0,ref:t.sn||'',ts:t.ts?.toDate?.()||null});});
-    }catch(e){}
-    items.sort((a,b)=>(b.ts?.getTime?.()||0)-(a.ts?.getTime?.()||0));
-    recvHistoryCache=items;
-    renderRecvHistory();
-  }catch(e){cont.innerHTML='<div style="text-align:center;color:#DF0024;padding:30px 0;font-size:12px;">Erreur: '+(e.message||e)+'</div>';}
-}
-function renderRecvHistory(){
-  const cont=document.getElementById('recvHistoryList');if(!cont)return;
-  const items=recvHistoryCache.filter(i=>recvHistoryFilter==='all'||i.kind===recvHistoryFilter);
-  if(!items.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:40px 0;font-size:13px;">Aucune entrée.</div>';return;}
-  cont.innerHTML=items.map(i=>{
-    const d=i.ts?i.ts.toLocaleDateString('fr-FR')+' '+i.ts.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'—';
-    const amtColor=i.amount<0?'#DF0024':'#34d399';
-    const amtTxt=i.amount?(i.amount>0?'+':'')+fmt(i.amount)+' F':'';
-    return `<div style="background:#ffffff06;border:1px solid #ffffff10;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;gap:12px;align-items:center;">
-      <div style="width:40px;height:40px;border-radius:12px;background:#FF6B0022;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${i.icon}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-weight:800;font-size:13px;color:#fff;">${i.title}</div>
-        ${i.sub?`<div style="font-size:11px;color:#aaa;font-family:'JetBrains Mono',monospace;">${i.sub}</div>`:''}
-        <div style="font-size:10px;color:#666;margin-top:2px;">${d}${i.ref?' · '+i.ref:''}${i.status?' · '+i.status:''}</div>
-      </div>
-      ${amtTxt?`<div style="font-weight:900;font-size:14px;color:${amtColor};white-space:nowrap;">${amtTxt}</div>`:''}
-    </div>`;
-  }).join('');
-}
-window.filterRecvHistory=(f,btn)=>{
-  recvHistoryFilter=f;
-  document.querySelectorAll('.recv-hist-tab').forEach(b=>{b.style.background='transparent';b.style.borderColor='#333';b.style.color='#888';});
-  if(btn){btn.style.background='#FF6B0022';btn.style.borderColor='#FF6B0066';btn.style.color='#FF6B00';}
-  renderRecvHistory();
 };
 
 window.openModal=(id)=>document.getElementById(id).style.display='flex';
@@ -2337,20 +2265,7 @@ window.closeModal=(id)=>{document.getElementById(id).style.display='none';if(id=
 function updateBalanceUI(){document.getElementById('passBalance').textContent=fmt(S.profile?.balance||0);}
 function showDescendBtn(t){activeTicketData=t;document.getElementById('descendInfo').textContent=`${t.from}→${t.to} · ${t.price} FCFA`;document.getElementById('descendBtn').style.display='block';document.getElementById('activeTicketBanner').style.display='block';document.getElementById('activeTicketLabel').textContent=`🚌 ${t.gie}/${t.vehicle} — ${t.from}→${t.to}`;}
 function hideDescendBtn(){document.getElementById('descendBtn').style.display='none';document.getElementById('activeTicketBanner').style.display='none';activeTicketData=null;}
-window.demandDescendre=async()=>{
-  if(!activeTicketData)return;
-  const t=activeTicketData;
-  const base={type:'descendre',passenger:S.profile.name,from:t.from,to:t.to,vehicle:t.vehicle||'',gie:t.gie||'',read:false,ts:serverTimestamp()};
-  // Receveur (bus)
-  await addDoc(collection(db,'notifications'),{...base,toUid:t.busUid});
-  // Chauffeur — alarme dédiée
-  try{
-    const busDoc=await getDoc(doc(db,'users',t.busUid));
-    const chUid=busDoc.exists()?busDoc.data().chauffeurUid:null;
-    if(chUid){await addDoc(collection(db,'notifications'),{...base,toUid:chUid,target:'chauffeur'});}
-  }catch(e){console.warn('[descendre→chauffeur]',e);}
-  notify('🛑','Alarme envoyée !','Le receveur et le chauffeur ont été prévenus.');
-};
+window.demandDescendre=async()=>{if(!activeTicketData)return;await addDoc(collection(db,'notifications'),{toUid:activeTicketData.busUid,type:'descendre',passenger:S.profile.name,from:activeTicketData.from,to:activeTicketData.to,read:false,ts:serverTimestamp()});notify('🛑','Signal envoyé !','Le receveur a été prévenu.');};
 window.showActiveTicket=()=>{if(activeTicketData)showTicketData(activeTicketData);};
 window.openWithdraw=()=>{resetWithdraw();document.getElementById('withdrawAvailable').textContent=fmt(S.profile?.balance||0)+' FCFA';openModal('modalWithdraw');};
 function resetWithdraw(){['wdStep1','wdStep2','wdStep3','wdStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const w=document.getElementById('wdAmt');if(w)w.value='';}
