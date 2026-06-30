@@ -150,9 +150,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
 .admin-search:focus{border-color:var(--g);}
 .admin-detail-overlay{position:fixed;inset:0;background:#000000dd;z-index:600;display:none;align-items:flex-end;justify-content:center;}
 .admin-detail-box{background:#0c1f12;border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:90vh;overflow-y:auto;border:1px solid #009A4422;animation:slideUp .3s ease;}
-/* ══════════════════════════════════════════════
-   DIRECTEUR GIE — STYLES DASHBOARD
-══════════════════════════════════════════════ */
 .dir-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
 .dir-stat{background:#050d18;border:1px solid #0ea5e922;border-radius:14px;padding:14px;text-align:center;}
 .dir-stat .val{font-size:22px;font-weight:900;color:#7dd3fc;}
@@ -190,10 +187,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
 .dir-badge-warn{background:#FF6B0020;color:#FF6B00;border:1px solid #FF6B0044;}
 .dir-badge-err{background:#DF002420;color:#DF0024;border:1px solid #DF002444;}
 .dir-badge-pend{background:#FFD10020;color:#FFD100;border:1px solid #FFD10044;}
-
-/* ══════════════════════════════════════════════
-   RECEVEUR — BUS DISPONIBLES (NOUVEAU)
-══════════════════════════════════════════════ */
 .bus-owner-card{background:#0f1a0a;border:1.5px solid #ffffff10;border-radius:16px;padding:14px;margin-bottom:12px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;}
 .bus-owner-card:active{transform:scale(.98);}
 .bus-owner-card.selected{border-color:#009A44;background:linear-gradient(135deg,#009A4412,#00A65008);}
@@ -204,10 +197,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
 .check-ring.checked{background:var(--g);border-color:var(--g);}
 .bus-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800;background:#7c3aed22;color:#c4b5fd;border:1px solid #7c3aed44;margin-right:4px;margin-top:4px;}
 .my-bus-chip{display:flex;align-items:center;gap:8px;background:#009A4412;border:1.5px solid #009A4444;border-radius:12px;padding:10px 12px;margin-bottom:8px;}
-
-/* ══════════════════════════════════════════════
-   CHAUFFEUR — STYLES DASHBOARD
-══════════════════════════════════════════════ */
 .ch-nav{display:flex;background:#041510;border-top:1px solid #05966922;padding:8px 0 18px;position:sticky;bottom:0;z-index:10;}
 .ch-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;font-size:8px;font-weight:600;padding:6px 0;font-family:'Space Grotesk',sans-serif;transition:color .2s;}
 .ch-nav-btn.active{color:#059669;}
@@ -287,7 +276,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   <div class="camera-toolbar"><button onclick="stopCamera()" style="padding:12px 32px;border-radius:14px;border:none;cursor:pointer;background:#ffffff22;color:#fff;font-weight:800;font-size:14px;font-family:'Space Grotesk',sans-serif;pointer-events:all;">✕ Fermer</button></div>
 </div>
 
-<!-- DÉTAIL UTILISATEUR ADMIN -->
 <div class="admin-detail-overlay" id="adminDetailOverlay" onclick="if(event.target===this)closeAdminDetail()">
   <div class="admin-detail-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
@@ -299,7 +287,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- SPLASH -->
 <div class="screen active" id="screenSplash" style="background:linear-gradient(180deg,#06120a,#0c2010);justify-content:space-between;">
   <div class="sn-stripe"></div>
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;">
@@ -316,7 +303,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   <div class="sn-stripe"></div>
 </div>
 
-<!-- AUTH -->
 <div class="screen" id="screenAuth">
   <div class="sn-stripe"></div>
   <div style="background:#0c1f12;padding:28px 24px 20px;border-bottom:1px solid #009A4422;">
@@ -366,7 +352,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- MODAL RECEVEUR — SÉLECTION PROPRIÉTAIRES -->
 <div class="modal-overlay" id="modalRecvOwners" style="display:none;" onclick="if(event.target===this)closeModal('modalRecvOwners')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
@@ -384,7 +369,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- PENDING -->
 <div class="screen" id="screenPending" style="background:#06120a;justify-content:center;align-items:center;padding:32px 24px;text-align:center;">
   <div style="font-size:64px;margin-bottom:16px;" id="pendingIcon">⏳</div>
   <div style="font-weight:900;font-size:20px;margin-bottom:10px;" id="pendingTitle">En attente</div>
@@ -392,7 +376,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   <button class="btn btn-secondary" onclick="doLogout()">Se déconnecter</button>
 </div>
 
-<!-- PASSENGER -->
 <div class="screen" id="screenPassenger">
   <div class="scroll-area">
     <div class="tab-content active" id="passTab-home">
@@ -457,7 +440,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- RECEIVER -->
 <div class="screen" id="screenReceiver">
   <div class="scroll-area">
     <div class="tab-content active" id="recvTab-home">
@@ -546,7 +528,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
     </div>
   </div>
 
-  <!-- Nav receveur (4 onglets maintenant) -->
   <div class="recv-nav" style="position:relative;">
     <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
     <button class="recv-nav-btn active" id="rnav-home" onclick="switchRecvTab('home')">
@@ -564,9 +545,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     CHAUFFEUR (PROPRIÉTAIRE OPÉRATIONNEL)
-══════════════════════════════════════════════════════════ -->
 <div class="screen" id="screenChauffeur" style="background:#030a07;">
   <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
   <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #05966922;background:#041510;position:sticky;top:0;z-index:20;">
@@ -582,7 +560,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
     </div>
   </div>
   <div class="scroll-area">
-    <!-- ACCUEIL -->
     <div class="tab-content active" id="chTab-home" style="padding:18px 16px;">
       <div class="ch-rev-card">
         <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:20px 20px 0 0;"></div>
@@ -608,7 +585,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">💰 Derniers paiements</div>
       <div class="ch-card" id="chHomePayments"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">En attente du receveur assigné…</div></div>
     </div>
-    <!-- RECETTES -->
     <div class="tab-content" id="chTab-recettes" style="padding:18px 16px;">
       <div style="font-weight:900;font-size:20px;color:#34d399;margin-bottom:6px;">💰 Suivi des recettes</div>
       <div style="color:#888;font-size:12px;margin-bottom:16px;line-height:1.5;">Paiements du receveur en temps réel et historique des versements.</div>
@@ -630,7 +606,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div id="chPendingVersList"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucun versement en attente.</div></div>
       </div>
     </div>
-    <!-- RECEVEUR -->
     <div class="tab-content" id="chTab-receveur" style="padding:18px 16px;">
       <div style="font-weight:900;font-size:20px;color:#34d399;margin-bottom:16px;">🎫 Receveur affecté</div>
       <div id="chCandSection" style="display:none;margin-bottom:20px;">
@@ -651,7 +626,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">📊 Historique performances</div>
       <div class="ch-card" id="chRecvPerfList"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune donnée.</div></div>
     </div>
-    <!-- BUS -->
     <div class="tab-content" id="chTab-bus" style="padding:18px 16px;">
       <div style="font-weight:900;font-size:20px;color:#34d399;margin-bottom:16px;">🚌 Mon bus</div>
       <div class="ch-card">
@@ -684,7 +658,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
         </div>
       </div>
     </div>
-    <!-- STATS -->
     <div class="tab-content" id="chTab-stats" style="padding:18px 16px;">
       <div style="font-weight:900;font-size:20px;color:#34d399;margin-bottom:16px;">📊 Statistiques</div>
       <div class="ch-stat-grid" style="margin-bottom:16px;">
@@ -711,9 +684,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     DIRECTEUR GIE
-══════════════════════════════════════════════════════════ -->
 <div class="screen" id="screenDirecteur" style="background:#030b14;">
   <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
   <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #0ea5e922;background:#050d18;position:sticky;top:0;z-index:20;">
@@ -806,7 +776,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- ADMIN -->
 <div class="screen" id="screenAdmin" style="background:#050f08;">
   <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
   <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ffffff10;background:#050f08;position:sticky;top:0;z-index:20;">
@@ -867,7 +836,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- MODALS -->
 <div class="notif-panel" id="notifPanel" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
   <div class="notif-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
@@ -999,7 +967,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- MODAL ASSIGNER BUS -->
 <div class="modal-overlay" id="modalAssignBus" style="display:none;" onclick="if(event.target===this)closeModal('modalAssignBus')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
@@ -1045,7 +1012,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- ── MODAL VERSEMENT RECEVEUR → PROPRIÉTAIRE ───────────── -->
 <div class="modal-overlay" id="modalRecvVersement" style="display:none;" onclick="if(event.target===this)closeModal('modalRecvVersement')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#7c3aed,#a855f7,#4c1d95);border-radius:24px 24px 0 0;"></div>
@@ -1063,7 +1029,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- ── MODAL APPROBATION CANDIDATURE (PROPRIÉTAIRE) ──────── -->
 <div class="modal-overlay" id="modalOwnerWithdraw" style="display:none;" onclick="if(event.target===this)closeModal('modalOwnerWithdraw')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#FDEF42,#f59e0b,#FF6B00);border-radius:24px 24px 0 0;"></div>
@@ -1081,7 +1046,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- ── MODAL APPROBATION CANDIDATURE (PROPRIÉTAIRE) ──────── -->
 <div class="modal-overlay" id="modalApproveCandidature" style="display:none;" onclick="if(event.target===this)closeModal('modalApproveCandidature')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
@@ -1116,7 +1080,6 @@ const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a
 const fbApp=initializeApp(FC);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
-// Persistance offline (best-effort, ignore si déjà initialisé / multi-onglet)
 try{enableIndexedDbPersistence(db).catch(e=>console.warn('[persistence]',e.code||e.message));}catch(e){}
 const ADMIN_EMAIL='papacheikh900@gmail.com';
 
@@ -1130,14 +1093,10 @@ let dirRevChartInst=null,dirLineChartInst=null,chRevChartInst=null,chPerfChartIn
 let chCurrentPeriod='jour';
 let chLastTickets=[];
 
-// ══════════════════════════════════════════════
-// BUS DISPONIBLES — état local
-// ══════════════════════════════════════════════
-let allAvailableOwners=[];        // tous les owners approved chargés
-let recvBusSelection=new Set();   // UIDs owners sélectionnés
-let recvBusFilter='all';          // filtre actif
+let allAvailableOwners=[];
+let recvBusSelection=new Set();
+let recvBusFilter='all';
 
-// ── HELPERS ──────────────────────────────────────────────
 function loader(msg='',show=true){const l=document.getElementById('globalLoader');l.className=show?'show':'';if(msg)document.getElementById('loaderMsg').textContent=msg;}
 let ntTimer=null;
 function notify(icon,title,body){['sygostIcon','sygostTitle','sygostBody'].forEach((id,i)=>document.getElementById(id).textContent=[icon,title,body][i]);const el=document.getElementById('sygostNotif');el.classList.add('show');if(ntTimer)clearTimeout(ntTimer);ntTimer=setTimeout(hideSygost,4500);}
@@ -1149,7 +1108,6 @@ function statusBadge(s){const map={pending:'badge-pending',approved:'badge-appro
 function roleBadge(r){const c={passenger:'#009A44',receiver:'#FF6B00',owner:'#7c3aed',chauffeur:'#059669',directeur:'#0ea5e9'};const ic={passenger:'🧍',receiver:'🎫',owner:'🚌',chauffeur:'👨‍✈️',directeur:'🏢'};return`<span style="font-size:11px;padding:3px 10px;border-radius:8px;background:${c[r]||'#444'}22;color:${c[r]||'#aaa'};border:1px solid ${c[r]||'#444'}44;font-weight:800;">${ic[r]||'👤'} ${r}</span>`;}
 function fmt(n){return Math.round(n||0).toLocaleString('fr-FR');}
 
-// ── AUTH ─────────────────────────────────────────────────
 window.goSplash=()=>show('screenSplash');
 window.goAuth=(mode)=>{
   S.isReg=mode==='register';
@@ -1318,7 +1276,6 @@ function loginUI(){
   }else if(S.role==='receiver'&&p.status==='approved'){
     document.getElementById('recvGreet').textContent=p.name;
     document.getElementById('recvInfoLine').textContent=`GIE:${p.gie||'—'} = ${p.vehicle||'—'} = Ligne:${p.ligne||'—'} · ${p.trajet||''} · Zone:${p.zone||'—'}`;
-    // Versement libre — aucune approbation requise
     const verserBtn=document.getElementById('recvVerserBtn');
     if(verserBtn){
       verserBtn.disabled=false;
@@ -1330,7 +1287,6 @@ function loginUI(){
     renderMerchantQR('recvBusQRWrap',p,160);
     refreshRecvStats();loadTrajets();loadRecvTickets();
     attachPendingListener();attachNotifListener();loadRecvDirecteurInfo();
-    // Initialiser la sélection de bus depuis le profil
     recvBusSelection=new Set(p.linkedOwnerUids||[]);
     unsubRecvBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;const el=document.getElementById('recvBalance');if(el)el.textContent=fmt(S.profile.balance);}});
     show('screenReceiver');notify('✅','Connecté',p.name);
@@ -1346,7 +1302,6 @@ function loginUI(){
     document.getElementById('chWalletId').textContent=p.walletId||'—';
     show('screenChauffeur');
     initChauffeurDashboard();
-    // Affiche solde + bouton retrait uniquement pour le propriétaire
     const wb=document.getElementById('chOwnerWalletBox');
     if(wb){wb.style.display=S.role==='owner'?'block':'none';}
     if(S.role==='owner'){
@@ -1357,26 +1312,16 @@ function loginUI(){
   loader('',false);
 }
 
-// ── RECEVEUR — INFO DIRECTEUR ─────────────────────────────
 async function loadRecvDirecteurInfo(){
   const p=S.profile;if(!p.directeurUid)return;
   try{const snap=await getDoc(doc(db,'users',p.directeurUid));if(snap.exists()){const d=snap.data();document.getElementById('recvDirecteurName').textContent=d.name||'—';document.getElementById('recvDirecteurOrg').textContent=d.org||'—';document.getElementById('recvDirecteurInfo').style.display='block';}}catch(e){}
 }
 
-// ══════════════════════════════════════════════════════════
-// RECEVEUR — SÉLECTION DE BUS (NOUVEAU)
-// ══════════════════════════════════════════════════════════
-
-/**
- * Charge tous les propriétaires approuvés visibles par le receveur.
- * Priorité : ceux approuvés par son directeur d'abord.
- */
 async function loadRecvAvailableBus(){
   const cont=document.getElementById('recvAvailableBusList');
   if(!cont)return;
   cont.innerHTML=`<div style="text-align:center;padding:40px 20px;"><div class="spinner" style="margin:0 auto 14px;"></div><div style="color:#555;font-size:13px;">Chargement…</div></div>`;
   try{
-    // 1. Charger les propriétaires (une seule clause where pour éviter tout besoin d'index composite)
     let owners=[];
     try{
       const snap=await getDocs(query(collection(db,'users'),where('role','==','owner')));
@@ -1386,10 +1331,8 @@ async function loadRecvAvailableBus(){
       const snapAll=await getDocs(collection(db,'users'));
       owners=snapAll.docs.map(d=>({id:d.id,...d.data()})).filter(u=>u.role==='owner');
     }
-    // Filtre statut côté client (approved + tolérance si statut absent)
     allAvailableOwners=owners.filter(o=>!o.status||o.status==='approved');
 
-    // 2. Refresh sélection depuis Firestore
     try{
       const mySnap=await getDoc(doc(db,'users',S.uid));
       if(mySnap.exists()){recvBusSelection=new Set(mySnap.data().linkedOwnerUids||[]);}
@@ -1413,14 +1356,12 @@ function renderRecvBusList(){
   const q=(document.getElementById('recvBusSearch')?.value||'').toLowerCase();
   let filtered=allAvailableOwners;
 
-  // Filtre par catégorie
   if(recvBusFilter==='gieDir'){
     filtered=filtered.filter(o=>o.approvedByDir===S.profile.directeurUid);
   }else if(recvBusFilter==='autres'){
     filtered=filtered.filter(o=>o.approvedByDir!==S.profile.directeurUid);
   }
 
-  // Filtre texte
   if(q){filtered=filtered.filter(o=>(o.name+o.company+o.email).toLowerCase().includes(q));}
 
   if(!filtered.length){
@@ -1428,7 +1369,6 @@ function renderRecvBusList(){
     return;
   }
 
-  // Trier : ceux du directeur en premier, puis les sélectionnés, puis les autres
   filtered.sort((a,b)=>{
     const aDir=a.approvedByDir===S.profile.directeurUid?0:1;
     const bDir=b.approvedByDir===S.profile.directeurUid?0:1;
@@ -1462,7 +1402,6 @@ function renderRecvBusList(){
     </div>`;
   }).join('');
 
-  // Mettre à jour le compteur
   updateRecvBusCounter();
 }
 
@@ -1496,7 +1435,6 @@ window.toggleRecvBusOwner=(ownerId)=>{
   }else{
     recvBusSelection.add(ownerId);
   }
-  // Mettre à jour visuellement sans rechargement complet
   const card=document.getElementById('boc-'+ownerId);
   if(card){
     const sel=recvBusSelection.has(ownerId);
@@ -1530,7 +1468,6 @@ window.saveRecvBusSelection=async()=>{
   loader('Enregistrement…');
   try{
     await updateDoc(doc(db,'users',S.uid),{linkedOwnerUids:uids});
-    // Mettre à jour le profil local
     S.profile.linkedOwnerUids=uids;
     loader('',false);
     notify('✅','Bus enregistrés',`${uids.length} propriétaire${uids.length>1?'s':''} lié${uids.length>1?'s':''} à votre compte.`);
@@ -1546,9 +1483,6 @@ window.filterRecvBus=(filter,btn)=>{
 
 window.searchRecvBus=()=>renderRecvBusList();
 
-// ════════════════════════════════════════════════════════
-// DIRECTEUR GIE — DASHBOARD COMPLET
-// ════════════════════════════════════════════════════════
 window.switchDirTab=(tab)=>{
   document.querySelectorAll('#screenDirecteur .tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.dir-nav-btn').forEach(b=>b.classList.remove('active'));
@@ -1558,28 +1492,147 @@ window.switchDirTab=(tab)=>{
   if(tab==='receivers')loadDirReceivers();
 };
 
-const DIR_PERIODS={
-  jour:{enc:845000,tix:1240,vers:680000,net:74000,labels:['8h','10h','12h','14h','16h','18h','20h'],data:[62000,98000,145000,178000,192000,110000,60000]},
-  semaine:{enc:5320000,tix:8140,vers:4256000,net:520000,labels:['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'],data:[845000,920000,780000,960000,1050000,640000,125000]},
-  mois:{enc:21400000,tix:32600,vers:17120000,net:2100000,labels:['S1','S2','S3','S4'],data:[5200000,5800000,5100000,5300000]},
-  total:{enc:148000000,tix:224000,vers:118400000,net:14600000,labels:['Jan','Fév','Mar','Avr','Mai','Jun'],data:[22000000,24500000,21800000,26000000,27500000,26200000]},
-};
+/* ════════════════════════════════════════════════════════
+   DIRECTEUR — AGRÉGATIONS RÉELLES (remplace DIR_PERIODS)
+   ════════════════════════════════════════════════════════ */
 let dirCurrentPeriod='jour';
 
-window.dirSetPeriod=(k,btn)=>{
+function getPeriodBounds(period){
+  const now=new Date();
+  let start;
+  if(period==='jour'){start=new Date(now.getFullYear(),now.getMonth(),now.getDate());}
+  else if(period==='semaine'){start=new Date(now.getFullYear(),now.getMonth(),now.getDate()-6);}
+  else if(period==='mois'){start=new Date(now.getFullYear(),now.getMonth(),1);}
+  else{start=new Date(2000,0,1);}
+  return {start,end:now};
+}
+
+function buildChartBuckets(period,tickets){
+  let labels=[],buckets=[];
+  if(period==='jour'){
+    labels=['8h','10h','12h','14h','16h','18h','20h'];
+    buckets=labels.map(()=>0);
+    tickets.forEach(t=>{
+      const dt=t.ts?.toDate?.();if(!dt)return;
+      const h=dt.getHours();
+      const idx=Math.min(Math.max(Math.floor((h-8)/2),0),6);
+      buckets[idx]+=t.price||0;
+    });
+  }else if(period==='semaine'){
+    labels=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+    buckets=labels.map(()=>0);
+    tickets.forEach(t=>{
+      const dt=t.ts?.toDate?.();if(!dt)return;
+      const day=(dt.getDay()+6)%7;
+      buckets[day]+=t.price||0;
+    });
+  }else if(period==='mois'){
+    labels=['S1','S2','S3','S4'];
+    buckets=[0,0,0,0];
+    tickets.forEach(t=>{
+      const dt=t.ts?.toDate?.();if(!dt)return;
+      const week=Math.min(Math.floor((dt.getDate()-1)/7),3);
+      buckets[week]+=t.price||0;
+    });
+  }else{
+    const now=new Date();
+    labels=[];buckets=[];
+    for(let i=5;i>=0;i--){
+      const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+      labels.push(d.toLocaleDateString('fr-FR',{month:'short'}));
+      buckets.push(0);
+    }
+    tickets.forEach(t=>{
+      const dt=t.ts?.toDate?.();if(!dt)return;
+      const monthsAgo=(now.getFullYear()-dt.getFullYear())*12+(now.getMonth()-dt.getMonth());
+      const idx=5-monthsAgo;
+      if(idx>=0&&idx<6)buckets[idx]+=t.price||0;
+    });
+  }
+  return{labels,data:buckets};
+}
+
+function chunkArray(arr,size){
+  const out=[];
+  for(let i=0;i<arr.length;i+=size)out.push(arr.slice(i,i+size));
+  return out;
+}
+
+/**
+ * Calcule les vraies données agrégées pour le directeur connecté, pour une période donnée.
+ * Source de vérité : collections Firestore 'tickets' et 'versements', filtrées sur
+ * les receveurs rattachés à ce directeur (directeurUid === S.uid).
+ */
+async function computeDirPeriodData(period){
+  const {start}=getPeriodBounds(period);
+
+  const recvSnap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('directeurUid','==',S.uid)));
+  const receivers=recvSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const receiverUids=receivers.map(r=>r.id);
+
+  if(!receiverUids.length){
+    return{enc:0,tix:0,vers:0,net:0,retraits:0,labels:[],data:[]};
+  }
+
+  const chunks=chunkArray(receiverUids,30);
+
+  let allTickets=[];
+  for(const chunk of chunks){
+    try{
+      const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','in',chunk)));
+      allTickets.push(...tkSnap.docs.map(d=>d.data()));
+    }catch(e){console.warn('[computeDirPeriodData] tickets chunk error',e);}
+  }
+  const periodTickets=allTickets.filter(t=>{const dt=t.ts?.toDate?.();return dt&&dt>=start;});
+  const enc=periodTickets.reduce((s,t)=>s+(t.price||0),0);
+  const tix=periodTickets.length;
+
+  let allVersements=[];
+  for(const chunk of chunks){
+    try{
+      const vSnap=await getDocs(query(collection(db,'versements'),where('receiverUid','in',chunk)));
+      allVersements.push(...vSnap.docs.map(d=>d.data()));
+    }catch(e){console.warn('[computeDirPeriodData] versements chunk error',e);}
+  }
+  const periodVersements=allVersements.filter(v=>{const dt=v.ts?.toDate?.();return dt&&dt>=start&&v.status==='confirmed';});
+  const vers=periodVersements.reduce((s,v)=>s+(v.amount||0),0);
+
+  // Retraits des receveurs sur la période (collection withdrawal_requests, par uid receveur)
+  let allWithdrawals=[];
+  for(const chunk of chunks){
+    try{
+      const wSnap=await getDocs(query(collection(db,'withdrawal_requests'),where('uid','in',chunk)));
+      allWithdrawals.push(...wSnap.docs.map(d=>d.data()));
+    }catch(e){console.warn('[computeDirPeriodData] withdrawals chunk error',e);}
+  }
+  const periodWithdrawals=allWithdrawals.filter(w=>{const dt=w.requestedAt?.toDate?.();return dt&&dt>=start&&w.status==='done';});
+  const retraits=periodWithdrawals.reduce((s,w)=>s+(w.amount||0),0);
+
+  const net=enc-vers-retraits;
+
+  const{labels,data}=buildChartBuckets(period,periodTickets);
+
+  return{enc,tix,vers,net,retraits,labels,data};
+}
+
+window.dirSetPeriod=async(k,btn)=>{
   dirCurrentPeriod=k;
   document.querySelectorAll('.dir-ptab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  const d=DIR_PERIODS[k];
-  document.getElementById('dir-enc').textContent=fmt(d.enc);
-  document.getElementById('dir-tix').textContent=fmt(d.tix);
-  document.getElementById('dir-vers').textContent=fmt(d.vers);
-  document.getElementById('dir-net').textContent=fmt(d.net);
-  document.getElementById('dir-flux-enc').textContent='+'+fmt(d.enc)+' F';
-  document.getElementById('dir-flux-vers').textContent='−'+fmt(d.vers)+' F';
-  document.getElementById('dir-flux-ret').textContent='−'+fmt(Math.round(d.enc*0.05))+' F';
-  document.getElementById('dir-flux-net').textContent='+'+fmt(d.net)+' F';
-  if(dirRevChartInst){dirRevChartInst.data.labels=d.labels;dirRevChartInst.data.datasets[0].data=d.data;dirRevChartInst.update();}
+  loader('Calcul des données…');
+  try{
+    const d=await computeDirPeriodData(k);
+    document.getElementById('dir-enc').textContent=fmt(d.enc);
+    document.getElementById('dir-tix').textContent=fmt(d.tix);
+    document.getElementById('dir-vers').textContent=fmt(d.vers);
+    document.getElementById('dir-net').textContent=fmt(d.net);
+    document.getElementById('dir-flux-enc').textContent='+'+fmt(d.enc)+' F';
+    document.getElementById('dir-flux-vers').textContent='−'+fmt(d.vers)+' F';
+    document.getElementById('dir-flux-ret').textContent='−'+fmt(d.retraits)+' F';
+    document.getElementById('dir-flux-net').textContent='+'+fmt(d.net)+' F';
+    if(dirRevChartInst){dirRevChartInst.data.labels=d.labels;dirRevChartInst.data.datasets[0].data=d.data;dirRevChartInst.update();}
+  }catch(e){notify('❌','Erreur',e.message);}
+  loader('',false);
 };
 
 async function loadDirFullDashboard(){
@@ -1625,8 +1678,17 @@ async function loadDirFullDashboard(){
     if(dirLineChartInst)dirLineChartInst.destroy();
     const lCtx=document.getElementById('dirLineChart');
     if(lCtx&&ligneLabels.length){dirLineChartInst=new Chart(lCtx,{type:'bar',indexAxis:'y',data:{labels:ligneLabels,datasets:[{label:'FCFA',data:ligneData,backgroundColor:ligneData.map(v=>v>100000?'#009A44':v>0?'#FF6B00':'#DF0024'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10},callback:v=>fmt(v/1000)+'k'},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#7dd3fc',font:{size:11}},grid:{display:false},border:{display:false}}}}});}
-    const pd=DIR_PERIODS['jour'];
-    document.getElementById('dir-enc').textContent=fmt(pd.enc);document.getElementById('dir-tix').textContent=fmt(pd.tix);document.getElementById('dir-vers').textContent=fmt(pd.vers);document.getElementById('dir-net').textContent=fmt(pd.net);document.getElementById('dir-flux-enc').textContent='+'+fmt(pd.enc)+' F';document.getElementById('dir-flux-vers').textContent='−'+fmt(pd.vers)+' F';document.getElementById('dir-flux-ret').textContent='−'+fmt(Math.round(pd.enc*0.05))+' F';document.getElementById('dir-flux-net').textContent='+'+fmt(pd.net)+' F';
+
+    // ── Charge les vraies données pour la période 'jour' au démarrage ──
+    const pd=await computeDirPeriodData('jour');
+    document.getElementById('dir-enc').textContent=fmt(pd.enc);
+    document.getElementById('dir-tix').textContent=fmt(pd.tix);
+    document.getElementById('dir-vers').textContent=fmt(pd.vers);
+    document.getElementById('dir-net').textContent=fmt(pd.net);
+    document.getElementById('dir-flux-enc').textContent='+'+fmt(pd.enc)+' F';
+    document.getElementById('dir-flux-vers').textContent='−'+fmt(pd.vers)+' F';
+    document.getElementById('dir-flux-ret').textContent='−'+fmt(pd.retraits)+' F';
+    document.getElementById('dir-flux-net').textContent='+'+fmt(pd.net)+' F';
     if(dirRevChartInst)dirRevChartInst.destroy();
     const rCtx=document.getElementById('dirRevChart');
     if(rCtx){dirRevChartInst=new Chart(rCtx,{type:'bar',data:{labels:pd.labels,datasets:[{label:'Recettes (F)',data:pd.data,backgroundColor:'#0ea5e9',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10}},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#666',font:{size:10},callback:v=>fmt(v/1000)+'k'},grid:{color:'#0ea5e910'},border:{display:false}}}}});}
@@ -1634,7 +1696,16 @@ async function loadDirFullDashboard(){
   }catch(e){loader('',false);notify('❌','Erreur dashboard',e.message);console.error('loadDirFullDashboard:',e);}
 }
 
-window.dirGenererRapport=()=>{const p=DIR_PERIODS[dirCurrentPeriod];const txt=`RAPPORT GIE — ${(S.profile.org||'').toUpperCase()}\nPériode : ${dirCurrentPeriod}\nEncaissements : ${fmt(p.enc)} FCFA\nTickets : ${fmt(p.tix)}\nVersements : ${fmt(p.vers)} FCFA\nSolde net : ${fmt(p.net)} FCFA\n---\nGénéré par TataPay`;notify('📊','Rapport généré',`${fmt(p.enc)} FCFA · ${fmt(p.tix)} tickets`);if(navigator.share){navigator.share({title:'Rapport GIE TataPay',text:txt}).catch(()=>{});}};
+window.dirGenererRapport=async()=>{
+  loader('Génération du rapport…');
+  try{
+    const p=await computeDirPeriodData(dirCurrentPeriod);
+    const txt=`RAPPORT GIE — ${(S.profile.org||'').toUpperCase()}\nPériode : ${dirCurrentPeriod}\nEncaissements : ${fmt(p.enc)} FCFA\nTickets : ${fmt(p.tix)}\nVersements : ${fmt(p.vers)} FCFA\nRetraits : ${fmt(p.retraits)} FCFA\nSolde net : ${fmt(p.net)} FCFA\n---\nGénéré par TataPay`;
+    loader('',false);
+    notify('📊','Rapport généré',`${fmt(p.enc)} FCFA · ${fmt(p.tix)} tickets`);
+    if(navigator.share){navigator.share({title:'Rapport GIE TataPay',text:txt}).catch(()=>{});}
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
 
 async function loadDirOwners(){
   const cont=document.getElementById('dirOwnersList');
@@ -1692,9 +1763,6 @@ window.doAssignChauffeur=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-// ══════════════════════════════════════════════════════════
-// CHAUFFEUR — DASHBOARD
-// ══════════════════════════════════════════════════════════
 window.switchChauffeurTab=(tab)=>{
   document.querySelectorAll('#screenChauffeur .tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.ch-nav-btn').forEach(b=>b.classList.remove('active'));
@@ -1817,15 +1885,11 @@ function loadChBusPanel(){
   const [tCls,tLbl]=(techMap[ts]||techMap.actif);
   document.getElementById('chBusTechBadge').innerHTML=`<span class="ch-badge ${tCls}">${tLbl}</span>`;
   document.getElementById('chBusOpBadge').innerHTML=`<span class="ch-badge ${bs==='en_service'?'ch-badge-ok':'ch-badge-warn'}">${bs==='en_service'?'En service':'Hors service'}</span>`;
-  // Section géo: chauffeur partage, owner consulte
   const geoCard=document.getElementById('chGeoBtn')?.closest('.ch-card');
   if(geoCard)geoCard.style.display=S.role==='chauffeur'?'block':'none';
   const mapSec=document.getElementById('chOwnerMapSection');
   if(mapSec)mapSec.style.display=S.role==='owner'?'block':'none';
 }
-// ══════════════════════════════════════════════
-// PROPRIÉTAIRE — CANDIDATURES RECEVEURS
-// ══════════════════════════════════════════════
 function attachChCandidaturesListener(){
   if(unsubChCandidatures)unsubChCandidatures();
   try{
@@ -1879,7 +1943,6 @@ window.acceptChCandidature=async(notifId,receiverUid,receiverName)=>{
   document.getElementById('apprNotifId').value=notifId;
   document.getElementById('apprReceiverUid').value=receiverUid;
   document.getElementById('apprReceiverName').value=receiverName;
-  // Pré-remplir avec les infos du bus du propriétaire si déjà connues
   const p=S.profile||{};
   document.getElementById('apprGIE').value=p.gie||p.company||'';
   document.getElementById('apprVehicle').value=p.vehicle||'';
@@ -1977,9 +2040,6 @@ window.chSubmitReport=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-// ══════════════════════════════════════════════════════════
-// GEOLOCATION + LEAFLET MAP (chauffeur partage, owner voit)
-// ══════════════════════════════════════════════════════════
 window.chToggleGeo=()=>{
   const btn=document.getElementById('chGeoBtn');const st=document.getElementById('chGeoStatus');
   if(chGeoWatchId!=null){
@@ -2013,7 +2073,6 @@ function initChBusMap(){
 }
 function attachBusLocationListener(){
   if(unsubBusLoc)unsubBusLoc();
-  // Owner regarde sa propre position bus (clé = ownerUid)
   const targetUid=S.uid;
   unsubBusLoc=onSnapshot(doc(db,'bus_locations',targetUid),snap=>{
     const info=document.getElementById('chBusMapInfo');
@@ -2029,9 +2088,6 @@ function attachBusLocationListener(){
   });
 }
 
-// ══════════════════════════════════════════════════════════
-// VERSEMENT RECEVEUR → PROPRIÉTAIRE
-// ══════════════════════════════════════════════════════════
 window.openRecvVersement=async()=>{
   const today=S.profile?.today||0;
   const p=S.profile||{};
@@ -2056,10 +2112,8 @@ window.doRecvVersement=async()=>{
   try{
     const ref='VRS-'+Date.now().toString(36).toUpperCase();
     const date=new Date().toLocaleDateString('fr-FR');
-    // Débit immédiat du receveur
     await updateDoc(doc(db,'users',S.uid),{balance:increment(-amount)});
     await addDoc(collection(db,'users',S.uid,'history'),{type:'versement_out',label:'Versement chauffeur — '+ref,amount:-amount,ref,ts:serverTimestamp()});
-    // Crédit immédiat du chauffeur/propriétaire si lié
     if(ownerUid){
       await updateDoc(doc(db,'users',ownerUid),{balance:increment(amount)});
       await addDoc(collection(db,'users',ownerUid,'history'),{type:'versement_in',label:'Versement reçu de '+(S.profile?.name||'receveur'),amount,ref,ts:serverTimestamp()});
@@ -2071,9 +2125,6 @@ window.doRecvVersement=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-// ══════════════════════════════════════════════════════════
-// PROPRIÉTAIRE — RETRAIT PAYTECH
-// ══════════════════════════════════════════════════════════
 window.openOwnerWithdraw=()=>{
   const bal=S.profile?.balance||0;
   document.getElementById('wdAvailable').textContent=fmt(bal);
@@ -2095,7 +2146,6 @@ window.doOwnerWithdraw=async()=>{
     const res=await fetch('/api/public/paytech-payout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,phone,operator,ref,ownerName:S.profile?.name||''})});
     const data=await res.json().catch(()=>({}));
     if(!res.ok||!data.success){loader('',false);notify('❌','Échec PayTech',data?.error||'Retrait refusé par PayTech.');return;}
-    // Débit du solde propriétaire + historique
     await updateDoc(doc(db,'users',S.uid),{balance:increment(-amount)});
     await addDoc(collection(db,'users',S.uid,'history'),{type:'withdraw',label:`Retrait PayTech ${operator} → ${phone}`,amount:-amount,ref,ts:serverTimestamp()});
     await addDoc(collection(db,'withdrawals'),{ownerUid:S.uid,ownerName:S.profile?.name||'',amount,phone,operator,ref,status:'sent',ts:serverTimestamp()});
@@ -2104,9 +2154,6 @@ window.doOwnerWithdraw=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-// ══════════════════════════════════════════════════════════
-// PROPRIÉTAIRE — versements en attente de confirmation
-// ══════════════════════════════════════════════════════════
 function attachChPendingVersListener(){
   if(unsubChPendingVers)unsubChPendingVers();
   if(S.role!=='owner')return;
@@ -2156,9 +2203,6 @@ window.disputeChVers=async(id,receiverUid,amount)=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-// ══════════════════════════════════════════════════════════
-// Notif push native + son
-// ══════════════════════════════════════════════════════════
 function playNotifSound(){
   try{
     const ctx=new (window.AudioContext||window.webkitAudioContext)();
@@ -2174,9 +2218,6 @@ function pushNative(title,body){
 }
 try{if('Notification' in window && Notification.permission==='default')Notification.requestPermission();}catch(e){}
 
-// ══════════════════════════════════════════════════════════
-// Indicateur online / offline
-// ══════════════════════════════════════════════════════════
 function setOnlineIndicator(on){
   ['recvOnlineDot'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=on?'<span style="width:8px;height:8px;border-radius:50%;background:#34d399;display:inline-block;"></span>En ligne':'<span style="width:8px;height:8px;border-radius:50%;background:#DF0024;display:inline-block;"></span>Hors-ligne (sync en attente)';el.style.color=on?'#34d399':'#DF0024';});
 }
@@ -2191,7 +2232,6 @@ function showChToast(type,data){
   if(type==='descendre'){
     icon='🛑';title='🚨 ARRÊT DEMANDÉ !';body=`${data.passenger||'Passager'} veut descendre — ${data.from||''}→${data.to||''}`;color='#DF0024';
     playChauffeurAlarm();
-    // Bannière alarme plein écran
     const ov=document.createElement('div');
     ov.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#DF0024,#7f1d1d);color:#fff;padding:22px 18px;text-align:center;animation:slideDown .35s ease;box-shadow:0 8px 24px rgba(223,0,36,.6);border-bottom:4px solid #FDEF42;';
     ov.innerHTML=`<div style="font-size:42px;margin-bottom:6px;animation:bellShake .5s ease infinite;">🛑</div><div style="font-weight:900;font-size:20px;letter-spacing:1px;">ARRÊT DEMANDÉ</div><div style="font-size:14px;margin-top:4px;font-weight:700;">${data.passenger||'Passager'}</div><div style="font-size:12px;margin-top:2px;opacity:.9;">${data.from||''} → ${data.to||''}</div><button onclick="this.parentElement.remove()" style="margin-top:12px;background:#fff;color:#DF0024;border:none;border-radius:10px;padding:10px 22px;font-weight:900;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">✓ COMPRIS</button>`;
@@ -2210,7 +2250,6 @@ function showChToast(type,data){
   stack.appendChild(div);setTimeout(()=>{div.classList.add('out');setTimeout(()=>div.remove(),300);},6000);
 }
 
-// ── ADMIN ─────────────────────────────────────────────────
 let adminAllUsers=[],adminAllWithdrawals=[];
 let adminCurrentRoleFilter='all',adminCurrentWdFilter='pending';
 window.switchAdminTab=(tab)=>{document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.admin-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('adminTab-'+tab)?.classList.add('active');document.querySelectorAll('.admin-nav-btn').forEach(b=>{if(b.textContent.toLowerCase().includes(tab.slice(0,4)))b.classList.add('active');});};
@@ -2284,7 +2323,6 @@ window.markWithdrawDone=async(docId)=>{try{await updateDoc(doc(db,'withdrawal_re
 window.rejectWithdraw=async(docId)=>{try{await updateDoc(doc(db,'withdrawal_requests',docId),{status:'rejected',treatedAt:serverTimestamp()});notify('❌','Rejeté','Demande rejetée.');await loadAdminDashboard();}catch(e){notify('❌','Erreur',e.message);}};
 function startAdminRealtime(){if(unsubAdmin)unsubAdmin();unsubAdmin=onSnapshot(query(collection(db,'users'),where('status','==','pending'),where('role','==','directeur')),snap=>{const n=snap.size;document.querySelectorAll('.admin-nav-btn').forEach(b=>{if(b.textContent.includes('Dashboard'))b.textContent=n>0?`📊 Dashboard (${n})`:'📊 Dashboard';});});}
 
-// ── PASSENGER ─────────────────────────────────────────────
 window.switchTab=(tab)=>{document.querySelectorAll('#screenPassenger .tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('passTab-'+tab)?.classList.add('active');document.getElementById('nav-'+tab)?.classList.add('active');if(tab==='tickets')loadPassTickets();if(tab==='history')loadPassHistory();};
 
 window.switchRecvTab=(tab)=>{
@@ -2294,7 +2332,7 @@ window.switchRecvTab=(tab)=>{
   document.getElementById('rnav-'+tab)?.classList.add('active');
   if(tab==='trajets')loadTrajets();
   if(tab==='tickets')loadRecvTickets();
-  if(tab==='bus')loadRecvAvailableBus(); // ← Nouveau
+  if(tab==='bus')loadRecvAvailableBus();
   if(tab==='historique')loadRecvHistorique();
 };
 let _recvHistAll=[],_recvHistFilter='all';
@@ -2306,17 +2344,14 @@ async function loadRecvHistorique(){
   try{
     const items=[];
     let totVers=0,totEnc=0;
-    // Tickets émis (encaissements)
     try{
       const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','==',S.uid),orderBy('ts','desc'),limit(200)));
       tkSnap.docs.forEach(d=>{const t=d.data();totEnc+=t.price||0;items.push({cat:'ticket',ts:t.ts,icon:'🎫',color:'#34d399',title:`Ticket vendu — ${t.passenger||'—'}`,sub:`${t.from||''}→${t.to||''} · ${t.method||'cash'}`,amt:`+${fmt(t.price||0)} F`});});
     }catch(e){console.warn('hist tickets',e);}
-    // Versements effectués
     try{
       const vSnap=await getDocs(query(collection(db,'versements'),where('receiverUid','==',S.uid),orderBy('ts','desc'),limit(100)));
       vSnap.docs.forEach(d=>{const v=d.data();totVers+=v.amount||0;const st=v.status||'pending';const stCol=st==='confirmed'?'#34d399':st==='disputed'?'#DF0024':'#FF6B00';const stLbl=st==='confirmed'?'✅ Confirmé':st==='disputed'?'⚠️ Contesté':'⏳ En attente';items.push({cat:'versement',ts:v.ts,icon:'💸',color:'#c4b5fd',title:`Versement → ${v.ownerName||'Propriétaire'}`,sub:`${v.mode||'cash'} · <span style="color:${stCol};font-weight:800;">${stLbl}</span>`,amt:`-${fmt(v.amount||0)} F`});});
     }catch(e){console.warn('hist versements',e);}
-    // Actions / notifications (descendre reçus, demandes ticket…)
     try{
       const nSnap=await getDocs(query(collection(db,'notifications'),where('toUid','==',S.uid),orderBy('ts','desc'),limit(80)));
       nSnap.docs.forEach(d=>{const n=d.data();let icon='🔔',title='Notification',sub='';if(n.type==='descendre'){icon='🛑';title=`Passager veut descendre — ${n.passenger||'—'}`;sub=`${n.from||''}→${n.to||''}`;}else if(n.type==='ticket_request'){icon='📩';title=`Demande ticket — ${n.passenger||'—'}`;sub=`${n.price||0} FCFA`;}else if(n.type==='versement_confirmed'){icon='✅';title='Versement confirmé';sub=`${fmt(n.amount||0)} FCFA`;}else if(n.type==='versement_disputed'){icon='⚠️';title='Versement contesté';sub=n.reason||'—';}else if(n.type==='versement_alert'){icon='💸';title='Rappel versement';sub=n.message||'—';}else{return;}items.push({cat:'action',ts:n.ts,icon,color:'#fbbf24',title,sub,amt:''});});
@@ -2343,9 +2378,7 @@ function hideDescendBtn(){document.getElementById('descendBtn').style.display='n
 window.demandDescendre=async()=>{
   if(!activeTicketData)return;
   const payload={type:'descendre',passenger:S.profile.name,from:activeTicketData.from,to:activeTicketData.to,vehicle:activeTicketData.vehicle||'',gie:activeTicketData.gie||'',read:false,ts:serverTimestamp()};
-  // 1) Receveur
   await addDoc(collection(db,'notifications'),{...payload,toUid:activeTicketData.busUid});
-  // 2) Chauffeur (alarme) — lookup chauffeurUid depuis le receveur
   try{
     const rSnap=await getDoc(doc(db,'users',activeTicketData.busUid));
     const chUid=rSnap.exists()?rSnap.data().chauffeurUid:null;
@@ -2467,7 +2500,6 @@ window.closeTicket=()=>document.getElementById('ticketOverlay').style.display='n
 window.openNotifPanel=async()=>{const q=query(collection(db,'notifications'),where('toUid','==',S.uid),orderBy('ts','desc'),limit(20));const snap=await getDocs(q);const cont=document.getElementById('notifList');if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';}else{cont.innerHTML=snap.docs.map(d=>{const n=d.data();let icon='🔔',title='Notification',body='',color='var(--orange)';if(n.type==='descendre'){icon='🛑';title='Passager veut descendre';body=`${n.passenger||'—'} · ${n.from||''}→${n.to||''}`;color='#DF0024';}else if(n.type==='ticket_request'){icon='🎫';title='Demande ticket';body=`${n.passenger||'—'} · ${n.price||0} FCFA`;color='var(--g)';}else if(n.type==='ticket_validated'){icon='✅';title='Ticket validé';body='Votre ticket a été validé !';color='var(--g)';}else if(n.type==='receiver_request'){icon='🎫';title='Nouveau receveur';body=`${n.receiverName||'—'}`;color='var(--orange)';}else if(n.type==='owner_request'){icon='🚌';title='Nouveau propriétaire';body=`${n.ownerName||'—'} — ${n.company||'—'}`;color='#7c3aed';}else if(n.type==='chauffeur_request'){icon='👨‍✈️';title='Nouveau chauffeur';body=`${n.chauffeurName||'—'}`;color='#059669';}else if(n.type==='versement_alert'){icon='💸';title='Versement manquant';body=n.message||'Le receveur n\'a pas versé les recettes.';color='#DF0024';}else if(n.type==='fraud_alert'){icon='⚠️';title='Anomalie détectée';body=n.message||'Activité suspecte sur votre bus.';color='#FF6B00';}else if(n.type==='bus_panne'){icon='🔧';title='Panne signalée';body=n.message||'Problème technique sur le bus.';color='#DF0024';}else if(n.type==='bus_report'){icon='📋';title='Signalement bus';body=n.message||'—';color='#059669';}return`<div style="background:#ffffff08;border:1px solid ${color}33;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;"><div style="font-size:22px;">${icon}</div><div><div style="font-weight:800;font-size:13px;color:${color};">${title}</div><div style="font-size:12px;color:#ccc;margin-top:3px;">${body}</div></div></div>`;}).join('');}document.getElementById('notifPanel').style.display='flex';};
 window.clearNotifs=async()=>{const q=query(collection(db,'notifications'),where('toUid','==',S.uid));const snap=await getDocs(q);await Promise.all(snap.docs.map(d=>deleteDoc(doc(db,'notifications',d.id))));document.getElementById('notifList').innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';const b=document.getElementById('bellBadge');if(b)b.className='bell-badge';const cb=document.getElementById('chBellBadge');if(cb)cb.className='bell-badge';};
 
-// ── CAMERA ────────────────────────────────────────────────
 let detector=null;
 if('BarcodeDetector' in window){try{detector=new BarcodeDetector({formats:['qr_code']});}catch(e){}}
 let scanCanvas=null,scanCtx=null;
