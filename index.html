@@ -325,7 +325,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div class="input-wrap"><label class="input-label">Adresse / Quartier *</label><input class="input-field" id="authAddress" placeholder="ex: Médina, Dakar"/></div>
     </div>
     <div id="fieldsOwner" style="display:none;">
-      <div class="input-wrap"><label class="input-label">GIE d'affiliation *</label><select class="input-field" id="authOwnerDirecteurSelect"><option value="">— Choisir votre GIE —</option></select><div style="font-size:11px;color:#888;margin-top:6px;">Choix définitif — un seul GIE par propriétaire.</div></div>
+      <div class="input-wrap"><label class="input-label">Nom du GIE / Entreprise *</label><input class="input-field" id="authOwnerCompany" placeholder="GIE Dakar Express"/></div>
       <div style="background:#7c3aed15;border:1.5px solid #7c3aed44;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#c4b5fd;line-height:1.6;">⚠️ Compte propriétaire nécessite validation du Directeur de GIE.</div>
     </div>
     <div id="fieldsDirecteur" style="display:none;">
@@ -403,14 +403,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
             <button onclick="openCamera('friend')" style="background:linear-gradient(160deg,#059669,#065f46);border:2px solid #34d39966;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">📷</div>Scan Ami</button>
           </div>
         </div>
-        <button onclick="openBusLocator()" style="width:100%;background:linear-gradient(135deg,#0ea5e9,#0369a1);border:2px solid #38bdf866;border-radius:18px;padding:14px 16px;margin-bottom:16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-family:'Space Grotesk',sans-serif;text-align:left;">
-          <div style="font-size:26px;">📍</div>
-          <div style="flex:1;">
-            <div style="font-weight:900;font-size:14px;">Localiser mon bus</div>
-            <div style="font-size:11px;color:#bae6fd;">Entrez le numéro du bus pour voir sa position en direct</div>
-          </div>
-          <div style="font-size:20px;color:#bae6fd;">→</div>
-        </button>
         <div id="activeTicketBanner" style="display:none;background:#DF002415;border:2px solid #DF002466;border-radius:18px;padding:14px 16px;margin-bottom:16px;cursor:pointer;" onclick="showActiveTicket()">
           <div style="font-size:10px;color:#ff8888;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">🚌 Ticket en cours</div>
           <div style="font-weight:900;font-size:15px;" id="activeTicketLabel">—</div>
@@ -1082,8 +1074,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import{getFirestore,doc,setDoc,getDoc,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
-window._fs={collection,query,where,getDocs,onSnapshot,doc};
 import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FC={apiKey:"@secret:GOOGLE_API_KEY",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:dade7eebdc0894639b0b6d",measurementId:"G-2YGJP8MZ2H"};
@@ -1139,7 +1129,7 @@ window.setRole=async(r)=>{
   if(S.isReg){if(r==='receiver'){document.getElementById('fieldsReceiver').style.display='block';}else if(r==='owner')document.getElementById('fieldsOwner').style.display='block';else if(r==='directeur')document.getElementById('fieldsDirecteur').style.display='block';}
 };
 async function loadDirecteurList(){
-  const sels=[document.getElementById('authDirecteurSelect'),document.getElementById('authChDirecteurSelect'),document.getElementById('authOwnerDirecteurSelect')].filter(Boolean);
+  const sels=[document.getElementById('authDirecteurSelect'),document.getElementById('authChDirecteurSelect')].filter(Boolean);
   if(!sels.length)return;
   sels.forEach(sel=>sel.innerHTML='<option value="">Chargement…</option>');
   try{const snap=await getDocs(query(collection(db,'users'),where('role','==','directeur'),where('status','==','approved')));sels.forEach(sel=>{sel.innerHTML='<option value="">— Choisir un directeur —</option>';if(snap.empty){sel.innerHTML='<option value="">Aucun directeur disponible</option>';return;}snap.docs.forEach(d=>{const u=d.data();const opt=document.createElement('option');opt.value=d.id;opt.textContent=`${u.name} — ${u.org||u.email}`;sel.appendChild(opt);});});}catch(e){sels.forEach(sel=>sel.innerHTML='<option value="">Erreur — réessayez</option>');}
@@ -1198,14 +1188,12 @@ window.doAuth=async()=>{
         openModal('modalRecvOwners');
         return;
       }else if(S.authRole==='owner'){
-        const directeurUid=document.getElementById('authOwnerDirecteurSelect')?.value||'';
-        if(!directeurUid){loader('',false);notify('⚠️','GIE','Choisissez votre GIE (directeur).');return;}
-        let company='';
-        try{const dSnap=await getDoc(doc(db,'users',directeurUid));if(dSnap.exists())company=dSnap.data().org||'';}catch(e){}
-        if(!company){loader('',false);notify('⚠️','GIE','GIE introuvable.');return;}
+        const company=document.getElementById('authOwnerCompany')?.value.trim()||'';
+        if(!company){loader('',false);notify('⚠️','Champs','Entrez le nom du GIE.');return;}
         const walletId='OW-'+uid.slice(0,6).toUpperCase();
-        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'owner',status:'pending',company,gie:company,directeurUid,balance:0,createdAt:serverTimestamp()});
-        await addDoc(collection(db,'notifications'),{toUid:directeurUid,type:'owner_request',ownerUid:uid,ownerName:name,ownerEmail:email,company,phone,read:false,ts:serverTimestamp()});
+        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'owner',status:'pending',company,balance:0,createdAt:serverTimestamp()});
+        const dirSnap=await getDocs(query(collection(db,'users'),where('role','==','directeur'),where('status','==','approved')));
+        await Promise.all(dirSnap.docs.map(d=>addDoc(collection(db,'notifications'),{toUid:d.id,type:'owner_request',ownerUid:uid,ownerName:name,ownerEmail:email,company,phone,read:false,ts:serverTimestamp()})));
         await addDoc(collection(db,'adminNotifications'),{type:'owner_request',ownerUid:uid,ownerName:name,ownerEmail:email,company,phone,read:false,ts:serverTimestamp()});
       }else if(S.authRole==='directeur'){
         const org=document.getElementById('authDirecteurOrg')?.value.trim()||'';
@@ -2536,73 +2524,6 @@ function handleQR(raw){stopCamera();raw=(raw||'').trim();const walletM=raw.match
 if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const regs=await navigator.serviceWorker.getRegistrations();for(const r of regs)await r.unregister();if(window.caches){const keys=await caches.keys();for(const k of keys)await caches.delete(k);}}catch(e){}});}
 </script>
 </div>
-
-<div class="modal-overlay" id="modalBusLocator" style="display:none;" onclick="if(event.target===this)closeModal('modalBusLocator')">
-  <div class="modal-box" onclick="event.stopPropagation()">
-    <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
-    <div class="modal-header"><div style="font-weight:900;font-size:18px;">📍 Localiser un bus</div><button class="modal-close" onclick="closeModal('modalBusLocator')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-    <div class="modal-body">
-      <div style="background:#0ea5e910;border:1px solid #0ea5e933;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#7dd3fc;line-height:1.6;">Entrez le numéro du bus (immatriculation ou identifiant véhicule). Seuls les bus ayant activé le partage GPS sont visibles.</div>
-      <div class="input-wrap"><label class="input-label">Numéro du bus *</label><input class="input-field" id="busLocatorInput" placeholder="ex: DK-1234-AB" autocomplete="off"/></div>
-      <button class="btn btn-primary btn-full" onclick="doLocateBus()">🔎 Rechercher</button>
-      <div id="busLocatorStatus" style="margin-top:12px;font-size:12px;color:#888;text-align:center;"></div>
-      <div id="busLocatorMap" style="display:none;height:280px;border-radius:14px;overflow:hidden;margin-top:12px;border:1.5px solid #0ea5e944;"></div>
-      <div id="busLocatorInfo" style="display:none;margin-top:10px;padding:10px 12px;background:#0f1a0a;border:1px solid #ffffff15;border-radius:12px;font-size:12px;color:#bae6fd;line-height:1.6;"></div>
-    </div>
-  </div>
-</div>
-<script>
-(function(){
-  let map=null,marker=null,unsub=null;
-  window.openBusLocator=function(){
-    const inp=document.getElementById('busLocatorInput');if(inp)inp.value='';
-    document.getElementById('busLocatorStatus').textContent='';
-    document.getElementById('busLocatorMap').style.display='none';
-    document.getElementById('busLocatorInfo').style.display='none';
-    if(unsub){try{unsub();}catch(e){}unsub=null;}
-    if(marker&&map){try{map.removeLayer(marker);}catch(e){}marker=null;}
-    openModal('modalBusLocator');
-  };
-  window.doLocateBus=async function(){
-    const raw=(document.getElementById('busLocatorInput').value||'').trim();
-    const status=document.getElementById('busLocatorStatus');
-    const mapEl=document.getElementById('busLocatorMap');
-    const info=document.getElementById('busLocatorInfo');
-    if(!raw){status.textContent='⚠️ Entrez un numéro de bus.';status.style.color='#FF6B00';return;}
-    if(typeof db==='undefined'){status.textContent='❌ Base de données indisponible.';status.style.color='#DF0024';return;}
-    status.textContent='🔎 Recherche…';status.style.color='#888';
-    try{
-      const {collection,query,where,getDocs,onSnapshot,doc}=window._fs||{};
-      const fs=window._fs;
-      if(!fs){status.textContent='❌ Firestore non initialisé.';status.style.color='#DF0024';return;}
-      const snap=await fs.getDocs(fs.query(fs.collection(db,'bus_locations'),fs.where('vehicle','==',raw)));
-      if(snap.empty){
-        status.textContent="❌ Aucun bus '"+raw+"' n'a activé sa localisation.";status.style.color='#DF0024';
-        mapEl.style.display='none';info.style.display='none';return;
-      }
-      const d0=snap.docs[0];const targetId=d0.id;
-      status.textContent='✅ Bus trouvé — position en direct';status.style.color='#34d399';
-      mapEl.style.display='block';info.style.display='block';
-      setTimeout(()=>{
-        if(!map){map=L.map(mapEl,{zoomControl:true,attributionControl:false}).setView([14.6928,-17.4467],13);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);}else{map.invalidateSize();}
-        if(unsub){try{unsub();}catch(e){}unsub=null;}
-        unsub=fs.onSnapshot(fs.doc(db,'bus_locations',targetId),s=>{
-          if(!s.exists())return;
-          const dd=s.data();const ll=[dd.lat,dd.lng];
-          if(!marker){marker=L.marker(ll).addTo(map).bindPopup('🚌 '+(dd.vehicle||raw));}
-          else{marker.setLatLng(ll);}
-          map.setView(ll,15);
-          const t=dd.updatedAt&&dd.updatedAt.toDate?dd.updatedAt.toDate().toLocaleTimeString('fr-FR'):'—';
-          info.innerHTML='🚌 <strong>'+(dd.vehicle||raw)+'</strong>'+(dd.ligne?' · Ligne '+dd.ligne:'')+'<br>🛰️ Dernière position: '+t+' · ±'+Math.round(dd.accuracy||0)+'m<br>📍 '+dd.lat.toFixed(5)+', '+dd.lng.toFixed(5);
-        });
-      },150);
-    }catch(e){status.textContent='❌ '+e.message;status.style.color='#DF0024';}
-  };
-  // Clean up when modal closes via generic closeModal
-  const origClose=window.closeModal;
-  window.closeModal=function(id){if(id==='modalBusLocator'&&unsub){try{unsub();}catch(e){}unsub=null;}if(typeof origClose==='function')return origClose(id);const el=document.getElementById(id);if(el)el.style.display='none';};
-})();
-</script>
-
 </body>
 </html>
+      
