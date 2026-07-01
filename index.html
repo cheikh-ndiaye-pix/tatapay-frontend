@@ -959,7 +959,12 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <div class="modal-header"><div style="font-weight:900;font-size:18px;">📍 Suivre un bus</div><button class="modal-close" onclick="closeTrackBus()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="modal-body">
       <div id="trackBusStep1">
-        <div style="background:#0ea5e915;border:1px solid #0ea5e944;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#7dd3fc;line-height:1.6;">📡 Entrez le numéro d'immatriculation du bus (ex: DK-1234-A). Si le chauffeur a activé le partage GPS, vous verrez sa position en direct.</div>
+        <div style="font-size:11px;font-weight:800;color:#0ea5e9;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">🟢 Bus en direct maintenant</div>
+        <div id="trackBusActiveList" style="margin-bottom:18px;">
+          <div style="text-align:center;color:#555;padding:16px;font-size:12px;">Chargement…</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin:18px 0;"><div style="flex:1;height:1px;background:#0ea5e922;"></div><div style="font-size:11px;color:#555;">OU</div><div style="flex:1;height:1px;background:#0ea5e922;"></div></div>
+        <div style="background:#0ea5e915;border:1px solid #0ea5e944;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#7dd3fc;line-height:1.6;">📡 Entrez le numéro d'immatriculation du bus (ex: DK-1234-A).</div>
         <div class="input-wrap"><label class="input-label">Numéro du bus (immatriculation) *</label><input class="input-field" id="trackBusInput" placeholder="ex: DK-1234-A" style="text-transform:uppercase;"/></div>
         <button class="btn btn-full" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;" onclick="doTrackBus()">🔍 Localiser ce bus</button>
       </div>
@@ -1364,6 +1369,52 @@ async function loadRecvDirecteurInfo(){
 window.openTrackBus=()=>{
   resetTrackBus();
   openModal('modalTrackBus');
+  loadActiveTrackedBuses();
+};
+async function loadActiveTrackedBuses(){
+  const cont=document.getElementById('trackBusActiveList');
+  if(!cont)return;
+  cont.innerHTML='<div style="text-align:center;color:#555;padding:16px;font-size:12px;">Chargement…</div>';
+  try{
+    const snap=await getDocs(collection(db,'bus_locations'));
+    const now=Date.now();
+    const active=[];
+    snap.docs.forEach(d=>{
+      const data=d.data();
+      const t=data.updatedAt?.toDate?.()?.getTime();
+      if(t && (now-t)<10*60*1000){active.push({id:d.id,...data});}
+    });
+    if(!active.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:16px;font-size:12px;background:#ffffff08;border-radius:12px;">Aucun bus ne partage sa position pour le moment.</div>';return;}
+    active.sort((a,b)=>(b.updatedAt?.toMillis?.()||0)-(a.updatedAt?.toMillis?.()||0));
+    const enriched=await Promise.all(active.map(async b=>{
+      let name='—',gie='',zone='';
+      try{const uSnap=await getDoc(doc(db,'users',b.id));if(uSnap.exists()){const u=uSnap.data();name=u.name||'—';gie=u.gie||'';zone=u.zone||'';}}catch(e){}
+      return{...b,name,gie,zone};
+    }));
+    cont.innerHTML=enriched.map(b=>`<div onclick="selectTrackedBus('${b.id}','${(b.vehicle||'').replace(/'/g,"")}','${(b.ligne||'').replace(/'/g,"")}')" style="display:flex;align-items:center;gap:12px;background:#0ea5e912;border:1.5px solid #0ea5e944;border-radius:14px;padding:12px 14px;margin-bottom:10px;cursor:pointer;">
+      <div style="width:40px;height:40px;border-radius:20px;background:#0ea5e922;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🚌</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:900;font-size:14px;color:#e2e8f0;">${b.vehicle||'—'} · Ligne ${b.ligne||'—'}</div>
+        <div style="font-size:11px;color:#888;">${b.gie||'—'} · Zone ${b.zone||'—'} · ${b.name}</div>
+      </div>
+      <div style="width:8px;height:8px;border-radius:50%;background:#34d399;flex-shrink:0;"></div>
+    </div>`).join('');
+  }catch(e){console.error('[loadActiveTrackedBuses]',e);cont.innerHTML='<div style="text-align:center;color:#DF0024;padding:16px;font-size:12px;">Erreur de chargement.</div>';}
+}
+window.selectTrackedBus=(chauffeurUid,vehicle,ligne)=>{
+  document.getElementById('trackBusVehicle').textContent=`${vehicle||'—'} · Ligne ${ligne||'—'}`;
+  document.getElementById('trackBusMeta').textContent='Chargement des détails…';
+  document.getElementById('trackBusStep1').style.display='none';
+  document.getElementById('trackBusStep2').style.display='block';
+  getDoc(doc(db,'users',chauffeurUid)).then(snap=>{
+    if(snap.exists()){const u=snap.data();document.getElementById('trackBusMeta').textContent=`${u.gie||'—'} · Zone ${u.zone||'—'} · Chauffeur: ${u.name||'—'}`;}
+  }).catch(()=>{});
+  setTimeout(()=>{
+    const el=document.getElementById('trackBusMap');if(!el||typeof L==='undefined')return;
+    if(!trackMap){trackMap=L.map(el,{zoomControl:true,attributionControl:false}).setView([14.6928,-17.4467],12);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(trackMap);}
+    else{trackMap.invalidateSize();}
+    attachTrackBusLocationListener(chauffeurUid,vehicle||'Bus');
+  },150);
 };
 window.closeTrackBus=()=>{closeModal('modalTrackBus');resetTrackBus();};
 window.resetTrackBus=function(){
