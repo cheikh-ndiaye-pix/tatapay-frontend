@@ -150,9 +150,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
 .admin-search:focus{border-color:var(--g);}
 .admin-detail-overlay{position:fixed;inset:0;background:#000000dd;z-index:600;display:none;align-items:flex-end;justify-content:center;}
 .admin-detail-box{background:#0c1f12;border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:90vh;overflow-y:auto;border:1px solid #009A4422;animation:slideUp .3s ease;}
-/* ══════════════════════════════════════════════
-   DIRECTEUR GIE — STYLES DASHBOARD
-══════════════════════════════════════════════ */
 .dir-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
 .dir-stat{background:#050d18;border:1px solid #0ea5e922;border-radius:14px;padding:14px;text-align:center;}
 .dir-stat .val{font-size:22px;font-weight:900;color:#7dd3fc;}
@@ -190,10 +187,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
 .dir-badge-warn{background:#FF6B0020;color:#FF6B00;border:1px solid #FF6B0044;}
 .dir-badge-err{background:#DF002420;color:#DF0024;border:1px solid #DF002444;}
 .dir-badge-pend{background:#FFD10020;color:#FFD100;border:1px solid #FFD10044;}
-
-/* ══════════════════════════════════════════════
-   RECEVEUR — BUS DISPONIBLES (NOUVEAU)
-══════════════════════════════════════════════ */
 .bus-owner-card{background:#0f1a0a;border:1.5px solid #ffffff10;border-radius:16px;padding:14px;margin-bottom:12px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;}
 .bus-owner-card:active{transform:scale(.98);}
 .bus-owner-card.selected{border-color:#009A44;background:linear-gradient(135deg,#009A4412,#00A65008);}
@@ -204,10 +197,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
 .check-ring.checked{background:var(--g);border-color:var(--g);}
 .bus-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800;background:#7c3aed22;color:#c4b5fd;border:1px solid #7c3aed44;margin-right:4px;margin-top:4px;}
 .my-bus-chip{display:flex;align-items:center;gap:8px;background:#009A4412;border:1.5px solid #009A4444;border-radius:12px;padding:10px 12px;margin-bottom:8px;}
-
-/* ══════════════════════════════════════════════
-   CHAUFFEUR — STYLES DASHBOARD
-══════════════════════════════════════════════ */
 .ch-nav{display:flex;background:#041510;border-top:1px solid #05966922;padding:8px 0 18px;position:sticky;bottom:0;z-index:10;}
 .ch-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;font-size:8px;font-weight:600;padding:6px 0;font-family:'Space Grotesk',sans-serif;transition:color .2s;}
 .ch-nav-btn.active{color:#059669;}
@@ -233,6 +222,8 @@ select.input-field option{background:#0c1f12;color:#fff;}
 .ch-toast-stack{position:fixed;top:72px;left:12px;z-index:550;display:flex;flex-direction:column;gap:10px;max-width:300px;}
 .ch-toast{background:#041510;border:2px solid #059669;border-radius:16px;padding:12px 14px;animation:notifIn .35s ease;position:relative;}
 .ch-toast.out{animation:notifOut .3s ease forwards;}
+.track-modal-inner{padding:0;}
+.track-map-wrap{height:280px;border-radius:16px;overflow:hidden;border:1px solid #009A4444;background:#0a1e15;margin-top:12px;}
 </style>
 </head>
 <body>
@@ -287,7 +278,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   <div class="camera-toolbar"><button onclick="stopCamera()" style="padding:12px 32px;border-radius:14px;border:none;cursor:pointer;background:#ffffff22;color:#fff;font-weight:800;font-size:14px;font-family:'Space Grotesk',sans-serif;pointer-events:all;">✕ Fermer</button></div>
 </div>
 
-<!-- DÉTAIL UTILISATEUR ADMIN -->
 <div class="admin-detail-overlay" id="adminDetailOverlay" onclick="if(event.target===this)closeAdminDetail()">
   <div class="admin-detail-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
@@ -299,7 +289,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- SPLASH -->
 <div class="screen active" id="screenSplash" style="background:linear-gradient(180deg,#06120a,#0c2010);justify-content:space-between;">
   <div class="sn-stripe"></div>
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;">
@@ -316,7 +305,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   <div class="sn-stripe"></div>
 </div>
 
-<!-- AUTH -->
 <div class="screen" id="screenAuth">
   <div class="sn-stripe"></div>
   <div style="background:#0c1f12;padding:28px 24px 20px;border-bottom:1px solid #009A4422;">
@@ -340,10 +328,10 @@ select.input-field option{background:#0c1f12;color:#fff;}
     </div>
     <div id="fieldsOwner" style="display:none;">
       <div class="input-wrap">
-        <label class="input-label">GIE (Directeur) — choix unique et définitif *</label>
-        <select class="input-field" id="authOwnerGieSelect"><option value="">— Choisir votre GIE —</option></select>
+        <label class="input-label">GIE (Groupement) *</label>
+        <select class="input-field" id="authOwnerGIESelect"><option value="">— Choisir un GIE / Directeur —</option></select>
       </div>
-      <div style="background:#7c3aed15;border:1.5px solid #7c3aed44;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#c4b5fd;line-height:1.6;">⚠️ Vous ne pouvez appartenir qu'à un seul GIE. Ce choix est <strong>définitif</strong> et sera validé par le Directeur du GIE.</div>
+      <div style="background:#7c3aed15;border:1.5px solid #7c3aed44;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#c4b5fd;line-height:1.6;">⚠️ Vous ne pouvez appartenir qu'à un seul GIE. Le compte propriétaire nécessite la validation du Directeur de ce GIE.</div>
     </div>
     <div id="fieldsDirecteur" style="display:none;">
       <div class="input-wrap"><label class="input-label">Nom du GIE / Organisation *</label><input class="input-field" id="authDirecteurOrg" placeholder="AFTU Dakar Nord"/></div>
@@ -369,25 +357,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- MODAL SUIVI BUS EN DIRECT (public) -->
-<div class="modal-overlay" id="modalTrackBus" style="display:none;" onclick="if(event.target===this)closeModal('modalTrackBus')">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:520px;">
-    <div style="height:3px;background:linear-gradient(90deg,#0ea5e9 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
-    <div class="modal-header"><div style="font-weight:900;font-size:18px;">📍 Suivre un bus</div><button class="modal-close" onclick="closeModal('modalTrackBus')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-    <div class="modal-body">
-      <div style="background:#0ea5e910;border:1px solid #0ea5e933;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#7dd3fc;line-height:1.6;">Entrez le numéro d'immatriculation du bus qui a activé son partage GPS pour voir sa position en direct.</div>
-      <div class="input-wrap"><label class="input-label">Numéro du bus *</label><input class="input-field" id="trackBusInput" placeholder="ex: DK-1234-AB" style="text-transform:uppercase;"/></div>
-      <button class="btn btn-primary btn-full" onclick="doTrackBus()">🔍 Localiser le bus</button>
-      <div id="trackBusStatus" style="margin-top:12px;font-size:12px;color:#888;text-align:center;"></div>
-      <div id="trackBusMap" style="margin-top:12px;height:320px;border-radius:12px;display:none;background:#0a1407;"></div>
-      <div id="trackBusInfo" style="margin-top:10px;font-size:12px;color:#7dd3fc;text-align:center;display:none;"></div>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL RECEVEUR — SÉLECTION PROPRIÉTAIRES -->
 <div class="modal-overlay" id="modalRecvOwners" style="display:none;" onclick="if(event.target===this)closeModal('modalRecvOwners')">
-  <!-- placeholder marker -->
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
     <div class="modal-header"><div style="font-weight:900;font-size:18px;">🎫 Choisir les propriétaires</div><button class="modal-close" onclick="closeModal('modalRecvOwners')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
@@ -404,7 +374,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- PENDING -->
 <div class="screen" id="screenPending" style="background:#06120a;justify-content:center;align-items:center;padding:32px 24px;text-align:center;">
   <div style="font-size:64px;margin-bottom:16px;" id="pendingIcon">⏳</div>
   <div style="font-weight:900;font-size:20px;margin-bottom:10px;" id="pendingTitle">En attente</div>
@@ -412,7 +381,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   <button class="btn btn-secondary" onclick="doLogout()">Se déconnecter</button>
 </div>
 
-<!-- PASSENGER -->
 <div class="screen" id="screenPassenger">
   <div class="scroll-area">
     <div class="tab-content active" id="passTab-home">
@@ -437,12 +405,14 @@ select.input-field option{background:#0c1f12;color:#fff;}
             <button onclick="openRecharge()" style="background:linear-gradient(160deg,#1a56db,#0d3a8c);border:2px solid #4d8aff66;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">💳</div>Recharger</button>
             <button onclick="openSend()" style="background:linear-gradient(160deg,#FF6B00,#cc3d00);border:2px solid #ff8c3366;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">↗️</div>Transfert</button>
             <button onclick="openTicketFlow()" style="background:linear-gradient(160deg,#6d28d9,#3b0764);border:2px solid #a78bfa66;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">🎫</div>Ticket</button>
-<button onclick="openCamera('friend')" style="background:linear-gradient(160deg,#059669,#065f46);border:2px solid #34d39966;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">📷</div>Scan Ami</button>
+            <button onclick="openCamera('friend')" style="background:linear-gradient(160deg,#059669,#065f46);border:2px solid #34d39966;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">📷</div>Scan Ami</button>
           </div>
         </div>
-        <button onclick="openTrackBus()" style="width:100%;background:linear-gradient(135deg,#0ea5e9,#0369a1);border:none;border-radius:16px;padding:14px;color:#fff;font-weight:900;font-size:14px;font-family:'Space Grotesk',sans-serif;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:10px;"><span style="font-size:18px;">📍</span> Suivre un bus en direct</button>
-          </div>
-        </div>
+        <button onclick="openTrackBus()" style="width:100%;background:linear-gradient(135deg,#0ea5e9,#0369a1);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
+          <div style="font-size:24px;">📍</div>
+          <div style="text-align:left;flex:1;">Suivre un bus par numéro<div style="font-size:10px;font-weight:600;color:#bae6fd;margin-top:2px;">Entrez l'immatriculation pour voir sa position</div></div>
+          <div style="font-size:18px;">→</div>
+        </button>
         <div id="activeTicketBanner" style="display:none;background:#DF002415;border:2px solid #DF002466;border-radius:18px;padding:14px 16px;margin-bottom:16px;cursor:pointer;" onclick="showActiveTicket()">
           <div style="font-size:10px;color:#ff8888;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">🚌 Ticket en cours</div>
           <div style="font-weight:900;font-size:15px;" id="activeTicketLabel">—</div>
@@ -480,7 +450,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- RECEIVER -->
 <div class="screen" id="screenReceiver">
   <div class="scroll-area">
     <div class="tab-content active" id="recvTab-home">
@@ -544,72 +513,35 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <div class="tab-content" id="recvTab-tickets">
       <div style="padding:20px;"><div style="font-weight:900;font-size:22px;margin-bottom:18px;">🎫 Tickets Émis</div><div id="recvTicketsList"></div></div>
     </div>
-
-    <!-- ══════════════════════════════════════
-         NOUVEL ONGLET : MES BUS DISPONIBLES
-    ══════════════════════════════════════════ -->
-    <div class="tab-content" id="recvTab-bus">
-      <div class="sn-stripe"></div>
+    <div class="tab-content" id="recvTab-historique">
       <div style="padding:20px;">
-
-        <!-- Titre + compteur -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <div style="font-weight:900;font-size:22px;">🚌 Mes Bus</div>
-          <div style="background:#009A4422;border:1px solid #009A4444;border-radius:10px;padding:4px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;color:#009A44;" id="recvBusSelectedCount">0 sélectionné(s)</div>
+        <div style="font-weight:900;font-size:22px;margin-bottom:6px;">📜 Historique</div>
+        <div style="color:#888;font-size:12px;margin-bottom:14px;">Tous vos versements et actions en un coup d'œil.</div>
+        <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+          <button class="recv-hist-filter active" data-f="all" onclick="filterRecvHist('all')" style="flex:1;min-width:70px;background:#FF6B0022;border:1px solid #FF6B0066;color:#FF6B00;border-radius:10px;padding:8px;font-weight:800;font-size:11px;cursor:pointer;">Tout</button>
+          <button class="recv-hist-filter" data-f="versement" onclick="filterRecvHist('versement')" style="flex:1;min-width:70px;background:#ffffff08;border:1px solid #ffffff20;color:#aaa;border-radius:10px;padding:8px;font-weight:800;font-size:11px;cursor:pointer;">💸 Versements</button>
+          <button class="recv-hist-filter" data-f="ticket" onclick="filterRecvHist('ticket')" style="flex:1;min-width:70px;background:#ffffff08;border:1px solid #ffffff20;color:#aaa;border-radius:10px;padding:8px;font-weight:800;font-size:11px;cursor:pointer;">🎫 Tickets</button>
+          <button class="recv-hist-filter" data-f="action" onclick="filterRecvHist('action')" style="flex:1;min-width:70px;background:#ffffff08;border:1px solid #ffffff20;color:#aaa;border-radius:10px;padding:8px;font-weight:800;font-size:11px;cursor:pointer;">⚡ Actions</button>
         </div>
-        <div style="color:#888;font-size:13px;margin-bottom:18px;line-height:1.5;">Sélectionnez le(s) bus de votre propriétaire approuvé auquel vous êtes rattaché(e).</div>
-
-        <!-- Bus actuellement assignés -->
-        <div id="recvMyBusSection" style="display:none;margin-bottom:20px;">
-          <div style="font-size:11px;font-weight:800;color:#009A44;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">✅ Vos bus actuels</div>
-          <div id="recvMyBusList"></div>
-        </div>
-
-        <!-- Séparateur -->
-        <div style="font-size:11px;font-weight:800;color:#aaa;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">🔍 Propriétaires disponibles</div>
-
-        <!-- Filtres -->
-        <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;">
-          <button class="recv-bus-filter active" id="rbf-all" onclick="filterRecvBus('all',this)" style="flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid #FF6B0044;background:#FF6B0015;color:#FF6B00;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;cursor:pointer;white-space:nowrap;">Tous</button>
-          <button class="recv-bus-filter" id="rbf-gieDir" onclick="filterRecvBus('gieDir',this)" style="flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid #ffffff20;background:transparent;color:#555;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;cursor:pointer;white-space:nowrap;">Mon Directeur</button>
-          <button class="recv-bus-filter" id="rbf-autres" onclick="filterRecvBus('autres',this)" style="flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid #ffffff20;background:transparent;color:#555;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;cursor:pointer;white-space:nowrap;">Autres GIE</button>
-        </div>
-
-        <!-- Barre de recherche -->
-        <div style="position:relative;margin-bottom:16px;">
-          <input class="input-field" id="recvBusSearch" placeholder="🔍 Rechercher GIE, véhicule, ligne…" oninput="searchRecvBus()" style="padding-left:16px;"/>
-        </div>
-
-        <!-- Liste des propriétaires -->
-        <div id="recvAvailableBusList">
-          <div style="text-align:center;padding:40px 20px;">
-            <div class="spinner" style="margin:0 auto 14px;"></div>
-            <div style="color:#555;font-size:13px;">Chargement des bus disponibles…</div>
+        <div id="recvHistTotals" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+          <div style="background:#7c3aed15;border:1px solid #7c3aed44;border-radius:12px;padding:10px;">
+            <div style="font-size:10px;color:#a78bfa;letter-spacing:1px;">VERSÉ AU TOTAL</div>
+            <div style="font-weight:900;font-size:18px;color:#c4b5fd;font-family:'JetBrains Mono',monospace;" id="recvHistTotVers">0 F</div>
+          </div>
+          <div style="background:#05966915;border:1px solid #05966944;border-radius:12px;padding:10px;">
+            <div style="font-size:10px;color:#34d399;letter-spacing:1px;">ENCAISSÉ</div>
+            <div style="font-weight:900;font-size:18px;color:#6ee7b7;font-family:'JetBrains Mono',monospace;" id="recvHistTotEnc">0 F</div>
           </div>
         </div>
-
-        <!-- Bouton de sauvegarde flottant -->
-        <div id="recvBusSaveBtn" style="display:none;position:sticky;bottom:16px;padding:0 0 8px;">
-          <button onclick="saveRecvBusSelection()" style="width:100%;background:linear-gradient(135deg,#009A44,#007832);border:none;border-radius:16px;padding:16px;color:#fff;font-weight:900;font-size:15px;font-family:'Space Grotesk',sans-serif;cursor:pointer;box-shadow:0 6px 24px #009A4466;display:flex;align-items:center;justify-content:center;gap:10px;">
-            <span style="font-size:20px;">💾</span>
-            <span>Enregistrer ma sélection</span>
-          </button>
-        </div>
-
+        <div id="recvHistoriqueList"><div style="text-align:center;color:#555;padding:32px 0;font-size:13px;">Chargement…</div></div>
       </div>
     </div>
-    <!-- FIN ONGLET MES BUS -->
-
   </div>
 
-  <!-- Nav receveur (4 onglets maintenant) -->
   <div class="recv-nav" style="position:relative;">
     <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
     <button class="recv-nav-btn active" id="rnav-home" onclick="switchRecvTab('home')">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Accueil
-    </button>
-    <button class="recv-nav-btn" id="rnav-bus" onclick="switchRecvTab('bus')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8l5 3v5h-5V8z"/></svg>Mes Bus
     </button>
     <button class="recv-nav-btn" id="rnav-trajets" onclick="switchRecvTab('trajets')">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>Trajets
@@ -617,12 +549,12 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <button class="recv-nav-btn" id="rnav-tickets" onclick="switchRecvTab('tickets')">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a2 2 0 012-2h16a2 2 0 012 2v2a2 2 0 000 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 000-4V9z"/></svg>Tickets
     </button>
+    <button class="recv-nav-btn" id="rnav-historique" onclick="switchRecvTab('historique')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Historique
+    </button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     CHAUFFEUR (PROPRIÉTAIRE OPÉRATIONNEL)
-══════════════════════════════════════════════════════════ -->
 <div class="screen" id="screenChauffeur" style="background:#030a07;">
   <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
   <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #05966922;background:#041510;position:sticky;top:0;z-index:20;">
@@ -638,7 +570,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
     </div>
   </div>
   <div class="scroll-area">
-    <!-- ACCUEIL -->
     <div class="tab-content active" id="chTab-home" style="padding:18px 16px;">
       <div class="ch-rev-card">
         <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:20px 20px 0 0;"></div>
@@ -664,7 +595,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">💰 Derniers paiements</div>
       <div class="ch-card" id="chHomePayments"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">En attente du receveur assigné…</div></div>
     </div>
-    <!-- RECETTES -->
     <div class="tab-content" id="chTab-recettes" style="padding:18px 16px;">
       <div style="font-weight:900;font-size:20px;color:#34d399;margin-bottom:6px;">💰 Suivi des recettes</div>
       <div style="color:#888;font-size:12px;margin-bottom:16px;line-height:1.5;">Paiements du receveur en temps réel et historique des versements.</div>
@@ -686,7 +616,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div id="chPendingVersList"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucun versement en attente.</div></div>
       </div>
     </div>
-    <!-- RECEVEUR -->
     <div class="tab-content" id="chTab-receveur" style="padding:18px 16px;">
       <div style="font-weight:900;font-size:20px;color:#34d399;margin-bottom:16px;">🎫 Receveur affecté</div>
       <div id="chCandSection" style="display:none;margin-bottom:20px;">
@@ -707,7 +636,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">📊 Historique performances</div>
       <div class="ch-card" id="chRecvPerfList"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune donnée.</div></div>
     </div>
-    <!-- BUS -->
     <div class="tab-content" id="chTab-bus" style="padding:18px 16px;">
       <div style="font-weight:900;font-size:20px;color:#34d399;margin-bottom:16px;">🚌 Mon bus</div>
       <div class="ch-card">
@@ -740,7 +668,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
         </div>
       </div>
     </div>
-    <!-- STATS -->
     <div class="tab-content" id="chTab-stats" style="padding:18px 16px;">
       <div style="font-weight:900;font-size:20px;color:#34d399;margin-bottom:16px;">📊 Statistiques</div>
       <div class="ch-stat-grid" style="margin-bottom:16px;">
@@ -767,9 +694,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     DIRECTEUR GIE
-══════════════════════════════════════════════════════════ -->
 <div class="screen" id="screenDirecteur" style="background:#030b14;">
   <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
   <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #0ea5e922;background:#050d18;position:sticky;top:0;z-index:20;">
@@ -862,7 +786,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- ADMIN -->
 <div class="screen" id="screenAdmin" style="background:#050f08;">
   <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
   <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ffffff10;background:#050f08;position:sticky;top:0;z-index:20;">
@@ -923,7 +846,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- MODALS -->
 <div class="notif-panel" id="notifPanel" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
   <div class="notif-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
@@ -1031,6 +953,32 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
+<div class="modal-overlay" id="modalTrackBus" style="display:none;" onclick="if(event.target===this)closeTrackBus()">
+  <div class="modal-box track-modal-inner" onclick="event.stopPropagation()">
+    <div style="height:3px;background:linear-gradient(90deg,#0ea5e9,#0369a1);border-radius:24px 24px 0 0;"></div>
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">📍 Suivre un bus</div><button class="modal-close" onclick="closeTrackBus()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body">
+      <div id="trackBusStep1">
+        <div style="background:#0ea5e915;border:1px solid #0ea5e944;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#7dd3fc;line-height:1.6;">📡 Entrez le numéro d'immatriculation du bus (ex: DK-1234-A). Si le chauffeur a activé le partage GPS, vous verrez sa position en direct.</div>
+        <div class="input-wrap"><label class="input-label">Numéro du bus (immatriculation) *</label><input class="input-field" id="trackBusInput" placeholder="ex: DK-1234-A" style="text-transform:uppercase;"/></div>
+        <button class="btn btn-full" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;" onclick="doTrackBus()">🔍 Localiser ce bus</button>
+      </div>
+      <div id="trackBusStep2" style="display:none;">
+        <div style="display:flex;align-items:center;gap:10px;background:#0ea5e915;border:1px solid #0ea5e944;border-radius:12px;padding:10px 14px;margin-bottom:12px;">
+          <div style="font-size:22px;">🚌</div>
+          <div style="flex:1;">
+            <div style="font-weight:900;font-size:14px;" id="trackBusVehicle">—</div>
+            <div style="font-size:11px;color:#888;" id="trackBusMeta">—</div>
+          </div>
+          <button onclick="resetTrackBus()" style="background:#ffffff12;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;color:#888;font-size:12px;">✕</button>
+        </div>
+        <div class="track-map-wrap" id="trackBusMap"></div>
+        <div style="font-size:11px;color:#888;margin-top:8px;text-align:center;" id="trackBusInfo">En attente de position…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="full-modal" id="modalTicketFlow" style="display:none;">
   <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
   <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #009A4422;">
@@ -1055,7 +1003,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- MODAL ASSIGNER BUS -->
 <div class="modal-overlay" id="modalAssignBus" style="display:none;" onclick="if(event.target===this)closeModal('modalAssignBus')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
@@ -1101,7 +1048,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- ── MODAL VERSEMENT RECEVEUR → PROPRIÉTAIRE ───────────── -->
 <div class="modal-overlay" id="modalRecvVersement" style="display:none;" onclick="if(event.target===this)closeModal('modalRecvVersement')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#7c3aed,#a855f7,#4c1d95);border-radius:24px 24px 0 0;"></div>
@@ -1119,7 +1065,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- ── MODAL APPROBATION CANDIDATURE (PROPRIÉTAIRE) ──────── -->
 <div class="modal-overlay" id="modalOwnerWithdraw" style="display:none;" onclick="if(event.target===this)closeModal('modalOwnerWithdraw')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#FDEF42,#f59e0b,#FF6B00);border-radius:24px 24px 0 0;"></div>
@@ -1137,7 +1082,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
-<!-- ── MODAL APPROBATION CANDIDATURE (PROPRIÉTAIRE) ──────── -->
 <div class="modal-overlay" id="modalApproveCandidature" style="display:none;" onclick="if(event.target===this)closeModal('modalApproveCandidature')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
@@ -1168,11 +1112,10 @@ import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut
 import{getFirestore,doc,setDoc,getDoc,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:265d82fbda0db1b09b0b6d"};
+const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:dade7eebdc0894639b0b6d",measurementId:"G-2YGJP8MZ2H"};
 const fbApp=initializeApp(FC);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
-// Persistance offline (best-effort, ignore si déjà initialisé / multi-onglet)
 try{enableIndexedDbPersistence(db).catch(e=>console.warn('[persistence]',e.code||e.message));}catch(e){}
 const ADMIN_EMAIL='papacheikh900@gmail.com';
 
@@ -1186,14 +1129,12 @@ let dirRevChartInst=null,dirLineChartInst=null,chRevChartInst=null,chPerfChartIn
 let chCurrentPeriod='jour';
 let chLastTickets=[];
 
-// ══════════════════════════════════════════════
-// BUS DISPONIBLES — état local
-// ══════════════════════════════════════════════
-let allAvailableOwners=[];        // tous les owners approved chargés
-let recvBusSelection=new Set();   // UIDs owners sélectionnés
-let recvBusFilter='all';          // filtre actif
+let allAvailableOwners=[];
+let recvBusSelection=new Set();
+let recvBusFilter='all';
 
-// ── HELPERS ──────────────────────────────────────────────
+let trackMap=null,trackMapMarker=null,unsubTrackLoc=null;
+
 function loader(msg='',show=true){const l=document.getElementById('globalLoader');l.className=show?'show':'';if(msg)document.getElementById('loaderMsg').textContent=msg;}
 let ntTimer=null;
 function notify(icon,title,body){['sygostIcon','sygostTitle','sygostBody'].forEach((id,i)=>document.getElementById(id).textContent=[icon,title,body][i]);const el=document.getElementById('sygostNotif');el.classList.add('show');if(ntTimer)clearTimeout(ntTimer);ntTimer=setTimeout(hideSygost,4500);}
@@ -1205,7 +1146,6 @@ function statusBadge(s){const map={pending:'badge-pending',approved:'badge-appro
 function roleBadge(r){const c={passenger:'#009A44',receiver:'#FF6B00',owner:'#7c3aed',chauffeur:'#059669',directeur:'#0ea5e9'};const ic={passenger:'🧍',receiver:'🎫',owner:'🚌',chauffeur:'👨‍✈️',directeur:'🏢'};return`<span style="font-size:11px;padding:3px 10px;border-radius:8px;background:${c[r]||'#444'}22;color:${c[r]||'#aaa'};border:1px solid ${c[r]||'#444'}44;font-weight:800;">${ic[r]||'👤'} ${r}</span>`;}
 function fmt(n){return Math.round(n||0).toLocaleString('fr-FR');}
 
-// ── AUTH ─────────────────────────────────────────────────
 window.goSplash=()=>show('screenSplash');
 window.goAuth=(mode)=>{
   S.isReg=mode==='register';
@@ -1227,25 +1167,10 @@ window.setRole=async(r)=>{
   if(S.isReg){if(r==='receiver'){document.getElementById('fieldsReceiver').style.display='block';}else if(r==='owner'){document.getElementById('fieldsOwner').style.display='block';loadDirecteurList();}else if(r==='directeur')document.getElementById('fieldsDirecteur').style.display='block';}
 };
 async function loadDirecteurList(){
-  const sels=[document.getElementById('authDirecteurSelect'),document.getElementById('authChDirecteurSelect'),document.getElementById('authOwnerGieSelect')].filter(Boolean);
+  const sels=[document.getElementById('authDirecteurSelect'),document.getElementById('authChDirecteurSelect'),document.getElementById('authOwnerGIESelect')].filter(Boolean);
   if(!sels.length)return;
   sels.forEach(sel=>sel.innerHTML='<option value="">Chargement…</option>');
-  try{
-    const snap=await getDocs(query(collection(db,'users'),where('role','==','directeur'),where('status','==','approved')));
-    sels.forEach(sel=>{
-      const isGie=sel.id==='authOwnerGieSelect';
-      sel.innerHTML=isGie?'<option value="">— Choisir votre GIE —</option>':'<option value="">— Choisir un directeur —</option>';
-      if(snap.empty){sel.innerHTML=isGie?'<option value="">Aucun GIE disponible</option>':'<option value="">Aucun directeur disponible</option>';return;}
-      snap.docs.forEach(d=>{
-        const u=d.data();
-        const opt=document.createElement('option');
-        opt.value=d.id;
-        opt.textContent=isGie?`🏢 ${u.org||u.name||'—'}${u.name?' — Dir. '+u.name:''}`:`${u.name} — ${u.org||u.email}`;
-        opt.dataset.org=u.org||'';
-        sel.appendChild(opt);
-      });
-    });
-  }catch(e){sels.forEach(sel=>sel.innerHTML='<option value="">Erreur — réessayez</option>');}
+  try{const snap=await getDocs(query(collection(db,'users'),where('role','==','directeur'),where('status','==','approved')));sels.forEach(sel=>{sel.innerHTML='<option value="">— Choisir un directeur —</option>';if(snap.empty){sel.innerHTML='<option value="">Aucun directeur disponible</option>';return;}snap.docs.forEach(d=>{const u=d.data();const opt=document.createElement('option');opt.value=d.id;opt.textContent=`${u.name} — ${u.org||u.email}`;sel.appendChild(opt);});});}catch(e){sels.forEach(sel=>sel.innerHTML='<option value="">Erreur — réessayez</option>');}
 }
 window.authSelectedOwners=new Set();
 window.modalSelectedOwners=new Set();
@@ -1301,15 +1226,18 @@ window.doAuth=async()=>{
         openModal('modalRecvOwners');
         return;
       }else if(S.authRole==='owner'){
-        const gieSel=document.getElementById('authOwnerGieSelect');
+        const gieSel=document.getElementById('authOwnerGIESelect');
         const directeurUid=gieSel?.value||'';
-        const org=gieSel?.selectedOptions?.[0]?.dataset?.org||gieSel?.selectedOptions?.[0]?.textContent?.replace(/^🏢\s*/,'').split(' — ')[0]||'';
-        if(!directeurUid){loader('',false);notify('⚠️','GIE','Choisissez votre GIE (choix unique et définitif).');return;}
-        const company=org;
+        if(!directeurUid){loader('',false);notify('⚠️','GIE','Choisissez le GIE auquel vous appartenez.');return;}
+        const gieOpt=gieSel.selectedOptions[0];
+        const gieLabel=gieOpt?gieOpt.textContent.split(' — ')[1]||gieOpt.textContent:'';
+        const company=gieLabel;
         const walletId='OW-'+uid.slice(0,6).toUpperCase();
-        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'owner',status:'pending',company,gie:org,directeurUid,gieLocked:true,balance:0,createdAt:serverTimestamp()});
-        await addDoc(collection(db,'notifications'),{toUid:directeurUid,type:'owner_request',ownerUid:uid,ownerName:name,ownerEmail:email,company,gie:org,phone,read:false,ts:serverTimestamp()});
-        await addDoc(collection(db,'adminNotifications'),{type:'owner_request',ownerUid:uid,ownerName:name,ownerEmail:email,company,gie:org,directeurUid,phone,read:false,ts:serverTimestamp()});
+        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'owner',status:'pending',company,gie:company,directeurUid,balance:0,createdAt:serverTimestamp()});
+        try{
+          await addDoc(collection(db,'notifications'),{toUid:directeurUid,type:'owner_request',ownerUid:uid,ownerName:name,ownerEmail:email,company,phone,read:false,ts:serverTimestamp()});
+        }catch(e){console.warn('[owner_request notif]',e);}
+        await addDoc(collection(db,'adminNotifications'),{type:'owner_request',ownerUid:uid,ownerName:name,ownerEmail:email,company,phone,read:false,ts:serverTimestamp()});
       }else if(S.authRole==='directeur'){
         const org=document.getElementById('authDirecteurOrg')?.value.trim()||'';
         if(!org){loader('',false);notify('⚠️','Champs','Nom de l\'organisation requis.');return;}
@@ -1363,14 +1291,14 @@ onAuthStateChanged(auth,async user=>{
   }else{show('screenSplash');loader('',false);}
 });
 
-function detachListeners(){[unsubPending,unsubNotif,unsubBalance,unsubRecvBalance,unsubAdmin,unsubChProfile,unsubChReceiver,unsubChTickets,unsubChNotif,unsubChVersements,unsubChCandidatures,unsubChPendingVers,unsubBusLoc].forEach(u=>{if(u)u();});unsubPending=unsubNotif=unsubBalance=unsubRecvBalance=unsubAdmin=unsubChProfile=unsubChReceiver=unsubChTickets=unsubChNotif=unsubChVersements=unsubChCandidatures=unsubChPendingVers=unsubBusLoc=null;if(chRevChartInst){chRevChartInst.destroy();chRevChartInst=null;}if(chPerfChartInst){chPerfChartInst.destroy();chPerfChartInst=null;}if(chGeoWatchId!=null){try{navigator.geolocation.clearWatch(chGeoWatchId);}catch(e){}chGeoWatchId=null;}if(chMap){try{chMap.remove();}catch(e){}chMap=null;chMapMarker=null;}}
+function detachListeners(){[unsubPending,unsubNotif,unsubBalance,unsubRecvBalance,unsubAdmin,unsubChProfile,unsubChReceiver,unsubChTickets,unsubChNotif,unsubChVersements,unsubChCandidatures,unsubChPendingVers,unsubBusLoc].forEach(u=>{if(u)u();});unsubPending=unsubNotif=unsubBalance=unsubRecvBalance=unsubAdmin=unsubChProfile=unsubChReceiver=unsubChTickets=unsubChNotif=unsubChVersements=unsubChCandidatures=unsubChPendingVers=unsubBusLoc=null;if(chRevChartInst){chRevChartInst.destroy();chRevChartInst=null;}if(chPerfChartInst){chPerfChartInst.destroy();chPerfChartInst=null;}if(chGeoWatchId!=null){try{navigator.geolocation.clearWatch(chGeoWatchId);}catch(e){}chGeoWatchId=null;}if(chMap){try{chMap.remove();}catch(e){}chMap=null;chMapMarker=null;}resetTrackBus();}
 
 function loginUI(){
   const p=S.profile;detachListeners();
   if(p.status==='pending'){
     const icons={owner:'🚌',directeur:'🏢',receiver:'🎫',chauffeur:'👨‍✈️'};
     const titles={owner:'Compte Propriétaire en attente',directeur:'Compte Directeur en attente',receiver:'Candidature en attente',chauffeur:'En attente du Directeur de GIE'};
-    const bodies={owner:'Demande envoyée au(x) Directeur(s) de GIE.',directeur:'Demande en cours de validation admin.',receiver:'Le(s) propriétaire(s) de bus vont valider votre candidature.',chauffeur:'Le Directeur va vous assigner un bus et un receveur.'};
+    const bodies={owner:'Demande envoyée au Directeur de votre GIE.',directeur:'Demande en cours de validation admin.',receiver:'Le(s) propriétaire(s) de bus vont valider votre candidature.',chauffeur:'Le Directeur va vous assigner un bus et un receveur.'};
     document.getElementById('pendingIcon').textContent=icons[p.role]||'⏳';
     document.getElementById('pendingTitle').textContent=titles[p.role]||'En attente';
     document.getElementById('pendingBody').textContent=bodies[p.role]||'En attente de validation.';
@@ -1391,7 +1319,6 @@ function loginUI(){
   }else if(S.role==='receiver'&&p.status==='approved'){
     document.getElementById('recvGreet').textContent=p.name;
     document.getElementById('recvInfoLine').textContent=`GIE:${p.gie||'—'} = ${p.vehicle||'—'} = Ligne:${p.ligne||'—'} · ${p.trajet||''} · Zone:${p.zone||'—'}`;
-    // Versement libre — aucune approbation requise
     const verserBtn=document.getElementById('recvVerserBtn');
     if(verserBtn){
       verserBtn.disabled=false;
@@ -1403,7 +1330,6 @@ function loginUI(){
     renderMerchantQR('recvBusQRWrap',p,160);
     refreshRecvStats();loadTrajets();loadRecvTickets();
     attachPendingListener();attachNotifListener();loadRecvDirecteurInfo();
-    // Initialiser la sélection de bus depuis le profil
     recvBusSelection=new Set(p.linkedOwnerUids||[]);
     unsubRecvBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;const el=document.getElementById('recvBalance');if(el)el.textContent=fmt(S.profile.balance);}});
     show('screenReceiver');notify('✅','Connecté',p.name);
@@ -1419,7 +1345,6 @@ function loginUI(){
     document.getElementById('chWalletId').textContent=p.walletId||'—';
     show('screenChauffeur');
     initChauffeurDashboard();
-    // Affiche solde + bouton retrait uniquement pour le propriétaire
     const wb=document.getElementById('chOwnerWalletBox');
     if(wb){wb.style.display=S.role==='owner'?'block':'none';}
     if(S.role==='owner'){
@@ -1430,26 +1355,79 @@ function loginUI(){
   loader('',false);
 }
 
-// ── RECEVEUR — INFO DIRECTEUR ─────────────────────────────
 async function loadRecvDirecteurInfo(){
   const p=S.profile;if(!p.directeurUid)return;
   try{const snap=await getDoc(doc(db,'users',p.directeurUid));if(snap.exists()){const d=snap.data();document.getElementById('recvDirecteurName').textContent=d.name||'—';document.getElementById('recvDirecteurOrg').textContent=d.org||'—';document.getElementById('recvDirecteurInfo').style.display='block';}}catch(e){}
 }
 
-// ══════════════════════════════════════════════════════════
-// RECEVEUR — SÉLECTION DE BUS (NOUVEAU)
-// ══════════════════════════════════════════════════════════
+/* ═══════════════════ SUIVI D'UN BUS PAR NUMÉRO (PASSAGER) ═══════════════════ */
+window.openTrackBus=()=>{
+  resetTrackBus();
+  openModal('modalTrackBus');
+};
+window.closeTrackBus=()=>{closeModal('modalTrackBus');resetTrackBus();};
+window.resetTrackBus=function(){
+  if(unsubTrackLoc){unsubTrackLoc();unsubTrackLoc=null;}
+  trackMapMarker=null;
+  const s1=document.getElementById('trackBusStep1'),s2=document.getElementById('trackBusStep2');
+  if(s1)s1.style.display='block';
+  if(s2)s2.style.display='none';
+  const inp=document.getElementById('trackBusInput');if(inp)inp.value='';
+};
+window.doTrackBus=async()=>{
+  const raw=(document.getElementById('trackBusInput')?.value||'').trim().toUpperCase();
+  if(!raw){notify('⚠️','Numéro','Entrez le numéro d\'immatriculation du bus.');return;}
+  loader('Recherche du bus…');
+  try{
+    let target=null;
+    try{
+      const chSnap=await getDocs(query(collection(db,'users'),where('role','==','chauffeur'),where('vehicle','==',raw)));
+      if(!chSnap.empty)target={id:chSnap.docs[0].id,...chSnap.docs[0].data()};
+    }catch(e){console.warn('[track chauffeur query]',e);}
+    if(!target){
+      try{
+        const rSnap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('vehicle','==',raw)));
+        if(!rSnap.empty){
+          const recv={id:rSnap.docs[0].id,...rSnap.docs[0].data()};
+          if(recv.chauffeurUid){const cSnap=await getDoc(doc(db,'users',recv.chauffeurUid));if(cSnap.exists())target={id:recv.chauffeurUid,...cSnap.data()};}
+        }
+      }catch(e){console.warn('[track receiver query]',e);}
+    }
+    loader('',false);
+    if(!target){notify('❌','Bus introuvable','Aucun bus avec cette immatriculation.');return;}
+    document.getElementById('trackBusVehicle').textContent=`${target.vehicle||raw} · Ligne ${target.ligne||'—'}`;
+    document.getElementById('trackBusMeta').textContent=`${target.gie||'—'} · Zone ${target.zone||'—'} · Chauffeur: ${target.name||'—'}`;
+    document.getElementById('trackBusStep1').style.display='none';
+    document.getElementById('trackBusStep2').style.display='block';
+    setTimeout(()=>{
+      const el=document.getElementById('trackBusMap');if(!el||typeof L==='undefined')return;
+      if(!trackMap){trackMap=L.map(el,{zoomControl:true,attributionControl:false}).setView([14.6928,-17.4467],12);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(trackMap);}
+      else{trackMap.invalidateSize();}
+      attachTrackBusLocationListener(target.id,target.vehicle||raw);
+    },150);
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
+function attachTrackBusLocationListener(chauffeurUid,vehicleLabel){
+  if(unsubTrackLoc)unsubTrackLoc();
+  unsubTrackLoc=onSnapshot(doc(db,'bus_locations',chauffeurUid),snap=>{
+    const info=document.getElementById('trackBusInfo');
+    if(!snap.exists()){if(info)info.textContent='📡 Ce bus n\'a pas encore activé le partage GPS.';return;}
+    const d=snap.data();const t=d.updatedAt?.toDate?.()?.toLocaleTimeString('fr-FR')||'—';
+    if(info)info.textContent=`🛰️ Position mise à jour à ${t} · précision ±${Math.round(d.accuracy||0)}m`;
+    if(trackMap){
+      const ll=[d.lat,d.lng];
+      if(!trackMapMarker){trackMapMarker=L.marker(ll).addTo(trackMap).bindPopup(`🚌 ${vehicleLabel}`).openPopup();}
+      else{trackMapMarker.setLatLng(ll);}
+      trackMap.setView(ll,15);
+    }
+  });
+}
 
-/**
- * Charge tous les propriétaires approuvés visibles par le receveur.
- * Priorité : ceux approuvés par son directeur d'abord.
- */
 async function loadRecvAvailableBus(){
   const cont=document.getElementById('recvAvailableBusList');
   if(!cont)return;
   cont.innerHTML=`<div style="text-align:center;padding:40px 20px;"><div class="spinner" style="margin:0 auto 14px;"></div><div style="color:#555;font-size:13px;">Chargement…</div></div>`;
   try{
-    // 1. Charger les propriétaires (une seule clause where pour éviter tout besoin d'index composite)
     let owners=[];
     try{
       const snap=await getDocs(query(collection(db,'users'),where('role','==','owner')));
@@ -1459,10 +1437,8 @@ async function loadRecvAvailableBus(){
       const snapAll=await getDocs(collection(db,'users'));
       owners=snapAll.docs.map(d=>({id:d.id,...d.data()})).filter(u=>u.role==='owner');
     }
-    // Filtre statut côté client (approved + tolérance si statut absent)
     allAvailableOwners=owners.filter(o=>!o.status||o.status==='approved');
 
-    // 2. Refresh sélection depuis Firestore
     try{
       const mySnap=await getDoc(doc(db,'users',S.uid));
       if(mySnap.exists()){recvBusSelection=new Set(mySnap.data().linkedOwnerUids||[]);}
@@ -1486,14 +1462,12 @@ function renderRecvBusList(){
   const q=(document.getElementById('recvBusSearch')?.value||'').toLowerCase();
   let filtered=allAvailableOwners;
 
-  // Filtre par catégorie
   if(recvBusFilter==='gieDir'){
     filtered=filtered.filter(o=>o.approvedByDir===S.profile.directeurUid);
   }else if(recvBusFilter==='autres'){
     filtered=filtered.filter(o=>o.approvedByDir!==S.profile.directeurUid);
   }
 
-  // Filtre texte
   if(q){filtered=filtered.filter(o=>(o.name+o.company+o.email).toLowerCase().includes(q));}
 
   if(!filtered.length){
@@ -1501,7 +1475,6 @@ function renderRecvBusList(){
     return;
   }
 
-  // Trier : ceux du directeur en premier, puis les sélectionnés, puis les autres
   filtered.sort((a,b)=>{
     const aDir=a.approvedByDir===S.profile.directeurUid?0:1;
     const bDir=b.approvedByDir===S.profile.directeurUid?0:1;
@@ -1535,7 +1508,6 @@ function renderRecvBusList(){
     </div>`;
   }).join('');
 
-  // Mettre à jour le compteur
   updateRecvBusCounter();
 }
 
@@ -1569,7 +1541,6 @@ window.toggleRecvBusOwner=(ownerId)=>{
   }else{
     recvBusSelection.add(ownerId);
   }
-  // Mettre à jour visuellement sans rechargement complet
   const card=document.getElementById('boc-'+ownerId);
   if(card){
     const sel=recvBusSelection.has(ownerId);
@@ -1603,7 +1574,6 @@ window.saveRecvBusSelection=async()=>{
   loader('Enregistrement…');
   try{
     await updateDoc(doc(db,'users',S.uid),{linkedOwnerUids:uids});
-    // Mettre à jour le profil local
     S.profile.linkedOwnerUids=uids;
     loader('',false);
     notify('✅','Bus enregistrés',`${uids.length} propriétaire${uids.length>1?'s':''} lié${uids.length>1?'s':''} à votre compte.`);
@@ -1619,9 +1589,6 @@ window.filterRecvBus=(filter,btn)=>{
 
 window.searchRecvBus=()=>renderRecvBusList();
 
-// ════════════════════════════════════════════════════════
-// DIRECTEUR GIE — DASHBOARD COMPLET
-// ════════════════════════════════════════════════════════
 window.switchDirTab=(tab)=>{
   document.querySelectorAll('#screenDirecteur .tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.dir-nav-btn').forEach(b=>b.classList.remove('active'));
@@ -1631,28 +1598,141 @@ window.switchDirTab=(tab)=>{
   if(tab==='receivers')loadDirReceivers();
 };
 
-const DIR_PERIODS={
-  jour:{enc:845000,tix:1240,vers:680000,net:74000,labels:['8h','10h','12h','14h','16h','18h','20h'],data:[62000,98000,145000,178000,192000,110000,60000]},
-  semaine:{enc:5320000,tix:8140,vers:4256000,net:520000,labels:['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'],data:[845000,920000,780000,960000,1050000,640000,125000]},
-  mois:{enc:21400000,tix:32600,vers:17120000,net:2100000,labels:['S1','S2','S3','S4'],data:[5200000,5800000,5100000,5300000]},
-  total:{enc:148000000,tix:224000,vers:118400000,net:14600000,labels:['Jan','Fév','Mar','Avr','Mai','Jun'],data:[22000000,24500000,21800000,26000000,27500000,26200000]},
-};
+/* ════════════════════════════════════════════════════════
+   DIRECTEUR — AGRÉGATIONS RÉELLES (remplace DIR_PERIODS)
+   ════════════════════════════════════════════════════════ */
 let dirCurrentPeriod='jour';
 
-window.dirSetPeriod=(k,btn)=>{
+function getPeriodBounds(period){
+  const now=new Date();
+  let start;
+  if(period==='jour'){start=new Date(now.getFullYear(),now.getMonth(),now.getDate());}
+  else if(period==='semaine'){start=new Date(now.getFullYear(),now.getMonth(),now.getDate()-6);}
+  else if(period==='mois'){start=new Date(now.getFullYear(),now.getMonth(),1);}
+  else{start=new Date(2000,0,1);}
+  return {start,end:now};
+}
+
+function buildChartBuckets(period,tickets){
+  let labels=[],buckets=[];
+  if(period==='jour'){
+    labels=['8h','10h','12h','14h','16h','18h','20h'];
+    buckets=labels.map(()=>0);
+    tickets.forEach(t=>{
+      const dt=t.ts?.toDate?.();if(!dt)return;
+      const h=dt.getHours();
+      const idx=Math.min(Math.max(Math.floor((h-8)/2),0),6);
+      buckets[idx]+=t.price||0;
+    });
+  }else if(period==='semaine'){
+    labels=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+    buckets=labels.map(()=>0);
+    tickets.forEach(t=>{
+      const dt=t.ts?.toDate?.();if(!dt)return;
+      const day=(dt.getDay()+6)%7;
+      buckets[day]+=t.price||0;
+    });
+  }else if(period==='mois'){
+    labels=['S1','S2','S3','S4'];
+    buckets=[0,0,0,0];
+    tickets.forEach(t=>{
+      const dt=t.ts?.toDate?.();if(!dt)return;
+      const week=Math.min(Math.floor((dt.getDate()-1)/7),3);
+      buckets[week]+=t.price||0;
+    });
+  }else{
+    const now=new Date();
+    labels=[];buckets=[];
+    for(let i=5;i>=0;i--){
+      const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+      labels.push(d.toLocaleDateString('fr-FR',{month:'short'}));
+      buckets.push(0);
+    }
+    tickets.forEach(t=>{
+      const dt=t.ts?.toDate?.();if(!dt)return;
+      const monthsAgo=(now.getFullYear()-dt.getFullYear())*12+(now.getMonth()-dt.getMonth());
+      const idx=5-monthsAgo;
+      if(idx>=0&&idx<6)buckets[idx]+=t.price||0;
+    });
+  }
+  return{labels,data:buckets};
+}
+
+function chunkArray(arr,size){
+  const out=[];
+  for(let i=0;i<arr.length;i+=size)out.push(arr.slice(i,i+size));
+  return out;
+}
+
+async function computeDirPeriodData(period){
+  const {start}=getPeriodBounds(period);
+
+  const recvSnap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('directeurUid','==',S.uid)));
+  const receivers=recvSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const receiverUids=receivers.map(r=>r.id);
+
+  if(!receiverUids.length){
+    return{enc:0,tix:0,vers:0,net:0,retraits:0,labels:[],data:[]};
+  }
+
+  const chunks=chunkArray(receiverUids,30);
+
+  let allTickets=[];
+  for(const chunk of chunks){
+    try{
+      const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','in',chunk)));
+      allTickets.push(...tkSnap.docs.map(d=>d.data()));
+    }catch(e){console.warn('[computeDirPeriodData] tickets chunk error',e);}
+  }
+  const periodTickets=allTickets.filter(t=>{const dt=t.ts?.toDate?.();return dt&&dt>=start;});
+  const enc=periodTickets.reduce((s,t)=>s+(t.price||0),0);
+  const tix=periodTickets.length;
+
+  let allVersements=[];
+  for(const chunk of chunks){
+    try{
+      const vSnap=await getDocs(query(collection(db,'versements'),where('receiverUid','in',chunk)));
+      allVersements.push(...vSnap.docs.map(d=>d.data()));
+    }catch(e){console.warn('[computeDirPeriodData] versements chunk error',e);}
+  }
+  const periodVersements=allVersements.filter(v=>{const dt=v.ts?.toDate?.();return dt&&dt>=start&&v.status==='confirmed';});
+  const vers=periodVersements.reduce((s,v)=>s+(v.amount||0),0);
+
+  let allWithdrawals=[];
+  for(const chunk of chunks){
+    try{
+      const wSnap=await getDocs(query(collection(db,'withdrawal_requests'),where('uid','in',chunk)));
+      allWithdrawals.push(...wSnap.docs.map(d=>d.data()));
+    }catch(e){console.warn('[computeDirPeriodData] withdrawals chunk error',e);}
+  }
+  const periodWithdrawals=allWithdrawals.filter(w=>{const dt=w.requestedAt?.toDate?.();return dt&&dt>=start&&w.status==='done';});
+  const retraits=periodWithdrawals.reduce((s,w)=>s+(w.amount||0),0);
+
+  const net=enc-vers-retraits;
+
+  const{labels,data}=buildChartBuckets(period,periodTickets);
+
+  return{enc,tix,vers,net,retraits,labels,data};
+}
+
+window.dirSetPeriod=async(k,btn)=>{
   dirCurrentPeriod=k;
   document.querySelectorAll('.dir-ptab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  const d=DIR_PERIODS[k];
-  document.getElementById('dir-enc').textContent=fmt(d.enc);
-  document.getElementById('dir-tix').textContent=fmt(d.tix);
-  document.getElementById('dir-vers').textContent=fmt(d.vers);
-  document.getElementById('dir-net').textContent=fmt(d.net);
-  document.getElementById('dir-flux-enc').textContent='+'+fmt(d.enc)+' F';
-  document.getElementById('dir-flux-vers').textContent='−'+fmt(d.vers)+' F';
-  document.getElementById('dir-flux-ret').textContent='−'+fmt(Math.round(d.enc*0.05))+' F';
-  document.getElementById('dir-flux-net').textContent='+'+fmt(d.net)+' F';
-  if(dirRevChartInst){dirRevChartInst.data.labels=d.labels;dirRevChartInst.data.datasets[0].data=d.data;dirRevChartInst.update();}
+  loader('Calcul des données…');
+  try{
+    const d=await computeDirPeriodData(k);
+    document.getElementById('dir-enc').textContent=fmt(d.enc);
+    document.getElementById('dir-tix').textContent=fmt(d.tix);
+    document.getElementById('dir-vers').textContent=fmt(d.vers);
+    document.getElementById('dir-net').textContent=fmt(d.net);
+    document.getElementById('dir-flux-enc').textContent='+'+fmt(d.enc)+' F';
+    document.getElementById('dir-flux-vers').textContent='−'+fmt(d.vers)+' F';
+    document.getElementById('dir-flux-ret').textContent='−'+fmt(d.retraits)+' F';
+    document.getElementById('dir-flux-net').textContent='+'+fmt(d.net)+' F';
+    if(dirRevChartInst){dirRevChartInst.data.labels=d.labels;dirRevChartInst.data.datasets[0].data=d.data;dirRevChartInst.update();}
+  }catch(e){notify('❌','Erreur',e.message);}
+  loader('',false);
 };
 
 async function loadDirFullDashboard(){
@@ -1698,8 +1778,16 @@ async function loadDirFullDashboard(){
     if(dirLineChartInst)dirLineChartInst.destroy();
     const lCtx=document.getElementById('dirLineChart');
     if(lCtx&&ligneLabels.length){dirLineChartInst=new Chart(lCtx,{type:'bar',indexAxis:'y',data:{labels:ligneLabels,datasets:[{label:'FCFA',data:ligneData,backgroundColor:ligneData.map(v=>v>100000?'#009A44':v>0?'#FF6B00':'#DF0024'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10},callback:v=>fmt(v/1000)+'k'},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#7dd3fc',font:{size:11}},grid:{display:false},border:{display:false}}}}});}
-    const pd=DIR_PERIODS['jour'];
-    document.getElementById('dir-enc').textContent=fmt(pd.enc);document.getElementById('dir-tix').textContent=fmt(pd.tix);document.getElementById('dir-vers').textContent=fmt(pd.vers);document.getElementById('dir-net').textContent=fmt(pd.net);document.getElementById('dir-flux-enc').textContent='+'+fmt(pd.enc)+' F';document.getElementById('dir-flux-vers').textContent='−'+fmt(pd.vers)+' F';document.getElementById('dir-flux-ret').textContent='−'+fmt(Math.round(pd.enc*0.05))+' F';document.getElementById('dir-flux-net').textContent='+'+fmt(pd.net)+' F';
+
+    const pd=await computeDirPeriodData('jour');
+    document.getElementById('dir-enc').textContent=fmt(pd.enc);
+    document.getElementById('dir-tix').textContent=fmt(pd.tix);
+    document.getElementById('dir-vers').textContent=fmt(pd.vers);
+    document.getElementById('dir-net').textContent=fmt(pd.net);
+    document.getElementById('dir-flux-enc').textContent='+'+fmt(pd.enc)+' F';
+    document.getElementById('dir-flux-vers').textContent='−'+fmt(pd.vers)+' F';
+    document.getElementById('dir-flux-ret').textContent='−'+fmt(pd.retraits)+' F';
+    document.getElementById('dir-flux-net').textContent='+'+fmt(pd.net)+' F';
     if(dirRevChartInst)dirRevChartInst.destroy();
     const rCtx=document.getElementById('dirRevChart');
     if(rCtx){dirRevChartInst=new Chart(rCtx,{type:'bar',data:{labels:pd.labels,datasets:[{label:'Recettes (F)',data:pd.data,backgroundColor:'#0ea5e9',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10}},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#666',font:{size:10},callback:v=>fmt(v/1000)+'k'},grid:{color:'#0ea5e910'},border:{display:false}}}}});}
@@ -1707,7 +1795,16 @@ async function loadDirFullDashboard(){
   }catch(e){loader('',false);notify('❌','Erreur dashboard',e.message);console.error('loadDirFullDashboard:',e);}
 }
 
-window.dirGenererRapport=()=>{const p=DIR_PERIODS[dirCurrentPeriod];const txt=`RAPPORT GIE — ${(S.profile.org||'').toUpperCase()}\nPériode : ${dirCurrentPeriod}\nEncaissements : ${fmt(p.enc)} FCFA\nTickets : ${fmt(p.tix)}\nVersements : ${fmt(p.vers)} FCFA\nSolde net : ${fmt(p.net)} FCFA\n---\nGénéré par TataPay`;notify('📊','Rapport généré',`${fmt(p.enc)} FCFA · ${fmt(p.tix)} tickets`);if(navigator.share){navigator.share({title:'Rapport GIE TataPay',text:txt}).catch(()=>{});}};
+window.dirGenererRapport=async()=>{
+  loader('Génération du rapport…');
+  try{
+    const p=await computeDirPeriodData(dirCurrentPeriod);
+    const txt=`RAPPORT GIE — ${(S.profile.org||'').toUpperCase()}\nPériode : ${dirCurrentPeriod}\nEncaissements : ${fmt(p.enc)} FCFA\nTickets : ${fmt(p.tix)}\nVersements : ${fmt(p.vers)} FCFA\nRetraits : ${fmt(p.retraits)} FCFA\nSolde net : ${fmt(p.net)} FCFA\n---\nGénéré par TataPay`;
+    loader('',false);
+    notify('📊','Rapport généré',`${fmt(p.enc)} FCFA · ${fmt(p.tix)} tickets`);
+    if(navigator.share){navigator.share({title:'Rapport GIE TataPay',text:txt}).catch(()=>{});}
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
 
 async function loadDirOwners(){
   const cont=document.getElementById('dirOwnersList');
@@ -1765,9 +1862,6 @@ window.doAssignChauffeur=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-// ══════════════════════════════════════════════════════════
-// CHAUFFEUR — DASHBOARD
-// ══════════════════════════════════════════════════════════
 window.switchChauffeurTab=(tab)=>{
   document.querySelectorAll('#screenChauffeur .tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.ch-nav-btn').forEach(b=>b.classList.remove('active'));
@@ -1890,15 +1984,11 @@ function loadChBusPanel(){
   const [tCls,tLbl]=(techMap[ts]||techMap.actif);
   document.getElementById('chBusTechBadge').innerHTML=`<span class="ch-badge ${tCls}">${tLbl}</span>`;
   document.getElementById('chBusOpBadge').innerHTML=`<span class="ch-badge ${bs==='en_service'?'ch-badge-ok':'ch-badge-warn'}">${bs==='en_service'?'En service':'Hors service'}</span>`;
-  // Section géo: chauffeur partage, owner consulte
   const geoCard=document.getElementById('chGeoBtn')?.closest('.ch-card');
   if(geoCard)geoCard.style.display=S.role==='chauffeur'?'block':'none';
   const mapSec=document.getElementById('chOwnerMapSection');
   if(mapSec)mapSec.style.display=S.role==='owner'?'block':'none';
 }
-// ══════════════════════════════════════════════
-// PROPRIÉTAIRE — CANDIDATURES RECEVEURS
-// ══════════════════════════════════════════════
 function attachChCandidaturesListener(){
   if(unsubChCandidatures)unsubChCandidatures();
   try{
@@ -1952,7 +2042,6 @@ window.acceptChCandidature=async(notifId,receiverUid,receiverName)=>{
   document.getElementById('apprNotifId').value=notifId;
   document.getElementById('apprReceiverUid').value=receiverUid;
   document.getElementById('apprReceiverName').value=receiverName;
-  // Pré-remplir avec les infos du bus du propriétaire si déjà connues
   const p=S.profile||{};
   document.getElementById('apprGIE').value=p.gie||p.company||'';
   document.getElementById('apprVehicle').value=p.vehicle||'';
@@ -2050,9 +2139,6 @@ window.chSubmitReport=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-// ══════════════════════════════════════════════════════════
-// GEOLOCATION + LEAFLET MAP (chauffeur partage, owner voit)
-// ══════════════════════════════════════════════════════════
 window.chToggleGeo=()=>{
   const btn=document.getElementById('chGeoBtn');const st=document.getElementById('chGeoStatus');
   if(chGeoWatchId!=null){
@@ -2086,7 +2172,6 @@ function initChBusMap(){
 }
 function attachBusLocationListener(){
   if(unsubBusLoc)unsubBusLoc();
-  // Owner regarde sa propre position bus (clé = ownerUid)
   const targetUid=S.uid;
   unsubBusLoc=onSnapshot(doc(db,'bus_locations',targetUid),snap=>{
     const info=document.getElementById('chBusMapInfo');
@@ -2102,9 +2187,6 @@ function attachBusLocationListener(){
   });
 }
 
-// ══════════════════════════════════════════════════════════
-// VERSEMENT RECEVEUR → PROPRIÉTAIRE
-// ══════════════════════════════════════════════════════════
 window.openRecvVersement=async()=>{
   const today=S.profile?.today||0;
   const p=S.profile||{};
@@ -2129,10 +2211,8 @@ window.doRecvVersement=async()=>{
   try{
     const ref='VRS-'+Date.now().toString(36).toUpperCase();
     const date=new Date().toLocaleDateString('fr-FR');
-    // Débit immédiat du receveur
     await updateDoc(doc(db,'users',S.uid),{balance:increment(-amount)});
     await addDoc(collection(db,'users',S.uid,'history'),{type:'versement_out',label:'Versement chauffeur — '+ref,amount:-amount,ref,ts:serverTimestamp()});
-    // Crédit immédiat du chauffeur/propriétaire si lié
     if(ownerUid){
       await updateDoc(doc(db,'users',ownerUid),{balance:increment(amount)});
       await addDoc(collection(db,'users',ownerUid,'history'),{type:'versement_in',label:'Versement reçu de '+(S.profile?.name||'receveur'),amount,ref,ts:serverTimestamp()});
@@ -2144,9 +2224,6 @@ window.doRecvVersement=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-// ══════════════════════════════════════════════════════════
-// PROPRIÉTAIRE — RETRAIT PAYTECH
-// ══════════════════════════════════════════════════════════
 window.openOwnerWithdraw=()=>{
   const bal=S.profile?.balance||0;
   document.getElementById('wdAvailable').textContent=fmt(bal);
@@ -2168,7 +2245,6 @@ window.doOwnerWithdraw=async()=>{
     const res=await fetch('/api/public/paytech-payout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,phone,operator,ref,ownerName:S.profile?.name||''})});
     const data=await res.json().catch(()=>({}));
     if(!res.ok||!data.success){loader('',false);notify('❌','Échec PayTech',data?.error||'Retrait refusé par PayTech.');return;}
-    // Débit du solde propriétaire + historique
     await updateDoc(doc(db,'users',S.uid),{balance:increment(-amount)});
     await addDoc(collection(db,'users',S.uid,'history'),{type:'withdraw',label:`Retrait PayTech ${operator} → ${phone}`,amount:-amount,ref,ts:serverTimestamp()});
     await addDoc(collection(db,'withdrawals'),{ownerUid:S.uid,ownerName:S.profile?.name||'',amount,phone,operator,ref,status:'sent',ts:serverTimestamp()});
@@ -2177,9 +2253,6 @@ window.doOwnerWithdraw=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-// ══════════════════════════════════════════════════════════
-// PROPRIÉTAIRE — versements en attente de confirmation
-// ══════════════════════════════════════════════════════════
 function attachChPendingVersListener(){
   if(unsubChPendingVers)unsubChPendingVers();
   if(S.role!=='owner')return;
@@ -2229,9 +2302,6 @@ window.disputeChVers=async(id,receiverUid,amount)=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-// ══════════════════════════════════════════════════════════
-// Notif push native + son
-// ══════════════════════════════════════════════════════════
 function playNotifSound(){
   try{
     const ctx=new (window.AudioContext||window.webkitAudioContext)();
@@ -2247,20 +2317,27 @@ function pushNative(title,body){
 }
 try{if('Notification' in window && Notification.permission==='default')Notification.requestPermission();}catch(e){}
 
-// ══════════════════════════════════════════════════════════
-// Indicateur online / offline
-// ══════════════════════════════════════════════════════════
 function setOnlineIndicator(on){
   ['recvOnlineDot'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=on?'<span style="width:8px;height:8px;border-radius:50%;background:#34d399;display:inline-block;"></span>En ligne':'<span style="width:8px;height:8px;border-radius:50%;background:#DF0024;display:inline-block;"></span>Hors-ligne (sync en attente)';el.style.color=on?'#34d399':'#DF0024';});
 }
 window.addEventListener('online',()=>{setOnlineIndicator(true);notify('🟢','En ligne','Synchronisation des données…');});
 window.addEventListener('offline',()=>{setOnlineIndicator(false);notify('🔴','Hors-ligne','Les paiements seront synchronisés au retour du réseau.');});
 
+function playChauffeurAlarm(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const seq=[[0,1200,.22],[.28,900,.22],[.56,1200,.22],[.84,900,.22],[1.12,1500,.35]];seq.forEach(([s,f,d])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;o.type='square';g.gain.setValueAtTime(0,ctx.currentTime+s);g.gain.linearRampToValueAtTime(.6,ctx.currentTime+s+.02);g.gain.linearRampToValueAtTime(0,ctx.currentTime+s+d);o.start(ctx.currentTime+s);o.stop(ctx.currentTime+s+d+.05);});if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);}catch(e){}}
 function showChToast(type,data){
   const stack=document.getElementById('chToastStack');if(!stack)return;
   const div=document.createElement('div');div.className='ch-toast';
   let icon='🔔',title='Alerte',body='',color='#059669';
-  if(type==='versement_alert'){icon='💸';title='Versement manquant';body=data.message||'Recettes non versées.';color='#DF0024';}
+  if(type==='descendre'){
+    icon='🛑';title='🚨 ARRÊT DEMANDÉ !';body=`${data.passenger||'Passager'} veut descendre — ${data.from||''}→${data.to||''}`;color='#DF0024';
+    playChauffeurAlarm();
+    const ov=document.createElement('div');
+    ov.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#DF0024,#7f1d1d);color:#fff;padding:22px 18px;text-align:center;animation:slideDown .35s ease;box-shadow:0 8px 24px rgba(223,0,36,.6);border-bottom:4px solid #FDEF42;';
+    ov.innerHTML=`<div style="font-size:42px;margin-bottom:6px;animation:bellShake .5s ease infinite;">🛑</div><div style="font-weight:900;font-size:20px;letter-spacing:1px;">ARRÊT DEMANDÉ</div><div style="font-size:14px;margin-top:4px;font-weight:700;">${data.passenger||'Passager'}</div><div style="font-size:12px;margin-top:2px;opacity:.9;">${data.from||''} → ${data.to||''}</div><button onclick="this.parentElement.remove()" style="margin-top:12px;background:#fff;color:#DF0024;border:none;border-radius:10px;padding:10px 22px;font-weight:900;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">✓ COMPRIS</button>`;
+    document.body.appendChild(ov);
+    setTimeout(()=>ov.remove(),12000);
+  }
+  else if(type==='versement_alert'){icon='💸';title='Versement manquant';body=data.message||'Recettes non versées.';color='#DF0024';}
   else if(type==='fraud_alert'){icon='⚠️';title='Anomalie';body=data.message||'Activité suspecte.';color='#FF6B00';}
   else if(type==='bus_panne'){icon='🔧';title='Panne';body=data.message||'Problème bus.';color='#DF0024';}
   else if(type==='bus_report'){icon='📋';title='Signalement';body=data.message||'—';}
@@ -2272,7 +2349,6 @@ function showChToast(type,data){
   stack.appendChild(div);setTimeout(()=>{div.classList.add('out');setTimeout(()=>div.remove(),300);},6000);
 }
 
-// ── ADMIN ─────────────────────────────────────────────────
 let adminAllUsers=[],adminAllWithdrawals=[];
 let adminCurrentRoleFilter='all',adminCurrentWdFilter='pending';
 window.switchAdminTab=(tab)=>{document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.admin-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('adminTab-'+tab)?.classList.add('active');document.querySelectorAll('.admin-nav-btn').forEach(b=>{if(b.textContent.toLowerCase().includes(tab.slice(0,4)))b.classList.add('active');});};
@@ -2346,7 +2422,6 @@ window.markWithdrawDone=async(docId)=>{try{await updateDoc(doc(db,'withdrawal_re
 window.rejectWithdraw=async(docId)=>{try{await updateDoc(doc(db,'withdrawal_requests',docId),{status:'rejected',treatedAt:serverTimestamp()});notify('❌','Rejeté','Demande rejetée.');await loadAdminDashboard();}catch(e){notify('❌','Erreur',e.message);}};
 function startAdminRealtime(){if(unsubAdmin)unsubAdmin();unsubAdmin=onSnapshot(query(collection(db,'users'),where('status','==','pending'),where('role','==','directeur')),snap=>{const n=snap.size;document.querySelectorAll('.admin-nav-btn').forEach(b=>{if(b.textContent.includes('Dashboard'))b.textContent=n>0?`📊 Dashboard (${n})`:'📊 Dashboard';});});}
 
-// ── PASSENGER ─────────────────────────────────────────────
 window.switchTab=(tab)=>{document.querySelectorAll('#screenPassenger .tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('passTab-'+tab)?.classList.add('active');document.getElementById('nav-'+tab)?.classList.add('active');if(tab==='tickets')loadPassTickets();if(tab==='history')loadPassHistory();};
 
 window.switchRecvTab=(tab)=>{
@@ -2356,65 +2431,60 @@ window.switchRecvTab=(tab)=>{
   document.getElementById('rnav-'+tab)?.classList.add('active');
   if(tab==='trajets')loadTrajets();
   if(tab==='tickets')loadRecvTickets();
-  if(tab==='bus')loadRecvAvailableBus(); // ← Nouveau
+  if(tab==='bus')loadRecvAvailableBus();
+  if(tab==='historique')loadRecvHistorique();
 };
+let _recvHistAll=[],_recvHistFilter='all';
+window.filterRecvHist=(f)=>{_recvHistFilter=f;document.querySelectorAll('.recv-hist-filter').forEach(b=>{const on=b.dataset.f===f;b.style.background=on?'#FF6B0022':'#ffffff08';b.style.borderColor=on?'#FF6B0066':'#ffffff20';b.style.color=on?'#FF6B00':'#aaa';b.classList.toggle('active',on);});renderRecvHistorique();};
+async function loadRecvHistorique(){
+  const cont=document.getElementById('recvHistoriqueList');
+  if(!cont)return;
+  cont.innerHTML='<div style="text-align:center;color:#555;padding:32px 0;font-size:13px;">Chargement…</div>';
+  try{
+    const items=[];
+    let totVers=0,totEnc=0;
+    try{
+      const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','==',S.uid),orderBy('ts','desc'),limit(200)));
+      tkSnap.docs.forEach(d=>{const t=d.data();totEnc+=t.price||0;items.push({cat:'ticket',ts:t.ts,icon:'🎫',color:'#34d399',title:`Ticket vendu — ${t.passenger||'—'}`,sub:`${t.from||''}→${t.to||''} · ${t.method||'cash'}`,amt:`+${fmt(t.price||0)} F`});});
+    }catch(e){console.warn('hist tickets',e);}
+    try{
+      const vSnap=await getDocs(query(collection(db,'versements'),where('receiverUid','==',S.uid),orderBy('ts','desc'),limit(100)));
+      vSnap.docs.forEach(d=>{const v=d.data();totVers+=v.amount||0;const st=v.status||'pending';const stCol=st==='confirmed'?'#34d399':st==='disputed'?'#DF0024':'#FF6B00';const stLbl=st==='confirmed'?'✅ Confirmé':st==='disputed'?'⚠️ Contesté':'⏳ En attente';items.push({cat:'versement',ts:v.ts,icon:'💸',color:'#c4b5fd',title:`Versement → ${v.ownerName||'Propriétaire'}`,sub:`${v.mode||'cash'} · <span style="color:${stCol};font-weight:800;">${stLbl}</span>`,amt:`-${fmt(v.amount||0)} F`});});
+    }catch(e){console.warn('hist versements',e);}
+    try{
+      const nSnap=await getDocs(query(collection(db,'notifications'),where('toUid','==',S.uid),orderBy('ts','desc'),limit(80)));
+      nSnap.docs.forEach(d=>{const n=d.data();let icon='🔔',title='Notification',sub='';if(n.type==='descendre'){icon='🛑';title=`Passager veut descendre — ${n.passenger||'—'}`;sub=`${n.from||''}→${n.to||''}`;}else if(n.type==='ticket_request'){icon='📩';title=`Demande ticket — ${n.passenger||'—'}`;sub=`${n.price||0} FCFA`;}else if(n.type==='versement_confirmed'){icon='✅';title='Versement confirmé';sub=`${fmt(n.amount||0)} FCFA`;}else if(n.type==='versement_disputed'){icon='⚠️';title='Versement contesté';sub=n.reason||'—';}else if(n.type==='versement_alert'){icon='💸';title='Rappel versement';sub=n.message||'—';}else{return;}items.push({cat:'action',ts:n.ts,icon,color:'#fbbf24',title,sub,amt:''});});
+    }catch(e){console.warn('hist notifs',e);}
+    items.sort((a,b)=>(b.ts?.toMillis?.()||0)-(a.ts?.toMillis?.()||0));
+    _recvHistAll=items;
+    document.getElementById('recvHistTotVers').textContent=fmt(totVers)+' F';
+    document.getElementById('recvHistTotEnc').textContent=fmt(totEnc)+' F';
+    renderRecvHistorique();
+  }catch(e){cont.innerHTML='<div style="text-align:center;color:#DF0024;padding:20px;font-size:12px;">Erreur de chargement.</div>';console.error(e);}
+}
+function renderRecvHistorique(){
+  const cont=document.getElementById('recvHistoriqueList');if(!cont)return;
+  const list=_recvHistFilter==='all'?_recvHistAll:_recvHistAll.filter(i=>i.cat===_recvHistFilter);
+  if(!list.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:32px 0;font-size:13px;">Aucune entrée.</div>';return;}
+  cont.innerHTML=list.map(i=>{const d=i.ts?.toDate?.();const dt=d?d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'—';const amtCol=i.amt.startsWith('+')?'#34d399':i.amt.startsWith('-')?'#f87171':'#888';return`<div style="background:#ffffff06;border:1px solid #ffffff14;border-left:3px solid ${i.color};border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;"><div style="font-size:22px;">${i.icon}</div><div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13px;color:#fff;">${i.title}</div><div style="font-size:11px;color:#aaa;margin-top:2px;">${i.sub}</div><div style="font-size:10px;color:#666;margin-top:3px;font-family:'JetBrains Mono',monospace;">${dt}</div></div>${i.amt?`<div style="font-weight:900;font-size:14px;color:${amtCol};font-family:'JetBrains Mono',monospace;white-space:nowrap;">${i.amt}</div>`:''}</div>`;}).join('');
+}
 
 window.openModal=(id)=>document.getElementById(id).style.display='flex';
-window.closeModal=(id)=>{document.getElementById(id).style.display='none';if(id==='modalTicketFlow')resetFlow();if(id==='modalWithdraw')resetWithdraw();if(id==='modalRecharge')resetRecharge();if(id==='modalTrackBus'){if(unsubTrack){try{unsubTrack();}catch(e){}unsubTrack=null;}if(trackMap){try{trackMap.remove();}catch(e){}trackMap=null;trackMarker=null;}}};
-
-// ===== Suivi bus public =====
-let trackMap=null, trackMarker=null, unsubTrack=null;
-window.openTrackBus=()=>{
-  const inp=document.getElementById('trackBusInput'); if(inp) inp.value='';
-  document.getElementById('trackBusStatus').textContent='';
-  document.getElementById('trackBusMap').style.display='none';
-  document.getElementById('trackBusInfo').style.display='none';
-  if(unsubTrack){try{unsubTrack();}catch(e){} unsubTrack=null;}
-  if(trackMap){try{trackMap.remove();}catch(e){} trackMap=null;trackMarker=null;}
-  openModal('modalTrackBus');
-};
-window.doTrackBus=async()=>{
-  const raw=(document.getElementById('trackBusInput').value||'').trim().toUpperCase();
-  const st=document.getElementById('trackBusStatus');
-  if(!raw){st.textContent='⚠️ Entrez un numéro de bus.';st.style.color='#FF6B00';return;}
-  st.style.color='#7dd3fc';st.textContent='🔎 Recherche du bus '+raw+'…';
-  try{
-    let snap=await getDocs(query(collection(db,'bus_locations'),where('vehicle','==',raw)));
-    if(snap.empty){
-      const all=await getDocs(collection(db,'bus_locations'));
-      const match=all.docs.find(d=>((d.data().vehicle||'').toUpperCase().replace(/[\s-]/g,''))===raw.replace(/[\s-]/g,''));
-      if(!match){st.style.color='#DF0024';st.textContent='❌ Aucun bus trouvé avec ce numéro (ou GPS non activé).';return;}
-      snap={docs:[match],empty:false};
-    }
-    const d=snap.docs[0];
-    const ref=d.ref;
-    if(unsubTrack){try{unsubTrack();}catch(e){}}
-    unsubTrack=onSnapshot(ref, s=>{
-      if(!s.exists())return;
-      const v=s.data();
-      if(typeof v.lat!=='number'||typeof v.lng!=='number'){st.textContent='⚠️ Position invalide.';return;}
-      const mapEl=document.getElementById('trackBusMap');
-      mapEl.style.display='block';
-      if(!trackMap){
-        trackMap=L.map(mapEl,{zoomControl:true,attributionControl:false}).setView([v.lat,v.lng],15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(trackMap);
-      }
-      setTimeout(()=>{try{trackMap.invalidateSize();}catch(e){}},60);
-      if(!trackMarker){trackMarker=L.marker([v.lat,v.lng]).addTo(trackMap);}
-      else{trackMarker.setLatLng([v.lat,v.lng]);}
-      trackMap.setView([v.lat,v.lng],trackMap.getZoom()||15);
-      const info=document.getElementById('trackBusInfo');
-      info.style.display='block';
-      const t=v.updatedAt?.toDate?.()||null;
-      info.innerHTML=`🚌 <strong>${v.vehicle||raw}</strong>${v.ligne?' · Ligne '+v.ligne:''} · MAJ ${t?t.toLocaleTimeString():'—'}`;
-      st.style.color='#34d399';st.textContent='✅ Bus localisé en direct';
-    });
-  }catch(e){console.error('[trackBus]',e);st.style.color='#DF0024';st.textContent='❌ Erreur de recherche.';}
-};
+window.closeModal=(id)=>{document.getElementById(id).style.display='none';if(id==='modalTicketFlow')resetFlow();if(id==='modalWithdraw')resetWithdraw();if(id==='modalRecharge')resetRecharge();};
 function updateBalanceUI(){document.getElementById('passBalance').textContent=fmt(S.profile?.balance||0);}
 function showDescendBtn(t){activeTicketData=t;document.getElementById('descendInfo').textContent=`${t.from}→${t.to} · ${t.price} FCFA`;document.getElementById('descendBtn').style.display='block';document.getElementById('activeTicketBanner').style.display='block';document.getElementById('activeTicketLabel').textContent=`🚌 ${t.gie}/${t.vehicle} — ${t.from}→${t.to}`;}
 function hideDescendBtn(){document.getElementById('descendBtn').style.display='none';document.getElementById('activeTicketBanner').style.display='none';activeTicketData=null;}
-window.demandDescendre=async()=>{if(!activeTicketData)return;await addDoc(collection(db,'notifications'),{toUid:activeTicketData.busUid,type:'descendre',passenger:S.profile.name,from:activeTicketData.from,to:activeTicketData.to,read:false,ts:serverTimestamp()});notify('🛑','Signal envoyé !','Le receveur a été prévenu.');};
+window.demandDescendre=async()=>{
+  if(!activeTicketData)return;
+  const payload={type:'descendre',passenger:S.profile.name,from:activeTicketData.from,to:activeTicketData.to,vehicle:activeTicketData.vehicle||'',gie:activeTicketData.gie||'',read:false,ts:serverTimestamp()};
+  await addDoc(collection(db,'notifications'),{...payload,toUid:activeTicketData.busUid});
+  try{
+    const rSnap=await getDoc(doc(db,'users',activeTicketData.busUid));
+    const chUid=rSnap.exists()?rSnap.data().chauffeurUid:null;
+    if(chUid){await addDoc(collection(db,'notifications'),{...payload,toUid:chUid});}
+  }catch(e){console.warn('descendre→chauffeur',e);}
+  notify('🛑','Signal envoyé !','Le receveur et le chauffeur ont été prévenus.');
+};
 window.showActiveTicket=()=>{if(activeTicketData)showTicketData(activeTicketData);};
 window.openWithdraw=()=>{resetWithdraw();document.getElementById('withdrawAvailable').textContent=fmt(S.profile?.balance||0)+' FCFA';openModal('modalWithdraw');};
 function resetWithdraw(){['wdStep1','wdStep2','wdStep3','wdStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const w=document.getElementById('wdAmt');if(w)w.value='';}
@@ -2526,17 +2596,15 @@ function txRow(h){const icons={recharge:'💳',transfer_out:'↗️',transfer_in
 async function loadPassTickets(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'tickets'),orderBy('ts','desc'),limit(30));const snap=await getDocs(q);const cont=document.getElementById('passTicketsContainer');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;"><div style="font-size:56px;opacity:.4;margin-bottom:16px;">🎫</div><div style="color:#555;font-weight:800;">Aucun ticket</div><button class="btn btn-purple" style="margin-top:16px;" onclick="openTicketFlow()">🎫 Acheter un ticket</button></div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:12px;line-height:1.9;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}<br>✅ Validé</div></div></div>`;}).join('');}
 window.showTicketData=(t)=>{if(typeof t==='string')t=JSON.parse(t);document.getElementById('ticketThermalContent').innerHTML=`<div class="t-header">🚌 TATAPAY</div><div style="font-size:13px;line-height:2;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}<br>✅ Validé · ${t.passenger}</div>`;document.getElementById('ticketOverlay').style.display='flex';if(S.role==='passenger')showDescendBtn(t);};
 window.closeTicket=()=>document.getElementById('ticketOverlay').style.display='none';
-window.openNotifPanel=async()=>{const q=query(collection(db,'notificat
-                                                         ions'),where('toUid','==',S.uid),orderBy('ts','desc'),limit(20));const snap=await getDocs(q);const cont=document.getElementById('notifList');if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';}else{cont.innerHTML=snap.docs.map(d=>{const n=d.data();let icon='🔔',title='Notification',body='',color='var(--orange)';if(n.type==='descendre'){icon='🛑';title='Passager veut descendre';body=`${n.passenger||'—'} · ${n.from||''}→${n.to||''}`;color='#DF0024';}else if(n.type==='ticket_request'){icon='🎫';title='Demande ticket';body=`${n.passenger||'—'} · ${n.price||0} FCFA`;color='var(--g)';}else if(n.type==='ticket_validated'){icon='✅';title='Ticket validé';body='Votre ticket a été validé !';color='var(--g)';}else if(n.type==='receiver_request'){icon='🎫';title='Nouveau receveur';body=`${n.receiverName||'—'}`;color='var(--orange)';}else if(n.type==='owner_request'){icon='🚌';title='Nouveau propriétaire';body=`${n.ownerName||'—'} — ${n.company||'—'}`;color='#7c3aed';}else if(n.type==='chauffeur_request'){icon='👨‍✈️';title='Nouveau chauffeur';body=`${n.chauffeurName||'—'}`;color='#059669';}else if(n.type==='versement_alert'){icon='💸';title='Versement manquant';body=n.message||'Le receveur n\'a pas versé les recettes.';color='#DF0024';}else if(n.type==='fraud_alert'){icon='⚠️';title='Anomalie détectée';body=n.message||'Activité suspecte sur votre bus.';color='#FF6B00';}else if(n.type==='bus_panne'){icon='🔧';title='Panne signalée';body=n.message||'Problème technique sur le bus.';color='#DF0024';}else if(n.type==='bus_report'){icon='📋';title='Signalement bus';body=n.message||'—';color='#059669';}return`<div style="background:#ffffff08;border:1px solid ${color}33;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;"><div style="font-size:22px;">${icon}</div><div><div style="font-weight:800;font-size:13px;color:${color};">${title}</div><div style="font-size:12px;color:#ccc;margin-top:3px;">${body}</div></div></div>`;}).join('');}document.getElementById('notifPanel').style.display='flex';};
+window.openNotifPanel=async()=>{const q=query(collection(db,'notifications'),where('toUid','==',S.uid),orderBy('ts','desc'),limit(20));const snap=await getDocs(q);const cont=document.getElementById('notifList');if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';}else{cont.innerHTML=snap.docs.map(d=>{const n=d.data();let icon='🔔',title='Notification',body='',color='var(--orange)';if(n.type==='descendre'){icon='🛑';title='Passager veut descendre';body=`${n.passenger||'—'} · ${n.from||''}→${n.to||''}`;color='#DF0024';}else if(n.type==='ticket_request'){icon='🎫';title='Demande ticket';body=`${n.passenger||'—'} · ${n.price||0} FCFA`;color='var(--g)';}else if(n.type==='ticket_validated'){icon='✅';title='Ticket validé';body='Votre ticket a été validé !';color='var(--g)';}else if(n.type==='receiver_request'){icon='🎫';title='Nouveau receveur';body=`${n.receiverName||'—'}`;color='var(--orange)';}else if(n.type==='owner_request'){icon='🚌';title='Nouveau propriétaire';body=`${n.ownerName||'—'} — ${n.company||'—'}`;color='#7c3aed';}else if(n.type==='chauffeur_request'){icon='👨‍✈️';title='Nouveau chauffeur';body=`${n.chauffeurName||'—'}`;color='#059669';}else if(n.type==='versement_alert'){icon='💸';title='Versement manquant';body=n.message||'Le receveur n\'a pas versé les recettes.';color='#DF0024';}else if(n.type==='fraud_alert'){icon='⚠️';title='Anomalie détectée';body=n.message||'Activité suspecte sur votre bus.';color='#FF6B00';}else if(n.type==='bus_panne'){icon='🔧';title='Panne signalée';body=n.message||'Problème technique sur le bus.';color='#DF0024';}else if(n.type==='bus_report'){icon='📋';title='Signalement bus';body=n.message||'—';color='#059669';}return`<div style="background:#ffffff08;border:1px solid ${color}33;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;"><div style="font-size:22px;">${icon}</div><div><div style="font-weight:800;font-size:13px;color:${color};">${title}</div><div style="font-size:12px;color:#ccc;margin-top:3px;">${body}</div></div></div>`;}).join('');}document.getElementById('notifPanel').style.display='flex';};
 window.clearNotifs=async()=>{const q=query(collection(db,'notifications'),where('toUid','==',S.uid));const snap=await getDocs(q);await Promise.all(snap.docs.map(d=>deleteDoc(doc(db,'notifications',d.id))));document.getElementById('notifList').innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';const b=document.getElementById('bellBadge');if(b)b.className='bell-badge';const cb=document.getElementById('chBellBadge');if(cb)cb.className='bell-badge';};
 
-// ── CAMERA ────────────────────────────────────────────────
 let detector=null;
 if('BarcodeDetector' in window){try{detector=new BarcodeDetector({formats:['qr_code']});}catch(e){}}
 let scanCanvas=null,scanCtx=null;
 window.openCamera=async(mode)=>{
   S.camMode=mode;S.scanning=false;
-  const labels={bus:'Scanner QR Bus',recv:'Scanner Passager',friend:'Scanner Ami 📷','wallet-scan':'Scanner Wallet'};
+   const labels={bus:'Scanner QR Bus',recv:'Scanner Passager',friend:'Scanner Ami 📷','wallet-scan':'Scanner Wallet'};
   document.getElementById('camTitle').textContent=labels[mode]||'Scanner QR';
   document.getElementById('camError').style.display='none';
   document.getElementById('manualPanel')?.remove();
@@ -2555,5 +2623,3 @@ function handleQR(raw){stopCamera();raw=(raw||'').trim();const walletM=raw.match
 if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const regs=await navigator.serviceWorker.getRegistrations();for(const r of regs)await r.unregister();if(window.caches){const keys=await caches.keys();for(const k of keys)await caches.delete(k);}}catch(e){}});}
 </script>
 </div>
-</body>
-</html>
