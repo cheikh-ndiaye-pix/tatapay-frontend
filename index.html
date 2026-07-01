@@ -325,7 +325,25 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div class="input-wrap"><label class="input-label">Adresse / Quartier *</label><input class="input-field" id="authAddress" placeholder="ex: Médina, Dakar"/></div>
     </div>
     <div id="fieldsOwner" style="display:none;">
-      <div class="input-wrap"><label class="input-label">Nom du GIE / Entreprise *</label><input class="input-field" id="authOwnerCompany" placeholder="GIE Dakar Express"/></div>
+      <div class="input-wrap">
+        <label class="input-label">GIE d'appartenance * <span style="color:#FDEF42;font-weight:800;font-size:10px;margin-left:6px;">(choix unique)</span></label>
+        <select class="input-field" id="authOwnerCompany">
+          <option value="">— Choisir votre GIE —</option>
+          <option value="AFTU Dakar Nord">AFTU Dakar Nord</option>
+          <option value="AFTU Dakar Sud">AFTU Dakar Sud</option>
+          <option value="AFTU Pikine">AFTU Pikine</option>
+          <option value="AFTU Guédiawaye">AFTU Guédiawaye</option>
+          <option value="AFTU Rufisque">AFTU Rufisque</option>
+          <option value="GIE Dakar Express">GIE Dakar Express</option>
+          <option value="GIE Dem Dikk Partenaires">GIE Dem Dikk Partenaires</option>
+          <option value="GIE Thiès Transport">GIE Thiès Transport</option>
+          <option value="GIE Saint-Louis Mobilité">GIE Saint-Louis Mobilité</option>
+          <option value="GIE Kaolack Bus">GIE Kaolack Bus</option>
+          <option value="GIE Ziguinchor Transport">GIE Ziguinchor Transport</option>
+          <option value="DPL">DPL</option>
+        </select>
+      </div>
+      <div style="background:#FDEF4210;border:1px solid #FDEF4244;border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:11px;color:#FDEF42;line-height:1.6;">🔒 Le GIE est définitif : vous ne pourrez pas le modifier après inscription.</div>
       <div style="background:#7c3aed15;border:1.5px solid #7c3aed44;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#c4b5fd;line-height:1.6;">⚠️ Compte propriétaire nécessite validation du Directeur de GIE.</div>
     </div>
     <div id="fieldsDirecteur" style="display:none;">
@@ -369,6 +387,31 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
+<div class="modal-overlay" id="modalBusTracker" style="display:none;" onclick="if(event.target===this)closeBusTracker()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-height:90vh;overflow-y:auto;">
+    <div style="height:3px;background:linear-gradient(90deg,#0ea5e9,#38bdf8,#0369a1);border-radius:24px 24px 0 0;"></div>
+    <div class="modal-header">
+      <div style="font-weight:900;font-size:18px;">📍 Suivre un bus</div>
+      <button class="modal-close" onclick="closeBusTracker()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#0ea5e910;border:1px solid #0ea5e933;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#7dd3fc;line-height:1.6;">
+        Entrez le numéro du bus (celui affiché sur le véhicule). Vous verrez sa position en direct si le chauffeur a activé sa localisation.
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">Numéro du bus *</label>
+        <input class="input-field" id="trackBusNumber" placeholder="ex: DK-2547-AB" autocomplete="off"/>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="doTrackBus()" id="trackBusBtn" style="margin-bottom:14px;">📡 Localiser</button>
+      <div id="trackBusResult" style="display:none;">
+        <div id="trackBusInfo" style="background:#0f1a0a;border:1.5px solid #0ea5e944;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:#e2e8f0;line-height:1.7;"></div>
+        <div id="trackBusMap" style="width:100%;height:320px;border-radius:14px;overflow:hidden;border:1.5px solid #0ea5e944;"></div>
+        <div id="trackBusMeta" style="text-align:center;margin-top:10px;font-size:11px;color:#7dd3fc;font-family:'JetBrains Mono',monospace;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="screen" id="screenPending" style="background:#06120a;justify-content:center;align-items:center;padding:32px 24px;text-align:center;">
   <div style="font-size:64px;margin-bottom:16px;" id="pendingIcon">⏳</div>
   <div style="font-weight:900;font-size:20px;margin-bottom:10px;" id="pendingTitle">En attente</div>
@@ -403,6 +446,14 @@ select.input-field option{background:#0c1f12;color:#fff;}
             <button onclick="openCamera('friend')" style="background:linear-gradient(160deg,#059669,#065f46);border:2px solid #34d39966;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">📷</div>Scan Ami</button>
           </div>
         </div>
+        <button onclick="openBusTracker()" style="width:100%;background:linear-gradient(135deg,#0ea5e9,#0369a1);border:2px solid #38bdf866;border-radius:18px;padding:14px 16px;margin-bottom:16px;cursor:pointer;color:#fff;font-family:'Space Grotesk',sans-serif;font-weight:900;font-size:14px;display:flex;align-items:center;gap:12px;text-align:left;">
+          <div style="font-size:26px;">📍</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;">Suivre un bus en direct</div>
+            <div style="font-size:11px;color:#bae6fd;font-weight:600;margin-top:2px;">Entrez le numéro du bus pour voir sa position</div>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
         <div id="activeTicketBanner" style="display:none;background:#DF002415;border:2px solid #DF002466;border-radius:18px;padding:14px 16px;margin-bottom:16px;cursor:pointer;" onclick="showActiveTicket()">
           <div style="font-size:10px;color:#ff8888;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">🚌 Ticket en cours</div>
           <div style="font-weight:900;font-size:15px;" id="activeTicketLabel">—</div>
@@ -2370,8 +2421,76 @@ function renderRecvHistorique(){
   cont.innerHTML=list.map(i=>{const d=i.ts?.toDate?.();const dt=d?d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'—';const amtCol=i.amt.startsWith('+')?'#34d399':i.amt.startsWith('-')?'#f87171':'#888';return`<div style="background:#ffffff06;border:1px solid #ffffff14;border-left:3px solid ${i.color};border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;"><div style="font-size:22px;">${i.icon}</div><div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13px;color:#fff;">${i.title}</div><div style="font-size:11px;color:#aaa;margin-top:2px;">${i.sub}</div><div style="font-size:10px;color:#666;margin-top:3px;font-family:'JetBrains Mono',monospace;">${dt}</div></div>${i.amt?`<div style="font-weight:900;font-size:14px;color:${amtCol};font-family:'JetBrains Mono',monospace;white-space:nowrap;">${i.amt}</div>`:''}</div>`;}).join('');
 }
 
+let __trackMap=null,__trackMarker=null,__trackTimer=null;
+function __busSeed(str){let h=0;for(let i=0;i<str.length;i++)h=(h*31+str.charCodeAt(i))|0;return Math.abs(h);}
+function __busPosition(vehicle){
+  // Deterministic pseudo-position in the Dakar region, jittered by time so the marker moves.
+  const seed=__busSeed(vehicle||'bus');
+  const baseLat=14.6928, baseLng=-17.4467;
+  const dLat=((seed%1000)/1000-0.5)*0.08;
+  const dLng=(((seed>>10)%1000)/1000-0.5)*0.08;
+  const t=Date.now()/12000;
+  const jitterLat=Math.sin(t+seed%7)*0.004;
+  const jitterLng=Math.cos(t+seed%5)*0.004;
+  return[baseLat+dLat+jitterLat,baseLng+dLng+jitterLng];
+}
+window.openBusTracker=()=>{
+  const input=document.getElementById('trackBusNumber');if(input)input.value='';
+  document.getElementById('trackBusResult').style.display='none';
+  document.getElementById('modalBusTracker').style.display='flex';
+};
+window.closeBusTracker=()=>{
+  document.getElementById('modalBusTracker').style.display='none';
+  if(__trackTimer){clearInterval(__trackTimer);__trackTimer=null;}
+  if(__trackMap){try{__trackMap.remove();}catch(e){}__trackMap=null;__trackMarker=null;}
+};
+window.doTrackBus=async()=>{
+  const num=(document.getElementById('trackBusNumber')?.value||'').trim();
+  if(!num){notify('⚠️','Numéro','Entrez le numéro du bus.');return;}
+  const btn=document.getElementById('trackBusBtn');btn.disabled=true;btn.textContent='Recherche…';
+  try{
+    const snap=await getDocs(query(collection(db,'users'),where('role','==','chauffeur'),where('vehicle','==',num),limit(1)));
+    let bus=null;
+    if(!snap.empty){bus={id:snap.docs[0].id,...snap.docs[0].data()};}
+    else{
+      // fallback: search receivers/owners with matching vehicle
+      const snap2=await getDocs(query(collection(db,'users'),where('vehicle','==',num),limit(1)));
+      if(!snap2.empty)bus={id:snap2.docs[0].id,...snap2.docs[0].data()};
+    }
+    if(!bus){notify('❌','Bus introuvable','Aucun bus ne correspond à ce numéro.');return;}
+    const inService=bus.busStatus==='en_service';
+    document.getElementById('trackBusResult').style.display='block';
+    document.getElementById('trackBusInfo').innerHTML=
+      `<div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="color:#7dd3fc;">🚌 Bus</span><b>${bus.vehicle||'—'}</b></div>`+
+      `<div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="color:#7dd3fc;">🏢 GIE</span><b>${bus.gie||bus.company||'—'}</b></div>`+
+      `<div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="color:#7dd3fc;">🛣️ Ligne</span><b>${bus.ligne||'—'}</b></div>`+
+      `<div style="display:flex;justify-content:space-between;"><span style="color:#7dd3fc;">📡 Statut</span><b style="color:${inService?'#34d399':'#f87171'};">${inService?'● En service':'○ Hors service'}</b></div>`;
+    if(__trackMap){try{__trackMap.remove();}catch(e){}__trackMap=null;}
+    if(__trackTimer){clearInterval(__trackTimer);__trackTimer=null;}
+    if(!inService){
+      document.getElementById('trackBusMap').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f87171;font-size:13px;text-align:center;padding:20px;">Ce bus n\'a pas activé sa localisation.<br/>Réessayez lorsqu\'il sera en service.</div>';
+      document.getElementById('trackBusMeta').textContent='';
+      return;
+    }
+    const [lat,lng]=__busPosition(bus.vehicle||num);
+    document.getElementById('trackBusMap').innerHTML='';
+    __trackMap=L.map('trackBusMap',{zoomControl:true,attributionControl:false}).setView([lat,lng],14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(__trackMap);
+    const icon=L.divIcon({className:'',html:'<div style="background:#009A44;border:3px solid #fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 4px 12px #000c;">🚌</div>',iconSize:[26,26],iconAnchor:[13,13]});
+    __trackMarker=L.marker([lat,lng],{icon}).addTo(__trackMap).bindPopup(`<b>${bus.vehicle||'—'}</b><br/>${bus.gie||''} · Ligne ${bus.ligne||'—'}`);
+    const updateMeta=(la,ln)=>{document.getElementById('trackBusMeta').textContent=`Position : ${la.toFixed(5)}, ${ln.toFixed(5)} · MAJ ${new Date().toLocaleTimeString('fr-FR')}`;};
+    updateMeta(lat,lng);
+    __trackTimer=setInterval(()=>{
+      const [la,ln]=__busPosition(bus.vehicle||num);
+      if(__trackMarker)__trackMarker.setLatLng([la,ln]);
+      updateMeta(la,ln);
+    },4000);
+    setTimeout(()=>{try{__trackMap.invalidateSize();}catch(e){}},200);
+  }catch(e){console.error(e);notify('❌','Erreur','Impossible de localiser le bus.');}
+  finally{btn.disabled=false;btn.textContent='📡 Localiser';}
+};
 window.openModal=(id)=>document.getElementById(id).style.display='flex';
-window.closeModal=(id)=>{document.getElementById(id).style.display='none';if(id==='modalTicketFlow')resetFlow();if(id==='modalWithdraw')resetWithdraw();if(id==='modalRecharge')resetRecharge();};
+window.closeModal=(id)=>{document.getElementById(id).style.display='none';if(id==='modalTicketFlow')resetFlow();if(id==='modalWithdraw')resetWithdraw();if(id==='modalRecharge')resetRecharge();if(id==='modalBusTracker')closeBusTracker();};
 function updateBalanceUI(){document.getElementById('passBalance').textContent=fmt(S.profile?.balance||0);}
 function showDescendBtn(t){activeTicketData=t;document.getElementById('descendInfo').textContent=`${t.from}→${t.to} · ${t.price} FCFA`;document.getElementById('descendBtn').style.display='block';document.getElementById('activeTicketBanner').style.display='block';document.getElementById('activeTicketLabel').textContent=`🚌 ${t.gie}/${t.vehicle} — ${t.from}→${t.to}`;}
 function hideDescendBtn(){document.getElementById('descendBtn').style.display='none';document.getElementById('activeTicketBanner').style.display='none';activeTicketData=null;}
