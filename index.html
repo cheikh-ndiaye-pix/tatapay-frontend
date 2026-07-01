@@ -1478,6 +1478,11 @@ function attachTrackBusLocationListener(chauffeurUid,vehicleLabel){
       else{trackMapMarker.setLatLng(ll);}
       trackMap.setView(ll,15);
     }
+  },err=>{
+    console.error('[attachTrackBusLocationListener]',err);
+    const info=document.getElementById('trackBusInfo');
+    if(info)info.textContent='⚠️ Impossible de lire la position (permissions Firestore ?).';
+    notify('❌','Erreur GPS','Lecture refusée: '+(err.message||err.code||'permission'));
   });
 }
 
