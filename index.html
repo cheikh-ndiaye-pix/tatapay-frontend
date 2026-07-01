@@ -410,7 +410,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
         </div>
         <button onclick="openTrackBus()" style="width:100%;background:linear-gradient(135deg,#0ea5e9,#0369a1);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
           <div style="font-size:24px;">📍</div>
-          <div style="text-align:left;flex:1;">Suivre un bus par numéro<div style="font-size:10px;font-weight:600;color:#bae6fd;margin-top:2px;">Entrez l'immatriculation pour voir sa position</div></div>
+          <div style="text-align:left;flex:1;">Bus en direct près de moi<div style="font-size:10px;font-weight:600;color:#bae6fd;margin-top:2px;">Voir les bus qui partagent leur position (ligne + distance)</div></div>
           <div style="font-size:18px;">→</div>
         </button>
         <div id="activeTicketBanner" style="display:none;background:#DF002415;border:2px solid #DF002466;border-radius:18px;padding:14px 16px;margin-bottom:16px;cursor:pointer;" onclick="showActiveTicket()">
@@ -1377,12 +1377,15 @@ window.openTrackBus=()=>{
   openModal('modalTrackBus');
   loadActiveTrackedBuses();
 };
+function _haversineKm(lat1,lng1,lat2,lng2){const R=6371;const toRad=v=>v*Math.PI/180;const dLat=toRad(lat2-lat1);const dLng=toRad(lng2-lng1);const a=Math.sin(dLat/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(a));}
+function _fmtDist(km){if(km==null||isNaN(km))return '';if(km<1)return `${Math.round(km*1000)} m`;return `${km.toFixed(km<10?1:0)} km`;}
+function _getPassengerPos(){return new Promise(resolve=>{if(!navigator.geolocation)return resolve(null);navigator.geolocation.getCurrentPosition(p=>resolve({lat:p.coords.latitude,lng:p.coords.longitude}),()=>resolve(null),{enableHighAccuracy:false,maximumAge:60000,timeout:8000});});}
 async function loadActiveTrackedBuses(){
   const cont=document.getElementById('trackBusActiveList');
   if(!cont)return;
   cont.innerHTML='<div style="text-align:center;color:#555;padding:16px;font-size:12px;">Chargement…</div>';
   try{
-    const snap=await getDocs(collection(db,'bus_locations'));
+    const [snap,myPos]=await Promise.all([getDocs(collection(db,'bus_locations')),_getPassengerPos()]);
     const now=Date.now();
     const active=[];
     snap.docs.forEach(d=>{
@@ -1391,20 +1394,24 @@ async function loadActiveTrackedBuses(){
       if(t && (now-t)<10*60*1000){active.push({id:d.id,...data});}
     });
     if(!active.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:16px;font-size:12px;background:#ffffff08;border-radius:12px;">Aucun bus ne partage sa position pour le moment.</div>';return;}
-    active.sort((a,b)=>(b.updatedAt?.toMillis?.()||0)-(a.updatedAt?.toMillis?.()||0));
     const enriched=await Promise.all(active.map(async b=>{
       let name='—',gie='',zone='';
       try{const uSnap=await getDoc(doc(db,'users',b.id));if(uSnap.exists()){const u=uSnap.data();name=u.name||'—';gie=u.gie||'';zone=u.zone||'';}}catch(e){}
-      return{...b,name,gie,zone};
+      const distKm=(myPos&&b.lat!=null&&b.lng!=null)?_haversineKm(myPos.lat,myPos.lng,b.lat,b.lng):null;
+      return{...b,name,gie,zone,distKm};
     }));
-    cont.innerHTML=enriched.map(b=>`<div onclick="selectTrackedBus('${b.id}','${(b.vehicle||'').replace(/'/g,"")}','${(b.ligne||'').replace(/'/g,"")}')" style="display:flex;align-items:center;gap:12px;background:#0ea5e912;border:1.5px solid #0ea5e944;border-radius:14px;padding:12px 14px;margin-bottom:10px;cursor:pointer;">
-      <div style="width:40px;height:40px;border-radius:20px;background:#0ea5e922;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🚌</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-weight:900;font-size:14px;color:#e2e8f0;">${b.vehicle||'—'} · Ligne ${b.ligne||'—'}</div>
-        <div style="font-size:11px;color:#888;">${b.gie||'—'} · Zone ${b.zone||'—'} · ${b.name}</div>
-      </div>
-      <div style="width:8px;height:8px;border-radius:50%;background:#34d399;flex-shrink:0;"></div>
-    </div>`).join('');
+    enriched.sort((a,b)=>{if(a.distKm!=null&&b.distKm!=null)return a.distKm-b.distKm;if(a.distKm!=null)return -1;if(b.distKm!=null)return 1;return (b.updatedAt?.toMillis?.()||0)-(a.updatedAt?.toMillis?.()||0);});
+    const header=myPos?'':`<div style="text-align:center;color:#FF6B00;font-size:11px;padding:8px;background:#FF6B0010;border-radius:10px;margin-bottom:8px;">💡 Activez la localisation pour voir la distance jusqu'aux bus.</div>`;
+    cont.innerHTML=header+enriched.map(b=>{
+      const distBadge=b.distKm!=null?`<div style="background:#0ea5e922;color:#7dd3fc;font-weight:900;font-size:11px;padding:4px 8px;border-radius:8px;font-family:'JetBrains Mono',monospace;">${_fmtDist(b.distKm)}</div>`:`<div style="width:8px;height:8px;border-radius:50%;background:#34d399;"></div>`;
+      return`<div onclick="selectTrackedBus('${b.id}','${(b.vehicle||'').replace(/'/g,"")}','${(b.ligne||'').replace(/'/g,"")}')" style="display:flex;align-items:center;gap:12px;background:#0ea5e912;border:1.5px solid #0ea5e944;border-radius:14px;padding:12px 14px;margin-bottom:10px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:20px;background:#0ea5e922;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🚌</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:900;font-size:14px;color:#e2e8f0;">Ligne ${b.ligne||'—'} · ${b.vehicle||'—'}</div>
+          <div style="font-size:11px;color:#888;">${b.gie||'—'} · Zone ${b.zone||'—'} · ${b.name}</div>
+        </div>
+        ${distBadge}
+      </div>`;}).join('');
   }catch(e){console.error('[loadActiveTrackedBuses]',e);cont.innerHTML='<div style="text-align:center;color:#DF0024;padding:16px;font-size:12px;">Erreur de chargement.</div>';}
 }
 window.selectTrackedBus=(chauffeurUid,vehicle,ligne)=>{
