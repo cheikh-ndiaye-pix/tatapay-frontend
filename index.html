@@ -490,6 +490,11 @@ select.input-field option{background:#0c1f12;color:#fff;}
           <div style="font-weight:800;font-size:14px;margin-bottom:12px;">🚌 QR Marchand officiel</div>
           <div id="recvBusQRWrap"></div>
         </div>
+        <div style="background:#ffffff08;border:1px solid #0ea5e933;border-radius:18px;padding:16px;margin-bottom:16px;">
+          <div style="font-weight:800;font-size:14px;margin-bottom:10px;">📍 Partage de position du bus</div>
+          <div id="recvGeoStatus" style="font-size:12px;color:#888;margin-bottom:12px;">GPS désactivé</div>
+          <button id="recvGeoBtn" class="btn btn-full" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;" onclick="recvToggleGeo()">📡 Démarrer le partage GPS</button>
+        </div>
         <div id="recvDirecteurInfo" style="display:none;background:#0ea5e910;border:1px solid #0ea5e933;border-radius:14px;padding:12px 16px;margin-bottom:16px;">
           <div style="font-size:11px;color:#7dd3fc;font-weight:800;margin-bottom:4px;">🏢 Votre Directeur de GIE</div>
           <div style="font-weight:900;font-size:14px;" id="recvDirecteurName">—</div>
@@ -1130,6 +1135,7 @@ let unsubPending=null,unsubNotif=null,unsubBalance=null,unsubRecvBalance=null,un
 let unsubChProfile=null,unsubChReceiver=null,unsubChTickets=null,unsubChNotif=null,unsubChVersements=null;
 let unsubChCandidatures=null,unsubChPendingVers=null,unsubBusLoc=null;
 let chMap=null,chMapMarker=null,chGeoWatchId=null,chGeoLastWrite=0;
+let recvGeoWatchId=null,recvGeoLastWrite=0;
 let dirRevChartInst=null,dirLineChartInst=null,chRevChartInst=null,chPerfChartInst=null;
 let chCurrentPeriod='jour';
 let chLastTickets=[];
@@ -1296,7 +1302,7 @@ onAuthStateChanged(auth,async user=>{
   }else{show('screenSplash');loader('',false);}
 });
 
-function detachListeners(){[unsubPending,unsubNotif,unsubBalance,unsubRecvBalance,unsubAdmin,unsubChProfile,unsubChReceiver,unsubChTickets,unsubChNotif,unsubChVersements,unsubChCandidatures,unsubChPendingVers,unsubBusLoc].forEach(u=>{if(u)u();});unsubPending=unsubNotif=unsubBalance=unsubRecvBalance=unsubAdmin=unsubChProfile=unsubChReceiver=unsubChTickets=unsubChNotif=unsubChVersements=unsubChCandidatures=unsubChPendingVers=unsubBusLoc=null;if(chRevChartInst){chRevChartInst.destroy();chRevChartInst=null;}if(chPerfChartInst){chPerfChartInst.destroy();chPerfChartInst=null;}if(chGeoWatchId!=null){try{navigator.geolocation.clearWatch(chGeoWatchId);}catch(e){}chGeoWatchId=null;}if(chMap){try{chMap.remove();}catch(e){}chMap=null;chMapMarker=null;}resetTrackBus();}
+function detachListeners(){[unsubPending,unsubNotif,unsubBalance,unsubRecvBalance,unsubAdmin,unsubChProfile,unsubChReceiver,unsubChTickets,unsubChNotif,unsubChVersements,unsubChCandidatures,unsubChPendingVers,unsubBusLoc].forEach(u=>{if(u)u();});unsubPending=unsubNotif=unsubBalance=unsubRecvBalance=unsubAdmin=unsubChProfile=unsubChReceiver=unsubChTickets=unsubChNotif=unsubChVersements=unsubChCandidatures=unsubChPendingVers=unsubBusLoc=null;if(chRevChartInst){chRevChartInst.destroy();chRevChartInst=null;}if(chPerfChartInst){chPerfChartInst.destroy();chPerfChartInst=null;}if(chGeoWatchId!=null){try{navigator.geolocation.clearWatch(chGeoWatchId);}catch(e){}chGeoWatchId=null;}if(recvGeoWatchId!=null){try{navigator.geolocation.clearWatch(recvGeoWatchId);}catch(e){}recvGeoWatchId=null;}if(chMap){try{chMap.remove();}catch(e){}chMap=null;chMapMarker=null;}resetTrackBus();}
 
 function loginUI(){
   const p=S.profile;detachListeners();
@@ -1407,7 +1413,7 @@ window.selectTrackedBus=(chauffeurUid,vehicle,ligne)=>{
   document.getElementById('trackBusStep1').style.display='none';
   document.getElementById('trackBusStep2').style.display='block';
   getDoc(doc(db,'users',chauffeurUid)).then(snap=>{
-    if(snap.exists()){const u=snap.data();document.getElementById('trackBusMeta').textContent=`${u.gie||'—'} · Zone ${u.zone||'—'} · Chauffeur: ${u.name||'—'}`;}
+    if(snap.exists()){const u=snap.data();document.getElementById('trackBusMeta').textContent=`${u.gie||'—'} · Zone ${u.zone||'—'} · ${u.role==='chauffeur'?'Chauffeur':'Receveur'}: ${u.name||'—'}`;}
   }).catch(()=>{});
   setTimeout(()=>{
     const el=document.getElementById('trackBusMap');if(!el||typeof L==='undefined')return;
@@ -1441,13 +1447,14 @@ window.doTrackBus=async()=>{
         if(!rSnap.empty){
           const recv={id:rSnap.docs[0].id,...rSnap.docs[0].data()};
           if(recv.chauffeurUid){const cSnap=await getDoc(doc(db,'users',recv.chauffeurUid));if(cSnap.exists())target={id:recv.chauffeurUid,...cSnap.data()};}
+          else{target=recv;}
         }
       }catch(e){console.warn('[track receiver query]',e);}
     }
     loader('',false);
     if(!target){notify('❌','Bus introuvable','Aucun bus avec cette immatriculation.');return;}
     document.getElementById('trackBusVehicle').textContent=`${target.vehicle||raw} · Ligne ${target.ligne||'—'}`;
-    document.getElementById('trackBusMeta').textContent=`${target.gie||'—'} · Zone ${target.zone||'—'} · Chauffeur: ${target.name||'—'}`;
+    document.getElementById('trackBusMeta').textContent=`${target.gie||'—'} · Zone ${target.zone||'—'} · Receveur: ${target.name||'—'}`;
     document.getElementById('trackBusStep1').style.display='none';
     document.getElementById('trackBusStep2').style.display='block';
     setTimeout(()=>{
@@ -2639,6 +2646,27 @@ window.recvConfirmTicket=async(pendingId,paxUid,passengerId,passengerName,from,t
   catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 window.recvRejectTicket=async(pendingId)=>{try{await deleteDoc(doc(db,'pending',pendingId));notify('❌','Annulé','Demande refusée.');}catch(e){notify('❌','Erreur',e.message);}};
+window.recvToggleGeo=()=>{
+  const btn=document.getElementById('recvGeoBtn');const st=document.getElementById('recvGeoStatus');
+  if(recvGeoWatchId!=null){
+    navigator.geolocation.clearWatch(recvGeoWatchId);recvGeoWatchId=null;
+    btn.textContent='📡 Démarrer le partage GPS';btn.style.background='linear-gradient(135deg,#0ea5e9,#0369a1)';
+    st.textContent='GPS désactivé';st.style.color='#888';
+    deleteDoc(doc(db,'bus_locations',S.uid)).catch(()=>{});
+    notify('🛰️','GPS','Partage de position arrêté.');
+    return;
+  }
+  if(!navigator.geolocation){notify('⚠️','GPS','Géolocalisation non supportée sur cet appareil.');return;}
+  st.textContent='Activation…';st.style.color='#FF6B00';
+  recvGeoWatchId=navigator.geolocation.watchPosition(async pos=>{
+    const now=Date.now();if(now-recvGeoLastWrite<15000)return;recvGeoLastWrite=now;
+    const {latitude:lat,longitude:lng,accuracy}=pos.coords;
+    st.innerHTML=`🟢 Actif · ${lat.toFixed(4)}, ${lng.toFixed(4)} <span style="color:#555;">(±${Math.round(accuracy)}m)</span>`;st.style.color='#34d399';
+    try{await setDoc(doc(db,'bus_locations',S.uid),{lat,lng,accuracy,updatedAt:serverTimestamp(),vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||''});}catch(e){console.warn('[recv geo write]',e);}
+  },err=>{st.textContent='Erreur GPS: '+err.message;st.style.color='#DF0024';recvGeoWatchId=null;btn.textContent='📡 Réessayer';},{enableHighAccuracy:true,maximumAge:10000,timeout:15000});
+  btn.textContent='🛑 Arrêter le partage GPS';btn.style.background='linear-gradient(135deg,#DF0024,#B71C1C)';
+  notify('📡','GPS','Partage de position démarré. Les passagers pourront suivre votre bus.');
+};
 async function refreshRecvStats(){if(S.role!=='receiver')return;const snap=await getDoc(doc(db,'users',S.uid));if(!snap.exists())return;const u=snap.data();S.profile={...S.profile,...u};document.getElementById('recvTotalToday').textContent=fmt(u.today||0)+' F';document.getElementById('recvTicketCount').textContent=u.count||0;const rb=document.getElementById('recvBalance');if(rb)rb.textContent=fmt(u.balance||0);}
 async function loadRecvTickets(){const q=query(collection(db,'tickets'),where('busUid','==',S.uid),orderBy('ts','desc'),limit(50));const snap=await getDocs(q);const cont=document.getElementById('recvTicketsList');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;color:#555;">Aucun ticket émis.</div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:11px;line-height:1.9;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}</div></div></div>`;}).join('');}
 async function loadPassHomeTx(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'history'),orderBy('ts','desc'),limit(4));const snap=await getDocs(q);const cont=document.getElementById('passHomeTx');if(snap.empty){cont.innerHTML='<div style="color:#555;text-align:center;padding:16px 0;">Aucune transaction.</div>';return;}cont.innerHTML=snap.docs.map(d=>txRow(d.data())).join('');}
