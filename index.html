@@ -2055,7 +2055,7 @@ function loadChBusPanel(){
   document.getElementById('chBusTechBadge').innerHTML=`<span class="ch-badge ${tCls}">${tLbl}</span>`;
   document.getElementById('chBusOpBadge').innerHTML=`<span class="ch-badge ${bs==='en_service'?'ch-badge-ok':'ch-badge-warn'}">${bs==='en_service'?'En service':'Hors service'}</span>`;
   const geoCard=document.getElementById('chGeoBtn')?.closest('.ch-card');
-  if(geoCard)geoCard.style.display=S.role==='chauffeur'?'block':'none';
+  if(geoCard)geoCard.style.display=(S.role==='chauffeur'||S.role==='owner')?'block':'none';
   const mapSec=document.getElementById('chOwnerMapSection');
   if(mapSec)mapSec.style.display=S.role==='owner'?'block':'none';
 }
