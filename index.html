@@ -228,6 +228,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
 </head>
 <body>
 <div id="app">
+<div id="globalOfflineBar" style="display:none;position:sticky;top:0;left:0;right:0;z-index:9999;background:#DF0024;color:#fff;text-align:center;font-size:11px;font-weight:800;padding:6px 12px;letter-spacing:.3px;">🔴 Hors-ligne — vos données en cache s'affichent, la synchro reprendra au retour du réseau</div>
 <div style="position:fixed;bottom:4px;right:8px;z-index:9999;font-family:'JetBrains Mono',monospace;font-size:9px;color:#ffffff30;letter-spacing:1px;pointer-events:none;user-select:none;">C.M.N</div>
 
 <div id="globalLoader"><div class="spinner"></div><div style="color:#009A44;font-weight:800;font-size:15px;" id="loaderMsg">Chargement…</div></div>
@@ -1149,7 +1150,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import{getFirestore,doc,setDoc,getDoc,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,setDoc,getDoc,getDocFromCache,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:dade7eebdc0894639b0b6d",measurementId:"G-2YGJP8MZ2H"};
@@ -1300,7 +1301,16 @@ window.doAuth=async()=>{
       }
     }else{S.expectedLoginRole=S.authRole;await signInWithEmailAndPassword(auth,email,pass);}
     loader('',false);
-  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+  }catch(e){
+    loader('',false);
+    if(e.code==='auth/network-request-failed'||!navigator.onLine){
+      notify('🔴','Pas de réseau','Une première connexion nécessite internet. Si vous vous êtes déjà connecté sur cet appareil, votre session sera restaurée automatiquement.');
+    }else if(e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found'){
+      notify('❌','Identifiants incorrects','Email ou mot de passe invalide.');
+    }else{
+      notify('❌','Erreur',e.message);
+    }
+  }
 };
 window.doSubmitReceiverCandidature=async()=>{
   const data=window.pendingReceiverData;
@@ -1327,9 +1337,18 @@ window.doSubmitReceiverCandidature=async()=>{
 window.forgotPassword=async()=>{const email=document.getElementById('authEmail').value.trim().toLowerCase();if(!email){notify('⚠️','Email requis','Entrez votre email.');return;}try{await sendPasswordResetEmail(auth,email);notify('✅','Email envoyé','Vérifiez votre boîte mail.');}catch(e){notify('❌','Erreur',e.message);}};
 window.doLogout=async()=>{detachListeners();await signOut(auth);S={...S,role:null,uid:null,profile:null,expectedLoginRole:null};activeTicketData=null;hideDescendBtn();show('screenSplash');};
 
-onAuthStateChanged(auth,async user=>{
-  if(user){loader('Chargement…');
-    try{const snap=await getDoc(doc(db,'users',user.uid));if(snap.exists()){
+let _pendingAuthUser=null;
+async function attemptSessionRestore(user){
+  loader('Chargement…');
+  try{
+    let snap;
+    try{snap=await getDoc(doc(db,'users',user.uid));}
+    catch(networkErr){
+      // Pas de réseau (ou serveur injoignable) : on tente les données mises en cache localement
+      try{snap=await getDocFromCache(doc(db,'users',user.uid));}
+      catch(cacheErr){throw networkErr;}
+    }
+    if(snap.exists()){
       const actualRoleForCheck=snap.data().role;
       const roleCompatible=actualRoleForCheck===S.expectedLoginRole||(actualRoleForCheck==='chauffeur'&&S.expectedLoginRole==='owner');
       if(user.email!==ADMIN_EMAIL&&S.expectedLoginRole&&!roleCompatible){
@@ -1341,9 +1360,23 @@ onAuthStateChanged(auth,async user=>{
         notify('❌','Compte incorrect',`Ce compte est inscrit comme ${roleLabels[actualRole]||actualRole}. Reconnectez-vous depuis l'onglet ${roleLabels[expected]||expected}.`);
         return;
       }
-      S.expectedLoginRole=null;
-      S.uid=user.uid;S.profile=snap.data();S.role=S.profile.role;if(user.email===ADMIN_EMAIL){show('screenAdmin');loader('',false);loadAdminDashboard();startAdminRealtime();return;}loginUI();}else{loader('',false);await signOut(auth);}}catch(e){loader('',false);notify('❌','Erreur',e.message);}
-  }else{show('screenSplash');loader('',false);}
+      S.expectedLoginRole=null;_pendingAuthUser=null;
+      S.uid=user.uid;S.profile=snap.data();S.role=S.profile.role;if(user.email===ADMIN_EMAIL){show('screenAdmin');loader('',false);loadAdminDashboard();startAdminRealtime();return;}loginUI();
+    }else{loader('',false);await signOut(auth);}
+  }catch(e){
+    loader('',false);
+    if(!navigator.onLine||e.code==='unavailable'){
+      _pendingAuthUser=user;
+      notify('🔴','Hors-ligne','Reconnexion automatique dès que le réseau revient. Vos données en cache restent accessibles.');
+      show('screenSplash');
+    }else{
+      notify('❌','Erreur',e.message);
+    }
+  }
+}
+onAuthStateChanged(auth,user=>{
+  if(user){attemptSessionRestore(user);}
+  else{show('screenSplash');loader('',false);}
 });
 
 function detachListeners(){[unsubPending,unsubNotif,unsubBalance,unsubRecvBalance,unsubAdmin,unsubChProfile,unsubChReceiver,unsubChTickets,unsubChNotif,unsubChVersements,unsubChCandidatures,unsubChPendingVers,unsubBusLoc].forEach(u=>{if(u)u();});unsubPending=unsubNotif=unsubBalance=unsubRecvBalance=unsubAdmin=unsubChProfile=unsubChReceiver=unsubChTickets=unsubChNotif=unsubChVersements=unsubChCandidatures=unsubChPendingVers=unsubBusLoc=null;if(chRevChartInst){chRevChartInst.destroy();chRevChartInst=null;}if(chPerfChartInst){chPerfChartInst.destroy();chPerfChartInst=null;}if(chGeoWatchId!=null){try{navigator.geolocation.clearWatch(chGeoWatchId);}catch(e){}chGeoWatchId=null;}if(recvGeoWatchId!=null){try{navigator.geolocation.clearWatch(recvGeoWatchId);}catch(e){}recvGeoWatchId=null;}if(chMap){try{chMap.remove();}catch(e){}chMap=null;chMapMarker=null;}resetTrackBus();}
@@ -2650,8 +2683,10 @@ try{if('Notification' in window && Notification.permission==='default')Notificat
 
 function setOnlineIndicator(on){
   ['recvOnlineDot'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=on?'<span style="width:8px;height:8px;border-radius:50%;background:#34d399;display:inline-block;"></span>En ligne':'<span style="width:8px;height:8px;border-radius:50%;background:#DF0024;display:inline-block;"></span>Hors-ligne (sync en attente)';el.style.color=on?'#34d399':'#DF0024';});
+  const bar=document.getElementById('globalOfflineBar');if(bar)bar.style.display=on?'none':'block';
 }
-window.addEventListener('online',()=>{setOnlineIndicator(true);notify('🟢','En ligne','Synchronisation des données…');});
+setOnlineIndicator(navigator.onLine);
+window.addEventListener('online',()=>{setOnlineIndicator(true);notify('🟢','En ligne','Synchronisation des données…');if(_pendingAuthUser){const u=_pendingAuthUser;attemptSessionRestore(u);}});
 window.addEventListener('offline',()=>{setOnlineIndicator(false);notify('🔴','Hors-ligne','Les paiements seront synchronisés au retour du réseau.');});
 
 function playChauffeurAlarm(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const seq=[[0,1200,.22],[.28,900,.22],[.56,1200,.22],[.84,900,.22],[1.12,1500,.35]];seq.forEach(([s,f,d])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;o.type='square';g.gain.setValueAtTime(0,ctx.currentTime+s);g.gain.linearRampToValueAtTime(.6,ctx.currentTime+s+.02);g.gain.linearRampToValueAtTime(0,ctx.currentTime+s+d);o.start(ctx.currentTime+s);o.stop(ctx.currentTime+s+d+.05);});if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);}catch(e){}}
