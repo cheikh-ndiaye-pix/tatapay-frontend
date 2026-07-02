@@ -3119,15 +3119,98 @@ window.goPay=async()=>{
   }
   catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
+// ===== Ventes hors-ligne (receveur scanne un passager sans réseau) =====
+// Le solde n'est JAMAIS débité localement : la vente est stockée en attente,
+// et le vrai débit ne se fait qu'à la synchronisation, après avoir revérifié
+// le solde réel du passager sur le serveur à ce moment-là (pas le solde vu hors-ligne).
+async function submitSaleToServer(entry){
+  const paxSnap=await getDoc(doc(db,'users',entry.passengerUid));
+  if(!paxSnap.exists())throw new Error('Passager introuvable.');
+  const pax=paxSnap.data();
+  if((pax.balance||0)<entry.price){
+    const err=new Error(`Solde insuffisant chez ${entry.passenger} au moment de la synchronisation (a ${fmt(pax.balance||0)} F, ticket ${fmt(entry.price)} F).`);
+    err.code='insufficient_funds';throw err;
+  }
+  const ticket={busId:entry.busId,busUid:entry.busUid,gie:entry.gie,vehicle:entry.vehicle,ligne:entry.ligne,zone:entry.zone,from:entry.from,to:entry.to,section:entry.section,price:entry.price,method:'cash',passengerId:entry.passengerId,passengerUid:entry.passengerUid,passenger:entry.passenger,date:entry.date,time:entry.time,sn:entry.sn,ts:serverTimestamp()};
+  await updateDoc(doc(db,'users',entry.passengerUid),{balance:increment(-entry.price)});
+  await addDoc(collection(db,'users',entry.passengerUid,'history'),{type:'ticket',label:`Ticket ${entry.gie}/${entry.vehicle}`+(entry.to&&entry.to!=='—'?' → '+entry.to:''),amount:-entry.price,ts:serverTimestamp()});
+  await updateDoc(doc(db,'users',entry.busUid),{today:increment(entry.price),count:increment(1),balance:increment(entry.price)});
+  const tkRef=await addDoc(collection(db,'tickets'),ticket);
+  await addDoc(collection(db,'users',entry.passengerUid,'tickets'),{...ticket,ticketId:tkRef.id});
+  if(entry.pendingReqId){
+    try{await deleteDoc(doc(db,'pending',entry.pendingReqId));}catch(e){}
+    await addDoc(collection(db,'notifications'),{toUid:entry.passengerUid,type:'ticket_validated',passenger:entry.passenger,read:false,ts:serverTimestamp()});
+  }
+  return{...ticket,id:tkRef.id};
+}
+const PENDING_SALE_KEY='tp_pending_sales';
+function getPendingSales(){try{return JSON.parse(localStorage.getItem(PENDING_SALE_KEY)||'[]');}catch(e){return[];}}
+function savePendingSales(arr){try{localStorage.setItem(PENDING_SALE_KEY,JSON.stringify(arr));}catch(e){}}
+function myPendingSales(){return getPendingSales().filter(s=>s.busUid===S.uid);}
+function updatePendingSalesBadge(){
+  const list=myPendingSales();
+  const el=document.getElementById('recvPendingSaleInfo');
+  if(!el)return;
+  if(list.length){const total=list.reduce((s,w)=>s+(w.price||0),0);el.style.display='block';el.textContent='⏳ '+list.length+' vente'+(list.length>1?'s':'')+' ('+fmt(total)+' F) en attente de synchronisation';}
+  else{el.style.display='none';}
+}
+let _flushingSales=false;
+async function flushPendingSales(){
+  if(_flushingSales||!navigator.onLine||!S.uid)return;
+  const mine=myPendingSales();
+  if(!mine.length)return;
+  _flushingSales=true;
+  for(const entry of mine){
+    try{
+      await submitSaleToServer(entry);
+      savePendingSales(getPendingSales().filter(s=>s.localId!==entry.localId));
+      notify('✅','Vente synchronisée',fmt(entry.price)+' FCFA de '+entry.passenger+' confirmés.');
+      pushNative('Vente synchronisée',fmt(entry.price)+' FCFA de '+entry.passenger+' ont été encaissés.');
+      refreshRecvStats();loadRecvTickets();
+    }catch(e){
+      if(e&&e.code==='insufficient_funds'){
+        savePendingSales(getPendingSales().filter(s=>s.localId!==entry.localId));
+        notify('❌','Vente annulée',e.message);
+      }else{console.warn('[flushPendingSales]',e);}
+    }
+  }
+  _flushingSales=false;
+  updatePendingSalesBadge();
+}
+// Cache local des passagers déjà scannés en ligne, pour pouvoir les rescanner hors-ligne
+const PAX_CACHE_KEY='tp_passenger_cache';
+function getPaxCache(){try{return JSON.parse(localStorage.getItem(PAX_CACHE_KEY)||'{}');}catch(e){return{};}}
+function savePaxCache(map){try{localStorage.setItem(PAX_CACHE_KEY,JSON.stringify(map));}catch(e){}}
+function cachePaxData(walletId,paxUid,pax){const map=getPaxCache();map[walletId]={paxUid,pax,cachedAt:Date.now()};savePaxCache(map);}
+function getCachedPax(walletId){return getPaxCache()[walletId]||null;}
+
 let currentScanReq=null;
 window.showScanPanel=async(walletId)=>{
   document.getElementById('scanPanelEl')?.remove();loader('Recherche passager…');
-  try{const wSnap=await getDoc(doc(db,'wallets',walletId));if(!wSnap.exists()){loader('',false);notify('❌','Inconnu','Wallet passager introuvable.');return;}const paxUid=wSnap.data().uid;const paxSnap=await getDoc(doc(db,'users',paxUid));const pax=paxSnap.data();const q=query(collection(db,'pending'),where('passengerUid','==',paxUid),where('busUid','==',S.uid));const pSnap=await getDocs(q);currentScanReq=pSnap.empty?null:{id:pSnap.docs[0].id,...pSnap.docs[0].data(),paxUid};loader('',false);
+  if(!navigator.onLine){
+    const cached=getCachedPax(walletId);
+    loader('',false);
+    if(!cached){notify('❌','Passager non disponible hors-ligne','Scannez ce passager une première fois en ligne, puis réessayez sans réseau.');return;}
+    const paxUid=cached.paxUid,pax=cached.pax;
+    // Hors-ligne : pas de requête serveur possible sur "pending", on encaisse directement (mode manuel).
+    currentScanReq=null;
+    const div=document.createElement('div');div.id='scanPanelEl';div.style.cssText='position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:600;padding:20px;background:#0c1f12;border-radius:24px 24px 0 0;border:1px solid #009A4422;animation:slideUp .3s ease;max-height:92vh;overflow-y:auto;';
+    div.innerHTML=`<div style="background:#FF6B0018;border:1px solid #FF6B0044;border-radius:10px;padding:8px 12px;font-size:11px;color:#FF6B00;font-weight:700;text-align:center;margin-bottom:12px;">📴 Hors-ligne — solde en cache (dernier connu)</div><div style="background:#1a56db15;border:2px solid #1a56db44;border-radius:14px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;"><div style="width:44px;height:44px;border-radius:22px;background:linear-gradient(135deg,var(--g),var(--gd));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🧍</div><div><div style="font-weight:900;font-size:15px;">${pax.name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;">${walletId}</div><div style="color:var(--y);font-weight:800;font-size:13px;margin-top:2px;">Solde (cache) : ${fmt(pax.balance||0)} FCFA</div></div></div><div class="input-wrap"><label class="input-label">Destination *</label><input id="manualDest" class="input-field" type="text" placeholder="Ex: Liberté 6…"/></div><div class="quick-grid"><button class="quick-btn" onclick="document.getElementById('manualAmt').value=150">150</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=200">200</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=300">300</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=500">500</button></div><input id="manualAmt" class="input-field" type="number" placeholder="Montant en FCFA" style="margin-bottom:14px;font-size:20px;font-weight:900;text-align:center;"/><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button onclick="document.getElementById('scanPanelEl').remove()" style="background:#ffffff10;border:none;border-radius:14px;padding:14px;color:#888;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">✕ Annuler</button><button onclick="confirmManualScan('${paxUid}','${walletId}','${pax.name.replace(/'/g,'')}',${pax.balance||0})" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:14px;padding:14px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;">✅ Encaisser</button></div>`;
+    document.body.appendChild(div);
+    return;
+  }
+  try{const wSnap=await getDoc(doc(db,'wallets',walletId));if(!wSnap.exists()){loader('',false);notify('❌','Inconnu','Wallet passager introuvable.');return;}const paxUid=wSnap.data().uid;const paxSnap=await getDoc(doc(db,'users',paxUid));const pax=paxSnap.data();cachePaxData(walletId,paxUid,pax);const q=query(collection(db,'pending'),where('passengerUid','==',paxUid),where('busUid','==',S.uid));const pSnap=await getDocs(q);currentScanReq=pSnap.empty?null:{id:pSnap.docs[0].id,...pSnap.docs[0].data(),paxUid};loader('',false);
     const div=document.createElement('div');div.id='scanPanelEl';div.style.cssText='position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:600;padding:20px;background:#0c1f12;border-radius:24px 24px 0 0;border:1px solid #009A4422;animation:slideUp .3s ease;max-height:92vh;overflow-y:auto;';
     if(currentScanReq){const req=currentScanReq;div.innerHTML=`<div style="background:#00A65015;border:2px solid #00A65044;border-radius:14px;padding:14px;margin-bottom:12px;"><div style="font-weight:900;font-size:15px;">${pax.name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;margin-top:4px;">${req.from}→${req.to} · S${req.section} · <strong style="color:var(--y);">${req.price} FCFA</strong></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button onclick="rejectScan()" style="background:linear-gradient(135deg,var(--r),#B71C1C);border:none;border-radius:14px;padding:14px;color:#fff;font-weight:800;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;">✗ Rejeter</button><button onclick="confirmScan()" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:14px;padding:14px;color:#fff;font-weight:800;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;">✅ Valider</button></div>`;}
     else{div.innerHTML=`<div style="background:#1a56db15;border:2px solid #1a56db44;border-radius:14px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;"><div style="width:44px;height:44px;border-radius:22px;background:linear-gradient(135deg,var(--g),var(--gd));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🧍</div><div><div style="font-weight:900;font-size:15px;">${pax.name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;">${walletId}</div><div style="color:var(--y);font-weight:800;font-size:13px;margin-top:2px;">Solde : ${fmt(pax.balance||0)} FCFA</div></div></div><div class="input-wrap"><label class="input-label">Destination *</label><input id="manualDest" class="input-field" type="text" placeholder="Ex: Liberté 6…"/></div><div class="quick-grid"><button class="quick-btn" onclick="document.getElementById('manualAmt').value=150">150</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=200">200</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=300">300</button><button class="quick-btn" onclick="document.getElementById('manualAmt').value=500">500</button></div><input id="manualAmt" class="input-field" type="number" placeholder="Montant en FCFA" style="margin-bottom:14px;font-size:20px;font-weight:900;text-align:center;"/><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button onclick="document.getElementById('scanPanelEl').remove()" style="background:#ffffff10;border:none;border-radius:14px;padding:14px;color:#888;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">✕ Annuler</button><button onclick="confirmManualScan('${paxUid}','${walletId}','${pax.name.replace(/'/g,'')}',${pax.balance||0})" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:14px;padding:14px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;">✅ Encaisser</button></div>`;}
     document.body.appendChild(div);}
-  catch(e){loader('',false);notify('❌','Erreur',e.message);}
+  catch(e){
+    // Réseau instable : on retente le cache avant d'abandonner
+    const cached=getCachedPax(walletId);
+    loader('',false);
+    if(cached){showScanPanel.call(null,walletId);/* retentera la branche hors-ligne au prochain appel si toujours instable */}
+    notify('❌','Erreur',e.message);
+  }
 };
 window.confirmManualScan=async(paxUid,walletId,passengerName,paxBalance)=>{
   const amt=parseInt(document.getElementById('manualAmt')?.value||0);const dest=(document.getElementById('manualDest')?.value||'').trim()||'—';
