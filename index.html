@@ -409,6 +409,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
             <button onclick="openCamera('friend')" style="background:linear-gradient(160deg,#059669,#065f46);border:2px solid #34d39966;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">📷</div>Scan Ami</button>
           </div>
         </div>
+        <div id="passPendingTkInfo" style="display:none;background:#FF6B0018;border:1px solid #FF6B0044;border-radius:10px;padding:8px 12px;font-size:11.5px;color:#FF6B00;font-weight:700;text-align:center;margin-bottom:16px;"></div>
         <button onclick="openTrackBus()" style="width:100%;background:linear-gradient(135deg,#0ea5e9,#0369a1);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
           <div style="font-size:24px;">📍</div>
           <div style="text-align:left;flex:1;">Bus en direct près de moi<div style="font-size:10px;font-weight:600;color:#bae6fd;margin-top:2px;">Voir les bus qui partagent leur position (ligne + distance)</div></div>
@@ -1013,13 +1014,14 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <div id="ticketStep1" style="display:none;">
       <div style="font-weight:900;font-size:20px;margin-bottom:4px;">Étape 2 · Destination</div>
       <div style="background:#00A65015;border:2px solid #00A65044;border-radius:14px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px;"><div style="font-size:24px;">🚌</div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;" id="detectedBusInfo">—</div></div>
+      <div id="ticketOfflineNote" style="display:none;background:#FF6B0018;border:1px solid #FF6B0044;border-radius:10px;padding:8px 12px;font-size:11px;color:#FF6B00;font-weight:700;text-align:center;margin-bottom:14px;">📴 Hors-ligne — derniers tarifs connus (mis en cache)</div>
       <div id="destList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
       <div style="background:#ffffff0a;border-radius:12px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;"><div style="color:#888;font-size:13px;">À payer</div><div style="font-weight:900;font-size:22px;color:var(--y);" id="ticketPriceDisplay">— FCFA</div></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button class="btn btn-secondary" onclick="resetFlow()">← Retour</button><button class="btn btn-primary" id="btnPayTicket" onclick="goPay()" disabled>Payer →</button></div>
     </div>
     <div id="ticketStep3" style="display:none;">
       <div style="font-weight:900;font-size:20px;margin-bottom:16px;">Étape 3 · En attente…</div>
-      <div style="background:#FFD10010;border:2px dashed var(--y);border-radius:18px;padding:24px;text-align:center;margin-bottom:18px;animation:pulse 2s ease-in-out infinite;"><div style="font-size:48px;margin-bottom:8px;">⏳</div><div style="font-weight:900;font-size:16px;color:var(--y);">En attente du receveur…</div></div>
+      <div style="background:#FFD10010;border:2px dashed var(--y);border-radius:18px;padding:24px;text-align:center;margin-bottom:18px;animation:pulse 2s ease-in-out infinite;"><div style="font-size:48px;margin-bottom:8px;" id="tk3Icon">⏳</div><div style="font-weight:900;font-size:16px;color:var(--y);" id="tk3Title">En attente du receveur…</div></div>
       <div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:11px;line-height:1.9;"><span id="pv_gie">—</span> = <span id="pv_vehicle">—</span> = Ligne:<span id="pv_ligne">—</span><br>Trajet: <span id="pv_trajet">—</span><br>Section: <span id="pv_section">—</span> == Prix: <span id="pv_price">—</span> FCFA</div><div class="t-sn">Zone:<span id="pv_zone">—</span></div></div>
     </div>
   </div>
@@ -1419,7 +1421,7 @@ function loginUI(){
     renderQR('profileQRWrap','tatapay://wallet/'+p.walletId,200);
     updateBalanceUI();clearFriend();
     unsubBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;updateBalanceUI();}});
-    loadPassHomeTx();loadPassTickets();show('screenPassenger');notify('✅','Bienvenue !',p.name);
+    loadPassHomeTx();loadPassTickets();updatePendingTicketsBadge();flushPendingTickets();show('screenPassenger');notify('✅','Bienvenue !',p.name);
   }else if(S.role==='receiver'&&p.status==='approved'){
     document.getElementById('recvGreet').textContent=p.name;
     document.getElementById('recvInfoLine').textContent=`GIE:${p.gie||'—'} = ${p.vehicle||'—'} = Ligne:${p.ligne||'—'} · ${p.trajet||''} · Zone:${p.zone||'—'}`;
@@ -2744,7 +2746,7 @@ async function flushPendingWithdrawals(){
   updatePendingWithdrawBadge();
 }
 
-window.addEventListener('online',()=>{setOnlineIndicator(true);notify('🟢','En ligne','Synchronisation des données…');if(_pendingAuthUser){const u=_pendingAuthUser;attemptSessionRestore(u);}flushPendingWithdrawals();});
+window.addEventListener('online',()=>{setOnlineIndicator(true);notify('🟢','En ligne','Synchronisation des données…');if(_pendingAuthUser){const u=_pendingAuthUser;attemptSessionRestore(u);}flushPendingWithdrawals();flushPendingTickets();});
 window.addEventListener('offline',()=>{setOnlineIndicator(false);notify('🔴','Hors-ligne','Les paiements seront synchronisés au retour du réseau.');});
 
 function playChauffeurAlarm(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const seq=[[0,1200,.22],[.28,900,.22],[.56,1200,.22],[.84,900,.22],[1.12,1500,.35]];seq.forEach(([s,f,d])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;o.type='square';g.gain.setValueAtTime(0,ctx.currentTime+s);g.gain.linearRampToValueAtTime(.6,ctx.currentTime+s+.02);g.gain.linearRampToValueAtTime(0,ctx.currentTime+s+d);o.start(ctx.currentTime+s);o.stop(ctx.currentTime+s+d+.05);});if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);}catch(e){}}
@@ -2998,18 +3000,123 @@ window.doAddTrajet=async()=>{
 window.delTrajet=async(id)=>{try{await deleteDoc(doc(db,'users',S.uid,'destinations',id));loadTrajets();}catch(e){notify('❌','Erreur',e.message);}};
 async function loadTrajets(){if(S.role!=='receiver')return;const snap=await getDocs(collection(db,'users',S.uid,'destinations'));const cont=document.getElementById('trajetsList');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;color:#555;">Aucune section. Cliquez + Ajouter.</div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div class="trajet-row"><div style="flex:1;"><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.from}-->${t.to}</div><div style="color:#888;font-size:11px;margin-top:2px;">Section: ${t.section} == <strong style="color:var(--y);">${t.price} FCFA</strong></div></div><button onclick="delTrajet('${d.id}')" style="background:#DF002422;border:1px solid #DF002444;border-radius:10px;padding:8px;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>`;}).join('');}
 window.openTicketFlow=()=>{resetFlow();openModal('modalTicketFlow');};
-window.resetFlow=()=>{setDots(0);['ticketStep0','ticketStep1','ticketStep3'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('ticketStep0').style.display='block';S.ticketBus=null;S.ticketSection=null;document.getElementById('ticketPriceDisplay').textContent='— FCFA';document.getElementById('btnPayTicket').disabled=true;};
+window.resetFlow=()=>{setDots(0);['ticketStep0','ticketStep1','ticketStep3'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('ticketStep0').style.display='block';S.ticketBus=null;S.ticketSection=null;document.getElementById('ticketPriceDisplay').textContent='— FCFA';document.getElementById('btnPayTicket').disabled=true;const on=document.getElementById('ticketOfflineNote');if(on)on.style.display='none';};
 function setDots(s){for(let i=0;i<3;i++){const d=document.getElementById('tdot'+i);if(d)d.className='step-dot'+(i<s?' done':i===s?' active':'');}}
+const BUS_CACHE_KEY='tp_bus_cache';
+function getBusCache(){try{return JSON.parse(localStorage.getItem(BUS_CACHE_KEY)||'{}');}catch(e){return{};}}
+function saveBusCache(map){try{localStorage.setItem(BUS_CACHE_KEY,JSON.stringify(map));}catch(e){}}
+function cacheBusData(walletId,recv,destinations){const map=getBusCache();map[walletId]={recv,destinations,cachedAt:Date.now()};saveBusCache(map);}
+function getCachedBus(walletId){return getBusCache()[walletId]||null;}
+function renderBusInFlow(recv,destinations,isOffline){
+  S.ticketBus=recv;S.ticketSection=null;
+  document.getElementById('detectedBusInfo').innerHTML=`GIE:${recv.gie} = ${recv.vehicle} = Ligne:${recv.ligne}<br>Zone:${recv.zone}`;
+  const destList=document.getElementById('destList');destList.innerHTML='';
+  if(!destinations||!destinations.length){
+    destList.innerHTML='<div style="background:#FFD10015;border:1px solid #FFD10044;border-radius:12px;padding:12px;color:#888;font-size:13px;text-align:center;">Aucune section définie.</div>';
+  }else{
+    destinations.forEach(t=>{
+      const chip=document.createElement('div');
+      chip.style.cssText='background:#ffffff0d;border:1.5px solid #2a3a2a;border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .2s;';
+      chip.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.from}-->${t.to}</div><div style="color:#888;font-size:11px;">Section ${t.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${t.price} F</div></div>`;
+      chip.onclick=()=>{S.ticketSection={...t};destList.querySelectorAll('div').forEach(c=>{c.style.background='#ffffff0d';c.style.borderColor='#2a3a2a';});chip.style.background='#00A65033';chip.style.borderColor='var(--g)';document.getElementById('ticketPriceDisplay').textContent=t.price.toLocaleString('fr-FR')+' FCFA';document.getElementById('btnPayTicket').disabled=false;};
+      destList.appendChild(chip);
+    });
+  }
+  document.getElementById('ticketStep0').style.display='none';document.getElementById('ticketStep1').style.display='block';setDots(1);
+  const on=document.getElementById('ticketOfflineNote');if(on)on.style.display=isOffline?'block':'none';
+}
 async function loadBusInFlow(walletId){
   loader('Chargement bus…');
-  try{const wSnap=await getDoc(doc(db,'wallets',walletId));if(!wSnap.exists()){loader('',false);notify('❌','Bus inconnu','QR non reconnu.');return;}const recvUid=wSnap.data().uid;const rSnap=await getDoc(doc(db,'users',recvUid));if(!rSnap.exists()){loader('',false);notify('❌','Erreur','Receveur introuvable.');return;}const recv={...rSnap.data(),uid:recvUid};S.ticketBus=recv;S.ticketSection=null;document.getElementById('detectedBusInfo').innerHTML=`GIE:${recv.gie} = ${recv.vehicle} = Ligne:${recv.ligne}<br>Zone:${recv.zone}`;const destSnap=await getDocs(collection(db,'users',recvUid,'destinations'));const destList=document.getElementById('destList');destList.innerHTML='';if(destSnap.empty){destList.innerHTML='<div style="background:#FFD10015;border:1px solid #FFD10044;border-radius:12px;padding:12px;color:#888;font-size:13px;text-align:center;">Aucune section définie.</div>';}else{destSnap.docs.forEach(d=>{const t=d.data();const chip=document.createElement('div');chip.style.cssText='background:#ffffff0d;border:1.5px solid #2a3a2a;border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .2s;';chip.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.from}-->${t.to}</div><div style="color:#888;font-size:11px;">Section ${t.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${t.price} F</div></div>`;chip.onclick=()=>{S.ticketSection={...t,docId:d.id};destList.querySelectorAll('div').forEach(c=>{c.style.background='#ffffff0d';c.style.borderColor='#2a3a2a';});chip.style.background='#00A65033';chip.style.borderColor='var(--g)';document.getElementById('ticketPriceDisplay').textContent=t.price.toLocaleString('fr-FR')+' FCFA';document.getElementById('btnPayTicket').disabled=false;};destList.appendChild(chip);});}loader('',false);document.getElementById('ticketStep0').style.display='none';document.getElementById('ticketStep1').style.display='block';setDots(1);notify('🚌','Bus détecté',recv.vehicle+' · Ligne '+recv.ligne);}
-  catch(e){loader('',false);notify('❌','Erreur',e.message);}
+  if(!navigator.onLine){
+    const cached=getCachedBus(walletId);
+    loader('',false);
+    if(!cached){notify('❌','Bus non disponible hors-ligne','Scannez ce bus une première fois en ligne, puis réessayez sans réseau.');return;}
+    renderBusInFlow(cached.recv,cached.destinations,true);
+    notify('📴','Bus détecté (hors-ligne)',cached.recv.vehicle+' · Ligne '+cached.recv.ligne);
+    return;
+  }
+  try{
+    const wSnap=await getDoc(doc(db,'wallets',walletId));if(!wSnap.exists()){loader('',false);notify('❌','Bus inconnu','QR non reconnu.');return;}
+    const recvUid=wSnap.data().uid;const rSnap=await getDoc(doc(db,'users',recvUid));if(!rSnap.exists()){loader('',false);notify('❌','Erreur','Receveur introuvable.');return;}
+    const recv={...rSnap.data(),uid:recvUid};
+    const destSnap=await getDocs(collection(db,'users',recvUid,'destinations'));
+    const destinations=destSnap.docs.map(d=>({docId:d.id,...d.data()}));
+    cacheBusData(walletId,recv,destinations);
+    loader('',false);
+    renderBusInFlow(recv,destinations,false);
+    notify('🚌','Bus détecté',recv.vehicle+' · Ligne '+recv.ligne);
+  }catch(e){
+    const cached=getCachedBus(walletId);
+    loader('',false);
+    if(cached){renderBusInFlow(cached.recv,cached.destinations,true);notify('📴','Bus détecté (hors cache)','Réseau instable — dernières données connues affichées.');}
+    else{notify('❌','Erreur',e.message);}
+  }
+}
+async function submitTicketRequestToServer(entry){
+  await addDoc(collection(db,'pending'),{passengerId:entry.passengerId,passengerUid:entry.passengerUid,passengerName:entry.passengerName,busId:entry.busId,busUid:entry.busUid,from:entry.from,to:entry.to,section:entry.section,price:entry.price,ts:serverTimestamp()});
+  await addDoc(collection(db,'notifications'),{toUid:entry.busUid,type:'ticket_request',passenger:entry.passengerName,from:entry.from,to:entry.to,price:entry.price,read:false,ts:serverTimestamp()});
+}
+const PENDING_TK_KEY='tp_pending_tickets';
+function getPendingTickets(){try{return JSON.parse(localStorage.getItem(PENDING_TK_KEY)||'[]');}catch(e){return[];}}
+function savePendingTickets(arr){try{localStorage.setItem(PENDING_TK_KEY,JSON.stringify(arr));}catch(e){}}
+function myPendingTickets(){return getPendingTickets().filter(t=>t.passengerUid===S.uid);}
+function updatePendingTicketsBadge(){
+  const list=myPendingTickets();
+  const el=document.getElementById('passPendingTkInfo');
+  if(!el)return;
+  if(list.length){el.style.display='block';el.textContent='📴 '+list.length+' demande'+(list.length>1?'s':'')+' de ticket en attente d\'envoi (hors-ligne)';}
+  else{el.style.display='none';}
+}
+let _flushingTickets=false;
+async function flushPendingTickets(){
+  if(_flushingTickets||!navigator.onLine||!S.uid)return;
+  const mine=myPendingTickets();
+  if(!mine.length)return;
+  _flushingTickets=true;
+  for(const entry of mine){
+    try{
+      await submitTicketRequestToServer(entry);
+      const remaining=getPendingTickets().filter(t=>t.localId!==entry.localId);
+      savePendingTickets(remaining);
+      notify('✅','Ticket envoyé',entry.from+' → '+entry.to+' — demande transmise au receveur.');
+      pushNative('Demande de ticket envoyée',entry.from+' → '+entry.to+' a été transmise au receveur.');
+    }catch(e){console.warn('[flushPendingTickets]',e);}
+  }
+  _flushingTickets=false;
+  updatePendingTicketsBadge();
 }
 window.goPay=async()=>{
   if(!S.ticketSection){notify('⚠️','Section','Choisissez une destination.');return;}
   if((S.profile.balance||0)<S.ticketSection.price){notify('❌','Solde','Solde insuffisant.');return;}
-  const recv=S.ticketBus;const sec=S.ticketSection;loader('Envoi…');
-  try{['pv_gie','pv_vehicle','pv_ligne','pv_trajet','pv_section','pv_price','pv_zone'].forEach((id,i)=>document.getElementById(id).textContent=[recv.gie,recv.vehicle,recv.ligne,`${sec.from}-->${sec.to}`,sec.section,sec.price,recv.zone][i]);await addDoc(collection(db,'pending'),{passengerId:S.profile.walletId,passengerUid:S.uid,passengerName:S.profile.name,busId:recv.walletId,busUid:recv.uid,from:sec.from,to:sec.to,section:sec.section,price:sec.price,ts:serverTimestamp()});await addDoc(collection(db,'notifications'),{toUid:recv.uid,type:'ticket_request',passenger:S.profile.name,from:sec.from,to:sec.to,price:sec.price,read:false,ts:serverTimestamp()});loader('',false);document.getElementById('ticketStep1').style.display='none';document.getElementById('ticketStep3').style.display='block';setDots(2);notify('✅','Demande envoyée','En attente du receveur.');}
+  const recv=S.ticketBus;const sec=S.ticketSection;
+  ['pv_gie','pv_vehicle','pv_ligne','pv_trajet','pv_section','pv_price','pv_zone'].forEach((id,i)=>document.getElementById(id).textContent=[recv.gie,recv.vehicle,recv.ligne,`${sec.from}-->${sec.to}`,sec.section,sec.price,recv.zone][i]);
+
+  // Hors-ligne : la demande est mise en file d'attente locale. Le passager voit son reçu tout de suite,
+  // elle partira automatiquement vers le receveur dès le retour du réseau.
+  if(!navigator.onLine){
+    const entry={localId:'L'+Date.now()+Math.random().toString(36).slice(2,7),passengerId:S.profile.walletId,passengerUid:S.uid,passengerName:S.profile.name,busId:recv.walletId,busUid:recv.uid,from:sec.from,to:sec.to,section:sec.section,price:sec.price};
+    const all=getPendingTickets();all.push(entry);savePendingTickets(all);
+    document.getElementById('ticketStep1').style.display='none';
+    document.getElementById('ticketStep3').style.display='block';setDots(2);
+    document.getElementById('tk3Icon').textContent='📴';
+    document.getElementById('tk3Title').textContent='Hors-ligne — en attente d\'envoi';
+    document.getElementById('tk3Title').style.color='#FF6B00';
+    notify('📴','Ticket en attente','Sera envoyé au receveur dès le retour du réseau.');
+    updatePendingTicketsBadge();
+    return;
+  }
+
+  loader('Envoi…');
+  try{
+    await submitTicketRequestToServer({passengerId:S.profile.walletId,passengerUid:S.uid,passengerName:S.profile.name,busId:recv.walletId,busUid:recv.uid,from:sec.from,to:sec.to,section:sec.section,price:sec.price});
+    loader('',false);
+    document.getElementById('ticketStep1').style.display='none';
+    document.getElementById('ticketStep3').style.display='block';setDots(2);
+    document.getElementById('tk3Icon').textContent='⏳';
+    document.getElementById('tk3Title').textContent='En attente du receveur…';
+    document.getElementById('tk3Title').style.color='var(--y)';
+    notify('✅','Demande envoyée','En attente du receveur.');
+  }
   catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 let currentScanReq=null;
