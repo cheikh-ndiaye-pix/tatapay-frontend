@@ -1139,7 +1139,7 @@ const db=getFirestore(fbApp);
 try{enableIndexedDbPersistence(db).catch(e=>console.warn('[persistence]',e.code||e.message));}catch(e){}
 const ADMIN_EMAIL='papacheikh900@gmail.com';
 
-let S={role:null,uid:null,profile:null,authRole:'passenger',isReg:false,camMode:null,ticketBus:null,ticketSection:null,stream:null,facing:'environment',scanning:false,friendTarget:null};
+let S={role:null,uid:null,profile:null,authRole:'passenger',expectedLoginRole:null,isReg:false,camMode:null,ticketBus:null,ticketSection:null,stream:null,facing:'environment',scanning:false,friendTarget:null};
 let activeTicketData=null;
 let unsubPending=null,unsubNotif=null,unsubBalance=null,unsubRecvBalance=null,unsubAdmin=null;
 let unsubChProfile=null,unsubChReceiver=null,unsubChTickets=null,unsubChNotif=null,unsubChVersements=null;
@@ -1278,7 +1278,7 @@ window.doAuth=async()=>{
         await setDoc(doc(db,'wallets',walletId),{uid,role:'chauffeur'});
         await addDoc(collection(db,'notifications'),{toUid:directeurUid,type:'chauffeur_request',chauffeurUid:uid,chauffeurName:name,chauffeurEmail:email,phone,cni,address,read:false,ts:serverTimestamp()});
       }
-    }else{await signInWithEmailAndPassword(auth,email,pass);}
+    }else{S.expectedLoginRole=S.authRole;await signInWithEmailAndPassword(auth,email,pass);}
     loader('',false);
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
@@ -1305,11 +1305,24 @@ window.doSubmitReceiverCandidature=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 window.forgotPassword=async()=>{const email=document.getElementById('authEmail').value.trim().toLowerCase();if(!email){notify('⚠️','Email requis','Entrez votre email.');return;}try{await sendPasswordResetEmail(auth,email);notify('✅','Email envoyé','Vérifiez votre boîte mail.');}catch(e){notify('❌','Erreur',e.message);}};
-window.doLogout=async()=>{detachListeners();await signOut(auth);S={...S,role:null,uid:null,profile:null};activeTicketData=null;hideDescendBtn();show('screenSplash');};
+window.doLogout=async()=>{detachListeners();await signOut(auth);S={...S,role:null,uid:null,profile:null,expectedLoginRole:null};activeTicketData=null;hideDescendBtn();show('screenSplash');};
 
 onAuthStateChanged(auth,async user=>{
   if(user){loader('Chargement…');
-    try{const snap=await getDoc(doc(db,'users',user.uid));if(snap.exists()){S.uid=user.uid;S.profile=snap.data();S.role=S.profile.role;if(user.email===ADMIN_EMAIL){show('screenAdmin');loader('',false);loadAdminDashboard();startAdminRealtime();return;}loginUI();}else{loader('',false);await signOut(auth);}}catch(e){loader('',false);notify('❌','Erreur',e.message);}
+    try{const snap=await getDoc(doc(db,'users',user.uid));if(snap.exists()){
+      const actualRoleForCheck=snap.data().role;
+      const roleCompatible=actualRoleForCheck===S.expectedLoginRole||(actualRoleForCheck==='chauffeur'&&S.expectedLoginRole==='owner');
+      if(user.email!==ADMIN_EMAIL&&S.expectedLoginRole&&!roleCompatible){
+        const expected=S.expectedLoginRole;S.expectedLoginRole=null;
+        const roleLabels={passenger:'Passager',receiver:'Receveur',owner:'Propriétaire',directeur:'Directeur',chauffeur:'Chauffeur'};
+        const actualRole=snap.data().role;
+        loader('',false);
+        await signOut(auth);
+        notify('❌','Compte incorrect',`Ce compte est inscrit comme ${roleLabels[actualRole]||actualRole}. Reconnectez-vous depuis l'onglet ${roleLabels[expected]||expected}.`);
+        return;
+      }
+      S.expectedLoginRole=null;
+      S.uid=user.uid;S.profile=snap.data();S.role=S.profile.role;if(user.email===ADMIN_EMAIL){show('screenAdmin');loader('',false);loadAdminDashboard();startAdminRealtime();return;}loginUI();}else{loader('',false);await signOut(auth);}}catch(e){loader('',false);notify('❌','Erreur',e.message);}
   }else{show('screenSplash');loader('',false);}
 });
 
