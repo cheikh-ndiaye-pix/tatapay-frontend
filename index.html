@@ -477,6 +477,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
           <div style="font-size:11px;color:#FF6B0088;margin-bottom:4px;">Solde TataPay Receveur</div>
           <div style="color:var(--y);font-weight:900;font-size:32px;margin-bottom:14px;"><span id="recvBalance">0</span> <span style="font-size:14px;font-weight:700;color:#FDEF4288;">FCFA</span></div>
           <button onclick="openWithdraw()" style="background:linear-gradient(135deg,#009A44,#007832);border:none;border-radius:14px;padding:13px 20px;cursor:pointer;display:flex;align-items:center;gap:10px;color:#fff;font-weight:900;font-size:14px;font-family:'Space Grotesk',sans-serif;width:100%;justify-content:center;"><span style="font-size:20px;">💸</span> Retirer mon argent</button>
+          <div id="recvPendingWdInfo" style="display:none;margin-top:10px;background:#FF6B0018;border:1px solid #FF6B0044;border-radius:10px;padding:8px 12px;font-size:11.5px;color:#FF6B00;font-weight:700;text-align:center;"></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
           <div class="card" style="text-align:center;"><div style="color:#888;font-size:10px;text-transform:uppercase;">Recettes jour</div><div style="color:var(--g);font-weight:900;font-size:22px;margin-top:4px;" id="recvTotalToday">0 F</div></div>
@@ -887,7 +888,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <button onclick="resetWithdraw()" style="width:100%;background:none;border:none;color:#888;margin-top:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">← Retour</button>
       </div>
       <div id="wdStep3" style="display:none;text-align:center;padding:30px 0;"><div class="spinner" style="margin:0 auto 18px;"></div><div style="font-weight:800;font-size:15px;color:#aaa;">Envoi…</div></div>
-      <div id="wdStep4" style="display:none;text-align:center;padding:20px 0 10px;"><div style="font-size:64px;margin-bottom:14px;">✅</div><div style="font-weight:900;font-size:20px;color:var(--g);margin-bottom:6px;">Demande envoyée !</div><div style="color:#888;font-size:13px;margin-bottom:6px;" id="wdSuccessDesc">—</div><div style="background:#009A4415;border:1px solid #009A4444;border-radius:12px;padding:10px 14px;margin:16px 0;font-family:'JetBrains Mono',monospace;font-size:12px;color:#aaa;" id="wdSuccessRef">Ref: —</div><button class="btn btn-primary btn-full" onclick="closeModal('modalWithdraw')">Fermer</button></div>
+      <div id="wdStep4" style="display:none;text-align:center;padding:20px 0 10px;"><div style="font-size:64px;margin-bottom:14px;" id="wdSuccessIcon">✅</div><div style="font-weight:900;font-size:20px;color:var(--g);margin-bottom:6px;" id="wdSuccessTitle">Demande envoyée !</div><div style="color:#888;font-size:13px;margin-bottom:6px;" id="wdSuccessDesc">—</div><div style="background:#009A4415;border:1px solid #009A4444;border-radius:12px;padding:10px 14px;margin:16px 0;font-family:'JetBrains Mono',monospace;font-size:12px;color:#aaa;" id="wdSuccessRef">Ref: —</div><button class="btn btn-primary btn-full" onclick="closeModal('modalWithdraw')">Fermer</button></div>
     </div>
   </div>
 </div>
@@ -1150,7 +1151,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import{getFirestore,doc,setDoc,getDoc,getDocFromCache,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,setDoc,getDoc,getDocFromCache,getDocsFromCache,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:dade7eebdc0894639b0b6d",measurementId:"G-2YGJP8MZ2H"};
@@ -1338,6 +1339,21 @@ window.forgotPassword=async()=>{const email=document.getElementById('authEmail')
 window.doLogout=async()=>{detachListeners();await signOut(auth);S={...S,role:null,uid:null,profile:null,expectedLoginRole:null};activeTicketData=null;hideDescendBtn();show('screenSplash');};
 
 let _pendingAuthUser=null;
+// Lit une query Firestore : essaie le serveur, mais si hors-ligne (ou trop lent), retombe sur le cache local
+// pour ne jamais laisser un écran (ex: mes tickets) bloqué en chargement quand il n'y a pas de réseau.
+async function getDocsSmart(q){
+  if(!navigator.onLine){
+    try{return await getDocsFromCache(q);}catch(e){/* rien en cache, on tente quand même le serveur ci-dessous */}
+  }
+  try{
+    return await Promise.race([
+      getDocs(q),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),4000))
+    ]);
+  }catch(e){
+    try{return await getDocsFromCache(q);}catch(e2){throw e;}
+  }
+}
 async function attemptSessionRestore(user){
   loader('Chargement…');
   try{
@@ -1420,6 +1436,7 @@ function loginUI(){
     attachPendingListener();attachNotifListener();loadRecvDirecteurInfo();
     recvBusSelection=new Set(p.linkedOwnerUids||[]);
     unsubRecvBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;const el=document.getElementById('recvBalance');if(el)el.textContent=fmt(S.profile.balance);}});
+    updatePendingWithdrawBadge();flushPendingWithdrawals();
     show('screenReceiver');notify('✅','Connecté',p.name);
   }else if(S.role==='directeur'&&p.status==='approved'){
     document.getElementById('dirGreet').textContent=p.name;
@@ -2686,7 +2703,48 @@ function setOnlineIndicator(on){
   const bar=document.getElementById('globalOfflineBar');if(bar)bar.style.display=on?'none':'block';
 }
 setOnlineIndicator(navigator.onLine);
-window.addEventListener('online',()=>{setOnlineIndicator(true);notify('🟢','En ligne','Synchronisation des données…');if(_pendingAuthUser){const u=_pendingAuthUser;attemptSessionRestore(u);}});
+
+// ===== File d'attente locale des demandes de retrait hors-ligne =====
+const PENDING_WD_KEY='tp_pending_withdrawals';
+function getPendingWithdrawals(){try{return JSON.parse(localStorage.getItem(PENDING_WD_KEY)||'[]');}catch(e){return[];}}
+function savePendingWithdrawals(arr){try{localStorage.setItem(PENDING_WD_KEY,JSON.stringify(arr));}catch(e){}}
+function myPendingWithdrawals(){return getPendingWithdrawals().filter(w=>w.uid===S.uid);}
+function updatePendingWithdrawBadge(){
+  const list=myPendingWithdrawals();
+  const el=document.getElementById('recvPendingWdInfo');
+  if(!el)return;
+  if(list.length){
+    const total=list.reduce((s,w)=>s+(w.amount||0),0);
+    el.style.display='block';
+    el.textContent='⏳ '+list.length+' demande'+(list.length>1?'s':'')+' de retrait ('+fmt(total)+' F) en attente d\'envoi — sera transmise dès le retour du réseau';
+  }else{
+    el.style.display='none';
+  }
+}
+async function submitWithdrawalToServer(entry){
+  await setDoc(doc(collection(db,'withdrawal_requests')),{uid:entry.uid,name:entry.name,walletId:entry.walletId,amount:entry.amount,status:'pending',ref:entry.ref,requestedAt:serverTimestamp()});
+  await addDoc(collection(db,'users',entry.uid,'history'),{type:'withdraw_request',label:'Demande de retrait — '+entry.ref,amount:-entry.amount,ref:entry.ref,ts:serverTimestamp()});
+}
+let _flushingWithdrawals=false;
+async function flushPendingWithdrawals(){
+  if(_flushingWithdrawals||!navigator.onLine||!S.uid)return;
+  const mine=myPendingWithdrawals();
+  if(!mine.length)return;
+  _flushingWithdrawals=true;
+  for(const entry of mine){
+    try{
+      await submitWithdrawalToServer(entry);
+      const remaining=getPendingWithdrawals().filter(w=>w.localId!==entry.localId);
+      savePendingWithdrawals(remaining);
+      notify('✅','Retrait envoyé',fmt(entry.amount)+' FCFA — '+entry.ref+' transmis au serveur.');
+      pushNative('Retrait envoyé',fmt(entry.amount)+' FCFA ('+entry.ref+') a bien été transmis.');
+    }catch(e){console.warn('[flushPendingWithdrawals]',e);}
+  }
+  _flushingWithdrawals=false;
+  updatePendingWithdrawBadge();
+}
+
+window.addEventListener('online',()=>{setOnlineIndicator(true);notify('🟢','En ligne','Synchronisation des données…');if(_pendingAuthUser){const u=_pendingAuthUser;attemptSessionRestore(u);}flushPendingWithdrawals();});
 window.addEventListener('offline',()=>{setOnlineIndicator(false);notify('🔴','Hors-ligne','Les paiements seront synchronisés au retour du réseau.');});
 
 function playChauffeurAlarm(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const seq=[[0,1200,.22],[.28,900,.22],[.56,1200,.22],[.84,900,.22],[1.12,1500,.35]];seq.forEach(([s,f,d])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;o.type='square';g.gain.setValueAtTime(0,ctx.currentTime+s);g.gain.linearRampToValueAtTime(.6,ctx.currentTime+s+.02);g.gain.linearRampToValueAtTime(0,ctx.currentTime+s+d);o.start(ctx.currentTime+s);o.stop(ctx.currentTime+s+d+.05);});if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);}catch(e){}}
@@ -2852,13 +2910,48 @@ window.demandDescendre=async()=>{
   notify('🛑','Signal envoyé !','Le receveur et le chauffeur ont été prévenus.');
 };
 window.showActiveTicket=()=>{if(activeTicketData)showTicketData(activeTicketData);};
-window.openWithdraw=()=>{resetWithdraw();document.getElementById('withdrawAvailable').textContent=fmt(S.profile?.balance||0)+' FCFA';openModal('modalWithdraw');};
+window.openWithdraw=()=>{resetWithdraw();const bal=S.profile?.balance||0;const pendingTotal=myPendingWithdrawals().reduce((s,w)=>s+(w.amount||0),0);document.getElementById('withdrawAvailable').textContent=fmt(bal-pendingTotal)+' FCFA';updatePendingWithdrawBadge();openModal('modalWithdraw');};
 function resetWithdraw(){['wdStep1','wdStep2','wdStep3','wdStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const w=document.getElementById('wdAmt');if(w)w.value='';}
-window.wdGoStep2=()=>{const amt=parseInt(document.getElementById('wdAmt').value||0);const bal=S.profile?.balance||0;if(!amt||amt<500){notify('⚠️','Montant','Minimum 500 FCFA.');return;}if(amt>bal){notify('❌','Solde','Solde insuffisant ('+fmt(bal)+' FCFA).');return;}S.wdAmt=amt;document.getElementById('wdAmtBig').textContent=fmt(amt)+' FCFA';document.getElementById('wdStep1').style.display='none';document.getElementById('wdStep2').style.display='block';};
+window.wdGoStep2=()=>{
+  const amt=parseInt(document.getElementById('wdAmt').value||0);
+  const bal=S.profile?.balance||0;
+  const pendingTotal=myPendingWithdrawals().reduce((s,w)=>s+(w.amount||0),0);
+  const available=bal-pendingTotal;
+  if(!amt||amt<500){notify('⚠️','Montant','Minimum 500 FCFA.');return;}
+  if(amt>available){notify('❌','Solde','Solde disponible insuffisant ('+fmt(available)+' FCFA'+(pendingTotal>0?', dont '+fmt(pendingTotal)+' F déjà en attente d\'envoi':'')+').');return;}
+  S.wdAmt=amt;document.getElementById('wdAmtBig').textContent=fmt(amt)+' FCFA';document.getElementById('wdStep1').style.display='none';document.getElementById('wdStep2').style.display='block';
+};
 window.doWithdraw=async()=>{
   const amt=S.wdAmt;if(!amt)return;
   document.getElementById('wdStep2').style.display='none';document.getElementById('wdStep3').style.display='block';
-  try{await new Promise(r=>setTimeout(r,1200));const ref='WD-'+Date.now();await setDoc(doc(collection(db,'withdrawal_requests')),{uid:S.uid,name:S.profile.name,walletId:S.profile.walletId,amount:amt,status:'pending',ref,requestedAt:serverTimestamp()});await addDoc(collection(db,'users',S.uid,'history'),{type:'withdraw_request',label:'Demande de retrait — '+ref,amount:-amt,ref,ts:serverTimestamp()});document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep4').style.display='block';document.getElementById('wdSuccessDesc').textContent=fmt(amt)+' FCFA demandés';document.getElementById('wdSuccessRef').textContent='Ref: '+ref;}
+  const ref='WD-'+Date.now();
+
+  // Hors-ligne : on met la demande en file d'attente locale, elle partira automatiquement au retour du réseau.
+  if(!navigator.onLine){
+    const entry={localId:'L'+Date.now()+Math.random().toString(36).slice(2,7),uid:S.uid,name:S.profile.name,walletId:S.profile.walletId,amount:amt,ref};
+    const all=getPendingWithdrawals();all.push(entry);savePendingWithdrawals(all);
+    document.getElementById('wdStep3').style.display='none';
+    document.getElementById('wdSuccessIcon').textContent='⏳';
+    document.getElementById('wdSuccessTitle').textContent='En attente du réseau';
+    document.getElementById('wdSuccessTitle').style.color='#FF6B00';
+    document.getElementById('wdStep4').style.display='block';
+    document.getElementById('wdSuccessDesc').textContent=fmt(amt)+' FCFA — la demande sera envoyée automatiquement dès que la connexion revient';
+    document.getElementById('wdSuccessRef').textContent='Ref: '+ref;
+    updatePendingWithdrawBadge();
+    return;
+  }
+
+  // En ligne : envoi direct.
+  try{
+    await submitWithdrawalToServer({uid:S.uid,name:S.profile.name,walletId:S.profile.walletId,amount:amt,ref});
+    document.getElementById('wdStep3').style.display='none';
+    document.getElementById('wdSuccessIcon').textContent='✅';
+    document.getElementById('wdSuccessTitle').textContent='Demande envoyée !';
+    document.getElementById('wdSuccessTitle').style.color='var(--g)';
+    document.getElementById('wdStep4').style.display='block';
+    document.getElementById('wdSuccessDesc').textContent=fmt(amt)+' FCFA demandés';
+    document.getElementById('wdSuccessRef').textContent='Ref: '+ref;
+  }
   catch(e){notify('❌','Erreur',e.message);document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep2').style.display='block';}
 };
 window.openRecharge=()=>{resetRecharge();openModal('modalRecharge');};
@@ -2977,10 +3070,10 @@ window.recvToggleGeo=()=>{
 };
 async function refreshRecvStats(){if(S.role!=='receiver')return;const snap=await getDoc(doc(db,'users',S.uid));if(!snap.exists())return;const u=snap.data();S.profile={...S.profile,...u};document.getElementById('recvTotalToday').textContent=fmt(u.today||0)+' F';document.getElementById('recvTicketCount').textContent=u.count||0;const rb=document.getElementById('recvBalance');if(rb)rb.textContent=fmt(u.balance||0);}
 async function loadRecvTickets(){const q=query(collection(db,'tickets'),where('busUid','==',S.uid),orderBy('ts','desc'),limit(50));const snap=await getDocs(q);const cont=document.getElementById('recvTicketsList');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;color:#555;">Aucun ticket émis.</div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:11px;line-height:1.9;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}</div></div></div>`;}).join('');}
-async function loadPassHomeTx(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'history'),orderBy('ts','desc'),limit(4));const snap=await getDocs(q);const cont=document.getElementById('passHomeTx');if(snap.empty){cont.innerHTML='<div style="color:#555;text-align:center;padding:16px 0;">Aucune transaction.</div>';return;}cont.innerHTML=snap.docs.map(d=>txRow(d.data())).join('');}
+async function loadPassHomeTx(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'history'),orderBy('ts','desc'),limit(4));const snap=await getDocsSmart(q);const cont=document.getElementById('passHomeTx');if(snap.empty){cont.innerHTML='<div style="color:#555;text-align:center;padding:16px 0;">Aucune transaction.</div>';return;}cont.innerHTML=snap.docs.map(d=>txRow(d.data())).join('');}
 async function loadPassHistory(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'history'),orderBy('ts','desc'),limit(50));const snap=await getDocs(q);const cont=document.getElementById('passHistory');if(snap.empty){cont.innerHTML='<div style="color:#555;text-align:center;padding:40px 0;">Aucune transaction.</div>';return;}cont.innerHTML=snap.docs.map(d=>txRow(d.data())).join('');}
 function txRow(h){const icons={recharge:'💳',transfer_out:'↗️',transfer_in:'↙️',ticket:'🎫',withdraw:'💸',recharge_given:'💳',withdraw_request:'📤'};const pos=h.amount>0;return`<div class="tx-row"><div style="width:36px;height:36px;border-radius:12px;background:${pos?'#00A65022':'#DF002422'};display:flex;align-items:center;justify-content:center;font-size:16px;">${icons[h.type]||'💼'}</div><div style="flex:1;margin-left:4px;"><div style="font-weight:700;font-size:14px;">${h.label}</div></div><div style="color:${pos?'var(--g)':'var(--r)'};font-weight:800;font-size:14px;">${pos?'+':''}${fmt(h.amount)} F</div></div>`;}
-async function loadPassTickets(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'tickets'),orderBy('ts','desc'),limit(30));const snap=await getDocs(q);const cont=document.getElementById('passTicketsContainer');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;"><div style="font-size:56px;opacity:.4;margin-bottom:16px;">🎫</div><div style="color:#555;font-weight:800;">Aucun ticket</div><button class="btn btn-purple" style="margin-top:16px;" onclick="openTicketFlow()">🎫 Acheter un ticket</button></div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:12px;line-height:1.9;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}<br>✅ Validé</div></div></div>`;}).join('');}
+async function loadPassTickets(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'tickets'),orderBy('ts','desc'),limit(30));const snap=await getDocsSmart(q);const cont=document.getElementById('passTicketsContainer');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;"><div style="font-size:56px;opacity:.4;margin-bottom:16px;">🎫</div><div style="color:#555;font-weight:800;">Aucun ticket</div><button class="btn btn-purple" style="margin-top:16px;" onclick="openTicketFlow()">🎫 Acheter un ticket</button></div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:12px;line-height:1.9;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}<br>✅ Validé</div></div></div>`;}).join('');}
 window.showTicketData=(t)=>{if(typeof t==='string')t=JSON.parse(t);document.getElementById('ticketThermalContent').innerHTML=`<div class="t-header">🚌 TATAPAY</div><div style="font-size:13px;line-height:2;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}<br>✅ Validé · ${t.passenger}</div>`;document.getElementById('ticketOverlay').style.display='flex';if(S.role==='passenger')showDescendBtn(t);};
 window.closeTicket=()=>document.getElementById('ticketOverlay').style.display='none';
 window.openNotifPanel=async()=>{const q=query(collection(db,'notifications'),where('toUid','==',S.uid),orderBy('ts','desc'),limit(20));const snap=await getDocs(q);const cont=document.getElementById('notifList');if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';}else{cont.innerHTML=snap.docs.map(d=>{const n=d.data();let icon='🔔',title='Notification',body='',color='var(--orange)';if(n.type==='descendre'){icon='🛑';title='Passager veut descendre';body=`${n.passenger||'—'} · ${n.from||''}→${n.to||''}`;color='#DF0024';}else if(n.type==='ticket_request'){icon='🎫';title='Demande ticket';body=`${n.passenger||'—'} · ${n.price||0} FCFA`;color='var(--g)';}else if(n.type==='ticket_validated'){icon='✅';title='Ticket validé';body='Votre ticket a été validé !';color='var(--g)';}else if(n.type==='receiver_request'){icon='🎫';title='Nouveau receveur';body=`${n.receiverName||'—'}`;color='var(--orange)';}else if(n.type==='owner_request'){icon='🚌';title='Nouveau propriétaire';body=`${n.ownerName||'—'} — ${n.company||'—'}`;color='#7c3aed';}else if(n.type==='chauffeur_request'){icon='👨‍✈️';title='Nouveau chauffeur';body=`${n.chauffeurName||'—'}`;color='#059669';}else if(n.type==='versement_alert'){icon='💸';title='Versement manquant';body=n.message||'Le receveur n\'a pas versé les recettes.';color='#DF0024';}else if(n.type==='fraud_alert'){icon='⚠️';title='Anomalie détectée';body=n.message||'Activité suspecte sur votre bus.';color='#FF6B00';}else if(n.type==='bus_panne'){icon='🔧';title='Panne signalée';body=n.message||'Problème technique sur le bus.';color='#DF0024';}else if(n.type==='bus_report'){icon='📋';title='Signalement bus';body=n.message||'—';color='#059669';}return`<div style="background:#ffffff08;border:1px solid ${color}33;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;"><div style="font-size:22px;">${icon}</div><div><div style="font-weight:800;font-size:13px;color:${color};">${title}</div><div style="font-size:12px;color:#ccc;margin-top:3px;">${body}</div></div></div>`;}).join('');}document.getElementById('notifPanel').style.display='flex';};
