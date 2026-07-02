@@ -770,12 +770,14 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div class="dir-quick-actions" style="margin-bottom:24px;">
         <button class="dir-action-btn" onclick="openModal('modalAssignBus')"><span style="font-size:24px;">🚌</span>Ajouter bus</button>
         <button class="dir-action-btn" onclick="switchDirTab('receivers')"><span style="font-size:24px;">✅</span>Valider user</button>
+        <button class="dir-action-btn" onclick="switchDirTab('owners')" style="background:linear-gradient(135deg,#0ea5e922,#0369a122);border-color:#0ea5e966;position:relative;"><span style="font-size:24px;">🛰️</span>Proprios en direct<span style="position:absolute;top:6px;right:8px;width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399;animation:pulse 1.4s infinite;"></span></button>
         <button class="dir-action-btn" onclick="dirGenererRapport()"><span style="font-size:24px;">📊</span>Rapport</button>
         <button class="dir-action-btn" onclick="switchDirTab('receivers')"><span style="font-size:24px;">🔒</span>Bloquer compte</button>
       </div>
     </div>
     <div class="tab-content" id="dirTab-owners" style="padding:18px 16px;">
-      <div style="font-weight:900;font-size:20px;color:#7dd3fc;margin-bottom:16px;">🚌 Propriétaires de bus</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div style="font-weight:900;font-size:20px;color:#7dd3fc;">🚌 Propriétaires approuvés</div><div id="dirOwnersLiveBadge" style="display:flex;align-items:center;gap:6px;background:#05966922;border:1px solid #05966966;border-radius:20px;padding:5px 10px;font-size:10px;font-weight:800;color:#34d399;letter-spacing:1px;"><span style="width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399;animation:pulse 1.4s infinite;"></span>TEMPS RÉEL</div></div>
+      <div style="font-size:11px;color:#7dd3fc99;margin-bottom:14px;">Mise à jour automatique des propriétaires que vous avez approuvés (bus, statut, recettes du jour, solde).</div>
       <div id="dirOwnersList"><div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun propriétaire.</div></div>
     </div>
     <div class="tab-content" id="dirTab-receivers" style="padding:18px 16px;">
@@ -1876,15 +1878,68 @@ window.dirGenererRapport=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
+let unsubDirOwners=null;
+function renderDirOwnersList(all){
+  const cont=document.getElementById('dirOwnersList');if(!cont)return;
+  const badge=document.getElementById('dirOwnersLiveBadge');
+  if(!all.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun propriétaire approuvé pour le moment.</div>';if(badge)badge.querySelector('span:last-child')?.remove();return;}
+  cont.innerHTML=all.map(u=>{
+    const initials=(u.name||'??').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const busInfo=u.gie||u.vehicle||u.ligne?`<div style="font-size:11px;color:#0ea5e9;margin-top:4px;">🚌 ${u.gie||'—'} · ${u.vehicle||'—'} · Ligne ${u.ligne||'—'} · Zone ${u.zone||'—'}</div>`:'<div style="font-size:11px;color:#FF6B00;margin-top:4px;">⚠️ Aucun bus assigné</div>';
+    return `<div class="dir-card" style="animation:fadeIn .3s ease;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div class="dir-recv-avatar" style="background:linear-gradient(135deg,#0ea5e922,#0369a122);border:1.5px solid #0ea5e966;">${initials}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;"><div style="font-weight:800;color:#e2e8f0;">${u.name||'—'}</div><span style="width:6px;height:6px;border-radius:50%;background:${u.status==='approved'?'#34d399':u.status==='suspended'?'#DF0024':'#FF6B00'};box-shadow:0 0 6px ${u.status==='approved'?'#34d399':u.status==='suspended'?'#DF0024':'#FF6B00'};"></span></div>
+          <div style="font-size:11px;color:#888;">GIE: ${u.company||u.org||'—'}</div>
+          <div style="font-size:11px;color:#888;">${u.email||'—'} · ${u.phone||'—'}</div>
+          ${busInfo}
+          <div style="font-size:11px;color:#888;margin-top:4px;">💳 ${u.walletId||'—'} · Jour: <strong style="color:#34d399;">${fmt(u.today||0)} F</strong> · Solde: <strong style="color:#FDEF42;">${fmt(u.balance||0)} F</strong></div>
+        </div>
+        <div>${statusBadge(u.status)}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${u.status==='approved'?`<button class="admin-action-btn btn-suspend" onclick="dirSuspendUser('${u.id}')">⚠️ Suspendre</button>`:''}
+        ${u.status==='suspended'?`<button class="admin-action-btn btn-approve" onclick="dirReactivateUser('${u.id}')">♻️ Réactiver</button>`:''}
+      </div>
+    </div>`;}).join('');
+}
+let _dirOwnersA=[],_dirOwnersB=[];
+function _mergeAndRenderDirOwners(){
+  const seen=new Set();const all=[];
+  [..._dirOwnersA,..._dirOwnersB].forEach(u=>{if(!seen.has(u.id)){seen.add(u.id);all.push(u);}});
+  all.sort((a,b)=>(b.today||0)-(a.today||0));
+  renderDirOwnersList(all);
+}
+let unsubDirOwnersA=null,unsubDirOwnersB=null;
+function _dirOwnersErrHtml(err,label){
+  const code=err&&err.code||'';
+  let hint='';
+  if(code==='permission-denied')hint='Les règles Firestore bloquent la lecture de la collection users pour ce compte. Vérifie les Firestore Rules (le directeur doit pouvoir lire role==owner).';
+  else if(code==='failed-precondition')hint='Un index composite Firestore est requis. Ouvre la Console du navigateur (F12) : le message d\'erreur contient un lien direct pour le créer en 1 clic.';
+  else hint=err&&err.message||'Erreur inconnue.';
+  return `<div style="color:#DF0024;padding:16px;background:#DF002411;border:1px solid #DF002444;border-radius:12px;font-size:12px;line-height:1.6;"><strong>⚠️ Erreur (${label}) :</strong> ${code||err&&err.message||'—'}<br>${hint}</div>`;
+}
 async function loadDirOwners(){
-  const cont=document.getElementById('dirOwnersList');
+  const cont=document.getElementById('dirOwnersList');if(!cont)return;
+  if(unsubDirOwners){try{unsubDirOwners();}catch(e){}unsubDirOwners=null;}
+  if(unsubDirOwnersA){try{unsubDirOwnersA();}catch(e){}unsubDirOwnersA=null;}
+  if(unsubDirOwnersB){try{unsubDirOwnersB();}catch(e){}unsubDirOwnersB=null;}
+  _dirOwnersA=[];_dirOwnersB=[];
+  cont.innerHTML='<div style="text-align:center;color:#7dd3fc;padding:20px;font-size:12px;">🛰️ Connexion en temps réel…</div>';
+  if(!S.uid){cont.innerHTML='<div style="color:#DF0024;padding:16px;">Session invalide — reconnectez-vous.</div>';return;}
   try{
-    const snap1=await getDocs(query(collection(db,'users'),where('role','==','owner'),where('approvedByDir','==',S.uid)));
-    const snap2=await getDocs(query(collection(db,'users'),where('role','==','owner'),where('status','==','approved')));
-    const seen=new Set();const all=[];[...snap1.docs,...snap2.docs].forEach(d=>{if(!seen.has(d.id)){seen.add(d.id);all.push({id:d.id,...d.data()});}});
-    if(!all.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun propriétaire.</div>';return;}
-    cont.innerHTML=all.map(u=>`<div class="dir-card"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><div><div style="font-weight:800;color:#e2e8f0;">${u.name||'—'}</div><div style="font-size:11px;color:#888;">GIE: ${u.company||'—'}</div><div style="font-size:11px;color:#888;">${u.email||'—'}</div></div><div>${statusBadge(u.status)}</div></div><div style="display:flex;gap:8px;flex-wrap:wrap;">${u.status==='approved'?`<button class="admin-action-btn btn-suspend" onclick="dirSuspendUser('${u.id}')">⚠️ Suspendre</button>`:''} ${u.status==='suspended'?`<button class="admin-action-btn btn-approve" onclick="dirReactivateUser('${u.id}')">♻️ Réactiver</button>`:''}</div></div>`).join('');
-  }catch(e){cont.innerHTML='<div style="color:#DF0024;padding:16px;">Erreur chargement propriétaires.</div>';}
+    // Requête unique sur role=='owner' (index simple, toujours dispo) + filtrage côté client
+    // pour éviter toute dépendance à un index composite Firestore manquant.
+    const qOwners=query(collection(db,'users'),where('role','==','owner'));
+    unsubDirOwnersA=onSnapshot(qOwners,snap=>{
+      const dirOrg=(S.profile&&(S.profile.org||S.profile.company))||'';
+      const all=snap.docs.map(d=>({id:d.id,...d.data()}));
+      _dirOwnersA=all.filter(u=>u.approvedByDir===S.uid);
+      _dirOwnersB=all.filter(u=>u.status==='approved'&&(!u.approvedByDir||u.approvedByDir===S.uid||(dirOrg&&(u.company===dirOrg||u.org===dirOrg||u.gie===dirOrg))));
+      _mergeAndRenderDirOwners();
+    },err=>{console.warn('dirOwners',err);cont.innerHTML=_dirOwnersErrHtml(err,'lecture propriétaires');});
+  }catch(e){cont.innerHTML=_dirOwnersErrHtml(e,'init');}
 }
 
 async function loadDirReceivers(){
