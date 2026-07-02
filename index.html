@@ -1068,6 +1068,26 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
+<div class="modal-overlay" id="modalDirOwnerDetail" style="display:none;" onclick="if(event.target===this)closeModal('modalDirOwnerDetail')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="height:3px;background:linear-gradient(90deg,#0ea5e9,#0369a1,#7dd3fc);border-radius:24px 24px 0 0;"></div>
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">🚌 Détail propriétaire</div><button class="modal-close" onclick="closeModal('modalDirOwnerDetail')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body" id="dirOwnerDetailBody">
+      <div style="text-align:center;color:#7dd3fc;padding:24px;font-size:12px;">Chargement…</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalDirReceiverDetail" style="display:none;" onclick="if(event.target===this)closeModal('modalDirReceiverDetail')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="height:3px;background:linear-gradient(90deg,#FF6B00,#FDEF42,#FF6B00);border-radius:24px 24px 0 0;"></div>
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">🎫 Détail receveur</div><button class="modal-close" onclick="closeModal('modalDirReceiverDetail')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body" id="dirReceiverDetailBody">
+      <div style="text-align:center;color:#FF6B00;padding:24px;font-size:12px;">Chargement…</div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalRecvVersement" style="display:none;" onclick="if(event.target===this)closeModal('modalRecvVersement')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#7c3aed,#a855f7,#4c1d95);border-radius:24px 24px 0 0;"></div>
@@ -1911,7 +1931,7 @@ function renderDirOwnersList(all){
     const loc=dirOwnersLocData[u.id];
     const locIsFresh=loc&&loc.updatedAt&&(Date.now()-(loc.updatedAt?.toDate?.()?.getTime()||0))<10*60*1000;
     const locInfo=locIsFresh?`<div style="font-size:11px;color:#34d399;margin-top:4px;">🛰️ En ligne · ${loc.updatedAt?.toDate?.()?.toLocaleTimeString('fr-FR')||''} · ±${Math.round(loc.accuracy||0)}m</div>`:`<div style="font-size:11px;color:#555;margin-top:4px;">📡 Position GPS non partagée</div>`;
-    return `<div class="dir-card" style="animation:fadeIn .3s ease;">
+    return `<div class="dir-card" style="animation:fadeIn .3s ease;cursor:pointer;" onclick="openDirOwnerDetail('${u.id}')">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
         <div class="dir-recv-avatar" style="background:linear-gradient(135deg,#0ea5e922,#0369a122);border:1.5px solid #0ea5e966;">${initials}</div>
         <div style="flex:1;min-width:0;">
@@ -1924,7 +1944,8 @@ function renderDirOwnersList(all){
         </div>
         <div>${statusBadge(u.status)}</div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <div style="font-size:10px;color:#0ea5e988;text-align:center;margin:2px 0 8px;">👆 Touchez pour voir le détail + receveur(s)</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" onclick="event.stopPropagation()">
         ${locIsFresh?`<button class="admin-action-btn btn-info" onclick="focusDirOwnerOnMap('${u.id}')">📍 Localiser</button>`:''}
         ${u.status==='approved'?`<button class="admin-action-btn btn-suspend" onclick="dirSuspendUser('${u.id}')">⚠️ Suspendre</button>`:''}
         ${u.status==='suspended'?`<button class="admin-action-btn btn-approve" onclick="dirReactivateUser('${u.id}')">♻️ Réactiver</button>`:''}
@@ -2025,6 +2046,107 @@ async function loadDirOwners(){
     },err=>{console.warn('dirOwners',err);cont.innerHTML=_dirOwnersErrHtml(err,'lecture propriétaires');});
   }catch(e){cont.innerHTML=_dirOwnersErrHtml(e,'init');}
 }
+
+function _dirDetailField(label,value){
+  return `<div style="margin-bottom:10px;"><div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:1px;">${label}</div><div style="font-size:14px;color:#e2e8f0;font-weight:700;">${value||'—'}</div></div>`;
+}
+window.openDirOwnerDetail=async(ownerUid)=>{
+  openModal('modalDirOwnerDetail');
+  const body=document.getElementById('dirOwnerDetailBody');
+  body.innerHTML='<div style="text-align:center;color:#7dd3fc;padding:24px;font-size:12px;">Chargement…</div>';
+  try{
+    const oSnap=await getDoc(doc(db,'users',ownerUid));
+    if(!oSnap.exists()){body.innerHTML='<div style="text-align:center;color:#DF0024;padding:24px;">Propriétaire introuvable.</div>';return;}
+    const u={id:ownerUid,...oSnap.data()};
+    const loc=dirOwnersLocData[ownerUid];
+    const locIsFresh=loc&&loc.updatedAt&&(Date.now()-(loc.updatedAt?.toDate?.()?.getTime()||0))<10*60*1000;
+    let recvHtml='<div style="text-align:center;color:#555;padding:16px;font-size:12px;">Chargement des receveurs…</div>';
+    body.innerHTML=`
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="width:60px;height:60px;border-radius:30px;background:#0ea5e922;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 8px;">🚌</div>
+        <div style="font-weight:900;font-size:18px;">${u.name||'—'}</div>
+        <div style="color:#888;font-size:13px;">${u.email||'—'}</div>
+        <div style="margin-top:8px;">${statusBadge(u.status)}</div>
+      </div>
+      <div style="background:#0f2016;border-radius:14px;padding:14px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;">
+        ${_dirDetailField('GIE / Organisation',u.company||u.org||'—')}
+        ${_dirDetailField('Téléphone',u.phone||'—')}
+        ${_dirDetailField('Wallet',u.walletId||'—')}
+        ${_dirDetailField('Solde',fmt(u.balance||0)+' F')}
+        ${_dirDetailField('Bus',u.vehicle||'—')}
+        ${_dirDetailField('Ligne / Zone',(u.ligne||'—')+' · '+(u.zone||'—'))}
+        ${_dirDetailField('Recettes du jour',fmt(u.today||0)+' F')}
+        ${_dirDetailField('Position GPS',locIsFresh?'🛰️ En ligne · '+(loc.updatedAt?.toDate?.()?.toLocaleTimeString('fr-FR')||''):'📡 Non partagée')}
+      </div>
+      ${locIsFresh?`<button class="admin-action-btn btn-info" style="width:100%;margin-bottom:16px;" onclick="closeModal('modalDirOwnerDetail');focusDirOwnerOnMap('${ownerUid}')">📍 Voir sur la carte</button>`:''}
+      <div style="font-size:11px;font-weight:800;color:#7dd3fc;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">🎫 Receveur(s) lié(s)</div>
+      <div id="dirOwnerDetailReceivers">${recvHtml}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;">
+        ${u.status==='approved'?`<button class="admin-action-btn btn-suspend" onclick="dirSuspendUser('${ownerUid}');closeModal('modalDirOwnerDetail')">⚠️ Suspendre</button>`:''}
+        ${u.status==='suspended'?`<button class="admin-action-btn btn-approve" onclick="dirReactivateUser('${ownerUid}');closeModal('modalDirOwnerDetail')">♻️ Réactiver</button>`:''}
+      </div>`;
+    // Charge les receveurs liés à ce propriétaire (approuvés ou en attente)
+    const recvCont=document.getElementById('dirOwnerDetailReceivers');
+    try{
+      const rSnap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('approvedOwnerUids','array-contains',ownerUid)));
+      let receivers=rSnap.docs.map(d=>({id:d.id,...d.data()}));
+      if(!receivers.length){
+        // fallback: candidatures en attente (pas encore approuvées) liées à ce propriétaire
+        try{const pSnap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('pendingOwnerUids','array-contains',ownerUid)));receivers=pSnap.docs.map(d=>({id:d.id,...d.data()}));}catch(e2){}
+      }
+      if(!receivers.length){recvCont.innerHTML='<div style="text-align:center;color:#555;padding:16px;font-size:12px;background:#ffffff08;border-radius:12px;">Aucun receveur lié à ce propriétaire.</div>';return;}
+      recvCont.innerHTML=receivers.map(r=>{
+        const initials=(r.name||'??').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        return `<div class="dir-recv-row" style="cursor:pointer;" onclick="openDirReceiverDetail('${r.id}','${ownerUid}')">
+          <div class="dir-recv-avatar">${initials}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:800;font-size:13px;color:#e2e8f0;">${r.name||'—'}</div>
+            <div style="font-size:11px;color:#555;">${r.vehicle||'—'} · ${r.ligne||'—'}</div>
+          </div>
+          <div style="text-align:right;">${statusBadge(r.status)}<div style="font-size:11px;color:#0ea5e9;margin-top:2px;">👆 Voir</div></div>
+        </div>`;
+      }).join('');
+    }catch(e){console.warn('[dirOwnerDetail receivers]',e);recvCont.innerHTML='<div style="text-align:center;color:#DF0024;padding:16px;font-size:12px;">Erreur de chargement des receveurs.</div>';}
+  }catch(e){body.innerHTML='<div style="text-align:center;color:#DF0024;padding:24px;">Erreur: '+e.message+'</div>';}
+};
+window.openDirReceiverDetail=async(receiverUid,backOwnerUid)=>{
+  closeModal('modalDirOwnerDetail');
+  openModal('modalDirReceiverDetail');
+  const body=document.getElementById('dirReceiverDetailBody');
+  body.innerHTML='<div style="text-align:center;color:#FF6B00;padding:24px;font-size:12px;">Chargement…</div>';
+  try{
+    const rSnap=await getDoc(doc(db,'users',receiverUid));
+    if(!rSnap.exists()){body.innerHTML='<div style="text-align:center;color:#DF0024;padding:24px;">Receveur introuvable.</div>';return;}
+    const r={id:receiverUid,...rSnap.data()};
+    body.innerHTML=`
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="width:60px;height:60px;border-radius:30px;background:#FF6B0022;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 8px;">🎫</div>
+        <div style="font-weight:900;font-size:18px;">${r.name||'—'}</div>
+        <div style="color:#888;font-size:13px;">${r.email||'—'}</div>
+        <div style="margin-top:8px;">${statusBadge(r.status)}</div>
+      </div>
+      <div style="background:#0f2016;border-radius:14px;padding:14px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;">
+        ${_dirDetailField('Téléphone',r.phone||'—')}
+        ${_dirDetailField('CNI',r.cni||'—')}
+        ${_dirDetailField('Adresse',r.address||'—')}
+        ${_dirDetailField('Wallet',r.walletId||'—')}
+        ${_dirDetailField('Solde',fmt(r.balance||0)+' F')}
+        ${_dirDetailField('GIE',r.gie||'—')}
+        ${_dirDetailField('Bus',r.vehicle||'—')}
+        ${_dirDetailField('Ligne / Zone',(r.ligne||'—')+' · '+(r.zone||'—'))}
+        ${_dirDetailField('Recettes du jour',fmt(r.today||0)+' F')}
+        ${_dirDetailField('Tickets émis',r.count||0)}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="admin-action-btn btn-info" onclick="openAssignBusDir('${receiverUid}','${(r.name||'').replace(/'/g,'')}');closeModal('modalDirReceiverDetail')">🚌 ${r.gie?'Modifier Bus':'Assigner Bus'}</button>
+        ${r.status==='approved'?`<button class="admin-action-btn btn-suspend" onclick="dirSuspendUser('${receiverUid}');closeModal('modalDirReceiverDetail')">⚠️ Suspendre</button>`:''}
+        ${r.status==='suspended'?`<button class="admin-action-btn btn-approve" onclick="dirReactivateUser('${receiverUid}');closeModal('modalDirReceiverDetail')">♻️ Réactiver</button>`:''}
+      </div>
+      ${backOwnerUid?`<button class="btn btn-secondary btn-full" style="margin-top:14px;" onclick="openDirReceiverBack('${backOwnerUid}')">← Retour au propriétaire</button>`:''}
+    `;
+  }catch(e){body.innerHTML='<div style="text-align:center;color:#DF0024;padding:24px;">Erreur: '+e.message+'</div>';}
+};
+window.openDirReceiverBack=(ownerUid)=>{closeModal('modalDirReceiverDetail');openDirOwnerDetail(ownerUid);};
 
 async function loadDirReceivers(){
   const cont=document.getElementById('dirReceiversList');
