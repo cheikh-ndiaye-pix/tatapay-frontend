@@ -777,7 +777,15 @@ select.input-field option{background:#0c1f12;color:#fff;}
     </div>
     <div class="tab-content" id="dirTab-owners" style="padding:18px 16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div style="font-weight:900;font-size:20px;color:#7dd3fc;">🚌 Propriétaires approuvés</div><div id="dirOwnersLiveBadge" style="display:flex;align-items:center;gap:6px;background:#05966922;border:1px solid #05966966;border-radius:20px;padding:5px 10px;font-size:10px;font-weight:800;color:#34d399;letter-spacing:1px;"><span style="width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399;animation:pulse 1.4s infinite;"></span>TEMPS RÉEL</div></div>
-      <div style="font-size:11px;color:#7dd3fc99;margin-bottom:14px;">Mise à jour automatique des propriétaires que vous avez approuvés (bus, statut, recettes du jour, solde).</div>
+      <div style="font-size:11px;color:#7dd3fc99;margin-bottom:14px;">Mise à jour automatique des propriétaires que vous avez approuvés (bus, statut, recettes du jour, solde, position GPS).</div>
+      <div class="dir-card" style="margin-bottom:16px;padding:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:0 4px;">
+          <div style="font-size:12px;font-weight:800;color:#7dd3fc;">🗺️ Position en direct des bus</div>
+          <div id="dirOwnersMapCount" style="font-size:10px;color:#34d399;font-weight:800;">0 en ligne</div>
+        </div>
+        <div id="dirOwnersMap" style="height:220px;border-radius:12px;overflow:hidden;background:#0a1a26;"></div>
+        <div id="dirOwnersMapInfo" style="font-size:10px;color:#666;padding:6px 4px 0;">📡 En attente de position GPS des propriétaires…</div>
+      </div>
       <div id="dirOwnersList"><div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun propriétaire.</div></div>
     </div>
     <div class="tab-content" id="dirTab-receivers" style="padding:18px 16px;">
@@ -1147,6 +1155,7 @@ let recvBusSelection=new Set();
 let recvBusFilter='all';
 
 let trackMap=null,trackMapMarker=null,unsubTrackLoc=null;
+let dirOwnersMap=null,dirOwnersMarkers={},dirOwnersLocUnsubs={},dirOwnersLocData={};
 
 function loader(msg='',show=true){const l=document.getElementById('globalLoader');l.className=show?'show':'';if(msg)document.getElementById('loaderMsg').textContent=msg;}
 let ntTimer=null;
@@ -1666,7 +1675,7 @@ window.switchDirTab=(tab)=>{
   document.querySelectorAll('.dir-nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('dirTab-'+tab)?.classList.add('active');
   document.getElementById('dnav-'+tab)?.classList.add('active');
-  if(tab==='owners')loadDirOwners();
+  if(tab==='owners'){loadDirOwners();setTimeout(()=>dirOwnersMap?.invalidateSize(),150);}
   if(tab==='receivers')loadDirReceivers();
 };
 
@@ -1886,6 +1895,9 @@ function renderDirOwnersList(all){
   cont.innerHTML=all.map(u=>{
     const initials=(u.name||'??').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     const busInfo=u.gie||u.vehicle||u.ligne?`<div style="font-size:11px;color:#0ea5e9;margin-top:4px;">🚌 ${u.gie||'—'} · ${u.vehicle||'—'} · Ligne ${u.ligne||'—'} · Zone ${u.zone||'—'}</div>`:'<div style="font-size:11px;color:#FF6B00;margin-top:4px;">⚠️ Aucun bus assigné</div>';
+    const loc=dirOwnersLocData[u.id];
+    const locIsFresh=loc&&loc.updatedAt&&(Date.now()-(loc.updatedAt?.toDate?.()?.getTime()||0))<10*60*1000;
+    const locInfo=locIsFresh?`<div style="font-size:11px;color:#34d399;margin-top:4px;">🛰️ En ligne · ${loc.updatedAt?.toDate?.()?.toLocaleTimeString('fr-FR')||''} · ±${Math.round(loc.accuracy||0)}m</div>`:`<div style="font-size:11px;color:#555;margin-top:4px;">📡 Position GPS non partagée</div>`;
     return `<div class="dir-card" style="animation:fadeIn .3s ease;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
         <div class="dir-recv-avatar" style="background:linear-gradient(135deg,#0ea5e922,#0369a122);border:1.5px solid #0ea5e966;">${initials}</div>
@@ -1894,22 +1906,81 @@ function renderDirOwnersList(all){
           <div style="font-size:11px;color:#888;">GIE: ${u.company||u.org||'—'}</div>
           <div style="font-size:11px;color:#888;">${u.email||'—'} · ${u.phone||'—'}</div>
           ${busInfo}
+          ${locInfo}
           <div style="font-size:11px;color:#888;margin-top:4px;">💳 ${u.walletId||'—'} · Jour: <strong style="color:#34d399;">${fmt(u.today||0)} F</strong> · Solde: <strong style="color:#FDEF42;">${fmt(u.balance||0)} F</strong></div>
         </div>
         <div>${statusBadge(u.status)}</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${locIsFresh?`<button class="admin-action-btn btn-info" onclick="focusDirOwnerOnMap('${u.id}')">📍 Localiser</button>`:''}
         ${u.status==='approved'?`<button class="admin-action-btn btn-suspend" onclick="dirSuspendUser('${u.id}')">⚠️ Suspendre</button>`:''}
         ${u.status==='suspended'?`<button class="admin-action-btn btn-approve" onclick="dirReactivateUser('${u.id}')">♻️ Réactiver</button>`:''}
       </div>
     </div>`;}).join('');
 }
+function initDirOwnersMap(){
+  const el=document.getElementById('dirOwnersMap');
+  if(!el||typeof L==='undefined')return;
+  if(!dirOwnersMap){dirOwnersMap=L.map(el,{zoomControl:true,attributionControl:false}).setView([14.6928,-17.4467],11);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(dirOwnersMap);}
+  else{dirOwnersMap.invalidateSize();}
+}
+function syncDirOwnersLocations(owners){
+  initDirOwnersMap();
+  const currentIds=new Set(owners.map(o=>o.id));
+  // arrêter le suivi des propriétaires qui ne sont plus dans la liste
+  Object.keys(dirOwnersLocUnsubs).forEach(uid=>{
+    if(!currentIds.has(uid)){
+      try{dirOwnersLocUnsubs[uid]();}catch(e){}
+      delete dirOwnersLocUnsubs[uid];
+      if(dirOwnersMarkers[uid]){try{dirOwnersMap?.removeLayer(dirOwnersMarkers[uid]);}catch(e){}delete dirOwnersMarkers[uid];}
+      delete dirOwnersLocData[uid];
+    }
+  });
+  // démarrer le suivi des nouveaux propriétaires
+  owners.forEach(u=>{
+    if(dirOwnersLocUnsubs[u.id])return;
+    dirOwnersLocUnsubs[u.id]=onSnapshot(doc(db,'bus_locations',u.id),snap=>{
+      if(!snap.exists()){delete dirOwnersLocData[u.id];if(dirOwnersMarkers[u.id]){try{dirOwnersMap?.removeLayer(dirOwnersMarkers[u.id]);}catch(e){}delete dirOwnersMarkers[u.id];}_updateDirOwnersMapUI();return;}
+      const d=snap.data();dirOwnersLocData[u.id]=d;
+      if(dirOwnersMap&&d.lat!=null&&d.lng!=null){
+        const ll=[d.lat,d.lng];
+        const label=`🚌 ${u.name||'Propriétaire'} · ${d.vehicle||u.vehicle||'—'}`;
+        if(!dirOwnersMarkers[u.id]){dirOwnersMarkers[u.id]=L.marker(ll).addTo(dirOwnersMap).bindPopup(label);}
+        else{dirOwnersMarkers[u.id].setLatLng(ll).setPopupContent(label);}
+      }
+      _updateDirOwnersMapUI();
+    },err=>{console.warn('[dirOwnersLoc]',u.id,err);});
+  });
+  _updateDirOwnersMapUI();
+}
+function _updateDirOwnersMapUI(){
+  const countEl=document.getElementById('dirOwnersMapCount');
+  const infoEl=document.getElementById('dirOwnersMapInfo');
+  const n=Object.keys(dirOwnersMarkers).length;
+  if(countEl)countEl.textContent=n+' en ligne';
+  if(infoEl)infoEl.textContent=n?`🛰️ ${n} bus localisé${n>1?'s':''} en temps réel.`:'📡 En attente de position GPS des propriétaires…';
+  if(dirOwnersMap&&n){
+    const pts=Object.values(dirOwnersMarkers).map(m=>m.getLatLng());
+    if(pts.length===1)dirOwnersMap.setView(pts[0],14);
+    else dirOwnersMap.fitBounds(L.latLngBounds(pts),{padding:[24,24]});
+  }
+  // rafraîchit les cartes propriétaires pour mettre à jour le badge "En ligne"
+  renderDirOwnersList([..._dirOwnersA,..._dirOwnersB].filter((u,i,a)=>a.findIndex(x=>x.id===u.id)===i).sort((a,b)=>(b.today||0)-(a.today||0)));
+}
+window.focusDirOwnerOnMap=(uid)=>{
+  const m=dirOwnersMarkers[uid];
+  if(!m||!dirOwnersMap){notify('📡','Position','Ce propriétaire ne partage pas sa position pour le moment.');return;}
+  dirOwnersMap.setView(m.getLatLng(),16);
+  m.openPopup();
+  document.getElementById('dirOwnersMap')?.scrollIntoView({behavior:'smooth',block:'center'});
+};
 let _dirOwnersA=[],_dirOwnersB=[];
 function _mergeAndRenderDirOwners(){
   const seen=new Set();const all=[];
   [..._dirOwnersA,..._dirOwnersB].forEach(u=>{if(!seen.has(u.id)){seen.add(u.id);all.push(u);}});
   all.sort((a,b)=>(b.today||0)-(a.today||0));
   renderDirOwnersList(all);
+  syncDirOwnersLocations(all);
 }
 let unsubDirOwnersA=null,unsubDirOwnersB=null;
 function _dirOwnersErrHtml(err,label){
