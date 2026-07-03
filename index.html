@@ -3098,7 +3098,7 @@ window.clearNotifs=async()=>{const q=query(collection(db,'notifications'),where(
 
 let detector=null;
 if('BarcodeDetector' in window){try{detector=new BarcodeDetector({formats:['qr_code']});}catch(e){}}
-let scanCanvas=null,scanCtx=null;
+let scanCanvas=null,scanCtx=null,scanHintTimer=null,scanStartTs=0;
 window.openCamera=async(mode)=>{
   S.camMode=mode;S.scanning=false;
    const labels={bus:'Scanner QR Bus',recv:'Scanner Passager',friend:'Scanner Ami 📷','wallet-scan':'Scanner Wallet',ticket:'Scanner mon Ticket'};
@@ -3106,17 +3106,23 @@ window.openCamera=async(mode)=>{
   document.getElementById('camError').style.display='none';
   document.getElementById('manualPanel')?.remove();
   document.getElementById('cameraScreen').classList.add('open');
-  try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:S.facing},audio:false});S.stream=stream;const video=document.getElementById('cameraVideo');video.srcObject=stream;await video.play();if(!scanCanvas){scanCanvas=document.createElement('canvas');scanCtx=scanCanvas.getContext('2d',{willReadFrequently:true});}S.scanning=true;scanLoop();}
+  if(scanHintTimer){clearTimeout(scanHintTimer);scanHintTimer=null;}
+  if(!detector&&typeof jsQR!=='function'){
+    document.getElementById('camError').style.display='block';
+    document.getElementById('camError').textContent='⚠️ Lecteur QR indisponible (problème réseau au chargement). Rechargez la page avec une connexion active, ou utilisez la saisie manuelle si possible.';
+    if(mode!=='ticket')showManualPanel();
+  }
+  try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:S.facing},audio:false});S.stream=stream;const video=document.getElementById('cameraVideo');video.srcObject=stream;await video.play();if(!scanCanvas){scanCanvas=document.createElement('canvas');scanCtx=scanCanvas.getContext('2d',{willReadFrequently:true});}S.scanning=true;scanStartTs=Date.now();scanHintTimer=setTimeout(()=>{if(S.scanning){document.getElementById('camError').style.display='block';document.getElementById('camError').textContent='📷 Toujours en recherche… rapprochez/éloignez le téléphone, assurez un bon éclairage et que le QR entier soit visible et net.';}},8000);scanLoop();}
   catch(e){let msg='Caméra inaccessible.';if(e.name==='NotAllowedError')msg='Permission caméra refusée.';document.getElementById('camError').style.display='block';document.getElementById('camError').textContent='⚠️ '+msg;showManualPanel();}
 };
 function showManualPanel(){document.getElementById('manualPanel')?.remove();const div=Object.assign(document.createElement('div'),{id:'manualPanel'});div.style.cssText='position:absolute;left:0;right:0;bottom:90px;padding:0 20px;pointer-events:all;';div.innerHTML=`<div style="background:#0c1f12;border:1px solid #009A4444;border-radius:14px;padding:14px;"><div style="color:#aaa;font-size:12px;margin-bottom:8px;">Entrez l'ID manuellement :</div><input id="manualQrInput" class="input-field" placeholder="TP-... ou RV-..."/><button class="btn btn-primary btn-full" style="margin-top:10px;" onclick="submitManual()">Valider</button></div>`;document.querySelector('#cameraScreen .camera-overlay').appendChild(div);}
 window.submitManual=()=>{const v=document.getElementById('manualQrInput')?.value.trim();if(v)handleQR(v);};
 function scanLoop(){if(!S.scanning)return;const video=document.getElementById('cameraVideo');if(video.readyState!==video.HAVE_ENOUGH_DATA){requestAnimationFrame(scanLoop);return;}if(detector){detector.detect(video).then(codes=>{if(codes?.length){handleQR(codes[0].rawValue);return;}scanWithJsQR(video);}).catch(()=>scanWithJsQR(video));}else{scanWithJsQR(video);}}
 function scanWithJsQR(video){if(!S.scanning)return;if(typeof jsQR==='function'){const w=video.videoWidth,h=video.videoHeight;if(w&&h){scanCanvas.width=w;scanCanvas.height=h;scanCtx.drawImage(video,0,0,w,h);try{const img=scanCtx.getImageData(0,0,w,h);const code=jsQR(img.data,w,h,{inversionAttempts:'dontInvert'});if(code?.data){handleQR(code.data);return;}}catch(e){}}}requestAnimationFrame(scanLoop);}
-window.stopCamera=()=>{S.scanning=false;document.getElementById('cameraScreen').classList.remove('open');document.getElementById('manualPanel')?.remove();if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null;}};
+window.stopCamera=()=>{S.scanning=false;if(scanHintTimer){clearTimeout(scanHintTimer);scanHintTimer=null;}document.getElementById('cameraScreen').classList.remove('open');document.getElementById('manualPanel')?.remove();if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null;}};
 window.flipCamera=async()=>{S.facing=S.facing==='environment'?'user':'environment';if(S.stream)S.stream.getTracks().forEach(t=>t.stop());await window.openCamera(S.camMode);};
 function handleQR(raw){stopCamera();raw=(raw||'').trim();const ticketM=raw.match(/tatapay:\/\/ticket\/(.+)/i);if(ticketM){if(document.getElementById('modalTicketFlow')?.style.display==='flex')closeModal('modalTicketFlow');importTicketFromQR(ticketM[1]);return;}const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);const balM=raw.match(/[?&]bal=(\d+)/);const tM=raw.match(/[?&]t=(\d+)/);const uidM=raw.match(/[?&]uid=([A-Za-z0-9]+)/);const qrBal=balM?parseInt(balM[1],10):null;const qrTs=tM?parseInt(tM[1],10):null;const qrUid=uidM?uidM[1]:null;if(S.camMode==='ticket'&&!ticketM){notify('❌','QR invalide','Ce n\'est pas un QR de ticket.');return;}if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Contenu: '+raw.slice(0,40));return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId,qrBal,qrTs,qrUid);}else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}}
 
-if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const regs=await navigator.serviceWorker.getRegistrations();for(const r of regs)await r.unregister();if(window.caches){const keys=await caches.keys();for(const k of keys)await caches.delete(k);}}catch(e){}});}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
 </div>
