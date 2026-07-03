@@ -3096,7 +3096,7 @@ window.importTicketFromQR=(raw)=>{
       compact.price=Number(compact.price)||0;
       compact.offline=compact.offline==='1'||compact.offline===1;
     }
-  }catch(e){notify('❌','QR invalide','Ticket illisible.');return;}
+  }catch(e){console.warn('[importTicketFromQR] échec de lecture',raw,e);notify('❌','QR invalide','Ticket illisible.');return;}
   const now=new Date();
   const t={...compact,ts:null,receivedAt:now.toISOString()};
   cacheTicket(t);cacheActiveTicket(t);
