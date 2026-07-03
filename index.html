@@ -1184,7 +1184,7 @@ function loader(msg='',show=true){const l=document.getElementById('globalLoader'
 let ntTimer=null;
 function notify(icon,title,body){['sygostIcon','sygostTitle','sygostBody'].forEach((id,i)=>document.getElementById(id).textContent=[icon,title,body][i]);const el=document.getElementById('sygostNotif');el.classList.add('show');if(ntTimer)clearTimeout(ntTimer);ntTimer=setTimeout(hideSygost,4500);}
 window.hideSygost=()=>document.getElementById('sygostNotif').classList.remove('show');
-function renderQR(id,text,size=130){const el=document.getElementById(id);if(!el)return;el.innerHTML='';const canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;canvas.style.cssText=`border-radius:4px;display:block;width:${size}px;height:${size}px;background:#fff;`;el.appendChild(canvas);function fallbackImg(){el.innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&ecc=H&margin=10" width="${size}" height="${size}" style="border-radius:4px;display:block;" onerror="this.parentNode.innerHTML='<div style=&quot;color:#f66;font-size:11px;text-align:center;padding:20px;&quot;>QR indisponible (hors-ligne)</div>'"/>`;}if(window.QRCode&&QRCode.toCanvas){QRCode.toCanvas(canvas,text,{width:size,margin:2,errorCorrectionLevel:'H'},(err)=>{if(err){console.warn('[renderQR] local gen failed, fallback',err);fallbackImg();}});}else{console.warn('[renderQR] QRCode lib not loaded, fallback');fallbackImg();}}
+function renderQR(id,text,size=130,ecc='H'){const el=document.getElementById(id);if(!el)return;el.innerHTML='';const canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;canvas.style.cssText=`border-radius:4px;display:block;width:${size}px;height:${size}px;background:#fff;`;el.appendChild(canvas);function fallbackImg(){el.innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&ecc=${ecc}&margin=10" width="${size}" height="${size}" style="border-radius:4px;display:block;" onerror="this.parentNode.innerHTML='<div style=&quot;color:#f66;font-size:11px;text-align:center;padding:20px;&quot;>QR indisponible (hors-ligne)</div>'"/>`;}if(window.QRCode&&QRCode.toCanvas){QRCode.toCanvas(canvas,text,{width:size,margin:2,errorCorrectionLevel:ecc},(err)=>{if(err){console.warn('[renderQR] local gen failed, fallback',err);fallbackImg();}});}else{console.warn('[renderQR] QRCode lib not loaded, fallback');fallbackImg();}}
 function renderMerchantQR(id,p,size=160){const el=document.getElementById(id);if(!el)return;const data=`tatapay://bus/${p.walletId}?gie=${encodeURIComponent(p.gie||'')}&vehicle=${encodeURIComponent(p.vehicle||'')}&ligne=${encodeURIComponent(p.ligne||'')}&zone=${encodeURIComponent(p.zone||'')}`;el.innerHTML=`<div style="background:#fff;border-radius:14px;padding:12px;display:inline-block;"><div id="${id}_canvasWrap"></div><div style="margin-top:8px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:#333;font-weight:700;line-height:1.6;">${p.gie||'—'} · ${p.vehicle||'—'} · Ligne ${p.ligne||'—'}<br><span style="color:#009A44;">${p.walletId}</span></div></div>`;const wrap=document.getElementById(id+'_canvasWrap');if(!wrap)return;const canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;canvas.style.cssText=`display:block;border-radius:4px;width:${size}px;height:${size}px;`;wrap.appendChild(canvas);function fallbackImg(){wrap.innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(data)}&ecc=H&margin=10" width="${size}" height="${size}" style="display:block;border-radius:4px;" onerror="this.parentNode.innerHTML='<div style=&quot;color:#c00;font-size:11px;padding:20px;&quot;>QR indisponible (hors-ligne)</div>'"/>`;}if(window.QRCode&&QRCode.toCanvas){QRCode.toCanvas(canvas,data,{width:size,margin:1,errorCorrectionLevel:'H'},(err)=>{if(err){console.warn('[renderMerchantQR] local gen failed, fallback',err);fallbackImg();}});}else{console.warn('[renderMerchantQR] QRCode lib not loaded, fallback');fallbackImg();}}
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id)?.classList.add('active');}
 function statusBadge(s){const map={pending:'badge-pending',approved:'badge-approved',active:'badge-approved',rejected:'badge-rejected',suspended:'badge-suspended',done:'badge-done'};const label={pending:'En attente',approved:'Approuvé',active:'Actif',rejected:'Refusé',suspended:'Suspendu',done:'Traité'};return`<span class="admin-badge ${map[s]||'badge-pending'}">${label[s]||s}</span>`;}
@@ -3070,18 +3070,33 @@ window.showTicketData=(t)=>{
   if(S.role==='receiver'&&handoff){
     // Le receveur montre ce QR au passager : il contient le ticket complet, lisible
     // sans réseau, pour que le passager le reçoive instantanément sur son propre téléphone.
-    const compact={gie:t.gie,vehicle:t.vehicle,ligne:t.ligne,zone:t.zone,from:t.from,to:t.to,section:t.section,price:t.price,passenger:t.passenger,passengerId:t.passengerId,busId:t.busId,date:t.date,time:t.time,sn:t.sn,offline:!!isOffline};
-    const payload='tatapay://ticket/'+encodeURIComponent(JSON.stringify(compact));
+    // Format compact "champ|champ|..." (pas de JSON) pour garder un QR léger et facile à scanner.
+    const TK_FIELDS=['gie','vehicle','ligne','zone','from','to','section','price','passenger','passengerId','busId','date','time','sn','offline'];
+    const compactStr=TK_FIELDS.map(k=>{let v=k==='offline'?(isOffline?1:0):(t[k]??'');return String(v).replace(/\|/g,' ');}).join('|');
+    const payload='tatapay://ticket/'+encodeURIComponent(compactStr);
     handoff.style.display='block';
     handoff.innerHTML=`<div style="text-align:center;font-size:11px;color:#888;margin:10px 0 6px;">👇 Faites scanner ce code par le passager pour qu'il reçoive son ticket</div><div id="ticketHandoffQRWrap" style="display:flex;justify-content:center;"></div>`;
-    renderQR('ticketHandoffQRWrap',payload,140);
+    renderQR('ticketHandoffQRWrap',payload,240,'M');
   }else if(handoff){handoff.style.display='none';handoff.innerHTML='';}
   if(S.role==='passenger'){cacheTicket(t);cacheActiveTicket(t);showDescendBtn(t);}
 };
 // Réception d'un ticket transmis directement par le QR du receveur (sans réseau)
 window.importTicketFromQR=(raw)=>{
   let compact;
-  try{compact=JSON.parse(decodeURIComponent(raw));}catch(e){notify('❌','QR invalide','Ticket illisible.');return;}
+  const TK_FIELDS=['gie','vehicle','ligne','zone','from','to','section','price','passenger','passengerId','busId','date','time','sn','offline'];
+  try{
+    const decoded=decodeURIComponent(raw);
+    if(decoded.trim().startsWith('{')){
+      // Compatibilité avec l'ancien format JSON
+      compact=JSON.parse(decoded);
+    }else{
+      const parts=decoded.split('|');
+      compact={};
+      TK_FIELDS.forEach((k,i)=>{compact[k]=parts[i]??'';});
+      compact.price=Number(compact.price)||0;
+      compact.offline=compact.offline==='1'||compact.offline===1;
+    }
+  }catch(e){notify('❌','QR invalide','Ticket illisible.');return;}
   const now=new Date();
   const t={...compact,ts:null,receivedAt:now.toISOString()};
   cacheTicket(t);cacheActiveTicket(t);
@@ -3123,6 +3138,6 @@ window.stopCamera=()=>{S.scanning=false;if(scanHintTimer){clearTimeout(scanHintT
 window.flipCamera=async()=>{S.facing=S.facing==='environment'?'user':'environment';if(S.stream)S.stream.getTracks().forEach(t=>t.stop());await window.openCamera(S.camMode);};
 function handleQR(raw){stopCamera();raw=(raw||'').trim();const ticketM=raw.match(/tatapay:\/\/ticket\/(.+)/i);if(ticketM){if(document.getElementById('modalTicketFlow')?.style.display==='flex')closeModal('modalTicketFlow');importTicketFromQR(ticketM[1]);return;}const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);const balM=raw.match(/[?&]bal=(\d+)/);const tM=raw.match(/[?&]t=(\d+)/);const uidM=raw.match(/[?&]uid=([A-Za-z0-9]+)/);const qrBal=balM?parseInt(balM[1],10):null;const qrTs=tM?parseInt(tM[1],10):null;const qrUid=uidM?uidM[1]:null;if(S.camMode==='ticket'&&!ticketM){notify('❌','QR invalide','Ce n\'est pas un QR de ticket.');return;}if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Contenu: '+raw.slice(0,40));return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId,qrBal,qrTs,qrUid);}else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}}
 
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
 </div>
