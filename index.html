@@ -2834,7 +2834,8 @@ async function loadRecvHistorique(){
       nSnap.docs.forEach(d=>{const n=d.data();let icon='🔔',title='Notification',sub='';if(n.type==='descendre'){icon='🛑';title=`Passager veut descendre — ${n.passenger||'—'}`;sub=`${n.from||''}→${n.to||''}`;}else if(n.type==='ticket_request'){icon='📩';title=`Demande ticket — ${n.passenger||'—'}`;sub=`${n.price||0} FCFA`;}else if(n.type==='versement_confirmed'){icon='✅';title='Versement confirmé';sub=`${fmt(n.amount||0)} FCFA`;}else if(n.type==='versement_disputed'){icon='⚠️';title='Versement contesté';sub=n.reason||'—';}else if(n.type==='versement_alert'){icon='💸';title='Rappel versement';sub=n.message||'—';}else{return;}items.push({cat:'action',ts:n.ts,icon,color:'#fbbf24',title,sub,amt:''});});
     }catch(e){console.warn('hist notifs',e);}
     items.sort((a,b)=>(b.ts?.toMillis?.()||0)-(a.ts?.toMillis?.()||0));
-    _recvHistAll=items;
+    let tkCount=0;
+    _recvHistAll=items.filter(i=>{if(i.cat==='ticket'){tkCount++;return tkCount<=10;}return true;});
     document.getElementById('recvHistTotVers').textContent=fmt(totVers)+' F';
     document.getElementById('recvHistTotEnc').textContent=fmt(totEnc)+' F';
     renderRecvHistorique();
@@ -3027,9 +3028,9 @@ window.recvToggleGeo=()=>{
   notify('📡','GPS','Partage de position démarré. Les passagers pourront suivre votre bus.');
 };
 async function refreshRecvStats(){if(S.role!=='receiver')return;const snap=await getDoc(doc(db,'users',S.uid));if(!snap.exists())return;const u=snap.data();S.profile={...S.profile,...u};document.getElementById('recvTotalToday').textContent=fmt(u.today||0)+' F';document.getElementById('recvTicketCount').textContent=u.count||0;const rb=document.getElementById('recvBalance');if(rb)rb.textContent=fmt(u.balance||0);}
-async function loadRecvTickets(){const q=query(collection(db,'tickets'),where('busUid','==',S.uid),orderBy('ts','desc'),limit(50));const snap=await getDocs(q);const cont=document.getElementById('recvTicketsList');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;color:#555;">Aucun ticket émis.</div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:11px;line-height:1.9;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}</div></div></div>`;}).join('');}
+async function loadRecvTickets(){const q=query(collection(db,'tickets'),where('busUid','==',S.uid),orderBy('ts','desc'),limit(10));const snap=await getDocs(q);const cont=document.getElementById('recvTicketsList');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;color:#555;">Aucun ticket émis.</div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:11px;line-height:1.9;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}</div></div></div>`;}).join('');}
 async function loadPassHomeTx(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'history'),orderBy('ts','desc'),limit(4));const snap=await getDocs(q);const cont=document.getElementById('passHomeTx');if(snap.empty){cont.innerHTML='<div style="color:#555;text-align:center;padding:16px 0;">Aucune transaction.</div>';return;}cont.innerHTML=snap.docs.map(d=>txRow(d.data())).join('');}
-async function loadPassHistory(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'history'),orderBy('ts','desc'),limit(50));const snap=await getDocs(q);const cont=document.getElementById('passHistory');if(snap.empty){cont.innerHTML='<div style="color:#555;text-align:center;padding:40px 0;">Aucune transaction.</div>';return;}cont.innerHTML=snap.docs.map(d=>txRow(d.data())).join('');}
+async function loadPassHistory(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'history'),orderBy('ts','desc'),limit(50));const snap=await getDocs(q);const cont=document.getElementById('passHistory');if(snap.empty){cont.innerHTML='<div style="color:#555;text-align:center;padding:40px 0;">Aucune transaction.</div>';return;}let tkCount=0;const docs=snap.docs.map(d=>d.data()).filter(h=>{if(h.type==='ticket'){tkCount++;return tkCount<=10;}return true;});cont.innerHTML=docs.map(h=>txRow(h)).join('');}
 function txRow(h){const icons={recharge:'💳',transfer_out:'↗️',transfer_in:'↙️',ticket:'🎫',withdraw:'💸',recharge_given:'💳',withdraw_request:'📤'};const pos=h.amount>0;return`<div class="tx-row"><div style="width:36px;height:36px;border-radius:12px;background:${pos?'#00A65022':'#DF002422'};display:flex;align-items:center;justify-content:center;font-size:16px;">${icons[h.type]||'💼'}</div><div style="flex:1;margin-left:4px;"><div style="font-weight:700;font-size:14px;">${h.label}</div></div><div style="color:${pos?'var(--g)':'var(--r)'};font-weight:800;font-size:14px;">${pos?'+':''}${fmt(h.amount)} F</div></div>`;}
 /* ═══════════════════ CACHE TICKETS HORS-LIGNE (PASSAGER) ═══════════════════ */
 /* Sauvegarde les tickets achetés en localStorage pour qu'ils restent
@@ -3037,7 +3038,7 @@ function txRow(h){const icons={recharge:'💳',transfer_out:'↗️',transfer_in
 function _tkKey(){return 'tatapay_tickets_'+(S.uid||'anon');}
 function _tkActiveKey(){return 'tatapay_activeTicket_'+(S.uid||'anon');}
 function getCachedTickets(){try{return JSON.parse(localStorage.getItem(_tkKey())||'[]');}catch(e){return [];}}
-function cacheTicket(t){try{if(!t||!S.uid)return;const list=getCachedTickets();const sn=t.sn||('_'+Date.now());if(list.some(x=>x.sn===sn))return;list.unshift({...t,ts:null,_cachedAt:Date.now()});localStorage.setItem(_tkKey(),JSON.stringify(list.slice(0,50)));}catch(e){console.warn('[cacheTicket]',e);}}
+function cacheTicket(t){try{if(!t||!S.uid)return;const list=getCachedTickets();const sn=t.sn||('_'+Date.now());if(list.some(x=>x.sn===sn))return;list.unshift({...t,ts:null,_cachedAt:Date.now()});localStorage.setItem(_tkKey(),JSON.stringify(list.slice(0,10)));}catch(e){console.warn('[cacheTicket]',e);}}
 function cacheActiveTicket(t){try{localStorage.setItem(_tkActiveKey(),JSON.stringify({...t,ts:null}));}catch(e){}}
 function getCachedActiveTicket(){try{const v=localStorage.getItem(_tkActiveKey());return v?JSON.parse(v):null;}catch(e){return null;}}
 function clearCachedActiveTicket(){try{localStorage.removeItem(_tkActiveKey());}catch(e){}}
@@ -3048,7 +3049,7 @@ async function loadPassTickets(){
   const cached=getCachedTickets();
   if(cached.length)renderPassTicketsList(cached,!navigator.onLine);
   try{
-    const q=query(collection(db,'users',S.uid,'tickets'),orderBy('ts','desc'),limit(30));
+    const q=query(collection(db,'users',S.uid,'tickets'),orderBy('ts','desc'),limit(10));
     const snap=await getDocs(q);
     const remote=snap.docs.map(d=>d.data());
     // Fusion cache + serveur (le serveur a priorité, dédup par SN)
