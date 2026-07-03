@@ -1153,7 +1153,7 @@ import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut
 import{getFirestore,doc,setDoc,getDoc,getDocFromCache,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:dade7eebdc0894639b0b6d",measurementId:"G-2YGJP8MZ2H"};
+const FC={apiKey:"@secret:GOOGLE_API_KEY",authDomain:"tatapay-a4972.firebaseapp.com",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:dade7eebdc0894639b0b6d",measurementId:"G-2YGJP8MZ2H"};
 const fbApp=initializeApp(FC);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
@@ -1335,7 +1335,7 @@ window.doSubmitReceiverCandidature=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 window.forgotPassword=async()=>{const email=document.getElementById('authEmail').value.trim().toLowerCase();if(!email){notify('⚠️','Email requis','Entrez votre email.');return;}try{await sendPasswordResetEmail(auth,email);notify('✅','Email envoyé','Vérifiez votre boîte mail.');}catch(e){notify('❌','Erreur',e.message);}};
-window.doLogout=async()=>{detachListeners();await signOut(auth);S={...S,role:null,uid:null,profile:null,expectedLoginRole:null};activeTicketData=null;hideDescendBtn();show('screenSplash');};
+window.doLogout=async()=>{detachListeners();try{clearCachedActiveTicket();}catch(e){}await signOut(auth);S={...S,role:null,uid:null,profile:null,expectedLoginRole:null};activeTicketData=null;hideDescendBtn();show('screenSplash');};
 
 let _pendingAuthUser=null;
 async function attemptSessionRestore(user){
@@ -1404,6 +1404,8 @@ function loginUI(){
     updateBalanceUI();clearFriend();
     unsubBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;updateBalanceUI();}});
     loadPassHomeTx();loadPassTickets();show('screenPassenger');notify('✅','Bienvenue !',p.name);
+    // Restaure le dernier ticket actif depuis le cache (utile hors-ligne)
+    const _cachedActive=getCachedActiveTicket();if(_cachedActive)showDescendBtn(_cachedActive);
   }else if(S.role==='receiver'&&p.status==='approved'){
     document.getElementById('recvGreet').textContent=p.name;
     document.getElementById('recvInfoLine').textContent=`GIE:${p.gie||'—'} = ${p.vehicle||'—'} = Ligne:${p.ligne||'—'} · ${p.trajet||''} · Zone:${p.zone||'—'}`;
@@ -2980,9 +2982,45 @@ async function loadRecvTickets(){const q=query(collection(db,'tickets'),where('b
 async function loadPassHomeTx(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'history'),orderBy('ts','desc'),limit(4));const snap=await getDocs(q);const cont=document.getElementById('passHomeTx');if(snap.empty){cont.innerHTML='<div style="color:#555;text-align:center;padding:16px 0;">Aucune transaction.</div>';return;}cont.innerHTML=snap.docs.map(d=>txRow(d.data())).join('');}
 async function loadPassHistory(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'history'),orderBy('ts','desc'),limit(50));const snap=await getDocs(q);const cont=document.getElementById('passHistory');if(snap.empty){cont.innerHTML='<div style="color:#555;text-align:center;padding:40px 0;">Aucune transaction.</div>';return;}cont.innerHTML=snap.docs.map(d=>txRow(d.data())).join('');}
 function txRow(h){const icons={recharge:'💳',transfer_out:'↗️',transfer_in:'↙️',ticket:'🎫',withdraw:'💸',recharge_given:'💳',withdraw_request:'📤'};const pos=h.amount>0;return`<div class="tx-row"><div style="width:36px;height:36px;border-radius:12px;background:${pos?'#00A65022':'#DF002422'};display:flex;align-items:center;justify-content:center;font-size:16px;">${icons[h.type]||'💼'}</div><div style="flex:1;margin-left:4px;"><div style="font-weight:700;font-size:14px;">${h.label}</div></div><div style="color:${pos?'var(--g)':'var(--r)'};font-weight:800;font-size:14px;">${pos?'+':''}${fmt(h.amount)} F</div></div>`;}
-async function loadPassTickets(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'tickets'),orderBy('ts','desc'),limit(30));const snap=await getDocs(q);const cont=document.getElementById('passTicketsContainer');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;"><div style="font-size:56px;opacity:.4;margin-bottom:16px;">🎫</div><div style="color:#555;font-weight:800;">Aucun ticket</div><button class="btn btn-purple" style="margin-top:16px;" onclick="openTicketFlow()">🎫 Acheter un ticket</button></div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:12px;line-height:1.9;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}<br>✅ Validé</div></div></div>`;}).join('');}
-window.showTicketData=(t)=>{if(typeof t==='string')t=JSON.parse(t);document.getElementById('ticketThermalContent').innerHTML=`<div class="t-header">🚌 TATAPAY</div><div style="font-size:13px;line-height:2;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}<br>✅ Validé · ${t.passenger}</div>`;document.getElementById('ticketOverlay').style.display='flex';if(S.role==='passenger')showDescendBtn(t);};
+/* ═══════════════════ CACHE TICKETS HORS-LIGNE (PASSAGER) ═══════════════════ */
+/* Sauvegarde les tickets achetés en localStorage pour qu'ils restent
+   consultables même sans réseau. Clé: tatapay_tickets_<uid>. */
+function _tkKey(){return 'tatapay_tickets_'+(S.uid||'anon');}
+function _tkActiveKey(){return 'tatapay_activeTicket_'+(S.uid||'anon');}
+function getCachedTickets(){try{return JSON.parse(localStorage.getItem(_tkKey())||'[]');}catch(e){return [];}}
+function cacheTicket(t){try{if(!t||!S.uid)return;const list=getCachedTickets();const sn=t.sn||('_'+Date.now());if(list.some(x=>x.sn===sn))return;list.unshift({...t,ts:null,_cachedAt:Date.now()});localStorage.setItem(_tkKey(),JSON.stringify(list.slice(0,50)));}catch(e){console.warn('[cacheTicket]',e);}}
+function cacheActiveTicket(t){try{localStorage.setItem(_tkActiveKey(),JSON.stringify({...t,ts:null}));}catch(e){}}
+function getCachedActiveTicket(){try{const v=localStorage.getItem(_tkActiveKey());return v?JSON.parse(v):null;}catch(e){return null;}}
+function clearCachedActiveTicket(){try{localStorage.removeItem(_tkActiveKey());}catch(e){}}
+function renderPassTicketsList(tickets,offline){const cont=document.getElementById('passTicketsContainer');if(!tickets.length){cont.innerHTML='<div style="text-align:center;padding:48px 20px;"><div style="font-size:56px;opacity:.4;margin-bottom:16px;">🎫</div><div style="color:#555;font-weight:800;">Aucun ticket</div><button class="btn btn-purple" style="margin-top:16px;" onclick="openTicketFlow()">🎫 Acheter un ticket</button></div>';return;}const banner=offline?'<div style="background:#FF6B0015;border:1px solid #FF6B0044;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FFB97A;">📴 Mode hors-ligne · tickets enregistrés localement</div>':'';cont.innerHTML=banner+tickets.map(t=>`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:12px;line-height:1.9;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}<br>✅ Validé${offline?' · 📴 hors-ligne':''}</div></div></div>`).join('');}
+async function loadPassTickets(){
+  if(S.role!=='passenger')return;
+  // Affichage immédiat depuis le cache (fonctionne même hors-ligne)
+  const cached=getCachedTickets();
+  if(cached.length)renderPassTicketsList(cached,!navigator.onLine);
+  try{
+    const q=query(collection(db,'users',S.uid,'tickets'),orderBy('ts','desc'),limit(30));
+    const snap=await getDocs(q);
+    const remote=snap.docs.map(d=>d.data());
+    // Fusion cache + serveur (le serveur a priorité, dédup par SN)
+    remote.forEach(t=>cacheTicket(t));
+    const merged=getCachedTickets();
+    renderPassTicketsList(merged,false);
+  }catch(e){
+    console.warn('[loadPassTickets] offline, fallback cache',e);
+    renderPassTicketsList(getCachedTickets(),true);
+  }
+}
+window.showTicketData=(t)=>{
+  if(typeof t==='string')t=JSON.parse(t);
+  document.getElementById('ticketThermalContent').innerHTML=`<div class="t-header">🚌 TATAPAY</div><div style="font-size:13px;line-height:2;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}<br>✅ Validé · ${t.passenger}${!navigator.onLine?' · 📴':''}</div>`;
+  document.getElementById('ticketOverlay').style.display='flex';
+  if(S.role==='passenger'){cacheTicket(t);cacheActiveTicket(t);showDescendBtn(t);}
+};
 window.closeTicket=()=>document.getElementById('ticketOverlay').style.display='none';
+// Rafraîchir affichage quand la connexion revient
+window.addEventListener('online',()=>{if(S.role==='passenger')loadPassTickets();});
+window.addEventListener('offline',()=>{if(S.role==='passenger')renderPassTicketsList(getCachedTickets(),true);});
 window.openNotifPanel=async()=>{const q=query(collection(db,'notifications'),where('toUid','==',S.uid),orderBy('ts','desc'),limit(20));const snap=await getDocs(q);const cont=document.getElementById('notifList');if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';}else{cont.innerHTML=snap.docs.map(d=>{const n=d.data();let icon='🔔',title='Notification',body='',color='var(--orange)';if(n.type==='descendre'){icon='🛑';title='Passager veut descendre';body=`${n.passenger||'—'} · ${n.from||''}→${n.to||''}`;color='#DF0024';}else if(n.type==='ticket_request'){icon='🎫';title='Demande ticket';body=`${n.passenger||'—'} · ${n.price||0} FCFA`;color='var(--g)';}else if(n.type==='ticket_validated'){icon='✅';title='Ticket validé';body='Votre ticket a été validé !';color='var(--g)';}else if(n.type==='receiver_request'){icon='🎫';title='Nouveau receveur';body=`${n.receiverName||'—'}`;color='var(--orange)';}else if(n.type==='owner_request'){icon='🚌';title='Nouveau propriétaire';body=`${n.ownerName||'—'} — ${n.company||'—'}`;color='#7c3aed';}else if(n.type==='chauffeur_request'){icon='👨‍✈️';title='Nouveau chauffeur';body=`${n.chauffeurName||'—'}`;color='#059669';}else if(n.type==='versement_alert'){icon='💸';title='Versement manquant';body=n.message||'Le receveur n\'a pas versé les recettes.';color='#DF0024';}else if(n.type==='fraud_alert'){icon='⚠️';title='Anomalie détectée';body=n.message||'Activité suspecte sur votre bus.';color='#FF6B00';}else if(n.type==='bus_panne'){icon='🔧';title='Panne signalée';body=n.message||'Problème technique sur le bus.';color='#DF0024';}else if(n.type==='bus_report'){icon='📋';title='Signalement bus';body=n.message||'—';color='#059669';}return`<div style="background:#ffffff08;border:1px solid ${color}33;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;"><div style="font-size:22px;">${icon}</div><div><div style="font-weight:800;font-size:13px;color:${color};">${title}</div><div style="font-size:12px;color:#ccc;margin-top:3px;">${body}</div></div></div>`;}).join('');}document.getElementById('notifPanel').style.display='flex';};
 window.clearNotifs=async()=>{const q=query(collection(db,'notifications'),where('toUid','==',S.uid));const snap=await getDocs(q);await Promise.all(snap.docs.map(d=>deleteDoc(doc(db,'notifications',d.id))));document.getElementById('notifList').innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';const b=document.getElementById('bellBadge');if(b)b.className='bell-badge';const cb=document.getElementById('chBellBadge');if(cb)cb.className='bell-badge';};
 
