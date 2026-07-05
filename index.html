@@ -853,6 +853,13 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <button class="admin-action-btn" style="background:#ffffff10;color:#aaa;border:1px solid #ffffff20;" onclick="filterByRole('receiver')">Receveurs</button>
         <button class="admin-action-btn" style="background:#ffffff10;color:#aaa;border:1px solid #ffffff20;" onclick="filterByRole('chauffeur')">Chauffeurs</button>
       </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
+        <button class="admin-action-btn" style="background:#ffffff10;color:#ddd;border:1px solid #ffffff20;" onclick="adminToggleSelectAll()"><span id="adminSelectAllLabel">☑️ Tout cocher</span></button>
+      </div>
+      <div id="adminBulkBar" style="display:none;align-items:center;justify-content:space-between;gap:10px;background:#DF002418;border:1px solid #DF002444;border-radius:12px;padding:10px 14px;margin-bottom:12px;">
+        <div style="font-size:13px;color:#ffb3b3;font-weight:700;"><span id="adminBulkCount">0</span> sélectionné(s)</div>
+        <button class="admin-action-btn btn-delete" onclick="adminBulkDelete()">🗑️ Supprimer la sélection</button>
+      </div>
       <div id="adminUsersList"></div>
     </div>
     <div class="admin-tab" id="adminTab-withdrawals">
@@ -944,7 +951,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
       </div>
       <div id="rgStep2" style="display:none;">
         <div style="background:#ffffff08;border-radius:18px;padding:24px;text-align:center;margin-bottom:18px;"><div style="font-size:13px;color:#888;margin-bottom:6px;">Montant à recharger</div><div style="font-weight:900;font-size:32px;color:var(--y);" id="rgAmtBig">— FCFA</div></div>
-        <div class="input-wrap" style="margin-bottom:16px;"><label class="input-label">Téléphone *</label><input class="input-field" id="rgPhone" type="tel" placeholder="77 123 45 67"/></div>
         <button class="btn btn-full" onclick="rgPayWithPaytech()" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-weight:900;font-size:15px;padding:16px;">💳 Payer avec PayTech</button>
         <button onclick="resetRecharge()" style="width:100%;background:none;border:none;color:#888;margin-top:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">← Retour</button>
       </div>
@@ -2745,13 +2751,14 @@ async function loadAdminDashboard(){
   }catch(e){console.error('Admin dashboard error:',e);}
 }
 function renderDashPending(){const pendingDirs=adminAllUsers.filter(u=>u.status==='pending'&&u.role==='directeur');const cont=document.getElementById('adminDashPending');if(!pendingDirs.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:16px;font-size:13px;">Aucun directeur en attente ✅</div>';return;}cont.innerHTML=pendingDirs.map(u=>renderAdminUserCard(u,true)).join('');}
-function renderAdminUserCard(u,compact=false){
+function renderAdminUserCard(u,compact=false,selectable=false){
   const date=u.createdAt?.toDate?.()?.toLocaleDateString('fr-FR')||'—';
   const extraInfo=u.role==='owner'?`<div style="font-size:11px;color:#888;">GIE: ${u.company||'—'}</div>`:u.role==='receiver'?`<div style="font-size:11px;color:#888;">CNI: ${u.cni||'—'} · ${u.address||'—'}</div>`:u.role==='chauffeur'?`<div style="font-size:11px;color:#888;">CNI: ${u.cni||'—'} · Bus: ${u.vehicle||'—'}</div>`:u.role==='directeur'?`<div style="font-size:11px;color:#888;">Org: ${u.org||'—'}</div>`:'';
   const busInfo=(u.role==='receiver'||u.role==='chauffeur')&&u.gie?`<div style="font-size:11px;color:#009A44;margin-top:2px;">🚌 ${u.gie} · ${u.vehicle} · Ligne ${u.ligne}</div>`:'';
   const linkedInfo=u.role==='receiver'&&(u.linkedOwnerUids||[]).length?`<div style="font-size:11px;color:#FF6B00;margin-top:2px;">🔗 ${(u.linkedOwnerUids||[]).length} propriétaire(s) lié(s)</div>`:'';
   const actions=buildAdminActions(u);
-  return`<div class="admin-user-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;"><div style="flex:1;"><div style="font-weight:800;font-size:14px;">${u.name||'—'}</div><div style="font-size:11px;color:#888;">${u.email||'—'}</div>${extraInfo}${busInfo}${linkedInfo}<div style="font-size:11px;color:#666;margin-top:2px;">📅 ${date} · Solde: ${fmt(u.balance)} FCFA</div></div><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">${statusBadge(u.status)}${roleBadge(u.role)}</div></div>${!compact?`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#666;margin-bottom:8px;">${u.walletId||'—'} · ${u.phone||'—'}</div>`:''}<div class="admin-action-row">${actions}</div></div>`;
+  const checkbox=selectable?`<input type="checkbox" class="admin-select-cb" data-uid="${u.id}" ${adminSelectedUsers.has(u.id)?'checked':''} onchange="adminToggleUserCheck('${u.id}')" style="width:18px;height:18px;margin-right:10px;margin-top:2px;cursor:pointer;flex-shrink:0;"/>`:'';
+  return`<div class="admin-user-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;"><div style="display:flex;flex:1;min-width:0;">${checkbox}<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:14px;">${u.name||'—'}</div><div style="font-size:11px;color:#888;">${u.email||'—'}</div>${extraInfo}${busInfo}${linkedInfo}<div style="font-size:11px;color:#666;margin-top:2px;">📅 ${date} · Solde: ${fmt(u.balance)} FCFA</div></div></div><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">${statusBadge(u.status)}${roleBadge(u.role)}</div></div>${!compact?`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#666;margin-bottom:8px;">${u.walletId||'—'} · ${u.phone||'—'}</div>`:''}<div class="admin-action-row">${actions}</div></div>`;
 }
 function buildAdminActions(u){
   let btns='';
@@ -2795,7 +2802,45 @@ window.showAdminUserDetail=async(uid)=>{
 window.closeAdminDetail=()=>document.getElementById('adminDetailOverlay').style.display='none';
 function renderOwnersList(){const owners=adminAllUsers.filter(u=>u.role==='owner');const q=(document.getElementById('ownerSearch')?.value||'').toLowerCase();const filtered=q?owners.filter(u=>(u.name+u.email+(u.company||'')).toLowerCase().includes(q)):owners;const cont=document.getElementById('adminOwnersList');if(!filtered.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun propriétaire</div>';return;}cont.innerHTML=filtered.map(u=>renderAdminUserCard(u)).join('');}
 function renderDirecteursList(){const dirs=adminAllUsers.filter(u=>u.role==='directeur');const q=(document.getElementById('directeurSearch')?.value||'').toLowerCase();const filtered=q?dirs.filter(u=>(u.name+u.email+(u.org||'')).toLowerCase().includes(q)):dirs;const cont=document.getElementById('adminDirecteursList');if(!filtered.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun directeur</div>';return;}cont.innerHTML=filtered.map(u=>renderAdminUserCard(u)).join('');}
-function renderUsersList(){let users=adminAllUsers;if(adminCurrentRoleFilter!=='all')users=users.filter(u=>u.role===adminCurrentRoleFilter);const q=(document.getElementById('userSearch')?.value||'').toLowerCase();if(q)users=users.filter(u=>(u.name+u.email+(u.walletId||'')).toLowerCase().includes(q));const cont=document.getElementById('adminUsersList');cont.innerHTML=`<div style="color:#888;font-size:12px;margin-bottom:12px;">${users.length} utilisateur(s)</div>`;if(!users.length){cont.innerHTML+='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun utilisateur</div>';return;}cont.innerHTML+=users.map(u=>renderAdminUserCard(u)).join('');}
+let adminSelectedUsers=new Set();
+function adminGetVisibleFilteredUsers(){let users=adminAllUsers;if(adminCurrentRoleFilter!=='all')users=users.filter(u=>u.role===adminCurrentRoleFilter);const q=(document.getElementById('userSearch')?.value||'').toLowerCase();if(q)users=users.filter(u=>(u.name+u.email+(u.walletId||'')).toLowerCase().includes(q));return users;}
+function renderUsersList(){const users=adminGetVisibleFilteredUsers();const cont=document.getElementById('adminUsersList');cont.innerHTML=`<div style="color:#888;font-size:12px;margin-bottom:12px;">${users.length} utilisateur(s)</div>`;if(!users.length){cont.innerHTML+='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun utilisateur</div>';updateAdminBulkBar();updateAdminSelectAllLabel();return;}cont.innerHTML+=users.map(u=>renderAdminUserCard(u,false,true)).join('');updateAdminBulkBar();updateAdminSelectAllLabel();}
+window.adminToggleUserCheck=(uid)=>{if(adminSelectedUsers.has(uid))adminSelectedUsers.delete(uid);else adminSelectedUsers.add(uid);updateAdminBulkBar();updateAdminSelectAllLabel();};
+window.adminToggleSelectAll=()=>{
+  const users=adminGetVisibleFilteredUsers();
+  const allSelected=users.length>0&&users.every(u=>adminSelectedUsers.has(u.id));
+  if(allSelected){users.forEach(u=>adminSelectedUsers.delete(u.id));}
+  else{users.forEach(u=>adminSelectedUsers.add(u.id));}
+  renderUsersList();
+};
+function updateAdminSelectAllLabel(){
+  const users=adminGetVisibleFilteredUsers();
+  const allSelected=users.length>0&&users.every(u=>adminSelectedUsers.has(u.id));
+  const lbl=document.getElementById('adminSelectAllLabel');
+  if(lbl)lbl.textContent=allSelected?'☑️ Tout décocher':'☑️ Tout cocher';
+}
+function updateAdminBulkBar(){
+  const bar=document.getElementById('adminBulkBar');if(!bar)return;
+  const n=adminSelectedUsers.size;
+  bar.style.display=n>0?'flex':'none';
+  const cnt=document.getElementById('adminBulkCount');if(cnt)cnt.textContent=n;
+}
+window.adminBulkDelete=async()=>{
+  const uids=[...adminSelectedUsers];
+  if(!uids.length)return;
+  if(!confirm(`Supprimer définitivement ${uids.length} utilisateur(s) ? Cette action est irréversible.`))return;
+  loader('Suppression de '+uids.length+' utilisateur(s)…');
+  try{
+    for(const uid of uids){
+      try{await deleteDoc(doc(db,'users',uid));}
+      catch(e){console.error('Erreur suppression',uid,e.message);}
+    }
+    adminSelectedUsers.clear();
+    loader('',false);
+    notify('🗑️','Suppression terminée',uids.length+' utilisateur(s) supprimé(s).');
+    await loadAdminDashboard();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
 function renderWithdrawalsList(){let wds=adminAllWithdrawals;if(adminCurrentWdFilter!=='all')wds=wds.filter(w=>w.status===adminCurrentWdFilter);wds.sort((a,b)=>(b.requestedAt?.seconds||0)-(a.requestedAt?.seconds||0));const cont=document.getElementById('adminWithdrawList');cont.innerHTML=`<div style="color:#888;font-size:12px;margin-bottom:12px;">${wds.length} demande(s)</div>`;if(!wds.length){cont.innerHTML+='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucune demande</div>';return;}cont.innerHTML+=wds.map(w=>{const date=w.requestedAt?.toDate?.()?.toLocaleDateString('fr-FR')||'—';return`<div class="admin-user-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div style="font-weight:800;">${w.name||'—'}</div><div style="font-size:11px;color:#888;">${w.walletId||'—'}</div><div style="font-size:11px;color:#888;">Ref: ${w.ref||'—'} · ${date}</div></div><div style="text-align:right;"><div style="font-weight:900;font-size:18px;color:#FDEF42;">${fmt(w.amount)} F</div>${statusBadge(w.status)}</div></div>${w.status==='pending'?`<div class="admin-action-row"><button class="admin-action-btn btn-approve" onclick="markWithdrawDone('${w.id}')">✅ Marquer traité</button><button class="admin-action-btn btn-reject" onclick="rejectWithdraw('${w.id}')">❌ Refuser</button></div>`:''}</div>`;}).join('');}
 window.filterAdminList=(type)=>{if(type==='owners')renderOwnersList();else if(type==='directeurs')renderDirecteursList();else if(type==='users')renderUsersList();};
 window.filterByRole=(role)=>{adminCurrentRoleFilter=role;renderUsersList();};
@@ -2878,15 +2923,13 @@ window.doWithdraw=async()=>{
   try{await new Promise(r=>setTimeout(r,1200));const ref='WD-'+Date.now();await setDoc(doc(collection(db,'withdrawal_requests')),{uid:S.uid,name:S.profile.name,walletId:S.profile.walletId,amount:amt,status:'pending',ref,requestedAt:serverTimestamp()});await addDoc(collection(db,'users',S.uid,'history'),{type:'withdraw_request',label:'Demande de retrait — '+ref,amount:-amt,ref,ts:serverTimestamp()});document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep4').style.display='block';document.getElementById('wdSuccessDesc').textContent=fmt(amt)+' FCFA demandés';document.getElementById('wdSuccessRef').textContent='Ref: '+ref;}
   catch(e){notify('❌','Erreur',e.message);document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep2').style.display='block';}
 };
-window.openRecharge=()=>{resetRecharge();const ph=document.getElementById('rgPhone');if(ph)ph.value=S.profile?.phone||'';openModal('modalRecharge');};
+window.openRecharge=()=>{resetRecharge();openModal('modalRecharge');};
 function resetRecharge(){['rgStep1','rgStep2','rgStep3','rgStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const amt=document.getElementById('rechargeAmt');if(amt)amt.value='';document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));if(S.rgUnsub){S.rgUnsub();S.rgUnsub=null;}if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}}
 window.selQuickAmt=(v,btn)=>{document.getElementById('rechargeAmt').value=v;document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');};
 window.rgGoStep2=()=>{const v=parseInt(document.getElementById('rechargeAmt').value);if(!v||v<100){notify('⚠️','Montant','Min 100 FCFA.');return;}S.rgAmt=v;document.getElementById('rgAmtBig').textContent=fmt(v)+' FCFA';document.getElementById('rgStep1').style.display='none';document.getElementById('rgStep2').style.display='block';};
 window.rgCancelWait=()=>{if(S.rgUnsub){S.rgUnsub();S.rgUnsub=null;}if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';notify('ℹ️','En attente','Si le paiement se termine, votre solde sera mis à jour automatiquement.');};
 window.rgPayWithPaytech=async()=>{
   const amt=S.rgAmt;if(!amt)return;
-  const phone=(document.getElementById('rgPhone').value||'').replace(/\s+/g,'');
-  if(!/^\+?\d{8,15}$/.test(phone)){notify('⚠️','Numéro','Numéro mobile invalide.');return;}
   document.getElementById('rgWaitTitle').textContent='Ouverture du paiement…';
   document.getElementById('rgWaitSub').textContent="Une fenêtre PayTech s'est ouverte. Choisissez votre opérateur et terminez le paiement là-bas — cette page se mettra à jour automatiquement.";
   document.getElementById('rgStep2').style.display='none';document.getElementById('rgStep3').style.display='block';
@@ -2895,7 +2938,7 @@ window.rgPayWithPaytech=async()=>{
     const res=await fetch(BACKEND_URL+'/api/payment/init',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({amount:amt,phone,type:'recharge'})
+      body:JSON.stringify({amount:amt,phone:S.profile?.phone||'',type:'recharge'})
     });
     const data=await res.json().catch(()=>({}));
     if(!res.ok||!(data.payment_url||data.redirect_url)){
@@ -3191,3 +3234,4 @@ function handleQR(raw){stopCamera();raw=(raw||'').trim();const ticketM=raw.match
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
 </div>
+      
