@@ -944,10 +944,11 @@ select.input-field option{background:#0c1f12;color:#fff;}
       </div>
       <div id="rgStep2" style="display:none;">
         <div style="background:#ffffff08;border-radius:18px;padding:24px;text-align:center;margin-bottom:18px;"><div style="font-size:13px;color:#888;margin-bottom:6px;">Montant à recharger</div><div style="font-weight:900;font-size:32px;color:var(--y);" id="rgAmtBig">— FCFA</div></div>
-        <button class="btn btn-full" onclick="rgPayWithPaytech()" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-weight:900;font-size:15px;padding:16px;">💳 Payer (Simulation)</button>
+        <div class="input-wrap" style="margin-bottom:16px;"><label class="input-label">Téléphone *</label><input class="input-field" id="rgPhone" type="tel" placeholder="77 123 45 67"/></div>
+        <button class="btn btn-full" onclick="rgPayWithPaytech()" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-weight:900;font-size:15px;padding:16px;">💳 Payer avec PayTech</button>
         <button onclick="resetRecharge()" style="width:100%;background:none;border:none;color:#888;margin-top:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">← Retour</button>
       </div>
-      <div id="rgStep3" style="display:none;text-align:center;padding:30px 0;"><div class="spinner" style="margin:0 auto 18px;"></div><div style="font-weight:800;font-size:15px;color:#aaa;">Traitement…</div></div>
+      <div id="rgStep3" style="display:none;text-align:center;padding:30px 0;"><div class="spinner" style="margin:0 auto 18px;"></div><div style="font-weight:800;font-size:15px;color:#aaa;margin-bottom:6px;" id="rgWaitTitle">Ouverture du paiement…</div><div style="font-size:12px;color:#666;" id="rgWaitSub">Une fenêtre PayTech s'est ouverte. Choisissez votre opérateur et terminez le paiement là-bas — cette page se mettra à jour automatiquement.</div><button onclick="rgCancelWait()" style="width:100%;background:none;border:none;color:#888;margin-top:16px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">Annuler l'attente</button></div>
       <div id="rgStep4" style="display:none;text-align:center;padding:20px 0 10px;"><div style="font-size:64px;margin-bottom:14px;">✅</div><div style="font-weight:900;font-size:20px;color:var(--g);margin-bottom:6px;">Recharge réussie !</div><div style="color:#888;font-size:13px;margin-bottom:6px;" id="rgSuccessDesc">—</div><button class="btn btn-primary btn-full" onclick="closeModal('modalRecharge')">Fermer</button></div>
     </div>
   </div>
@@ -1158,6 +1159,7 @@ import{getFirestore,doc,setDoc,getDoc,getDocFromCache,updateDoc,addDoc,collectio
 import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a4972.firebaseapp.com",databaseURL:"https://tatapay-a4972-default-rtdb.europe-west1.firebasedatabase.app",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:265d82fbda0db1b09b0b6d",measurementId:"G-ZEM9NZPL5R"};
+const BACKEND_URL='https://tatapay-backend-1.onrender.com';
 const fbApp=initializeApp(FC);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
@@ -2876,15 +2878,61 @@ window.doWithdraw=async()=>{
   try{await new Promise(r=>setTimeout(r,1200));const ref='WD-'+Date.now();await setDoc(doc(collection(db,'withdrawal_requests')),{uid:S.uid,name:S.profile.name,walletId:S.profile.walletId,amount:amt,status:'pending',ref,requestedAt:serverTimestamp()});await addDoc(collection(db,'users',S.uid,'history'),{type:'withdraw_request',label:'Demande de retrait — '+ref,amount:-amt,ref,ts:serverTimestamp()});document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep4').style.display='block';document.getElementById('wdSuccessDesc').textContent=fmt(amt)+' FCFA demandés';document.getElementById('wdSuccessRef').textContent='Ref: '+ref;}
   catch(e){notify('❌','Erreur',e.message);document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep2').style.display='block';}
 };
-window.openRecharge=()=>{resetRecharge();openModal('modalRecharge');};
-function resetRecharge(){['rgStep1','rgStep2','rgStep3','rgStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const amt=document.getElementById('rechargeAmt');if(amt)amt.value='';document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));}
+window.openRecharge=()=>{resetRecharge();const ph=document.getElementById('rgPhone');if(ph)ph.value=S.profile?.phone||'';openModal('modalRecharge');};
+function resetRecharge(){['rgStep1','rgStep2','rgStep3','rgStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const amt=document.getElementById('rechargeAmt');if(amt)amt.value='';document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));if(S.rgUnsub){S.rgUnsub();S.rgUnsub=null;}if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}}
 window.selQuickAmt=(v,btn)=>{document.getElementById('rechargeAmt').value=v;document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');};
 window.rgGoStep2=()=>{const v=parseInt(document.getElementById('rechargeAmt').value);if(!v||v<100){notify('⚠️','Montant','Min 100 FCFA.');return;}S.rgAmt=v;document.getElementById('rgAmtBig').textContent=fmt(v)+' FCFA';document.getElementById('rgStep1').style.display='none';document.getElementById('rgStep2').style.display='block';};
+window.rgCancelWait=()=>{if(S.rgUnsub){S.rgUnsub();S.rgUnsub=null;}if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';notify('ℹ️','En attente','Si le paiement se termine, votre solde sera mis à jour automatiquement.');};
 window.rgPayWithPaytech=async()=>{
   const amt=S.rgAmt;if(!amt)return;
+  const phone=(document.getElementById('rgPhone').value||'').replace(/\s+/g,'');
+  if(!/^\+?\d{8,15}$/.test(phone)){notify('⚠️','Numéro','Numéro mobile invalide.');return;}
+  document.getElementById('rgWaitTitle').textContent='Ouverture du paiement…';
+  document.getElementById('rgWaitSub').textContent="Une fenêtre PayTech s'est ouverte. Choisissez votre opérateur et terminez le paiement là-bas — cette page se mettra à jour automatiquement.";
   document.getElementById('rgStep2').style.display='none';document.getElementById('rgStep3').style.display='block';
-  try{await new Promise(r=>setTimeout(r,1200));const ref='SIM-'+Date.now();await updateDoc(doc(db,'users',S.uid),{balance:increment(amt)});await addDoc(collection(db,'users',S.uid,'history'),{type:'recharge',label:'Recharge simulée — '+ref,amount:amt,ref,ts:serverTimestamp()});document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep4').style.display='block';document.getElementById('rgSuccessDesc').textContent='+'+fmt(amt)+' FCFA ajoutés';closeModal('modalRecharge');notify('✅','Recharge réussie','+'+fmt(amt)+' FCFA');}
-  catch(e){notify('❌','Erreur',e.message);document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';}
+  try{
+    const token=await auth.currentUser.getIdToken();
+    const res=await fetch(BACKEND_URL+'/api/payment/init',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({amount:amt,phone,type:'recharge'})
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok||!(data.payment_url||data.redirect_url)){
+      document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';
+      notify('❌','Échec',data?.error||"Impossible d'initier le paiement.");
+      return;
+    }
+    const payUrl=data.payment_url||data.redirect_url;
+    const win=window.open(payUrl,'_blank');
+    if(!win){notify('⚠️','Popup bloquée',"Autorisez les popups pour ce site, puis réessayez.");}
+
+    // Attente : le webhook backend crédite le solde via Firestore -> on écoute en temps réel.
+    const startBalance=S.profile?.balance||0;
+    if(S.rgUnsub)S.rgUnsub();
+    S.rgUnsub=onSnapshot(doc(db,'users',S.uid),snap=>{
+      if(!snap.exists())return;
+      const b=snap.data().balance||0;
+      if(b>=startBalance+amt){
+        if(S.rgUnsub){S.rgUnsub();S.rgUnsub=null;}
+        if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}
+        document.getElementById('rgStep3').style.display='none';
+        document.getElementById('rgStep4').style.display='block';
+        document.getElementById('rgSuccessDesc').textContent='+'+fmt(amt)+' FCFA ajoutés';
+        notify('✅','Recharge réussie','+'+fmt(amt)+' FCFA');
+      }
+    });
+    // Après 6 minutes sans confirmation, on arrête d'attendre activement (le solde se mettra
+    // quand même à jour plus tard via le listener global si le paiement arrive après coup).
+    S.rgTimeout=setTimeout(()=>{
+      if(S.rgUnsub){S.rgUnsub();S.rgUnsub=null;}
+      document.getElementById('rgWaitTitle').textContent='Paiement toujours en attente…';
+      document.getElementById('rgWaitSub').textContent="Ça prend plus de temps que prévu. Vous pouvez fermer cette fenêtre — votre solde sera mis à jour dès que le paiement sera confirmé.";
+    },6*60*1000);
+  }catch(e){
+    document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';
+    notify('❌','Erreur',e.message);
+  }
 };
 window.openSend=()=>{clearFriend();document.getElementById('sendAmt').value='';openModal('modalSend');};
 window.clearFriend=()=>{S.friendTarget=null;document.getElementById('friendPreview').style.display='none';document.getElementById('friendManualWrap').style.display='block';document.getElementById('sendTarget').value='';};
