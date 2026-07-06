@@ -1200,6 +1200,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div id="resaTicketQRWrap" style="display:flex;justify-content:center;margin-bottom:14px;"></div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#666;margin-bottom:8px;" id="rtRef">—</div>
       <div style="font-weight:800;font-size:13px;" id="rtStatus">—</div>
+      <button id="rtShareBtn" style="display:none;background:linear-gradient(135deg,#059669,#047857);border:none;border-radius:12px;padding:10px 16px;color:#fff;font-weight:800;font-size:13px;cursor:pointer;margin-top:14px;width:100%;">👥 Partager avec les autres passagers</button>
       <div style="font-size:11px;color:#888;margin-top:14px;line-height:1.6;">Présentez ce QR code au chauffeur à l'embarquement pour qu'il le scanne et confirme votre place.</div>
     </div>
   </div>
@@ -2840,7 +2841,7 @@ window.loadPassResa=async()=>{
         contMy.innerHTML=bookings.map(b=>{
           const statusLabel=b.status==='confirmed'?'':(b.status==='boarded'?' · Embarqué ✅':(b.status==='refunded'?' · Remboursé (trajet annulé)':' · Annulé'));
           const ticketBtn=(b.status==='confirmed'||b.status==='boarded')?`<button style="background:#FDEF4222;color:#FDEF42;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;" onclick="showResaTicket('${b.id}')">🎟️ Ticket</button>`:'';
-          const shareBtn=(b.places>2&&(b.status==='confirmed'||b.status==='boarded'))?`<button style="background:#05966922;color:#34d399;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;" onclick="openResaShare('${b.id}')">👥 Partager</button>`:'';
+          const shareBtn=(b.places>1&&(b.status==='confirmed'||b.status==='boarded'))?`<button style="background:#05966922;color:#34d399;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;" onclick="openResaShare('${b.id}')">👥 Partager</button>`:'';
           const cancelBtn=b.status==='confirmed'?`<button style="background:#DF002422;color:#DF0024;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;" onclick="cancelBooking('${b.id}')">Annuler</button>`:'';
           return `<div class="tx-row"><div style="flex:1;"><div style="font-weight:700;font-size:13px;">${b.from} → ${b.to} · ${b.places} pl.</div><div style="font-size:11px;color:#888;">${b.date} · ${fmt(b.total)} F${statusLabel}</div></div><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;max-width:150px;">${ticketBtn}${shareBtn}${cancelBtn}</div></div>`;
         }).join('');
@@ -2859,6 +2860,14 @@ window.showResaTicket=(bookingId)=>{
   const statusEl=document.getElementById('rtStatus');
   if(b.status==='boarded'){statusEl.textContent='✅ Embarquement confirmé';statusEl.style.color='#34d399';}
   else{statusEl.textContent='⏳ En attente d\'embarquement';statusEl.style.color='#FDEF42';}
+  const shareBtn=document.getElementById('rtShareBtn');
+  if(b.places>1&&(b.status==='confirmed'||b.status==='boarded')){
+    shareBtn.style.display='block';
+    shareBtn.onclick=()=>{closeModal('modalResaTicket');openResaShare(bookingId);};
+  }else{
+    shareBtn.style.display='none';
+    shareBtn.onclick=null;
+  }
   openModal('modalResaTicket');
   const data=`tatapay://resa/${bookingId}?uid=${b.passengerUid}`;
   setTimeout(()=>renderQR('resaTicketQRWrap',data,200,'M'),50);
@@ -2957,6 +2966,8 @@ window.doBookTrip=async()=>{
   try{
     const ref='RES-'+Date.now().toString(36).toUpperCase();
     let finalTotal=0;
+    let finalBookingId=null;
+    let finalBookingData=null;
     await runTransaction(db,async(tx)=>{
       const tripRef=doc(db,'reservations_trips',t.id);
       const tripSnap=await tx.get(tripRef);
@@ -2976,7 +2987,9 @@ window.doBookTrip=async()=>{
       tx.update(passRef,{balance:increment(-total)});
       tx.update(doc(db,'users',trip.ownerUid),{balance:increment(priceTotal)});
       const bookingRef=doc(collection(db,'reservations_bookings'));
-      tx.set(bookingRef,{tripId:t.id,ownerUid:trip.ownerUid,ownerName:trip.ownerName,passengerUid:S.uid,passengerName:S.profile?.name||'',places,pricePerPlace:trip.pricePerPlace,priceTotal,commission,total,from:trip.from,to:trip.to,date:trip.date,time:trip.time,status:'confirmed',sharesCount:0,boardedCount:0,ref,createdAt:serverTimestamp()});
+      const bookingData={tripId:t.id,ownerUid:trip.ownerUid,ownerName:trip.ownerName,passengerUid:S.uid,passengerName:S.profile?.name||'',places,pricePerPlace:trip.pricePerPlace,priceTotal,commission,total,from:trip.from,to:trip.to,date:trip.date,time:trip.time,status:'confirmed',sharesCount:0,boardedCount:0,ref,createdAt:serverTimestamp()};
+      tx.set(bookingRef,bookingData);
+      finalBookingId=bookingRef.id;finalBookingData=bookingData;
       tx.set(doc(collection(db,'commissions_resa')),{tripId:t.id,bookingId:bookingRef.id,amount:commission,ref,ts:serverTimestamp()});
       tx.set(doc(collection(db,'users',S.uid,'history')),{type:'reservation',label:`Résa. ${trip.from}→${trip.to} (${places} pl.)`,amount:-total,ref,ts:serverTimestamp()});
       tx.set(doc(collection(db,'users',trip.ownerUid,'history')),{type:'reservation_in',label:`Résa. reçue — ${places} pl. ${trip.from}→${trip.to}`,amount:priceTotal,ref,ts:serverTimestamp()});
@@ -2984,6 +2997,10 @@ window.doBookTrip=async()=>{
     loader('',false);closeModal('modalBookTrip');
     notify('✅','Réservation confirmée',`${fmt(finalTotal)} FCFA débités.`);
     loadPassResa();
+    if(finalBookingId&&finalBookingData){
+      _resaBookingsCache[finalBookingId]=finalBookingData;
+      setTimeout(()=>showResaTicket(finalBookingId),350);
+    }
   }catch(e){loader('',false);notify('❌','Échec',e.message);}
 };
 
