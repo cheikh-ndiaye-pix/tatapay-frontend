@@ -1127,8 +1127,8 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div style="font-weight:900;font-size:24px;color:#fff;"><span id="wdAvailable">0</span> FCFA</div>
       </div>
       <div class="input-wrap"><label class="input-label">Montant (FCFA) *</label><input type="number" min="500" class="input-field" id="wdAmount" placeholder="ex: 50000"/></div>
-      <div class="input-wrap"><label class="input-label">Opérateur *</label><select class="input-field" id="wdOperator"><option value="orange-money-senegal">🟠 Orange Money</option><option value="wave-senegal">🌊 Wave</option><option value="free-money-senegal">🆓 Free Money</option></select></div>
-      <div class="input-wrap"><label class="input-label">Numéro mobile *</label><input class="input-field" id="wdPhone" placeholder="ex: 771234567"/></div>
+      <input type="hidden" id="wdOperator" value="wave-senegal"/>
+      <input type="hidden" id="wdPhone"/>
       <button class="btn btn-full" style="background:linear-gradient(135deg,#FDEF42,#f59e0b);color:#0a0a0a;font-weight:900;" onclick="doOwnerWithdraw()">💸 Confirmer le retrait</button>
     </div>
   </div>
