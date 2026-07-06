@@ -1456,10 +1456,8 @@ function loginUI(){
     show('screenChauffeur');
     initChauffeurDashboard();
     const wb=document.getElementById('chOwnerWalletBox');
-    if(wb){wb.style.display=S.role==='owner'?'block':'none';}
-    if(S.role==='owner'){
-      try{onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){const b=snap.data().balance||0;S.profile.balance=b;const el=document.getElementById('chOwnerBalance');if(el)el.textContent=fmt(b);}});}catch(e){}
-    }
+    if(wb){wb.style.display='block';}
+    try{onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){const b=snap.data().balance||0;S.profile.balance=b;const el=document.getElementById('chOwnerBalance');if(el)el.textContent=fmt(b);}});}catch(e){}
     notify('✅',S.role==='owner'?'Bienvenue Propriétaire':'Bienvenue Chauffeur',p.name);
   }else{show('screenSplash');}
   loader('',false);
