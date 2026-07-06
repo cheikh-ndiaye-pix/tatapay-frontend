@@ -2750,7 +2750,7 @@ window.doCreateTrip=async()=>{
   if(!price||price<100){notify('⚠️','Prix','Prix minimum 100 FCFA par place.');return;}
   loader('Création du trajet…');
   try{
-    await addDoc(collection(db,'reservations_trips'),{
+    await addDoc(collection(db,'tripOffers'),{
       ownerUid:S.uid,ownerName:S.profile?.name||'',
       gie:S.profile?.gie||S.profile?.company||'',vehicle:S.profile?.vehicle||'',
       ligne:S.profile?.ligne||'',zone:S.profile?.zone||'',
@@ -2768,7 +2768,7 @@ window.loadChResa=async()=>{
   if(!cont)return;
   cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:20px;">Chargement…</div>';
   try{
-    const snap=await getDocs(query(collection(db,'reservations_trips'),where('ownerUid','==',S.uid)));
+    const snap=await getDocs(query(collection(db,'tripOffers'),where('ownerUid','==',S.uid)));
     const trips=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
     if(!trips.length){cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:20px;">Aucun trajet créé.</div>';return;}
     cont.innerHTML=trips.map(t=>`<div class="ch-card" style="margin-bottom:10px;">
@@ -2788,11 +2788,11 @@ window.loadChResa=async()=>{
 window.cancelTrip=async(tripId)=>{
   loader('Annulation en cours…');
   try{
-    const tripRef=doc(db,'reservations_trips',tripId);
+    const tripRef=doc(db,'tripOffers',tripId);
     const tripSnap=await getDoc(tripRef);
     if(!tripSnap.exists()){loader('',false);return;}
     const trip=tripSnap.data();
-    const bookSnap=await getDocs(query(collection(db,'reservations_bookings'),where('tripId','==',tripId),where('status','==','confirmed')));
+    const bookSnap=await getDocs(query(collection(db,'tripBookings'),where('tripId','==',tripId),where('status','==','confirmed')));
     for(const bDoc of bookSnap.docs){
       const b=bDoc.data();
       await updateDoc(doc(db,'users',b.passengerUid),{balance:increment(b.total)});
@@ -2816,7 +2816,7 @@ window.loadPassResa=async()=>{
   if(cont){
     cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:20px;">Chargement…</div>';
     try{
-      const snap=await getDocs(query(collection(db,'reservations_trips'),where('status','==','active')));
+      const snap=await getDocs(query(collection(db,'tripOffers'),where('status','==','active')));
       const trips=snap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>(t.placesLeft||0)>0).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
       _resaTripsCache={};trips.forEach(t=>_resaTripsCache[t.id]=t);
       if(!trips.length){cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:20px;">Aucun trajet disponible pour le moment.</div>';}
@@ -2833,7 +2833,7 @@ window.loadPassResa=async()=>{
   const contMy=document.getElementById('passResaMyList');
   if(contMy){
     try{
-      const snap=await getDocs(query(collection(db,'reservations_bookings'),where('passengerUid','==',S.uid)));
+      const snap=await getDocs(query(collection(db,'tripBookings'),where('passengerUid','==',S.uid)));
       const bookings=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
       _resaBookingsCache={};bookings.forEach(b=>_resaBookingsCache[b.id]=b);
       if(!bookings.length){contMy.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune réservation.</div>';}
@@ -2887,11 +2887,11 @@ async function refreshResaShareList(bookingId){
   const addBtn=document.getElementById('rsAddBtn');
   cont.innerHTML='<div style="color:#555;font-size:12px;text-align:center;padding:12px;">Chargement…</div>';
   try{
-    const bookSnap=await getDoc(doc(db,'reservations_bookings',bookingId));
+    const bookSnap=await getDoc(doc(db,'tripBookings',bookingId));
     if(!bookSnap.exists())return;
     const b=bookSnap.data();
     document.getElementById('rsCount').textContent=`${b.sharesCount||0}/${b.places}`;
-    const snap=await getDocs(query(collection(db,'reservations_bookings',bookingId,'shares'),orderBy('seatIndex')));
+    const snap=await getDocs(query(collection(db,'tripBookings',bookingId,'shares'),orderBy('seatIndex')));
     const shares=snap.docs.map(d=>({id:d.id,...d.data()}));
     if(!shares.length){cont.innerHTML='<div style="color:#555;font-size:12px;text-align:center;padding:12px;">Aucune place partagée pour l\'instant.</div>';}
     else{
@@ -2915,7 +2915,7 @@ window.addResaShare=async(bookingId)=>{
   try{
     let seatIndex=0;
     await runTransaction(db,async(tx)=>{
-      const bookRef=doc(db,'reservations_bookings',bookingId);
+      const bookRef=doc(db,'tripBookings',bookingId);
       const bookSnap=await tx.get(bookRef);
       if(!bookSnap.exists())throw new Error('Réservation introuvable.');
       const b=bookSnap.data();
@@ -2925,7 +2925,7 @@ window.addResaShare=async(bookingId)=>{
       if(current>=b.places)throw new Error(`Refusé : les ${b.places} places de cette réservation sont déjà toutes partagées.`);
       seatIndex=current+1;
       tx.update(bookRef,{sharesCount:increment(1)});
-      const shareRef=doc(collection(db,'reservations_bookings',bookingId,'shares'));
+      const shareRef=doc(collection(db,'tripBookings',bookingId,'shares'));
       tx.set(shareRef,{seatIndex,status:'pending',createdAt:serverTimestamp()});
     });
     loader('',false);
@@ -2969,7 +2969,7 @@ window.doBookTrip=async()=>{
     let finalBookingId=null;
     let finalBookingData=null;
     await runTransaction(db,async(tx)=>{
-      const tripRef=doc(db,'reservations_trips',t.id);
+      const tripRef=doc(db,'tripOffers',t.id);
       const tripSnap=await tx.get(tripRef);
       if(!tripSnap.exists())throw new Error('Trajet introuvable.');
       const trip=tripSnap.data();
@@ -2986,7 +2986,7 @@ window.doBookTrip=async()=>{
       tx.update(tripRef,{placesLeft:increment(-places)});
       tx.update(passRef,{balance:increment(-total)});
       tx.update(doc(db,'users',trip.ownerUid),{balance:increment(priceTotal)});
-      const bookingRef=doc(collection(db,'reservations_bookings'));
+      const bookingRef=doc(collection(db,'tripBookings'));
       const bookingData={tripId:t.id,ownerUid:trip.ownerUid,ownerName:trip.ownerName,passengerUid:S.uid,passengerName:S.profile?.name||'',places,pricePerPlace:trip.pricePerPlace,priceTotal,commission,total,from:trip.from,to:trip.to,date:trip.date,time:trip.time,status:'confirmed',sharesCount:0,boardedCount:0,ref,createdAt:serverTimestamp()};
       tx.set(bookingRef,bookingData);
       finalBookingId=bookingRef.id;finalBookingData=bookingData;
@@ -3007,14 +3007,14 @@ window.doBookTrip=async()=>{
 window.cancelBooking=async(bookingId)=>{
   loader('Annulation en cours…');
   try{
-    const bookRef=doc(db,'reservations_bookings',bookingId);
+    const bookRef=doc(db,'tripBookings',bookingId);
     const bookSnap=await getDoc(bookRef);
     if(!bookSnap.exists()){loader('',false);return;}
     const b=bookSnap.data();
     if(b.status!=='confirmed'){loader('',false);notify('⚠️','Déjà traité','Cette réservation a déjà été annulée ou remboursée.');return;}
     await updateDoc(doc(db,'users',S.uid),{balance:increment(b.total)});
     await updateDoc(doc(db,'users',b.ownerUid),{balance:increment(-b.priceTotal)});
-    await updateDoc(doc(db,'reservations_trips',b.tripId),{placesLeft:increment(b.places)});
+    await updateDoc(doc(db,'tripOffers',b.tripId),{placesLeft:increment(b.places)});
     await updateDoc(bookRef,{status:'cancelled',cancelledAt:serverTimestamp()});
     await addDoc(collection(db,'commissions_resa'),{tripId:b.tripId,bookingId,amount:-b.commission,ref:'CANCEL-'+b.ref,ts:serverTimestamp()});
     await addDoc(collection(db,'users',S.uid,'history'),{type:'reservation_refund',label:`Annulation réservation — ${b.from}→${b.to}`,amount:b.total,ref:b.ref,ts:serverTimestamp()});
@@ -3028,7 +3028,7 @@ window.cancelBooking=async(bookingId)=>{
 window.confirmBoardingScan=async(bookingId,uid)=>{
   loader('Vérification du ticket…');
   try{
-    const bookRef=doc(db,'reservations_bookings',bookingId);
+    const bookRef=doc(db,'tripBookings',bookingId);
     const bookSnap=await getDoc(bookRef);
     if(!bookSnap.exists())throw new Error('Réservation introuvable.');
     const b=bookSnap.data();
@@ -3045,12 +3045,12 @@ window.confirmBoardingScan=async(bookingId,uid)=>{
 window.confirmShareBoardingScan=async(bookingId,shareId)=>{
   loader('Vérification du ticket…');
   try{
-    const bookRef=doc(db,'reservations_bookings',bookingId);
+    const bookRef=doc(db,'tripBookings',bookingId);
     const bookSnap=await getDoc(bookRef);
     if(!bookSnap.exists())throw new Error('Réservation introuvable.');
     const b=bookSnap.data();
     if(b.ownerUid!==S.uid)throw new Error('Ce ticket ne correspond pas à un de vos trajets.');
-    const shareRef=doc(db,'reservations_bookings',bookingId,'shares',shareId);
+    const shareRef=doc(db,'tripBookings',bookingId,'shares',shareId);
     const shareSnap=await getDoc(shareRef);
     if(!shareSnap.exists())throw new Error('Place partagée introuvable.');
     const s=shareSnap.data();
