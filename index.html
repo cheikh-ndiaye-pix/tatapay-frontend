@@ -434,6 +434,14 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <div class="tab-content" id="passTab-history">
       <div style="padding:20px;"><div style="font-weight:900;font-size:22px;margin-bottom:18px;">Historique</div><div id="passHistory"></div></div>
     </div>
+    <div class="tab-content" id="passTab-resa">
+      <div style="padding:20px;">
+        <div style="font-weight:900;font-size:22px;margin-bottom:18px;">🗓️ Trajets programmés</div>
+        <div id="passResaList" style="margin-bottom:24px;"><div style="color:#555;font-size:13px;text-align:center;padding:20px;">Chargement…</div></div>
+        <div style="font-weight:900;font-size:16px;margin-bottom:12px;color:#aaa;">Mes réservations</div>
+        <div id="passResaMyList"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune réservation.</div></div>
+      </div>
+    </div>
     <div class="tab-content" id="passTab-profile">
       <div class="sn-stripe"></div>
       <div style="padding:20px;text-align:center;">
@@ -451,6 +459,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <button class="nav-btn active" id="nav-home" onclick="switchTab('home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Accueil</button>
     <button class="nav-btn" id="nav-tickets" onclick="switchTab('tickets')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a2 2 0 012-2h16a2 2 0 012 2v2a2 2 0 000 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 000-4V9z"/></svg>Tickets</button>
     <button class="nav-btn" id="nav-history" onclick="switchTab('history')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Historique</button>
+    <button class="nav-btn" id="nav-resa" onclick="switchTab('resa')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Résa.</button>
     <button class="nav-btn" id="nav-profile" onclick="switchTab('profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profil</button>
   </div>
 </div>
@@ -678,6 +687,13 @@ select.input-field option{background:#0c1f12;color:#fff;}
         </div>
       </div>
     </div>
+    <div class="tab-content" id="chTab-resa" style="padding:18px 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-weight:900;font-size:20px;color:#34d399;">🗓️ Réservations</div>
+        <button onclick="openNewTrip()" style="background:linear-gradient(135deg,#059669,#047857);border:none;border-radius:12px;padding:9px 14px;color:#fff;font-weight:800;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><span style="font-size:16px;">+</span> Nouveau</button>
+      </div>
+      <div id="chResaList"><div style="color:#555;font-size:13px;text-align:center;padding:20px;">Chargement…</div></div>
+    </div>
     <div class="tab-content" id="chTab-stats" style="padding:18px 16px;">
       <div style="font-weight:900;font-size:20px;color:#34d399;margin-bottom:16px;">📊 Statistiques</div>
       <div class="ch-stat-grid" style="margin-bottom:16px;">
@@ -700,6 +716,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <button class="ch-nav-btn" id="cnav-recettes" onclick="switchChauffeurTab('recettes')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Recettes</button>
     <button class="ch-nav-btn" id="cnav-receveur" onclick="switchChauffeurTab('receveur')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Receveur</button>
     <button class="ch-nav-btn" id="cnav-bus" onclick="switchChauffeurTab('bus')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8l5 3v5h-5V8z"/></svg>Bus</button>
+    <button class="ch-nav-btn" id="cnav-resa" onclick="switchChauffeurTab('resa')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Résa.</button>
     <button class="ch-nav-btn" id="cnav-stats" onclick="switchChauffeurTab('stats')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Stats</button>
   </div>
 </div>
@@ -831,6 +848,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div class="admin-stat"><div class="val" id="aStat-pending">—</div><div class="lbl">En attente</div></div>
         <div class="admin-stat"><div class="val" id="aStat-tickets">—</div><div class="lbl">Tickets émis</div></div>
         <div class="admin-stat"><div class="val" id="aStat-withdraws">—</div><div class="lbl">Retraits</div></div>
+        <div class="admin-stat"><div class="val" id="aStat-resaComm">—</div><div class="lbl">Commission résa.</div></div>
       </div>
       <div style="font-weight:800;font-size:14px;margin-bottom:10px;color:#aaa;">⏰ Directeurs en attente</div>
       <div id="adminDashPending"></div>
@@ -1134,6 +1152,41 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
+<div class="modal-overlay" id="modalNewTrip" style="display:none;" onclick="if(event.target===this)closeModal('modalNewTrip')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="height:3px;background:linear-gradient(90deg,#009A44,#059669);border-radius:24px 24px 0 0;"></div>
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">🗓️ Nouveau trajet</div><button class="modal-close" onclick="closeModal('modalNewTrip')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body">
+      <div class="input-wrap"><label class="input-label">Ville de départ *</label><input class="input-field" id="trFrom" placeholder="ex: Dakar"/></div>
+      <div class="input-wrap"><label class="input-label">Ville d'arrivée *</label><input class="input-field" id="trTo" placeholder="ex: Thiès"/></div>
+      <div class="input-wrap"><label class="input-label">Date *</label><input type="date" class="input-field" id="trDate"/></div>
+      <div class="input-wrap"><label class="input-label">Heure *</label><input type="time" class="input-field" id="trTime"/></div>
+      <div class="input-wrap"><label class="input-label">Nombre de places *</label><input type="number" min="1" class="input-field" id="trPlaces" placeholder="ex: 20"/></div>
+      <div class="input-wrap"><label class="input-label">Prix par place (FCFA) *</label><input type="number" min="100" class="input-field" id="trPrice" placeholder="ex: 2000"/></div>
+      <button class="btn btn-full" style="background:linear-gradient(135deg,#009A44,#059669);color:#fff;font-weight:900;" onclick="doCreateTrip()">✅ Créer le trajet</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalBookTrip" style="display:none;" onclick="if(event.target===this)closeModal('modalBookTrip')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="height:3px;background:linear-gradient(90deg,#009A44,#FDEF42,#DF0024);border-radius:24px 24px 0 0;"></div>
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">🎟️ Réserver</div><button class="modal-close" onclick="closeModal('modalBookTrip')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body">
+      <div style="background:#009A4415;border:1px solid #009A4444;border-radius:14px;padding:14px;margin-bottom:14px;">
+        <div style="font-weight:800;font-size:14px;" id="bkTripInfo">—</div>
+        <div style="font-size:12px;color:#888;margin-top:4px;"><span id="bkAvailable">0</span> place(s) disponible(s)</div>
+      </div>
+      <div class="input-wrap"><label class="input-label">Nombre de places *</label><input type="number" min="1" class="input-field" id="bkPlaces" value="1" oninput="updateBookTotal()"/></div>
+      <div style="background:#ffffff08;border-radius:14px;padding:14px;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#888;margin-bottom:6px;"><span>Commission</span><span id="bkCommission">0</span></div>
+        <div style="display:flex;justify-content:space-between;font-weight:900;font-size:18px;color:var(--y);"><span>Total à payer</span><span><span id="bkTotal">0</span> FCFA</span></div>
+      </div>
+      <button class="btn btn-full" style="background:linear-gradient(135deg,#009A44,#059669);color:#fff;font-weight:900;" onclick="doBookTrip()">✅ Confirmer la réservation</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalApproveCandidature" style="display:none;" onclick="if(event.target===this)closeModal('modalApproveCandidature')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
@@ -1161,7 +1214,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import{getFirestore,doc,setDoc,getDoc,getDocFromCache,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,setDoc,getDoc,getDocFromCache,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove,runTransaction}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a4972.firebaseapp.com",databaseURL:"https://tatapay-a4972-default-rtdb.europe-west1.firebasedatabase.app",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:265d82fbda0db1b09b0b6d",measurementId:"G-ZEM9NZPL5R"};
@@ -2254,6 +2307,7 @@ window.switchChauffeurTab=(tab)=>{
   if(tab==='recettes')loadChRecettes();
   if(tab==='receveur')loadChReceveur();
   if(tab==='bus'){loadChBusPanel();if(S.role==='owner')initChBusMap();}
+  if(tab==='resa')loadChResa();
   if(tab==='stats')loadChStats();
 };
 function initChauffeurDashboard(){
@@ -2637,6 +2691,210 @@ window.doOwnerWithdraw=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
+// ═══════════ RÉSERVATIONS ═══════════
+function resaCommission(places){return places<=10?300:places<=20?500:700;}
+
+window.openNewTrip=()=>{
+  document.getElementById('trFrom').value='';
+  document.getElementById('trTo').value='';
+  document.getElementById('trDate').value='';
+  document.getElementById('trTime').value='';
+  document.getElementById('trPlaces').value='';
+  document.getElementById('trPrice').value='';
+  openModal('modalNewTrip');
+};
+
+window.doCreateTrip=async()=>{
+  const from=(document.getElementById('trFrom').value||'').trim();
+  const to=(document.getElementById('trTo').value||'').trim();
+  const date=document.getElementById('trDate').value;
+  const time=document.getElementById('trTime').value;
+  const places=parseInt(document.getElementById('trPlaces').value||'0',10);
+  const price=parseInt(document.getElementById('trPrice').value||'0',10);
+  if(!from||!to){notify('⚠️','Villes','Indiquez la ville de départ et d\'arrivée.');return;}
+  if(!date||!time){notify('⚠️','Date/Heure','Indiquez la date et l\'heure du trajet.');return;}
+  if(!places||places<1){notify('⚠️','Places','Indiquez le nombre de places.');return;}
+  if(!price||price<100){notify('⚠️','Prix','Prix minimum 100 FCFA par place.');return;}
+  loader('Création du trajet…');
+  try{
+    await addDoc(collection(db,'reservations_trips'),{
+      ownerUid:S.uid,ownerName:S.profile?.name||'',
+      gie:S.profile?.gie||S.profile?.company||'',vehicle:S.profile?.vehicle||'',
+      ligne:S.profile?.ligne||'',zone:S.profile?.zone||'',
+      from,to,date,time,totalPlaces:places,placesLeft:places,pricePerPlace:price,
+      status:'active',createdAt:serverTimestamp()
+    });
+    loader('',false);closeModal('modalNewTrip');
+    notify('✅','Trajet créé',`${from} → ${to} le ${date}`);
+    loadChResa();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
+
+window.loadChResa=async()=>{
+  const cont=document.getElementById('chResaList');
+  if(!cont)return;
+  cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:20px;">Chargement…</div>';
+  try{
+    const snap=await getDocs(query(collection(db,'reservations_trips'),where('ownerUid','==',S.uid)));
+    const trips=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    if(!trips.length){cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:20px;">Aucun trajet créé.</div>';return;}
+    cont.innerHTML=trips.map(t=>`<div class="ch-card" style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-weight:900;font-size:15px;">${t.from} → ${t.to}</div>
+          <div style="font-size:12px;color:#888;margin-top:2px;">${t.date} · ${t.time}</div>
+          <div style="font-size:12px;color:#34d399;margin-top:4px;">${t.placesLeft}/${t.totalPlaces} places · ${fmt(t.pricePerPlace)} F/place</div>
+        </div>
+        ${t.status==='active'?'<span style="background:#05966922;color:#34d399;font-size:10px;padding:3px 8px;border-radius:8px;font-weight:800;white-space:nowrap;">Actif</span>':'<span style="background:#DF002422;color:#DF0024;font-size:10px;padding:3px 8px;border-radius:8px;font-weight:800;white-space:nowrap;">Annulé</span>'}
+      </div>
+      ${t.status==='active'?`<button class="btn btn-full" style="background:#DF002422;color:#DF0024;font-weight:800;margin-top:10px;font-size:13px;padding:10px;" onclick="cancelTrip('${t.id}')">❌ Annuler le trajet</button>`:''}
+    </div>`).join('');
+  }catch(e){console.warn('[loadChResa]',e);cont.innerHTML='<div style="color:#DF0024;font-size:13px;text-align:center;padding:20px;">Erreur de chargement.</div>';}
+};
+
+window.cancelTrip=async(tripId)=>{
+  loader('Annulation en cours…');
+  try{
+    const tripRef=doc(db,'reservations_trips',tripId);
+    const tripSnap=await getDoc(tripRef);
+    if(!tripSnap.exists()){loader('',false);return;}
+    const trip=tripSnap.data();
+    const bookSnap=await getDocs(query(collection(db,'reservations_bookings'),where('tripId','==',tripId),where('status','==','confirmed')));
+    for(const bDoc of bookSnap.docs){
+      const b=bDoc.data();
+      await updateDoc(doc(db,'users',b.passengerUid),{balance:increment(b.total)});
+      await updateDoc(doc(db,'users',trip.ownerUid),{balance:increment(-b.priceTotal)});
+      await updateDoc(bDoc.ref,{status:'refunded',refundedAt:serverTimestamp()});
+      await addDoc(collection(db,'commissions_resa'),{tripId,bookingId:bDoc.id,amount:-b.commission,ref:'REFUND-'+b.ref,ts:serverTimestamp()});
+      await addDoc(collection(db,'users',b.passengerUid,'history'),{type:'reservation_refund',label:`Remboursement trajet annulé — ${trip.from}→${trip.to}`,amount:b.total,ref:b.ref,ts:serverTimestamp()});
+      await addDoc(collection(db,'users',trip.ownerUid,'history'),{type:'reservation_refund_out',label:'Remboursement résa. annulée',amount:-b.priceTotal,ref:b.ref,ts:serverTimestamp()});
+    }
+    await updateDoc(tripRef,{status:'cancelled',placesLeft:0,cancelledAt:serverTimestamp()});
+    loader('',false);
+    notify('✅','Trajet annulé',`${bookSnap.size} passager(s) remboursé(s) intégralement.`);
+    loadChResa();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
+
+let _resaTripsCache={};
+window.loadPassResa=async()=>{
+  const cont=document.getElementById('passResaList');
+  if(cont){
+    cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:20px;">Chargement…</div>';
+    try{
+      const snap=await getDocs(query(collection(db,'reservations_trips'),where('status','==','active')));
+      const trips=snap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>(t.placesLeft||0)>0).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+      _resaTripsCache={};trips.forEach(t=>_resaTripsCache[t.id]=t);
+      if(!trips.length){cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:20px;">Aucun trajet disponible pour le moment.</div>';}
+      else{
+        cont.innerHTML=trips.map(t=>`<div class="ch-card" style="margin-bottom:10px;">
+          <div style="font-weight:900;font-size:15px;">${t.from} → ${t.to}</div>
+          <div style="font-size:12px;color:#888;margin-top:2px;">${t.date} · ${t.time} · ${t.gie||'—'} ${t.vehicle||''}</div>
+          <div style="font-size:12px;color:#34d399;margin-top:4px;">${t.placesLeft} place(s) restante(s) · ${fmt(t.pricePerPlace)} F/place</div>
+          <button class="btn btn-full" style="margin-top:10px;background:linear-gradient(135deg,#009A44,#059669);color:#fff;font-weight:800;font-size:13px;padding:10px;" onclick="openBookTrip('${t.id}')">🎟️ Réserver</button>
+        </div>`).join('');
+      }
+    }catch(e){console.warn('[loadPassResa]',e);cont.innerHTML='<div style="color:#DF0024;font-size:13px;text-align:center;padding:20px;">Erreur de chargement.</div>';}
+  }
+  const contMy=document.getElementById('passResaMyList');
+  if(contMy){
+    try{
+      const snap=await getDocs(query(collection(db,'reservations_bookings'),where('passengerUid','==',S.uid)));
+      const bookings=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+      if(!bookings.length){contMy.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune réservation.</div>';}
+      else{
+        contMy.innerHTML=bookings.map(b=>{
+          const statusLabel=b.status==='confirmed'?'':(b.status==='refunded'?' · Remboursé (trajet annulé)':' · Annulé');
+          return `<div class="tx-row"><div style="flex:1;"><div style="font-weight:700;font-size:13px;">${b.from} → ${b.to} · ${b.places} pl.</div><div style="font-size:11px;color:#888;">${b.date} · ${fmt(b.total)} F${statusLabel}</div></div>${b.status==='confirmed'?`<button style="background:#DF002422;color:#DF0024;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;" onclick="cancelBooking('${b.id}')">Annuler</button>`:''}</div>`;
+        }).join('');
+      }
+    }catch(e){console.warn('[loadPassResa my]',e);}
+  }
+};
+
+window.openBookTrip=(tripId)=>{
+  const t=_resaTripsCache[tripId];
+  if(!t){notify('⚠️','Trajet','Ce trajet n\'est plus disponible.');return;}
+  S.bookingTrip=t;
+  document.getElementById('bkTripInfo').textContent=`${t.from} → ${t.to} · ${t.date} ${t.time}`;
+  document.getElementById('bkAvailable').textContent=t.placesLeft;
+  document.getElementById('bkPlaces').value=1;
+  document.getElementById('bkPlaces').max=t.placesLeft;
+  updateBookTotal();
+  openModal('modalBookTrip');
+};
+
+window.updateBookTotal=()=>{
+  const t=S.bookingTrip;if(!t)return;
+  let places=parseInt(document.getElementById('bkPlaces').value||'0',10);
+  if(places<1)places=1;
+  if(places>t.placesLeft)places=t.placesLeft;
+  const commission=resaCommission(places);
+  const total=t.pricePerPlace*places+commission;
+  document.getElementById('bkCommission').textContent=fmt(commission);
+  document.getElementById('bkTotal').textContent=fmt(total);
+};
+
+window.doBookTrip=async()=>{
+  const t=S.bookingTrip;
+  if(!t){notify('❌','Erreur','Aucun trajet sélectionné.');return;}
+  let places=parseInt(document.getElementById('bkPlaces').value||'0',10);
+  if(!places||places<1){notify('⚠️','Places','Indiquez au moins 1 place.');return;}
+  loader('Réservation en cours…');
+  try{
+    const ref='RES-'+Date.now().toString(36).toUpperCase();
+    let finalTotal=0;
+    await runTransaction(db,async(tx)=>{
+      const tripRef=doc(db,'reservations_trips',t.id);
+      const tripSnap=await tx.get(tripRef);
+      if(!tripSnap.exists())throw new Error('Trajet introuvable.');
+      const trip=tripSnap.data();
+      if(trip.status!=='active')throw new Error('Ce trajet a été annulé.');
+      if((trip.placesLeft||0)<places)throw new Error(`Plus assez de places disponibles (${trip.placesLeft||0} restante(s)).`);
+      const passRef=doc(db,'users',S.uid);
+      const passSnap=await tx.get(passRef);
+      const bal=passSnap.data()?.balance||0;
+      const commission=resaCommission(places);
+      const priceTotal=trip.pricePerPlace*places;
+      const total=priceTotal+commission;
+      if(bal<total)throw new Error(`Solde insuffisant (${fmt(total)} FCFA requis).`);
+      finalTotal=total;
+      tx.update(tripRef,{placesLeft:increment(-places)});
+      tx.update(passRef,{balance:increment(-total)});
+      tx.update(doc(db,'users',trip.ownerUid),{balance:increment(priceTotal)});
+      const bookingRef=doc(collection(db,'reservations_bookings'));
+      tx.set(bookingRef,{tripId:t.id,ownerUid:trip.ownerUid,ownerName:trip.ownerName,passengerUid:S.uid,passengerName:S.profile?.name||'',places,pricePerPlace:trip.pricePerPlace,priceTotal,commission,total,from:trip.from,to:trip.to,date:trip.date,time:trip.time,status:'confirmed',ref,createdAt:serverTimestamp()});
+      tx.set(doc(collection(db,'commissions_resa')),{tripId:t.id,bookingId:bookingRef.id,amount:commission,ref,ts:serverTimestamp()});
+      tx.set(doc(collection(db,'users',S.uid,'history')),{type:'reservation',label:`Résa. ${trip.from}→${trip.to} (${places} pl.)`,amount:-total,ref,ts:serverTimestamp()});
+      tx.set(doc(collection(db,'users',trip.ownerUid,'history')),{type:'reservation_in',label:`Résa. reçue — ${places} pl. ${trip.from}→${trip.to}`,amount:priceTotal,ref,ts:serverTimestamp()});
+    });
+    loader('',false);closeModal('modalBookTrip');
+    notify('✅','Réservation confirmée',`${fmt(finalTotal)} FCFA débités.`);
+    loadPassResa();
+  }catch(e){loader('',false);notify('❌','Échec',e.message);}
+};
+
+window.cancelBooking=async(bookingId)=>{
+  loader('Annulation en cours…');
+  try{
+    const bookRef=doc(db,'reservations_bookings',bookingId);
+    const bookSnap=await getDoc(bookRef);
+    if(!bookSnap.exists()){loader('',false);return;}
+    const b=bookSnap.data();
+    if(b.status!=='confirmed'){loader('',false);notify('⚠️','Déjà traité','Cette réservation a déjà été annulée ou remboursée.');return;}
+    await updateDoc(doc(db,'users',S.uid),{balance:increment(b.total)});
+    await updateDoc(doc(db,'users',b.ownerUid),{balance:increment(-b.priceTotal)});
+    await updateDoc(doc(db,'reservations_trips',b.tripId),{placesLeft:increment(b.places)});
+    await updateDoc(bookRef,{status:'cancelled',cancelledAt:serverTimestamp()});
+    await addDoc(collection(db,'commissions_resa'),{tripId:b.tripId,bookingId,amount:-b.commission,ref:'CANCEL-'+b.ref,ts:serverTimestamp()});
+    await addDoc(collection(db,'users',S.uid,'history'),{type:'reservation_refund',label:`Annulation réservation — ${b.from}→${b.to}`,amount:b.total,ref:b.ref,ts:serverTimestamp()});
+    await addDoc(collection(db,'users',b.ownerUid,'history'),{type:'reservation_refund_out',label:'Réservation annulée par le passager',amount:-b.priceTotal,ref:b.ref,ts:serverTimestamp()});
+    loader('',false);
+    notify('✅','Réservation annulée',`${fmt(b.total)} FCFA remboursés.`);
+    loadPassResa();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
+
 function attachChPendingVersListener(){
   if(unsubChPendingVers)unsubChPendingVers();
   if(S.role!=='owner')return;
@@ -2745,6 +3003,7 @@ async function loadAdminDashboard(){
     document.getElementById('aStat-total').textContent=total;document.getElementById('aStat-passengers').textContent=passengers;document.getElementById('aStat-receivers').textContent=receivers;document.getElementById('aStat-owners').textContent=owners;document.getElementById('aStat-directeurs').textContent=directeurs;document.getElementById('aStat-chauffeurs').textContent=chauffeurs;document.getElementById('aStat-pending').textContent=pending;
     try{const tc=await getCountFromServer(collection(db,'tickets'));document.getElementById('aStat-tickets').textContent=tc.data().count;}catch(e){document.getElementById('aStat-tickets').textContent='—';}
     const wdSnap=await getDocs(collection(db,'withdrawal_requests'));adminAllWithdrawals=wdSnap.docs.map(d=>({id:d.id,...d.data()}));document.getElementById('aStat-withdraws').textContent=adminAllWithdrawals.filter(w=>w.status==='pending').length;
+    try{const commSnap=await getDocs(collection(db,'commissions_resa'));const totalResaComm=commSnap.docs.reduce((s,d)=>s+(d.data().amount||0),0);document.getElementById('aStat-resaComm').textContent=fmt(totalResaComm)+' F';}catch(e){document.getElementById('aStat-resaComm').textContent='—';}
     renderDashPending();renderOwnersList();renderDirecteursList();renderUsersList();renderWithdrawalsList();
   }catch(e){console.error('Admin dashboard error:',e);}
 }
@@ -2847,7 +3106,7 @@ window.markWithdrawDone=async(docId)=>{try{await updateDoc(doc(db,'withdrawal_re
 window.rejectWithdraw=async(docId)=>{try{await updateDoc(doc(db,'withdrawal_requests',docId),{status:'rejected',treatedAt:serverTimestamp()});notify('❌','Rejeté','Demande rejetée.');await loadAdminDashboard();}catch(e){notify('❌','Erreur',e.message);}};
 function startAdminRealtime(){if(unsubAdmin)unsubAdmin();unsubAdmin=onSnapshot(query(collection(db,'users'),where('status','==','pending'),where('role','==','directeur')),snap=>{const n=snap.size;document.querySelectorAll('.admin-nav-btn').forEach(b=>{if(b.textContent.includes('Dashboard'))b.textContent=n>0?`📊 Dashboard (${n})`:'📊 Dashboard';});});}
 
-window.switchTab=(tab)=>{document.querySelectorAll('#screenPassenger .tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('passTab-'+tab)?.classList.add('active');document.getElementById('nav-'+tab)?.classList.add('active');if(tab==='tickets')loadPassTickets();if(tab==='history')loadPassHistory();};
+window.switchTab=(tab)=>{document.querySelectorAll('#screenPassenger .tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('passTab-'+tab)?.classList.add('active');document.getElementById('nav-'+tab)?.classList.add('active');if(tab==='tickets')loadPassTickets();if(tab==='history')loadPassHistory();if(tab==='resa')loadPassResa();};
 
 window.switchRecvTab=(tab)=>{
   document.querySelectorAll('#screenReceiver .tab-content').forEach(t=>t.classList.remove('active'));
