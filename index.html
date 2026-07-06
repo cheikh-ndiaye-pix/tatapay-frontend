@@ -690,7 +690,10 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <div class="tab-content" id="chTab-resa" style="padding:18px 16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
         <div style="font-weight:900;font-size:20px;color:#34d399;">🗓️ Réservations</div>
-        <button onclick="openNewTrip()" style="background:linear-gradient(135deg,#059669,#047857);border:none;border-radius:12px;padding:9px 14px;color:#fff;font-weight:800;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><span style="font-size:16px;">+</span> Nouveau</button>
+        <div style="display:flex;gap:8px;">
+          <button onclick="openCamera('resa-scan')" style="background:linear-gradient(135deg,#FDEF42,#f5d90a);border:none;border-radius:12px;padding:9px 14px;color:#111;font-weight:800;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;">📷 Scanner</button>
+          <button onclick="openNewTrip()" style="background:linear-gradient(135deg,#059669,#047857);border:none;border-radius:12px;padding:9px 14px;color:#fff;font-weight:800;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"><span style="font-size:16px;">+</span> Nouveau</button>
+        </div>
       </div>
       <div id="chResaList"><div style="color:#555;font-size:13px;text-align:center;padding:20px;">Chargement…</div></div>
     </div>
@@ -1183,6 +1186,35 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div style="display:flex;justify-content:space-between;font-weight:900;font-size:18px;color:var(--y);"><span>Total à payer</span><span><span id="bkTotal">0</span> FCFA</span></div>
       </div>
       <button class="btn btn-full" style="background:linear-gradient(135deg,#009A44,#059669);color:#fff;font-weight:900;" onclick="doBookTrip()">✅ Confirmer la réservation</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalResaTicket" style="display:none;" onclick="if(event.target===this)closeModal('modalResaTicket')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="height:3px;background:linear-gradient(90deg,#009A44,#FDEF42,#DF0024);border-radius:24px 24px 0 0;"></div>
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">🎟️ Ticket de réservation</div><button class="modal-close" onclick="closeModal('modalResaTicket')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body" style="text-align:center;">
+      <div style="font-weight:800;font-size:15px;" id="rtTripInfo">—</div>
+      <div style="font-size:12px;color:#888;margin:4px 0 16px;"><span id="rtPlaces">0</span> place(s) · <span id="rtPassenger">—</span></div>
+      <div id="resaTicketQRWrap" style="display:flex;justify-content:center;margin-bottom:14px;"></div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#666;margin-bottom:8px;" id="rtRef">—</div>
+      <div style="font-weight:800;font-size:13px;" id="rtStatus">—</div>
+      <div style="font-size:11px;color:#888;margin-top:14px;line-height:1.6;">Présentez ce QR code au chauffeur à l'embarquement pour qu'il le scanne et confirme votre place.</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalResaShare" style="display:none;" onclick="if(event.target===this)closeModal('modalResaShare')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="height:3px;background:linear-gradient(90deg,#009A44,#FDEF42,#DF0024);border-radius:24px 24px 0 0;"></div>
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">👥 Partager mes places</div><button class="modal-close" onclick="closeModal('modalResaShare')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body">
+      <div style="font-weight:800;font-size:14px;" id="rsTripInfo">—</div>
+      <div style="font-size:12px;color:#888;margin:4px 0 14px;">Places partagées : <span id="rsCount">0/0</span></div>
+      <div id="resaShareList" style="margin-bottom:14px;"></div>
+      <button id="rsAddBtn" class="btn btn-full" style="background:linear-gradient(135deg,#009A44,#059669);color:#fff;font-weight:900;" onclick="addResaShare(S.shareBookingId)">➕ Générer une place à partager</button>
+      <div style="font-size:11px;color:#888;margin-top:12px;line-height:1.6;">Envoyez chaque QR code à une personne différente. Le chauffeur scanne chaque QR pour confirmer l'embarquement de cette place. Impossible de générer plus de places que ce que vous avez réservé — toute tentative au-delà sera refusée.</div>
     </div>
   </div>
 </div>
@@ -2717,7 +2749,7 @@ window.doCreateTrip=async()=>{
   if(!price||price<100){notify('⚠️','Prix','Prix minimum 100 FCFA par place.');return;}
   loader('Création du trajet…');
   try{
-    await addDoc(collection(db,'tripOffers'),{
+    await addDoc(collection(db,'reservations_trips'),{
       ownerUid:S.uid,ownerName:S.profile?.name||'',
       gie:S.profile?.gie||S.profile?.company||'',vehicle:S.profile?.vehicle||'',
       ligne:S.profile?.ligne||'',zone:S.profile?.zone||'',
@@ -2735,7 +2767,7 @@ window.loadChResa=async()=>{
   if(!cont)return;
   cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:20px;">Chargement…</div>';
   try{
-    const snap=await getDocs(query(collection(db,'tripOffers'),where('ownerUid','==',S.uid)));
+    const snap=await getDocs(query(collection(db,'reservations_trips'),where('ownerUid','==',S.uid)));
     const trips=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
     if(!trips.length){cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:20px;">Aucun trajet créé.</div>';return;}
     cont.innerHTML=trips.map(t=>`<div class="ch-card" style="margin-bottom:10px;">
@@ -2755,11 +2787,11 @@ window.loadChResa=async()=>{
 window.cancelTrip=async(tripId)=>{
   loader('Annulation en cours…');
   try{
-    const tripRef=doc(db,'tripOffers',tripId);
+    const tripRef=doc(db,'reservations_trips',tripId);
     const tripSnap=await getDoc(tripRef);
     if(!tripSnap.exists()){loader('',false);return;}
     const trip=tripSnap.data();
-    const bookSnap=await getDocs(query(collection(db,'tripBookings'),where('tripId','==',tripId),where('status','==','confirmed')));
+    const bookSnap=await getDocs(query(collection(db,'reservations_bookings'),where('tripId','==',tripId),where('status','==','confirmed')));
     for(const bDoc of bookSnap.docs){
       const b=bDoc.data();
       await updateDoc(doc(db,'users',b.passengerUid),{balance:increment(b.total)});
@@ -2777,12 +2809,13 @@ window.cancelTrip=async(tripId)=>{
 };
 
 let _resaTripsCache={};
+let _resaBookingsCache={};
 window.loadPassResa=async()=>{
   const cont=document.getElementById('passResaList');
   if(cont){
     cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:20px;">Chargement…</div>';
     try{
-      const snap=await getDocs(query(collection(db,'tripOffers'),where('status','==','active')));
+      const snap=await getDocs(query(collection(db,'reservations_trips'),where('status','==','active')));
       const trips=snap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>(t.placesLeft||0)>0).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
       _resaTripsCache={};trips.forEach(t=>_resaTripsCache[t.id]=t);
       if(!trips.length){cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:20px;">Aucun trajet disponible pour le moment.</div>';}
@@ -2799,17 +2832,97 @@ window.loadPassResa=async()=>{
   const contMy=document.getElementById('passResaMyList');
   if(contMy){
     try{
-      const snap=await getDocs(query(collection(db,'tripBookings'),where('passengerUid','==',S.uid)));
+      const snap=await getDocs(query(collection(db,'reservations_bookings'),where('passengerUid','==',S.uid)));
       const bookings=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+      _resaBookingsCache={};bookings.forEach(b=>_resaBookingsCache[b.id]=b);
       if(!bookings.length){contMy.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune réservation.</div>';}
       else{
         contMy.innerHTML=bookings.map(b=>{
-          const statusLabel=b.status==='confirmed'?'':(b.status==='refunded'?' · Remboursé (trajet annulé)':' · Annulé');
-          return `<div class="tx-row"><div style="flex:1;"><div style="font-weight:700;font-size:13px;">${b.from} → ${b.to} · ${b.places} pl.</div><div style="font-size:11px;color:#888;">${b.date} · ${fmt(b.total)} F${statusLabel}</div></div>${b.status==='confirmed'?`<button style="background:#DF002422;color:#DF0024;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;" onclick="cancelBooking('${b.id}')">Annuler</button>`:''}</div>`;
+          const statusLabel=b.status==='confirmed'?'':(b.status==='boarded'?' · Embarqué ✅':(b.status==='refunded'?' · Remboursé (trajet annulé)':' · Annulé'));
+          const ticketBtn=(b.status==='confirmed'||b.status==='boarded')?`<button style="background:#FDEF4222;color:#FDEF42;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;" onclick="showResaTicket('${b.id}')">🎟️ Ticket</button>`:'';
+          const shareBtn=(b.places>2&&(b.status==='confirmed'||b.status==='boarded'))?`<button style="background:#05966922;color:#34d399;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;" onclick="openResaShare('${b.id}')">👥 Partager</button>`:'';
+          const cancelBtn=b.status==='confirmed'?`<button style="background:#DF002422;color:#DF0024;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;" onclick="cancelBooking('${b.id}')">Annuler</button>`:'';
+          return `<div class="tx-row"><div style="flex:1;"><div style="font-weight:700;font-size:13px;">${b.from} → ${b.to} · ${b.places} pl.</div><div style="font-size:11px;color:#888;">${b.date} · ${fmt(b.total)} F${statusLabel}</div></div><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;max-width:150px;">${ticketBtn}${shareBtn}${cancelBtn}</div></div>`;
         }).join('');
       }
     }catch(e){console.warn('[loadPassResa my]',e);}
   }
+};
+
+window.showResaTicket=(bookingId)=>{
+  const b=_resaBookingsCache[bookingId];
+  if(!b){notify('⚠️','Ticket','Réservation introuvable.');return;}
+  document.getElementById('rtTripInfo').textContent=`${b.from} → ${b.to} · ${b.date}${b.time?' '+b.time:''}`;
+  document.getElementById('rtPlaces').textContent=b.places;
+  document.getElementById('rtPassenger').textContent=b.passengerName||S.profile?.name||'—';
+  document.getElementById('rtRef').textContent=b.ref;
+  const statusEl=document.getElementById('rtStatus');
+  if(b.status==='boarded'){statusEl.textContent='✅ Embarquement confirmé';statusEl.style.color='#34d399';}
+  else{statusEl.textContent='⏳ En attente d\'embarquement';statusEl.style.color='#FDEF42';}
+  openModal('modalResaTicket');
+  const data=`tatapay://resa/${bookingId}?uid=${b.passengerUid}`;
+  setTimeout(()=>renderQR('resaTicketQRWrap',data,200,'M'),50);
+};
+
+window.openResaShare=async(bookingId)=>{
+  const b=_resaBookingsCache[bookingId];
+  if(!b){notify('⚠️','Erreur','Réservation introuvable.');return;}
+  S.shareBookingId=bookingId;
+  document.getElementById('rsTripInfo').textContent=`${b.from} → ${b.to} · ${b.date}${b.time?' '+b.time:''}`;
+  openModal('modalResaShare');
+  await refreshResaShareList(bookingId);
+};
+
+async function refreshResaShareList(bookingId){
+  const cont=document.getElementById('resaShareList');
+  const addBtn=document.getElementById('rsAddBtn');
+  cont.innerHTML='<div style="color:#555;font-size:12px;text-align:center;padding:12px;">Chargement…</div>';
+  try{
+    const bookSnap=await getDoc(doc(db,'reservations_bookings',bookingId));
+    if(!bookSnap.exists())return;
+    const b=bookSnap.data();
+    document.getElementById('rsCount').textContent=`${b.sharesCount||0}/${b.places}`;
+    const snap=await getDocs(query(collection(db,'reservations_bookings',bookingId,'shares'),orderBy('seatIndex')));
+    const shares=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!shares.length){cont.innerHTML='<div style="color:#555;font-size:12px;text-align:center;padding:12px;">Aucune place partagée pour l\'instant.</div>';}
+    else{
+      cont.innerHTML=shares.map(s=>`<div style="display:flex;align-items:center;gap:10px;background:#ffffff08;border-radius:12px;padding:10px;margin-bottom:8px;">
+        <div id="shareQR_${s.id}" style="flex-shrink:0;"></div>
+        <div style="flex:1;"><div style="font-weight:800;font-size:13px;">Place ${s.seatIndex}</div><div style="font-size:11px;color:${s.status==='boarded'?'#34d399':'#FDEF42'};">${s.status==='boarded'?'✅ Embarqué':'⏳ En attente'}</div></div>
+      </div>`).join('');
+      shares.forEach(s=>{
+        const data=`tatapay://resashare/${bookingId}/${s.id}`;
+        setTimeout(()=>renderQR(`shareQR_${s.id}`,data,64,'M'),50);
+      });
+    }
+    const full=(b.sharesCount||0)>=b.places;
+    if(addBtn){addBtn.disabled=full;addBtn.style.opacity=full?'0.4':'1';addBtn.textContent=full?'🚫 Toutes les places sont déjà partagées':'➕ Générer une place à partager';}
+  }catch(e){console.warn('[refreshResaShareList]',e);cont.innerHTML='<div style="color:#DF0024;font-size:12px;text-align:center;padding:12px;">Erreur de chargement.</div>';}
+}
+
+window.addResaShare=async(bookingId)=>{
+  if(!bookingId)return;
+  loader('Génération de la place partagée…');
+  try{
+    let seatIndex=0;
+    await runTransaction(db,async(tx)=>{
+      const bookRef=doc(db,'reservations_bookings',bookingId);
+      const bookSnap=await tx.get(bookRef);
+      if(!bookSnap.exists())throw new Error('Réservation introuvable.');
+      const b=bookSnap.data();
+      if(b.passengerUid!==S.uid)throw new Error('Cette réservation ne vous appartient pas.');
+      if(b.status!=='confirmed'&&b.status!=='boarded')throw new Error('Cette réservation n\'est plus valide.');
+      const current=b.sharesCount||0;
+      if(current>=b.places)throw new Error(`Refusé : les ${b.places} places de cette réservation sont déjà toutes partagées.`);
+      seatIndex=current+1;
+      tx.update(bookRef,{sharesCount:increment(1)});
+      const shareRef=doc(collection(db,'reservations_bookings',bookingId,'shares'));
+      tx.set(shareRef,{seatIndex,status:'pending',createdAt:serverTimestamp()});
+    });
+    loader('',false);
+    notify('✅','Place partagée créée',`Place ${seatIndex} — envoyez son QR à la personne concernée.`);
+    refreshResaShareList(bookingId);
+  }catch(e){loader('',false);notify('❌','Refusé',e.message);}
 };
 
 window.openBookTrip=(tripId)=>{
@@ -2845,7 +2958,7 @@ window.doBookTrip=async()=>{
     const ref='RES-'+Date.now().toString(36).toUpperCase();
     let finalTotal=0;
     await runTransaction(db,async(tx)=>{
-      const tripRef=doc(db,'tripOffers',t.id);
+      const tripRef=doc(db,'reservations_trips',t.id);
       const tripSnap=await tx.get(tripRef);
       if(!tripSnap.exists())throw new Error('Trajet introuvable.');
       const trip=tripSnap.data();
@@ -2862,8 +2975,8 @@ window.doBookTrip=async()=>{
       tx.update(tripRef,{placesLeft:increment(-places)});
       tx.update(passRef,{balance:increment(-total)});
       tx.update(doc(db,'users',trip.ownerUid),{balance:increment(priceTotal)});
-      const bookingRef=doc(collection(db,'tripBookings'));
-      tx.set(bookingRef,{tripId:t.id,ownerUid:trip.ownerUid,ownerName:trip.ownerName,passengerUid:S.uid,passengerName:S.profile?.name||'',places,pricePerPlace:trip.pricePerPlace,priceTotal,commission,total,from:trip.from,to:trip.to,date:trip.date,time:trip.time,status:'confirmed',ref,createdAt:serverTimestamp()});
+      const bookingRef=doc(collection(db,'reservations_bookings'));
+      tx.set(bookingRef,{tripId:t.id,ownerUid:trip.ownerUid,ownerName:trip.ownerName,passengerUid:S.uid,passengerName:S.profile?.name||'',places,pricePerPlace:trip.pricePerPlace,priceTotal,commission,total,from:trip.from,to:trip.to,date:trip.date,time:trip.time,status:'confirmed',sharesCount:0,boardedCount:0,ref,createdAt:serverTimestamp()});
       tx.set(doc(collection(db,'commissions_resa')),{tripId:t.id,bookingId:bookingRef.id,amount:commission,ref,ts:serverTimestamp()});
       tx.set(doc(collection(db,'users',S.uid,'history')),{type:'reservation',label:`Résa. ${trip.from}→${trip.to} (${places} pl.)`,amount:-total,ref,ts:serverTimestamp()});
       tx.set(doc(collection(db,'users',trip.ownerUid,'history')),{type:'reservation_in',label:`Résa. reçue — ${places} pl. ${trip.from}→${trip.to}`,amount:priceTotal,ref,ts:serverTimestamp()});
@@ -2877,14 +2990,14 @@ window.doBookTrip=async()=>{
 window.cancelBooking=async(bookingId)=>{
   loader('Annulation en cours…');
   try{
-    const bookRef=doc(db,'tripBookings',bookingId);
+    const bookRef=doc(db,'reservations_bookings',bookingId);
     const bookSnap=await getDoc(bookRef);
     if(!bookSnap.exists()){loader('',false);return;}
     const b=bookSnap.data();
     if(b.status!=='confirmed'){loader('',false);notify('⚠️','Déjà traité','Cette réservation a déjà été annulée ou remboursée.');return;}
     await updateDoc(doc(db,'users',S.uid),{balance:increment(b.total)});
     await updateDoc(doc(db,'users',b.ownerUid),{balance:increment(-b.priceTotal)});
-    await updateDoc(doc(db,'tripOffers',b.tripId),{placesLeft:increment(b.places)});
+    await updateDoc(doc(db,'reservations_trips',b.tripId),{placesLeft:increment(b.places)});
     await updateDoc(bookRef,{status:'cancelled',cancelledAt:serverTimestamp()});
     await addDoc(collection(db,'commissions_resa'),{tripId:b.tripId,bookingId,amount:-b.commission,ref:'CANCEL-'+b.ref,ts:serverTimestamp()});
     await addDoc(collection(db,'users',S.uid,'history'),{type:'reservation_refund',label:`Annulation réservation — ${b.from}→${b.to}`,amount:b.total,ref:b.ref,ts:serverTimestamp()});
@@ -2892,6 +3005,43 @@ window.cancelBooking=async(bookingId)=>{
     loader('',false);
     notify('✅','Réservation annulée',`${fmt(b.total)} FCFA remboursés.`);
     loadPassResa();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
+
+window.confirmBoardingScan=async(bookingId,uid)=>{
+  loader('Vérification du ticket…');
+  try{
+    const bookRef=doc(db,'reservations_bookings',bookingId);
+    const bookSnap=await getDoc(bookRef);
+    if(!bookSnap.exists())throw new Error('Réservation introuvable.');
+    const b=bookSnap.data();
+    if(b.ownerUid!==S.uid)throw new Error('Ce ticket ne correspond pas à un de vos trajets.');
+    if(uid&&b.passengerUid!==uid)throw new Error('Ticket invalide (passager incohérent).');
+    if(b.status==='boarded'){loader('',false);notify('⚠️','Déjà scanné',`${b.passengerName||'Passager'} a déjà embarqué.`);return;}
+    if(b.status!=='confirmed')throw new Error('Cette réservation n\'est plus valide (annulée/remboursée).');
+    await updateDoc(bookRef,{status:'boarded',boardedAt:serverTimestamp()});
+    loader('',false);
+    notify('✅','Embarquement confirmé',`${b.passengerName||'Passager'} · ${b.places} place(s) · ${b.from}→${b.to}`);
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
+
+window.confirmShareBoardingScan=async(bookingId,shareId)=>{
+  loader('Vérification du ticket…');
+  try{
+    const bookRef=doc(db,'reservations_bookings',bookingId);
+    const bookSnap=await getDoc(bookRef);
+    if(!bookSnap.exists())throw new Error('Réservation introuvable.');
+    const b=bookSnap.data();
+    if(b.ownerUid!==S.uid)throw new Error('Ce ticket ne correspond pas à un de vos trajets.');
+    const shareRef=doc(db,'reservations_bookings',bookingId,'shares',shareId);
+    const shareSnap=await getDoc(shareRef);
+    if(!shareSnap.exists())throw new Error('Place partagée introuvable.');
+    const s=shareSnap.data();
+    if(s.status==='boarded'){loader('',false);notify('⚠️','Déjà scanné',`Place ${s.seatIndex} déjà embarquée.`);return;}
+    await updateDoc(shareRef,{status:'boarded',boardedAt:serverTimestamp()});
+    await updateDoc(bookRef,{boardedCount:increment(1)});
+    loader('',false);
+    notify('✅','Embarquement confirmé',`Place ${s.seatIndex} · ${b.from}→${b.to}`);
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
@@ -3503,7 +3653,7 @@ function scanLoop(){if(!S.scanning)return;const video=document.getElementById('c
 function scanWithJsQR(video){if(!S.scanning)return;if(typeof jsQR==='function'){const w=video.videoWidth,h=video.videoHeight;if(w&&h){scanCanvas.width=w;scanCanvas.height=h;scanCtx.drawImage(video,0,0,w,h);try{const img=scanCtx.getImageData(0,0,w,h);const code=jsQR(img.data,w,h,{inversionAttempts:'dontInvert'});if(code?.data){handleQR(code.data);return;}}catch(e){}}}requestAnimationFrame(scanLoop);}
 window.stopCamera=()=>{S.scanning=false;if(scanHintTimer){clearTimeout(scanHintTimer);scanHintTimer=null;}document.getElementById('cameraScreen').classList.remove('open');document.getElementById('manualPanel')?.remove();if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null;}};
 window.flipCamera=async()=>{S.facing=S.facing==='environment'?'user':'environment';if(S.stream)S.stream.getTracks().forEach(t=>t.stop());await window.openCamera(S.camMode);};
-function handleQR(raw){stopCamera();raw=(raw||'').trim();const ticketM=raw.match(/tatapay:\/\/ticket\/(.+)/i);if(ticketM){if(document.getElementById('modalTicketFlow')?.style.display==='flex')closeModal('modalTicketFlow');importTicketFromQR(ticketM[1]);return;}const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);const balM=raw.match(/[?&]bal=(\d+)/);const tM=raw.match(/[?&]t=(\d+)/);const uidM=raw.match(/[?&]uid=([A-Za-z0-9]+)/);const qrBal=balM?parseInt(balM[1],10):null;const qrTs=tM?parseInt(tM[1],10):null;const qrUid=uidM?uidM[1]:null;if(S.camMode==='ticket'&&!ticketM){notify('❌','QR invalide','Ce n\'est pas un QR de ticket.');return;}if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Contenu: '+raw.slice(0,40));return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId,qrBal,qrTs,qrUid);}else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}}
+function handleQR(raw){stopCamera();raw=(raw||'').trim();const ticketM=raw.match(/tatapay:\/\/ticket\/(.+)/i);if(ticketM){if(document.getElementById('modalTicketFlow')?.style.display==='flex')closeModal('modalTicketFlow');importTicketFromQR(ticketM[1]);return;}const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);const balM=raw.match(/[?&]bal=(\d+)/);const tM=raw.match(/[?&]t=(\d+)/);const uidM=raw.match(/[?&]uid=([A-Za-z0-9]+)/);const resaM=raw.match(/tatapay:\/\/resa\/([A-Za-z0-9]+)/i);const resaShareM=raw.match(/tatapay:\/\/resashare\/([A-Za-z0-9]+)\/([A-Za-z0-9]+)/i);const qrBal=balM?parseInt(balM[1],10):null;const qrTs=tM?parseInt(tM[1],10):null;const qrUid=uidM?uidM[1]:null;if(S.camMode==='ticket'&&!ticketM){notify('❌','QR invalide','Ce n\'est pas un QR de ticket.');return;}if(S.camMode==='resa-scan'){if(resaShareM){confirmShareBoardingScan(resaShareM[1],resaShareM[2]);return;}if(!resaM){notify('❌','QR invalide','Ce n\'est pas un ticket de réservation.');return;}confirmBoardingScan(resaM[1],qrUid);}else if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Contenu: '+raw.slice(0,40));return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId,qrBal,qrTs,qrUid);}else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}}
 
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
