@@ -2930,9 +2930,14 @@ window.rgGoStep2=()=>{const v=parseInt(document.getElementById('rechargeAmt').va
 window.rgCancelWait=()=>{if(S.rgUnsub){S.rgUnsub();S.rgUnsub=null;}if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';notify('ℹ️','En attente','Si le paiement se termine, votre solde sera mis à jour automatiquement.');};
 window.rgPayWithPaytech=async()=>{
   const amt=S.rgAmt;if(!amt)return;
-  document.getElementById('rgWaitTitle').textContent='Ouverture du paiement…';
-  document.getElementById('rgWaitSub').textContent="Une fenêtre PayTech s'est ouverte. Choisissez votre opérateur et terminez le paiement là-bas — cette page se mettra à jour automatiquement.";
   document.getElementById('rgStep2').style.display='none';document.getElementById('rgStep3').style.display='block';
+  await rgAttemptInit(amt,1);
+};
+async function rgAttemptInit(amt,attempt){
+  document.getElementById('rgWaitTitle').textContent=attempt===1?'Ouverture du paiement…':'Nouvelle tentative…';
+  document.getElementById('rgWaitSub').textContent=attempt===1
+    ?"Connexion au serveur de paiement…"
+    :"Le serveur se réveille (ça peut prendre jusqu'à 1 minute la première fois). Merci de patienter.";
   try{
     const token=await auth.currentUser.getIdToken();
     const res=await fetch(BACKEND_URL+'/api/payment/init',{
@@ -2946,6 +2951,22 @@ window.rgPayWithPaytech=async()=>{
       notify('❌','Échec',data?.error||"Impossible d'initier le paiement.");
       return;
     }
+    rgProceedAfterInit(data,amt);
+  }catch(e){
+    // Échec réseau probable (serveur en veille) : on réessaie une fois automatiquement.
+    if(attempt<3){
+      document.getElementById('rgWaitTitle').textContent='Réveil du serveur…';
+      document.getElementById('rgWaitSub').textContent="Première connexion un peu lente, nouvelle tentative dans quelques secondes…";
+      await new Promise(r=>setTimeout(r,attempt===1?4000:8000));
+      return rgAttemptInit(amt,attempt+1);
+    }
+    document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';
+    notify('❌','Erreur réseau',"Le serveur ne répond pas. Vérifiez votre connexion et réessayez dans un instant.");
+  }
+}
+function rgProceedAfterInit(data,amt){
+    document.getElementById('rgWaitTitle').textContent='Ouverture du paiement…';
+    document.getElementById('rgWaitSub').textContent="Une fenêtre PayTech s'est ouverte. Choisissez votre opérateur et terminez le paiement là-bas — cette page se mettra à jour automatiquement.";
     const payUrl=data.payment_url||data.redirect_url;
     const win=window.open(payUrl,'_blank');
     if(!win){notify('⚠️','Popup bloquée',"Autorisez les popups pour ce site, puis réessayez.");}
@@ -2972,11 +2993,7 @@ window.rgPayWithPaytech=async()=>{
       document.getElementById('rgWaitTitle').textContent='Paiement toujours en attente…';
       document.getElementById('rgWaitSub').textContent="Ça prend plus de temps que prévu. Vous pouvez fermer cette fenêtre — votre solde sera mis à jour dès que le paiement sera confirmé.";
     },6*60*1000);
-  }catch(e){
-    document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';
-    notify('❌','Erreur',e.message);
-  }
-};
+}
 window.openSend=()=>{clearFriend();document.getElementById('sendAmt').value='';openModal('modalSend');};
 window.clearFriend=()=>{S.friendTarget=null;document.getElementById('friendPreview').style.display='none';document.getElementById('friendManualWrap').style.display='block';document.getElementById('sendTarget').value='';};
 function setFriend(walletId,name){S.friendTarget={walletId,name};document.getElementById('friendName').textContent=name;document.getElementById('friendWalletId').textContent=walletId;document.getElementById('friendPreview').style.display='flex';document.getElementById('friendManualWrap').style.display='none';}
@@ -3234,4 +3251,3 @@ function handleQR(raw){stopCamera();raw=(raw||'').trim();const ticketM=raw.match
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
 </div>
-      
