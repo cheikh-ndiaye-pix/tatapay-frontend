@@ -2873,27 +2873,52 @@ window.showResaTicket=(bookingId)=>{
   const data=`tatapay://resa/${bookingId}?uid=${b.passengerUid}`;
   setTimeout(()=>renderQR('resaTicketQRWrap',data,200,'M'),50);
   const waMsg=`🎟️ Ticket de réservation TataPay\n${b.from} → ${b.to} · ${b.date}${b.time?' '+b.time:''}\n${b.places} place(s) · Réf ${b.ref}\nPrésentez ce QR au chauffeur pour confirmer l'embarquement.\n\nCode : ${data}`;
-  document.getElementById('rtWhatsappBtn').onclick=()=>shareQRWhatsapp('resaTicketQRWrap',waMsg);
+  document.getElementById('rtWhatsappBtn').onclick=()=>shareQRWhatsapp('resaTicketQRWrap',waMsg,data);
+};
+
+// Génère un PNG haute qualité du QR (hors-écran) pour le partage.
+window.buildQRBlob=async(qrData,size=512)=>{
+  try{
+    if(!qrData||!window.QRCode||!QRCode.toCanvas)return null;
+    const canvas=document.createElement('canvas');
+    await new Promise((resolve,reject)=>{
+      QRCode.toCanvas(canvas,qrData,{width:size,margin:2,errorCorrectionLevel:'M',color:{dark:'#000000',light:'#FFFFFF'}},(err)=>err?reject(err):resolve());
+    });
+    return await new Promise(res=>canvas.toBlob(res,'image/png'));
+  }catch(e){console.warn('[buildQRBlob]',e);return null;}
 };
 
 // Partage d'un QR (image + texte si possible) via WhatsApp ou toute autre app,
 // avec repli sur un lien wa.me si le partage natif n'est pas disponible.
-window.shareQRWhatsapp=async(containerId,message)=>{
+// containerId : sert de repli si qrData n'est pas fourni.
+// qrData : données du QR — recommandé pour obtenir une image nette (512px).
+window.shareQRWhatsapp=async(containerId,message,qrData)=>{
   try{
-    const canvas=document.querySelector('#'+containerId+' canvas');
-    if(canvas&&navigator.share){
-      const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
-      if(blob){
-        const file=new File([blob],'ticket-tatapay.png',{type:'image/png'});
-        if(navigator.canShare&&navigator.canShare({files:[file]})){
-          await navigator.share({files:[file],text:message,title:'🎟️ Ticket TataPay'});
-          return;
-        }
+    // 1) Toujours essayer de générer un PNG haute qualité à partir des données.
+    let blob=qrData?await buildQRBlob(qrData,512):null;
+    // 2) Repli : récupérer le canvas déjà rendu dans le conteneur.
+    if(!blob&&containerId){
+      const canvas=document.querySelector('#'+containerId+' canvas');
+      if(canvas)blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
+    }
+    if(blob&&navigator.share){
+      const file=new File([blob],'ticket-tatapay.png',{type:'image/png'});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],text:message,title:'🎟️ Ticket TataPay'});
+        return;
       }
     }
+    // 3) Pas de partage de fichier possible : télécharger l'image puis ouvrir WhatsApp
+    //    afin que l'utilisateur puisse la joindre manuellement.
+    if(blob){
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;a.download='ticket-tatapay.png';
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),4000);
+    }
     if(navigator.share){
-      await navigator.share({text:message,title:'🎟️ Ticket TataPay'});
-      return;
+      try{await navigator.share({text:message,title:'🎟️ Ticket TataPay'});return;}catch(_){}
     }
   }catch(e){
     if(e&&e.name==='AbortError')return;
@@ -2970,7 +2995,7 @@ window.shareResaShareWhatsapp=(bookingId,shareId,seatIndex)=>{
   const tripTxt=b?`${b.from} → ${b.to} · ${b.date}${b.time?' '+b.time:''}`:'Trajet réservé';
   const data=`tatapay://resashare/${bookingId}/${shareId}`;
   const message=`🎟️ Ticket TataPay — Place ${seatIndex}\n${tripTxt}\nPrésentez ce QR au chauffeur pour confirmer l'embarquement.\n\nCode : ${data}`;
-  shareQRWhatsapp('shareQR_'+shareId,message);
+  shareQRWhatsapp('shareQR_'+shareId,message,data);
 };
 
 window.openBookTrip=(tripId)=>{
