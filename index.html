@@ -814,8 +814,14 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div style="font-size:11px;font-weight:800;color:#0ea5e9;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;margin-top:16px;">⚠️ Alertes</div>
       <div class="dir-card" style="margin-bottom:16px;" id="dir-alerts-card"><div id="dir-alerts-list"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune alerte active.</div></div></div>
       <div style="font-size:11px;font-weight:800;color:#0ea5e9;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">⚙️ Actions rapides</div>
-      <div class="dir-quick-actions" style="margin-bottom:24px;">
-        <button class="dir-action-btn" onclick="dirGenererRapport()"><span style="font-size:24px;">📊</span>Rapport</button>
+      <div class="dir-quick-actions" style="margin-bottom:12px;">
+        <button class="dir-action-btn" onclick="dirGenererRapport()" title="Génère un récapitulatif des recettes, reversements et alertes du jour, à partager par WhatsApp ou SMS."><span style="font-size:24px;">📊</span>Rapport</button>
+      </div>
+      <div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-bottom:24px;font-size:11px;color:#555;">
+        <span id="dirLastUpdate">Dernière mise à jour : —</span>
+        <button onclick="loadDirFullDashboard()" title="Rafraîchir les données" style="background:#0ea5e922;border:1px solid #0ea5e955;border-radius:8px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#7dd3fc;padding:0;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        </button>
       </div>
     </div>
     <div class="tab-content" id="dirTab-owners" style="padding:18px 16px;">
@@ -2148,6 +2154,8 @@ async function loadDirFullDashboard(){
     if(dirRevChartInst)dirRevChartInst.destroy();
     const rCtx=document.getElementById('dirRevChart');
     if(rCtx){dirRevChartInst=new Chart(rCtx,{type:'bar',data:{labels:pd.labels,datasets:[{label:'Recettes (F)',data:pd.data,backgroundColor:'#0ea5e9',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10}},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#666',font:{size:10},callback:v=>fmt(v/1000)+'k'},grid:{color:'#0ea5e910'},border:{display:false}}}}});}
+    const upd=document.getElementById('dirLastUpdate');
+    if(upd)upd.textContent='Dernière mise à jour : '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
     loader('',false);
   }catch(e){loader('',false);notify('❌','Erreur dashboard',e.message);console.error('loadDirFullDashboard:',e);}
 }
