@@ -324,7 +324,11 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div style="font-weight:800;font-size:13px;" id="ptStatus">—</div>
       <div style="font-size:11px;color:#888;margin-top:14px;line-height:1.6;">Présentez ce QR code au chauffeur à l'embarquement pour qu'il le scanne et confirme la place.</div>
     </div>
-    <div id="ptError" style="display:none;color:#DF0024;font-size:13px;margin-top:18px;max-width:280px;">Ticket introuvable ou lien invalide.</div>
+    <div id="ptError" style="display:none;margin-top:18px;max-width:300px;text-align:center;background:#0c1f12;border:1px solid #DF002444;border-radius:18px;padding:22px 18px;">
+      <div id="ptErrorIcon" style="font-size:42px;margin-bottom:10px;">🚫</div>
+      <div id="ptErrorTitle" style="font-weight:800;font-size:16px;color:#fff;margin-bottom:8px;">Ticket introuvable</div>
+      <div id="ptErrorText" style="color:#DF0024;font-size:13px;line-height:1.5;">Ce lien ne correspond à aucune réservation ou il est invalide.</div>
+    </div>
   </div>
   <div style="padding:0 24px 44px;">
     <button class="btn btn-secondary btn-full" onclick="location.href=location.origin+location.pathname">Ouvrir l'application TataPay</button>
@@ -1494,17 +1498,36 @@ async function showPublicResaTicket(bookingId, uid){
   const errEl=document.getElementById('ptError');
   try{
     const snap=await getDoc(doc(db,'tripBookings',bookingId));
-    if(!snap.exists()){ if(loadingEl)loadingEl.style.display='none'; if(errEl)errEl.style.display='block'; return; }
+    if(!snap.exists()){
+      if(loadingEl)loadingEl.style.display='none';
+      if(contentEl)contentEl.style.display='none';
+      if(errEl){
+        errEl.style.display='block';
+        setPublicTicketError(errEl,'🚫','Ticket introuvable','Ce lien ne correspond à aucune réservation ou il est invalide.');
+      }
+      return;
+    }
     const b=snap.data();
+    const shareableStatuses=['confirmed','pending'];
+    if(!shareableStatuses.includes(b.status)){
+      if(loadingEl)loadingEl.style.display='none';
+      if(contentEl)contentEl.style.display='none';
+      if(errEl){
+        errEl.style.display='block';
+        let title='Ticket invalide',icon='🚫',msg='Ce ticket n\'est plus partageable.';
+        if(b.status==='cancelled'){icon='❌';title='Réservation annulée';msg='Cette réservation a été annulée par le passager ou le chauffeur.';}
+        else if(b.status==='refunded'){icon='💸';title='Réservation remboursée';msg='Cette réservation a été remboursée et n\'est plus valide.';}
+        else if(b.status==='boarded'){icon='✅';title='Embarquement confirmé';msg='L\'embarquement est déjà confirmé pour cette réservation.';}
+        setPublicTicketError(errEl,icon,title,msg);
+      }
+      return;
+    }
     document.getElementById('ptTripInfo').textContent=`${b.from||'—'} → ${b.to||'—'} · ${b.date||''}${b.time?' '+b.time:''}`;
     document.getElementById('ptPlaces').textContent=b.places||0;
     document.getElementById('ptPassenger').textContent=b.passengerName||'—';
     document.getElementById('ptRef').textContent=b.ref||bookingId;
     const st=document.getElementById('ptStatus');
-    if(b.status==='boarded'){st.textContent='✅ Embarquement confirmé';st.style.color='#34d399';}
-    else if(b.status==='cancelled'){st.textContent='❌ Réservation annulée';st.style.color='#DF0024';}
-    else if(b.status==='refunded'){st.textContent='💸 Remboursé';st.style.color='#FDEF42';}
-    else{st.textContent="⏳ En attente d'embarquement";st.style.color='#FDEF42';}
+    st.textContent="⏳ En attente d'embarquement";st.style.color='#FDEF42';
     if(loadingEl)loadingEl.style.display='none';
     if(contentEl)contentEl.style.display='block';
     const qrPayload=`tatapay://resa/${bookingId}`+(uid?`?uid=${encodeURIComponent(uid)}`:'');
@@ -1512,8 +1535,20 @@ async function showPublicResaTicket(bookingId, uid){
   }catch(e){
     console.warn('[showPublicResaTicket]',e);
     if(loadingEl)loadingEl.style.display='none';
-    if(errEl){errEl.style.display='block'; errEl.textContent='Impossible de charger le ticket. Vérifiez votre connexion.';}
+    if(contentEl)contentEl.style.display='none';
+    if(errEl){
+      errEl.style.display='block';
+      setPublicTicketError(errEl,'⚠️','Impossible de charger','Vérifiez votre connexion internet et réessayez.');
+    }
   }
+}
+function setPublicTicketError(errEl,icon,title,text){
+  const iconEl=document.getElementById('ptErrorIcon');
+  const titleEl=document.getElementById('ptErrorTitle');
+  const textEl=document.getElementById('ptErrorText');
+  if(iconEl)iconEl.textContent=icon;
+  if(titleEl)titleEl.textContent=title;
+  if(textEl)textEl.textContent=text;
 }
 (function bootPublicTicket(){
   try{
@@ -2921,16 +2956,27 @@ function resaTicketUrl(bookingId,uid){
   return `${base}#t/${encodeURIComponent(bookingId)}`+(uid?`/${encodeURIComponent(uid)}`:'');
 }
 
-window.showResaTicket=(bookingId)=>{
-  const b=_resaBookingsCache[bookingId];
+window.showResaTicket=async(bookingId)=>{
+  let b=_resaBookingsCache[bookingId];
+  try{
+    const fresh=await getDoc(doc(db,'tripBookings',bookingId));
+    if(fresh.exists()) b=fresh.data();
+  }catch(e){}
   if(!b){notify('⚠️','Ticket','Réservation introuvable.');return;}
+  const shareableStatuses=['confirmed','pending'];
+  if(!shareableStatuses.includes(b.status)){
+    let reason='Cette réservation n\'est plus partageable.';
+    if(b.status==='cancelled') reason='Cette réservation a été annulée.';
+    else if(b.status==='refunded') reason='Cette réservation a été remboursée.';
+    else if(b.status==='boarded') reason='L\'embarquement est déjà confirmé.';
+    notify('⚠️','Ticket non partageable',reason);return;
+  }
   document.getElementById('rtTripInfo').textContent=`${b.from} → ${b.to} · ${b.date}${b.time?' '+b.time:''}`;
   document.getElementById('rtPlaces').textContent=b.places;
   document.getElementById('rtPassenger').textContent=b.passengerName||S.profile?.name||'—';
   document.getElementById('rtRef').textContent=b.ref;
   const statusEl=document.getElementById('rtStatus');
-  if(b.status==='boarded'){statusEl.textContent='✅ Embarquement confirmé';statusEl.style.color='#34d399';}
-  else{statusEl.textContent='⏳ En attente d\'embarquement';statusEl.style.color='#FDEF42';}
+  statusEl.textContent="⏳ En attente d'embarquement";statusEl.style.color='#FDEF42';
   openModal('modalResaTicket');
   const link=resaTicketUrl(bookingId,b.passengerUid);
   setTimeout(()=>renderQR('resaTicketQRWrap',link,200,'M'),50);
