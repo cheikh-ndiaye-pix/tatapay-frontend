@@ -354,7 +354,21 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <div id="fieldPhone" style="display:none"><div class="input-wrap"><label class="input-label">Téléphone *</label><input class="input-field" id="authPhone" type="tel" placeholder="77 123 45 67"/></div></div>
     <div id="fieldsReceiver" style="display:none;">
       <div style="background:#FF6B0010;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FF6B00;line-height:1.6;">🎫 Après validation de votre email, vous choisirez un ou plusieurs propriétaires de bus pour envoyer votre candidature.</div>
+      <div style="background:#0ea5e912;border:1px solid #0ea5e944;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#7dd3fc;line-height:1.7;">
+        📋 <b>Prérequis</b><br/>
+        • Âge : 18 à 55 ans<br/>
+        • Niveau d'études : sait lire, écrire et compter (niveau CM2 minimum)
+      </div>
       <div class="input-wrap"><label class="input-label">Adresse / Quartier *</label><input class="input-field" id="authAddress" placeholder="ex: Médina, Dakar"/></div>
+      <div class="input-wrap"><label class="input-label">Photo (selfie) *</label><input class="input-field" id="authRecvPhoto" type="file" accept="image/*"/></div>
+      <div class="input-wrap"><label class="input-label">Pièce d'identité (CNI) *</label><input class="input-field" id="authRecvIdDoc" type="file" accept="image/*,.pdf"/></div>
+      <div class="input-wrap"><label class="input-label">Diplôme (optionnel)</label><input class="input-field" id="authRecvDiploma" type="file" accept="image/*,.pdf"/></div>
+      <div class="input-wrap"><label class="input-label">CV (optionnel)</label><input class="input-field" id="authRecvCV" type="file" accept="image/*,.pdf"/></div>
+      <div style="background:#009A4412;border:1px solid #009A4444;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#34d399;line-height:1.6;">✅ Aucun frais d'inscription n'est demandé.</div>
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;">
+        <input type="checkbox" id="authRecvCGU" style="margin-top:3px;flex-shrink:0;"/>
+        <label for="authRecvCGU" style="font-size:11px;color:#888;line-height:1.5;">J'accepte les <span onclick="openModal('modalCGU')" style="color:#0ea5e9;text-decoration:underline;cursor:pointer;">Conditions Générales</span> et la <span onclick="openModal('modalPrivacy')" style="color:#0ea5e9;text-decoration:underline;cursor:pointer;">Politique de confidentialité</span>.</label>
+      </div>
     </div>
     <div id="fieldsOwner" style="display:none;">
       <div class="input-wrap">
@@ -1080,6 +1094,28 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
 </div>
 
+<div class="modal-overlay" id="modalCGU" style="display:none;" onclick="if(event.target===this)closeModal('modalCGU')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">📄 Conditions Générales</div><button class="modal-close" onclick="closeModal('modalCGU')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body" style="max-height:60vh;overflow-y:auto;font-size:12px;color:#aaa;line-height:1.7;">
+      <p><b>Texte à personnaliser.</b> Ceci est un texte générique de démonstration — remplacez-le par les Conditions Générales d'Utilisation réelles de TataPay avant mise en production.</p>
+      <p>En utilisant TataPay en tant que receveur, vous vous engagez à : effectuer les encaissements de tickets conformément aux tarifs affichés, reverser les recettes au GIE selon les modalités convenues avec le propriétaire du bus, et signaler toute anomalie technique ou financière au directeur de votre GIE.</p>
+      <p>TataPay se réserve le droit de suspendre un compte en cas de non-respect de ces conditions, de fraude constatée, ou sur demande du Directeur/Propriétaire concerné.</p>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modalPrivacy" style="display:none;" onclick="if(event.target===this)closeModal('modalPrivacy')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">🔒 Politique de confidentialité</div><button class="modal-close" onclick="closeModal('modalPrivacy')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body" style="max-height:60vh;overflow-y:auto;font-size:12px;color:#aaa;line-height:1.7;">
+      <p><b>Texte à personnaliser.</b> Ceci est un texte générique de démonstration — remplacez-le par la Politique de confidentialité réelle de TataPay avant mise en production.</p>
+      <p>Les données collectées (nom, contact, adresse, photo, pièce d'identité, et le cas échéant diplôme/CV) sont utilisées uniquement pour vérifier votre identité et instruire votre candidature auprès d'un propriétaire de bus et de votre GIE. Elles ne sont pas partagées avec des tiers en dehors de ce cadre.</p>
+      <p>Vous pouvez demander la suppression de vos documents à votre Directeur de GIE ou à l'administrateur de la plateforme.</p>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="modalAssignBus" style="display:none;" onclick="if(event.target===this)closeModal('modalAssignBus')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
@@ -1261,12 +1297,14 @@ import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-ap
 import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import{getFirestore,doc,setDoc,getDoc,getDocFromCache,updateDoc,addDoc,collection,collectionGroup,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove,runTransaction}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getStorage,ref as storageRef,uploadBytes,getDownloadURL}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a4972.firebaseapp.com",databaseURL:"https://tatapay-a4972-default-rtdb.europe-west1.firebasedatabase.app",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:265d82fbda0db1b09b0b6d",measurementId:"G-ZEM9NZPL5R"};
 const BACKEND_URL='https://tatapay-backend-1.onrender.com';
 const fbApp=initializeApp(FC);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
+const storage=getStorage(fbApp);
 try{enableIndexedDbPersistence(db).catch(e=>console.warn('[persistence]',e.code||e.message));}catch(e){}
 const ADMIN_EMAIL='papacheikh900@gmail.com';
 
@@ -1356,6 +1394,11 @@ window.doAuth=async()=>{
       const name=document.getElementById('authName').value.trim();
       if(!name){loader('',false);notify('⚠️','Champs','Entrez votre nom.');return;}
       if(document.getElementById('authPass2').value!==pass){loader('',false);notify('⚠️','Erreur','Mots de passe différents.');return;}
+      if(S.authRole==='receiver'){
+        if(!document.getElementById('authRecvCGU')?.checked){loader('',false);notify('⚠️','CGU','Veuillez accepter les CGU et la politique de confidentialité.');return;}
+        if(!document.getElementById('authRecvPhoto')?.files[0]){loader('',false);notify('⚠️','Photo','Ajoutez votre photo (selfie).');return;}
+        if(!document.getElementById('authRecvIdDoc')?.files[0]){loader('',false);notify('⚠️','Pièce d\'identité','Ajoutez un scan/photo de votre pièce d\'identité.');return;}
+      }
       const cred=await createUserWithEmailAndPassword(auth,email,pass);
       const uid=cred.user.uid;
       const phone=document.getElementById('authPhone').value.trim();
@@ -1366,8 +1409,21 @@ window.doAuth=async()=>{
       }else if(S.authRole==='receiver'){
         const address=document.getElementById('authAddress')?.value.trim()||'';
         if(!address){loader('',false);notify('⚠️','Adresse','Entrez votre adresse.');return;}
+        loader('Envoi des documents…');
+        const docUrls={};
+        try{
+          const photoFile=document.getElementById('authRecvPhoto')?.files[0];
+          const idFile=document.getElementById('authRecvIdDoc')?.files[0];
+          const diplomaFile=document.getElementById('authRecvDiploma')?.files[0];
+          const cvFile=document.getElementById('authRecvCV')?.files[0];
+          if(photoFile){const r=storageRef(storage,`receivers/${uid}/photo_${Date.now()}_${photoFile.name}`);await uploadBytes(r,photoFile);docUrls.photoUrl=await getDownloadURL(r);}
+          if(idFile){const r=storageRef(storage,`receivers/${uid}/cni_${Date.now()}_${idFile.name}`);await uploadBytes(r,idFile);docUrls.idDocUrl=await getDownloadURL(r);}
+          if(diplomaFile){const r=storageRef(storage,`receivers/${uid}/diplome_${Date.now()}_${diplomaFile.name}`);await uploadBytes(r,diplomaFile);docUrls.diplomaUrl=await getDownloadURL(r);}
+          if(cvFile){const r=storageRef(storage,`receivers/${uid}/cv_${Date.now()}_${cvFile.name}`);await uploadBytes(r,cvFile);docUrls.cvUrl=await getDownloadURL(r);}
+        }catch(e){console.warn('[receiver docs upload]',e);notify('⚠️','Documents','Compte créé, mais l\'envoi de certains documents a échoué. Vous pourrez les renvoyer plus tard.');}
+        loader('Finalisation…');
         const walletId='RV-'+uid.slice(0,6).toUpperCase();
-        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'receiver',status:'pending',directeurUid:'',address,gie:'',vehicle:'',ligne:'',zone:'',today:0,count:0,balance:0,linkedOwnerUids:[],pendingOwnerUids:[],approvedOwnerUids:[],createdAt:serverTimestamp()});
+        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'receiver',status:'pending',directeurUid:'',address,...docUrls,gie:'',vehicle:'',ligne:'',zone:'',today:0,count:0,balance:0,linkedOwnerUids:[],pendingOwnerUids:[],approvedOwnerUids:[],createdAt:serverTimestamp()});
         await setDoc(doc(db,'wallets',walletId),{uid,role:'receiver'});
         window.pendingReceiverData={uid,name,email,phone,address};
         const muid=document.getElementById('modalRecvPendingUid');if(muid)muid.value=uid;
