@@ -354,7 +354,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <div id="fieldPhone" style="display:none"><div class="input-wrap"><label class="input-label">Téléphone *</label><input class="input-field" id="authPhone" type="tel" placeholder="77 123 45 67"/></div></div>
     <div id="fieldsReceiver" style="display:none;">
       <div style="background:#FF6B0010;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FF6B00;line-height:1.6;">🎫 Après validation de votre email, vous choisirez un ou plusieurs propriétaires de bus pour envoyer votre candidature.</div>
-      <div class="input-wrap"><label class="input-label">Numéro CNI *</label><input class="input-field" id="authCNI" placeholder="1 234 567 890 12345" maxlength="20"/></div>
       <div class="input-wrap"><label class="input-label">Adresse / Quartier *</label><input class="input-field" id="authAddress" placeholder="ex: Médina, Dakar"/></div>
     </div>
     <div id="fieldsOwner" style="display:none;">
@@ -778,6 +777,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div class="dir-stat"><div class="val" id="dir-enc">0</div><div class="lbl">Encaissé (FCFA)</div></div>
         <div class="dir-stat"><div class="val" id="dir-tix">0</div><div class="lbl">Tickets validés</div></div>
         <div class="dir-stat"><div class="val" id="dir-vers">0</div><div class="lbl">Versements GIE</div></div>
+        <div class="dir-stat"><div class="val" id="dir-ret">0</div><div class="lbl">Retraits (FCFA)</div></div>
         <div class="dir-stat"><div class="val" id="dir-net">0</div><div class="lbl">Solde net (FCFA)</div></div>
       </div>
       <div class="dir-card" style="margin-bottom:16px;">
@@ -789,11 +789,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div class="dir-stat"><div class="val" id="dir-bus-actifs" style="color:#009A44;">0</div><div class="lbl">Actifs</div></div>
         <div class="dir-stat"><div class="val" id="dir-bus-inactifs" style="color:#DF0024;">0</div><div class="lbl">Inactifs</div></div>
       </div>
-      <div class="dir-card" style="margin-bottom:16px;" id="dir-bus-list-card">
-        <div style="font-size:12px;font-weight:800;color:#7dd3fc;margin-bottom:8px;">Performance par bus</div>
-        <div id="dir-bus-perf-list"><div style="color:#555;font-size:13px;text-align:center;padding:16px;">Chargement…</div></div>
-      </div>
-      <div class="dir-card" style="margin-bottom:16px;">
+      <div class="dir-card" style="margin-bottom:16px;" id="dir-line-chart-card">
         <div style="font-size:12px;font-weight:800;color:#7dd3fc;margin-bottom:8px;">📊 Recettes par ligne</div>
         <div class="dir-chart-wrap"><canvas id="dirLineChart"></canvas></div>
       </div>
@@ -802,28 +798,24 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div class="dir-stat"><div class="val" id="dirStatReceivers">0</div><div class="lbl">Receveurs</div></div>
         <div class="dir-stat"><div class="val" id="dirStatApproved">0</div><div class="lbl">Actifs</div></div>
       </div>
-      <div class="dir-card" style="margin-bottom:16px;">
-        <div style="font-size:12px;font-weight:800;color:#7dd3fc;margin-bottom:8px;">Performance receveurs</div>
-        <div id="dir-recv-perf-list"><div style="color:#555;font-size:13px;text-align:center;padding:16px;">Chargement…</div></div>
+      <div class="dir-card" style="margin-bottom:16px;" id="dir-bus-list-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-size:12px;font-weight:800;color:#7dd3fc;">🏆 Classement du jour</div>
+          <div style="display:flex;gap:4px;background:#0a1a26;border-radius:10px;padding:3px;">
+            <button id="dirRankTab-bus" onclick="dirSwitchRankTab('bus')" style="padding:5px 10px;font-size:11px;font-weight:700;border:none;border-radius:8px;cursor:pointer;background:#0ea5e9;color:#fff;">Par bus</button>
+            <button id="dirRankTab-recv" onclick="dirSwitchRankTab('recv')" style="padding:5px 10px;font-size:11px;font-weight:700;border:none;border-radius:8px;cursor:pointer;background:transparent;color:#7dd3fc99;">Par receveur</button>
+          </div>
+        </div>
+        <div id="dir-bus-perf-list"><div style="color:#555;font-size:13px;text-align:center;padding:16px;">Chargement…</div></div>
+        <div id="dir-recv-perf-list" style="display:none;"><div style="color:#555;font-size:13px;text-align:center;padding:16px;">Chargement…</div></div>
       </div>
       <div style="font-size:11px;font-weight:800;color:#0ea5e9;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">📥 Demandes à traiter</div>
       <div id="dirPendingList"><div style="text-align:center;color:#555;padding:20px;font-size:13px;">Aucune demande.</div></div>
-      <div style="font-size:11px;font-weight:800;color:#0ea5e9;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;margin-top:16px;">💳 Flux financiers</div>
-      <div class="dir-card" style="margin-bottom:16px;">
-        <div class="dir-flux-row"><span class="dir-flux-label">Encaissements tickets</span><span class="dir-flux-amt flux-in" id="dir-flux-enc">+0 F</span></div>
-        <div class="dir-flux-row"><span class="dir-flux-label">Reversements GIE</span><span class="dir-flux-amt flux-out" id="dir-flux-vers">−0 F</span></div>
-        <div class="dir-flux-row"><span class="dir-flux-label">Retraits receveurs</span><span class="dir-flux-amt flux-out" id="dir-flux-ret">−0 F</span></div>
-        <div class="dir-flux-row" style="border-top:1px solid #0ea5e933;padding-top:12px;margin-top:4px;"><span class="dir-flux-label" style="font-weight:800;color:#7dd3fc;">Solde net GIE</span><span class="dir-flux-amt flux-in" style="font-size:18px;" id="dir-flux-net">+0 F</span></div>
-      </div>
-      <div style="font-size:11px;font-weight:800;color:#0ea5e9;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">⚠️ Alertes</div>
+      <div style="font-size:11px;font-weight:800;color:#0ea5e9;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;margin-top:16px;">⚠️ Alertes</div>
       <div class="dir-card" style="margin-bottom:16px;" id="dir-alerts-card"><div id="dir-alerts-list"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune alerte active.</div></div></div>
       <div style="font-size:11px;font-weight:800;color:#0ea5e9;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">⚙️ Actions rapides</div>
       <div class="dir-quick-actions" style="margin-bottom:24px;">
-        <button class="dir-action-btn" onclick="openModal('modalAssignBus')"><span style="font-size:24px;">🚌</span>Ajouter bus</button>
-        <button class="dir-action-btn" onclick="switchDirTab('receivers')"><span style="font-size:24px;">✅</span>Valider user</button>
-        <button class="dir-action-btn" onclick="switchDirTab('owners')" style="background:linear-gradient(135deg,#0ea5e922,#0369a122);border-color:#0ea5e966;position:relative;"><span style="font-size:24px;">🛰️</span>Proprios en direct<span style="position:absolute;top:6px;right:8px;width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399;animation:pulse 1.4s infinite;"></span></button>
         <button class="dir-action-btn" onclick="dirGenererRapport()"><span style="font-size:24px;">📊</span>Rapport</button>
-        <button class="dir-action-btn" onclick="switchDirTab('receivers')"><span style="font-size:24px;">🔒</span>Bloquer compte</button>
       </div>
     </div>
     <div class="tab-content" id="dirTab-owners" style="padding:18px 16px;">
@@ -1366,14 +1358,12 @@ window.doAuth=async()=>{
         await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'passenger',status:'approved',balance:0,createdAt:serverTimestamp()});
         await setDoc(doc(db,'wallets',walletId),{uid,role:'passenger'});
       }else if(S.authRole==='receiver'){
-        const cni=document.getElementById('authCNI')?.value.trim()||'';
         const address=document.getElementById('authAddress')?.value.trim()||'';
-        if(!cni){loader('',false);notify('⚠️','CNI','Entrez votre numéro de CNI.');return;}
         if(!address){loader('',false);notify('⚠️','Adresse','Entrez votre adresse.');return;}
         const walletId='RV-'+uid.slice(0,6).toUpperCase();
-        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'receiver',status:'pending',directeurUid:'',cni,address,gie:'',vehicle:'',ligne:'',zone:'',today:0,count:0,balance:0,linkedOwnerUids:[],pendingOwnerUids:[],approvedOwnerUids:[],createdAt:serverTimestamp()});
+        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'receiver',status:'pending',directeurUid:'',address,gie:'',vehicle:'',ligne:'',zone:'',today:0,count:0,balance:0,linkedOwnerUids:[],pendingOwnerUids:[],approvedOwnerUids:[],createdAt:serverTimestamp()});
         await setDoc(doc(db,'wallets',walletId),{uid,role:'receiver'});
-        window.pendingReceiverData={uid,name,email,phone,cni,address};
+        window.pendingReceiverData={uid,name,email,phone,address};
         const muid=document.getElementById('modalRecvPendingUid');if(muid)muid.value=uid;
         loader('',false);
         window.modalSelectedOwners=new Set();
@@ -1429,12 +1419,12 @@ window.doSubmitReceiverCandidature=async()=>{
   if(!data){notify('⚠️','Erreur','Aucune inscription en cours.');return;}
   const ownerUids=Array.from(window.modalSelectedOwners||[]);
   if(!ownerUids.length){notify('⚠️','Propriétaires','Sélectionnez au moins un propriétaire de bus.');return;}
-  const {uid,name,email,phone,cni,address}=data;
+  const {uid,name,email,phone,address}=data;
   loader('Envoi de votre candidature…');
   try{
     await updateDoc(doc(db,'users',uid),{pendingOwnerUids:ownerUids});
     for(const ouid of ownerUids){
-      try{await addDoc(collection(db,'notifications'),{toUid:ouid,type:'receiver_candidature',receiverUid:uid,receiverName:name,receiverEmail:email,phone,cni,address,read:false,ts:serverTimestamp()});}
+      try{await addDoc(collection(db,'notifications'),{toUid:ouid,type:'receiver_candidature',receiverUid:uid,receiverName:name,receiverEmail:email,phone,address,read:false,ts:serverTimestamp()});}
       catch(err){console.warn('[notif owner]',ouid,err);}
     }
     window.pendingReceiverData=null;
@@ -1954,10 +1944,15 @@ let dirCurrentPeriod='jour';
 
 function getPeriodBounds(period){
   const now=new Date();
+  // Journée métier transport (convention GIE sénégalais) : de 4h à 4h,
+  // pas de minuit à minuit. Avant 4h du matin, on est encore rattaché
+  // à la "tournée" de la veille (bus interurbains partis tard la veille).
+  const biz=new Date(now);
+  if(now.getHours()<4)biz.setDate(biz.getDate()-1);
   let start;
-  if(period==='jour'){start=new Date(now.getFullYear(),now.getMonth(),now.getDate());}
-  else if(period==='semaine'){start=new Date(now.getFullYear(),now.getMonth(),now.getDate()-6);}
-  else if(period==='mois'){start=new Date(now.getFullYear(),now.getMonth(),1);}
+  if(period==='jour'){start=new Date(biz.getFullYear(),biz.getMonth(),biz.getDate(),4,0,0);}
+  else if(period==='semaine'){start=new Date(biz.getFullYear(),biz.getMonth(),biz.getDate()-6,4,0,0);}
+  else if(period==='mois'){start=new Date(biz.getFullYear(),biz.getMonth(),1,4,0,0);}
   else{start=new Date(2000,0,1);}
   return {start,end:now};
 }
@@ -2074,16 +2069,29 @@ window.dirSetPeriod=async(k,btn)=>{
     document.getElementById('dir-enc').textContent=fmt(d.enc);
     document.getElementById('dir-tix').textContent=fmt(d.tix);
     document.getElementById('dir-vers').textContent=fmt(d.vers);
+    document.getElementById('dir-ret').textContent=fmt(d.retraits);
     document.getElementById('dir-net').textContent=fmt(d.net);
-    document.getElementById('dir-flux-enc').textContent='+'+fmt(d.enc)+' F';
-    document.getElementById('dir-flux-vers').textContent='−'+fmt(d.vers)+' F';
-    document.getElementById('dir-flux-ret').textContent='−'+fmt(d.retraits)+' F';
-    document.getElementById('dir-flux-net').textContent='+'+fmt(d.net)+' F';
     if(dirRevChartInst){dirRevChartInst.data.labels=d.labels;dirRevChartInst.data.datasets[0].data=d.data;dirRevChartInst.update();}
   }catch(e){notify('❌','Erreur',e.message);}
   loader('',false);
 };
 
+window.dirSwitchRankTab=(which)=>{
+  const busList=document.getElementById('dir-bus-perf-list');
+  const recvList=document.getElementById('dir-recv-perf-list');
+  const busTab=document.getElementById('dirRankTab-bus');
+  const recvTab=document.getElementById('dirRankTab-recv');
+  if(!busList||!recvList||!busTab||!recvTab)return;
+  if(which==='bus'){
+    busList.style.display='block';recvList.style.display='none';
+    busTab.style.background='#0ea5e9';busTab.style.color='#fff';
+    recvTab.style.background='transparent';recvTab.style.color='#7dd3fc99';
+  }else{
+    busList.style.display='none';recvList.style.display='block';
+    recvTab.style.background='#0ea5e9';recvTab.style.color='#fff';
+    busTab.style.background='transparent';busTab.style.color='#7dd3fc99';
+  }
+};
 async function loadDirFullDashboard(){
   loader('Chargement dashboard…');
   try{
@@ -2124,19 +2132,19 @@ async function loadDirFullDashboard(){
     if(!alerts.length){alertsCont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">✅ Aucune alerte active.</div>';}
     else{alertsCont.innerHTML=alerts.map(a=>`<div class="dir-alert-row"><div class="dir-alert-dot" style="background:${a.color};"></div><div style="flex:1;font-size:12px;color:#ccc;">${a.msg}</div></div>`).join('');}
     const ligneLabels=approvedRecv.map(r=>r.ligne||'—');const ligneData=approvedRecv.map(r=>r.today||0);
+    const uniqueLignes=new Set(approvedRecv.map(r=>r.ligne).filter(Boolean));
+    const lineCard=document.getElementById('dir-line-chart-card');
+    if(lineCard)lineCard.style.display=uniqueLignes.size>1?'block':'none';
     if(dirLineChartInst)dirLineChartInst.destroy();
     const lCtx=document.getElementById('dirLineChart');
-    if(lCtx&&ligneLabels.length){dirLineChartInst=new Chart(lCtx,{type:'bar',indexAxis:'y',data:{labels:ligneLabels,datasets:[{label:'FCFA',data:ligneData,backgroundColor:ligneData.map(v=>v>100000?'#009A44':v>0?'#FF6B00':'#DF0024'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10},callback:v=>fmt(v/1000)+'k'},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#7dd3fc',font:{size:11}},grid:{display:false},border:{display:false}}}}});}
+    if(lCtx&&uniqueLignes.size>1&&ligneLabels.length){dirLineChartInst=new Chart(lCtx,{type:'bar',indexAxis:'y',data:{labels:ligneLabels,datasets:[{label:'FCFA',data:ligneData,backgroundColor:ligneData.map(v=>v>100000?'#009A44':v>0?'#FF6B00':'#DF0024'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10},callback:v=>fmt(v/1000)+'k'},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#7dd3fc',font:{size:11}},grid:{display:false},border:{display:false}}}}});}
 
     const pd=await computeDirPeriodData('jour');
     document.getElementById('dir-enc').textContent=fmt(pd.enc);
     document.getElementById('dir-tix').textContent=fmt(pd.tix);
     document.getElementById('dir-vers').textContent=fmt(pd.vers);
+    document.getElementById('dir-ret').textContent=fmt(pd.retraits);
     document.getElementById('dir-net').textContent=fmt(pd.net);
-    document.getElementById('dir-flux-enc').textContent='+'+fmt(pd.enc)+' F';
-    document.getElementById('dir-flux-vers').textContent='−'+fmt(pd.vers)+' F';
-    document.getElementById('dir-flux-ret').textContent='−'+fmt(pd.retraits)+' F';
-    document.getElementById('dir-flux-net').textContent='+'+fmt(pd.net)+' F';
     if(dirRevChartInst)dirRevChartInst.destroy();
     const rCtx=document.getElementById('dirRevChart');
     if(rCtx){dirRevChartInst=new Chart(rCtx,{type:'bar',data:{labels:pd.labels,datasets:[{label:'Recettes (F)',data:pd.data,backgroundColor:'#0ea5e9',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10}},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#666',font:{size:10},callback:v=>fmt(v/1000)+'k'},grid:{color:'#0ea5e910'},border:{display:false}}}}});}
