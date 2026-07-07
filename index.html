@@ -462,10 +462,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div id="passResaList" style="margin-bottom:24px;"><div style="color:#555;font-size:13px;text-align:center;padding:20px;">Chargement…</div></div>
         <div style="font-weight:900;font-size:16px;margin-bottom:12px;color:#aaa;">Mes réservations</div>
         <div id="passResaMyList"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune réservation.</div></div>
-        <div id="passResaSharedSection" style="display:none;margin-top:24px;">
-          <div style="font-weight:900;font-size:16px;margin-bottom:12px;color:#aaa;">👥 Places reçues d'un ami</div>
-          <div id="passResaSharedList"></div>
-        </div>
       </div>
     </div>
     <div class="tab-content" id="passTab-profile">
@@ -1229,24 +1225,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <button id="rtWhatsappBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;border:none;border-radius:12px;padding:10px 16px;color:#052e17;font-weight:800;font-size:13px;cursor:pointer;margin-top:14px;width:100%;">📲 Partager via WhatsApp</button>
       <button id="rtCopyLinkBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#ffffff10;border:1px solid #ffffff22;border-radius:12px;padding:10px 16px;color:#fff;font-weight:800;font-size:13px;cursor:pointer;margin-top:10px;width:100%;">🔗 Copier le lien du ticket</button>
       <div id="rtCancelledNote" style="display:none;background:#DF002415;border:1px solid #DF002444;border-radius:12px;padding:10px 14px;margin-top:14px;color:#ff8888;font-size:12px;font-weight:700;">❌ Cette réservation a été annulée. Le QR n'est plus valable.</div>
-      <div id="rtShareSection" style="margin-top:18px;text-align:left;">
-        <button id="rtShareBtn" class="btn btn-full" style="background:#7c3aed22;color:#a78bfa;font-weight:800;font-size:13px;padding:10px;" onclick="window._rtBookingId&&shareBookingSeat(window._rtBookingId)">👥 Partager une place avec un ami</button>
-        <div id="rtSharesList" style="margin-top:10px;"></div>
-      </div>
       <div style="font-size:11px;color:#888;margin-top:14px;line-height:1.6;">Présentez ce QR code au chauffeur à l'embarquement pour qu'il le scanne et confirme votre place.</div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalShareResa" style="display:none;" onclick="if(event.target===this)closeModal('modalShareResa')">
-  <div class="modal-box" onclick="event.stopPropagation()">
-    <div style="height:3px;background:linear-gradient(90deg,#7c3aed,#4c1d95);border-radius:24px 24px 0 0;"></div>
-    <div class="modal-header"><div style="font-weight:900;font-size:18px;">👥 Place partagée</div><button class="modal-close" onclick="closeModal('modalShareResa')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-    <div class="modal-body" style="text-align:center;">
-      <div style="font-size:12px;color:#aaa;margin-bottom:14px;">Envoyez ce lien à votre ami. En l'ouvrant, il verra cette place dans son propre espace TataPay.</div>
-      <div id="shareResaQRWrap" style="display:flex;justify-content:center;margin-bottom:14px;"></div>
-      <button id="srWhatsappBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;border:none;border-radius:12px;padding:10px 16px;color:#052e17;font-weight:800;font-size:13px;cursor:pointer;width:100%;">📲 Envoyer via WhatsApp</button>
-      <button id="srCopyLinkBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#ffffff10;border:1px solid #ffffff22;border-radius:12px;padding:10px 16px;color:#fff;font-weight:800;font-size:13px;cursor:pointer;margin-top:10px;width:100%;">🔗 Copier le lien</button>
     </div>
   </div>
 </div>
@@ -1503,7 +1482,58 @@ async function attemptSessionRestore(user){
     }
   }
 }
+
+// === Vue publique du ticket de réservation ===
+// Quand quelqu'un ouvre le lien partagé (?ticket=resa&id=...&uid=...) dans son
+// navigateur (WhatsApp, SMS, etc.), on affiche l'écran screenPublicTicket avec
+// le QR à présenter au chauffeur, sans obliger à se connecter.
+async function showPublicResaTicket(bookingId, uid){
+  try{ show('screenPublicTicket'); loader('',false); }catch(e){}
+  const loadingEl=document.getElementById('ptLoading');
+  const contentEl=document.getElementById('ptContent');
+  const errEl=document.getElementById('ptError');
+  try{
+    const snap=await getDoc(doc(db,'tripBookings',bookingId));
+    if(!snap.exists()){ if(loadingEl)loadingEl.style.display='none'; if(errEl)errEl.style.display='block'; return; }
+    const b=snap.data();
+    document.getElementById('ptTripInfo').textContent=`${b.from||'—'} → ${b.to||'—'} · ${b.date||''}${b.time?' '+b.time:''}`;
+    document.getElementById('ptPlaces').textContent=b.places||0;
+    document.getElementById('ptPassenger').textContent=b.passengerName||'—';
+    document.getElementById('ptRef').textContent=b.ref||bookingId;
+    const st=document.getElementById('ptStatus');
+    if(b.status==='boarded'){st.textContent='✅ Embarquement confirmé';st.style.color='#34d399';}
+    else if(b.status==='cancelled'){st.textContent='❌ Réservation annulée';st.style.color='#DF0024';}
+    else if(b.status==='refunded'){st.textContent='💸 Remboursé';st.style.color='#FDEF42';}
+    else{st.textContent="⏳ En attente d'embarquement";st.style.color='#FDEF42';}
+    if(loadingEl)loadingEl.style.display='none';
+    if(contentEl)contentEl.style.display='block';
+    const qrPayload=`tatapay://resa/${bookingId}`+(uid?`?uid=${encodeURIComponent(uid)}`:'');
+    setTimeout(()=>renderQR('ptQRWrap',qrPayload,200,'M'),50);
+  }catch(e){
+    console.warn('[showPublicResaTicket]',e);
+    if(loadingEl)loadingEl.style.display='none';
+    if(errEl){errEl.style.display='block'; errEl.textContent='Impossible de charger le ticket. Vérifiez votre connexion.';}
+  }
+}
+(function bootPublicTicket(){
+  try{
+    // Nouveau format court : #t/<id>[/<uid>]
+    const h=(location.hash||'').replace(/^#/,'');
+    const mh=h.match(/^t\/([^\/?&#]+)(?:\/([^\/?&#]+))?/i);
+    if(mh){ showPublicResaTicket(decodeURIComponent(mh[1]), mh[2]?decodeURIComponent(mh[2]):null); return; }
+    // Legacy : ?ticket=resa&id=…&uid=…
+    const u=new URL(location.href);
+    if(u.searchParams.get('ticket')==='resa'){
+      const id=u.searchParams.get('id');
+      const uid=u.searchParams.get('uid');
+      if(id){ showPublicResaTicket(id, uid); return; }
+    }
+  }catch(e){}
+})();
+
 onAuthStateChanged(auth,user=>{
+  const pubTicket=document.getElementById('screenPublicTicket')?.classList.contains('active');
+  if(pubTicket)return; // ne pas écraser l'écran public
   if(user){attemptSessionRestore(user);}
   else{show('screenSplash');loader('',false);}
 });
@@ -2883,7 +2913,12 @@ window.loadPassResa=async()=>{
 // Construit le lien web public du ticket : ouvrable dans n'importe quel navigateur
 // (WhatsApp, SMS, etc.) même sans l'app installée, et affiche le QR à l'écran.
 function resaTicketUrl(bookingId,uid){
-  return `${location.origin}${location.pathname}?ticket=resa&id=${encodeURIComponent(bookingId)}&uid=${encodeURIComponent(uid||'')}`;
+  // Lien court et propre : https://…/#t/<id>[/<uid>]
+  // Le hash évite tout paramètre visible et rend l'URL beaucoup plus compacte
+  // pour un envoi WhatsApp / SMS. Le format legacy (?ticket=resa&id=…) reste
+  // reconnu à l'ouverture pour compatibilité.
+  const base=`${location.origin}${location.pathname}`.replace(/\/+$/,'/');
+  return `${base}#t/${encodeURIComponent(bookingId)}`+(uid?`/${encodeURIComponent(uid)}`:'');
 }
 
 window.showResaTicket=(bookingId)=>{
@@ -3680,11 +3715,13 @@ function handleQR(raw){stopCamera();raw=(raw||'').trim();
   // Les tickets de réservation sont désormais encodés comme un lien web
   // (https://…/?ticket=resa&id=…&uid=…) plutôt qu'un schéma tatapay://.
   // On le convertit ici vers le format interne pour réutiliser le parsing existant.
-  if(/^https?:\/\//i.test(raw)&&/[?&]ticket=resa\b/i.test(raw)){
+  if(/^https?:\/\//i.test(raw)&&(/[?&]ticket=resa\b/i.test(raw)||/#t\//i.test(raw))){
     try{
       const u=new URL(raw);
-      const rid=u.searchParams.get('id');
-      const ruid=u.searchParams.get('uid');
+      let rid=u.searchParams.get('id');
+      let ruid=u.searchParams.get('uid');
+      const mh=(u.hash||'').replace(/^#/,'').match(/^t\/([^\/?&#]+)(?:\/([^\/?&#]+))?/i);
+      if(mh){ rid=decodeURIComponent(mh[1]); if(mh[2])ruid=decodeURIComponent(mh[2]); }
       if(rid)raw=`tatapay://resa/${rid}`+(ruid?`?uid=${ruid}`:'');
     }catch(e){}
   }
