@@ -581,7 +581,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
           <button class="recv-hist-filter" data-f="ticket" onclick="filterRecvHist('ticket')" style="flex:1;min-width:70px;background:#ffffff08;border:1px solid #ffffff20;color:#aaa;border-radius:10px;padding:8px;font-weight:800;font-size:11px;cursor:pointer;">🎫 Tickets</button>
           <button class="recv-hist-filter" data-f="action" onclick="filterRecvHist('action')" style="flex:1;min-width:70px;background:#ffffff08;border:1px solid #ffffff20;color:#aaa;border-radius:10px;padding:8px;font-weight:800;font-size:11px;cursor:pointer;">⚡ Actions</button>
         </div>
-        <div id="recvHistTotals" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div id="recvHistTotals" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;">
           <div style="background:#7c3aed15;border:1px solid #7c3aed44;border-radius:12px;padding:10px;">
             <div style="font-size:10px;color:#a78bfa;letter-spacing:1px;">VERSÉ AU TOTAL</div>
             <div style="font-weight:900;font-size:18px;color:#c4b5fd;font-family:'JetBrains Mono',monospace;" id="recvHistTotVers">0 F</div>
@@ -591,6 +591,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
             <div style="font-weight:900;font-size:18px;color:#6ee7b7;font-family:'JetBrains Mono',monospace;" id="recvHistTotEnc">0 F</div>
           </div>
         </div>
+        <div id="recvNoVersHint" onclick="openRecvVersement()" style="display:none;cursor:pointer;background:#FF6B0015;border:1px solid #FF6B0044;border-radius:10px;padding:9px 12px;font-size:11.5px;color:#FF6B00;margin-bottom:14px;">Aucun reversement effectué. Utilisez le bouton « Verser au propriétaire ».</div>
         <div id="recvHistoriqueList"><div style="text-align:center;color:#555;padding:32px 0;font-size:13px;">Chargement…</div></div>
       </div>
     </div>
@@ -3261,7 +3262,7 @@ function renderChPendingVers(items){
     const t=v.ts?.toDate?.()?.toLocaleString('fr-FR')||'—';
     return `<div class="ch-card" style="border:1.5px solid #FF6B0044;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-        <div><div style="font-weight:900;font-size:14px;">${v.receiverName||'Receveur'}</div><div style="font-size:11px;color:#888;">${t} · ${v.mode||'cash'} · Ref: ${v.ref||'—'}</div>${v.note?`<div style="font-size:11px;color:#aaa;margin-top:3px;">📝 ${v.note}</div>`:''}</div>
+        <div><div style="font-weight:900;font-size:14px;">${v.receiverName||'Receveur'}</div><div style="font-size:11px;color:#888;">${t} · Ref: ${v.ref||'—'}</div>${v.note?`<div style="font-size:11px;color:#aaa;margin-top:3px;">📝 ${v.note}</div>`:''}</div>
         <div style="font-weight:900;font-size:18px;color:#FF6B00;">${fmt(v.amount)} F</div>
       </div>
       <div style="display:flex;gap:8px;">
@@ -3331,7 +3332,7 @@ function showChToast(type,data){
   else if(type==='fraud_alert'){icon='⚠️';title='Anomalie';body=data.message||'Activité suspecte.';color='#FF6B00';}
   else if(type==='bus_panne'){icon='🔧';title='Panne';body=data.message||'Problème bus.';color='#DF0024';}
   else if(type==='bus_report'){icon='📋';title='Signalement';body=data.message||'—';}
-  else if(type==='versement_received'){icon='💰';title='Nouveau versement';body=`${data.receiverName||'Receveur'} a versé ${fmt(data.amount||0)} FCFA (${data.mode||'cash'}).`;color='#7c3aed';}
+  else if(type==='versement_received'){icon='💰';title='Nouveau versement';body=`${data.receiverName||'Receveur'} a versé ${fmt(data.amount||0)} FCFA.`;color='#7c3aed';}
   else if(type==='versement_confirmed'){icon='✅';title='Versement confirmé';body=`${fmt(data.amount||0)} FCFA confirmés par le propriétaire.`;color='#34d399';}
   else if(type==='versement_disputed'){icon='⚠️';title='Versement contesté';body=data.reason||'Le propriétaire a contesté ce versement.';color='#DF0024';}
   else if(type==='receiver_candidature'){icon='📥';title='Nouvelle candidature';body=`${data.receiverName||'Receveur'} souhaite rejoindre votre bus.`;color='#FF6B00';}
@@ -3475,11 +3476,11 @@ async function loadRecvHistorique(){
     let totVers=0,totEnc=0;
     try{
       const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','==',S.uid),orderBy('ts','desc'),limit(200)));
-      tkSnap.docs.forEach(d=>{const t=d.data();totEnc+=t.price||0;items.push({cat:'ticket',ts:t.ts,icon:'🎫',color:'#34d399',title:`Ticket vendu — ${t.passenger||'—'}`,sub:`${t.from||''}→${t.to||''} · ${t.method||'cash'}`,amt:`+${fmt(t.price||0)} F`});});
+      tkSnap.docs.forEach(d=>{const t=d.data();totEnc+=t.price||0;const trajet=(t.from&&t.to)?`${t.from}→${t.to}`:'Trajet non renseigné';items.push({cat:'ticket',ts:t.ts,icon:'🎫',color:'#34d399',title:`Ticket vendu — ${t.passenger||'—'}`,sub:trajet,amt:`+${fmt(t.price||0)} F`});});
     }catch(e){console.warn('hist tickets',e);}
     try{
       const vSnap=await getDocs(query(collection(db,'versements'),where('receiverUid','==',S.uid),orderBy('ts','desc'),limit(100)));
-      vSnap.docs.forEach(d=>{const v=d.data();totVers+=v.amount||0;const st=v.status||'pending';const stCol=st==='confirmed'?'#34d399':st==='disputed'?'#DF0024':'#FF6B00';const stLbl=st==='confirmed'?'✅ Confirmé':st==='disputed'?'⚠️ Contesté':'⏳ En attente';items.push({cat:'versement',ts:v.ts,icon:'💸',color:'#c4b5fd',title:`Versement → ${v.ownerName||'Propriétaire'}`,sub:`${v.mode||'cash'} · <span style="color:${stCol};font-weight:800;">${stLbl}</span>`,amt:`-${fmt(v.amount||0)} F`});});
+      vSnap.docs.forEach(d=>{const v=d.data();totVers+=v.amount||0;const st=v.status||'pending';const stCol=st==='confirmed'?'#34d399':st==='disputed'?'#DF0024':'#FF6B00';const stLbl=st==='confirmed'?'✅ Confirmé':st==='disputed'?'⚠️ Contesté':'⏳ En attente';items.push({cat:'versement',ts:v.ts,icon:'💸',color:'#c4b5fd',title:`Reversement au propriétaire — ${v.ownerName||'Propriétaire'}`,sub:`<span style="color:${stCol};font-weight:800;">${stLbl}</span>`,amt:`-${fmt(v.amount||0)} F`});});
     }catch(e){console.warn('hist versements',e);}
     try{
       const nSnap=await getDocs(query(collection(db,'notifications'),where('toUid','==',S.uid),orderBy('ts','desc'),limit(80)));
@@ -3490,6 +3491,7 @@ async function loadRecvHistorique(){
     _recvHistAll=items.filter(i=>{if(i.cat==='ticket'){tkCount++;return tkCount<=10;}return true;});
     document.getElementById('recvHistTotVers').textContent=fmt(totVers)+' F';
     document.getElementById('recvHistTotEnc').textContent=fmt(totEnc)+' F';
+    const hint=document.getElementById('recvNoVersHint');if(hint)hint.style.display=totVers===0?'block':'none';
     renderRecvHistorique();
   }catch(e){cont.innerHTML='<div style="text-align:center;color:#DF0024;padding:20px;font-size:12px;">Erreur de chargement.</div>';console.error(e);}
 }
@@ -3497,7 +3499,9 @@ function renderRecvHistorique(){
   const cont=document.getElementById('recvHistoriqueList');if(!cont)return;
   const list=_recvHistFilter==='all'?_recvHistAll:_recvHistAll.filter(i=>i.cat===_recvHistFilter);
   if(!list.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:32px 0;font-size:13px;">Aucune entrée.</div>';return;}
-  cont.innerHTML=list.map(i=>{const d=i.ts?.toDate?.();const dt=d?d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'—';const amtCol=i.amt.startsWith('+')?'#34d399':i.amt.startsWith('-')?'#f87171':'#888';return`<div style="background:#ffffff06;border:1px solid #ffffff14;border-left:3px solid ${i.color};border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;"><div style="font-size:22px;">${i.icon}</div><div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13px;color:#fff;">${i.title}</div><div style="font-size:11px;color:#aaa;margin-top:2px;">${i.sub}</div><div style="font-size:10px;color:#666;margin-top:3px;font-family:'JetBrains Mono',monospace;">${dt}</div></div>${i.amt?`<div style="font-weight:900;font-size:14px;color:${amtCol};font-family:'JetBrains Mono',monospace;white-space:nowrap;">${i.amt}</div>`:''}</div>`;}).join('');
+  const today0=new Date();today0.setHours(0,0,0,0);
+  const yest0=new Date(today0);yest0.setDate(yest0.getDate()-1);
+  cont.innerHTML=list.map(i=>{const d=i.ts?.toDate?.();const dt=d?d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'—';let dayBadge='';if(d){const d0=new Date(d);d0.setHours(0,0,0,0);if(d0.getTime()===today0.getTime())dayBadge='<span style="background:#05966922;color:#34d399;font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;margin-left:6px;">Aujourd\'hui</span>';else if(d0.getTime()===yest0.getTime())dayBadge='<span style="background:#ffffff14;color:#aaa;font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;margin-left:6px;">Hier</span>';}const amtCol=i.amt.startsWith('+')?'#34d399':i.amt.startsWith('-')?'#f87171':'#888';return`<div style="background:#ffffff06;border:1px solid #ffffff14;border-left:3px solid ${i.color};border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;"><div style="font-size:22px;">${i.icon}</div><div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13px;color:#fff;">${i.title}</div><div style="font-size:11px;color:#aaa;margin-top:2px;">${i.sub}</div><div style="font-size:10px;color:#666;margin-top:3px;font-family:'JetBrains Mono',monospace;">${dt}${dayBadge}</div></div>${i.amt?`<div style="font-weight:900;font-size:14px;color:${amtCol};font-family:'JetBrains Mono',monospace;white-space:nowrap;">${i.amt}</div>`:''}</div>`;}).join('');
 }
 
 window.openModal=(id)=>document.getElementById(id).style.display='flex';
