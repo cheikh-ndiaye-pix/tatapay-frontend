@@ -310,6 +310,28 @@ select.input-field option{background:#0c1f12;color:#fff;}
   <div class="sn-stripe"></div>
 </div>
 
+<div class="screen" id="screenPublicTicket" style="background:#06120a;">
+  <div class="sn-stripe"></div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;">
+    <div style="width:56px;height:56px;background:linear-gradient(135deg,#009A44,#006B30);border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;font-size:26px;">🚌</div>
+    <div style="font-weight:900;font-size:20px;margin-bottom:4px;">Ticket<span style="color:var(--y)">Pay</span></div>
+    <div id="ptLoading" style="color:#888;font-size:13px;margin-top:18px;">Chargement du ticket…</div>
+    <div id="ptContent" style="display:none;width:100%;max-width:320px;margin-top:10px;background:#0c1f12;border:1px solid #009A4433;border-radius:18px;padding:22px 18px;">
+      <div style="font-weight:800;font-size:16px;" id="ptTripInfo">—</div>
+      <div style="font-size:12px;color:#888;margin:4px 0 16px;"><span id="ptPlaces">0</span> place(s) · <span id="ptPassenger">—</span></div>
+      <div id="ptQRWrap" style="display:flex;justify-content:center;margin-bottom:14px;"></div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#666;margin-bottom:8px;" id="ptRef">—</div>
+      <div style="font-weight:800;font-size:13px;" id="ptStatus">—</div>
+      <div style="font-size:11px;color:#888;margin-top:14px;line-height:1.6;">Présentez ce QR code au chauffeur à l'embarquement pour qu'il le scanne et confirme la place.</div>
+    </div>
+    <div id="ptError" style="display:none;color:#DF0024;font-size:13px;margin-top:18px;max-width:280px;">Ticket introuvable ou lien invalide.</div>
+  </div>
+  <div style="padding:0 24px 44px;">
+    <button class="btn btn-secondary btn-full" onclick="location.href=location.origin+location.pathname">Ouvrir l'application TataPay</button>
+  </div>
+  <div class="sn-stripe"></div>
+</div>
+
 <div class="screen" id="screenAuth">
   <div class="sn-stripe"></div>
   <div style="background:#0c1f12;padding:28px 24px 20px;border-bottom:1px solid #009A4422;">
@@ -1200,23 +1222,9 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div id="resaTicketQRWrap" style="display:flex;justify-content:center;margin-bottom:14px;"></div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#666;margin-bottom:8px;" id="rtRef">—</div>
       <div style="font-weight:800;font-size:13px;" id="rtStatus">—</div>
-      <button id="rtShareBtn" style="display:none;background:linear-gradient(135deg,#059669,#047857);border:none;border-radius:12px;padding:10px 16px;color:#fff;font-weight:800;font-size:13px;cursor:pointer;margin-top:14px;width:100%;">👥 Partager avec les autres passagers</button>
-      <button id="rtWhatsappBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;border:none;border-radius:12px;padding:10px 16px;color:#052e17;font-weight:800;font-size:13px;cursor:pointer;margin-top:10px;width:100%;">📲 Partager via WhatsApp</button>
+      <button id="rtWhatsappBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;border:none;border-radius:12px;padding:10px 16px;color:#052e17;font-weight:800;font-size:13px;cursor:pointer;margin-top:14px;width:100%;">📲 Partager via WhatsApp</button>
+      <button id="rtCopyLinkBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#ffffff10;border:1px solid #ffffff22;border-radius:12px;padding:10px 16px;color:#fff;font-weight:800;font-size:13px;cursor:pointer;margin-top:10px;width:100%;">🔗 Copier le lien du ticket</button>
       <div style="font-size:11px;color:#888;margin-top:14px;line-height:1.6;">Présentez ce QR code au chauffeur à l'embarquement pour qu'il le scanne et confirme votre place.</div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalResaShare" style="display:none;" onclick="if(event.target===this)closeModal('modalResaShare')">
-  <div class="modal-box" onclick="event.stopPropagation()">
-    <div style="height:3px;background:linear-gradient(90deg,#009A44,#FDEF42,#DF0024);border-radius:24px 24px 0 0;"></div>
-    <div class="modal-header"><div style="font-weight:900;font-size:18px;">👥 Partager mes places</div><button class="modal-close" onclick="closeModal('modalResaShare')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-    <div class="modal-body">
-      <div style="font-weight:800;font-size:14px;" id="rsTripInfo">—</div>
-      <div style="font-size:12px;color:#888;margin:4px 0 14px;">Places partagées : <span id="rsCount">0/0</span></div>
-      <div id="resaShareList" style="margin-bottom:14px;"></div>
-      <button id="rsAddBtn" class="btn btn-full" style="background:linear-gradient(135deg,#009A44,#059669);color:#fff;font-weight:900;" onclick="addResaShare(S.shareBookingId)">➕ Générer une place à partager</button>
-      <div style="font-size:11px;color:#888;margin-top:12px;line-height:1.6;">Envoyez chaque QR code à une personne différente. Le chauffeur scanne chaque QR pour confirmer l'embarquement de cette place. Impossible de générer plus de places que ce que vous avez réservé — toute tentative au-delà sera refusée.</div>
     </div>
   </div>
 </div>
@@ -2842,14 +2850,19 @@ window.loadPassResa=async()=>{
         contMy.innerHTML=bookings.map(b=>{
           const statusLabel=b.status==='confirmed'?'':(b.status==='boarded'?' · Embarqué ✅':(b.status==='refunded'?' · Remboursé (trajet annulé)':' · Annulé'));
           const ticketBtn=(b.status==='confirmed'||b.status==='boarded')?`<button style="background:#FDEF4222;color:#FDEF42;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;" onclick="showResaTicket('${b.id}')">🎟️ Ticket</button>`:'';
-          const shareBtn=(b.places>1&&(b.status==='confirmed'||b.status==='boarded'))?`<button style="background:#05966922;color:#34d399;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;" onclick="openResaShare('${b.id}')">👥 Partager</button>`:'';
           const cancelBtn=b.status==='confirmed'?`<button style="background:#DF002422;color:#DF0024;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;" onclick="cancelBooking('${b.id}')">Annuler</button>`:'';
-          return `<div class="tx-row"><div style="flex:1;"><div style="font-weight:700;font-size:13px;">${b.from} → ${b.to} · ${b.places} pl.</div><div style="font-size:11px;color:#888;">${b.date} · ${fmt(b.total)} F${statusLabel}</div></div><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;max-width:150px;">${ticketBtn}${shareBtn}${cancelBtn}</div></div>`;
+          return `<div class="tx-row"><div style="flex:1;"><div style="font-weight:700;font-size:13px;">${b.from} → ${b.to} · ${b.places} pl.</div><div style="font-size:11px;color:#888;">${b.date} · ${fmt(b.total)} F${statusLabel}</div></div><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;max-width:150px;">${ticketBtn}${cancelBtn}</div></div>`;
         }).join('');
       }
     }catch(e){console.warn('[loadPassResa my]',e);}
   }
 };
+
+// Construit le lien web public du ticket : ouvrable dans n'importe quel navigateur
+// (WhatsApp, SMS, etc.) même sans l'app installée, et affiche le QR à l'écran.
+function resaTicketUrl(bookingId,uid){
+  return `${location.origin}${location.pathname}?ticket=resa&id=${encodeURIComponent(bookingId)}&uid=${encodeURIComponent(uid||'')}`;
+}
 
 window.showResaTicket=(bookingId)=>{
   const b=_resaBookingsCache[bookingId];
@@ -2861,64 +2874,33 @@ window.showResaTicket=(bookingId)=>{
   const statusEl=document.getElementById('rtStatus');
   if(b.status==='boarded'){statusEl.textContent='✅ Embarquement confirmé';statusEl.style.color='#34d399';}
   else{statusEl.textContent='⏳ En attente d\'embarquement';statusEl.style.color='#FDEF42';}
-  const shareBtn=document.getElementById('rtShareBtn');
-  if(b.places>1&&(b.status==='confirmed'||b.status==='boarded')){
-    shareBtn.style.display='block';
-    shareBtn.onclick=()=>{closeModal('modalResaTicket');openResaShare(bookingId);};
-  }else{
-    shareBtn.style.display='none';
-    shareBtn.onclick=null;
-  }
   openModal('modalResaTicket');
-  const data=`tatapay://resa/${bookingId}?uid=${b.passengerUid}`;
-  setTimeout(()=>renderQR('resaTicketQRWrap',data,200,'M'),50);
-  const waMsg=`🎟️ Ticket de réservation TataPay\n${b.from} → ${b.to} · ${b.date}${b.time?' '+b.time:''}\n${b.places} place(s) · Réf ${b.ref}\nPrésentez ce QR au chauffeur pour confirmer l'embarquement.\n\nCode : ${data}`;
-  document.getElementById('rtWhatsappBtn').onclick=()=>shareQRWhatsapp('resaTicketQRWrap',waMsg,data);
+  const link=resaTicketUrl(bookingId,b.passengerUid);
+  setTimeout(()=>renderQR('resaTicketQRWrap',link,200,'M'),50);
+  const waMsg=`🎟️ Ticket de réservation TataPay\n${b.from} → ${b.to} · ${b.date}${b.time?' '+b.time:''}\n${b.places} place(s) · Réf ${b.ref}\nOuvrez ce lien pour voir le QR et le présenter au chauffeur :\n${link}`;
+  document.getElementById('rtWhatsappBtn').onclick=()=>shareQRWhatsapp('resaTicketQRWrap',waMsg,link);
+  document.getElementById('rtCopyLinkBtn').onclick=()=>copyTicketLink(link);
 };
 
-// Génère un PNG haute qualité du QR (hors-écran) pour le partage.
-window.buildQRBlob=async(qrData,size=512)=>{
+// Partage d'un QR (image + texte si possible) via WhatsApp ou toute autre app.
+// Le message inclut toujours le lien web réel du ticket (cliquable, s'ouvre dans
+// le navigateur et affiche le QR), en plus de tenter d'envoyer l'image du QR.
+window.shareQRWhatsapp=async(containerId,message,link)=>{
   try{
-    if(!qrData||!window.QRCode||!QRCode.toCanvas)return null;
-    const canvas=document.createElement('canvas');
-    await new Promise((resolve,reject)=>{
-      QRCode.toCanvas(canvas,qrData,{width:size,margin:2,errorCorrectionLevel:'M',color:{dark:'#000000',light:'#FFFFFF'}},(err)=>err?reject(err):resolve());
-    });
-    return await new Promise(res=>canvas.toBlob(res,'image/png'));
-  }catch(e){console.warn('[buildQRBlob]',e);return null;}
-};
-
-// Partage d'un QR (image + texte si possible) via WhatsApp ou toute autre app,
-// avec repli sur un lien wa.me si le partage natif n'est pas disponible.
-// containerId : sert de repli si qrData n'est pas fourni.
-// qrData : données du QR — recommandé pour obtenir une image nette (512px).
-window.shareQRWhatsapp=async(containerId,message,qrData)=>{
-  try{
-    // 1) Toujours essayer de générer un PNG haute qualité à partir des données.
-    let blob=qrData?await buildQRBlob(qrData,512):null;
-    // 2) Repli : récupérer le canvas déjà rendu dans le conteneur.
-    if(!blob&&containerId){
-      const canvas=document.querySelector('#'+containerId+' canvas');
-      if(canvas)blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
-    }
-    if(blob&&navigator.share){
-      const file=new File([blob],'ticket-tatapay.png',{type:'image/png'});
-      if(navigator.canShare&&navigator.canShare({files:[file]})){
-        await navigator.share({files:[file],text:message,title:'🎟️ Ticket TataPay'});
-        return;
+    const canvas=document.querySelector('#'+containerId+' canvas');
+    if(canvas&&navigator.share){
+      const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
+      if(blob){
+        const file=new File([blob],'ticket-tatapay.png',{type:'image/png'});
+        if(navigator.canShare&&navigator.canShare({files:[file]})){
+          await navigator.share({files:[file],text:message,title:'🎟️ Ticket TataPay'});
+          return;
+        }
       }
     }
-    // 3) Pas de partage de fichier possible : télécharger l'image puis ouvrir WhatsApp
-    //    afin que l'utilisateur puisse la joindre manuellement.
-    if(blob){
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url;a.download='ticket-tatapay.png';
-      document.body.appendChild(a);a.click();a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url),4000);
-    }
     if(navigator.share){
-      try{await navigator.share({text:message,title:'🎟️ Ticket TataPay'});return;}catch(_){}
+      await navigator.share({text:message,title:'🎟️ Ticket TataPay'});
+      return;
     }
   }catch(e){
     if(e&&e.name==='AbortError')return;
@@ -2927,75 +2909,13 @@ window.shareQRWhatsapp=async(containerId,message,qrData)=>{
   window.open('https://wa.me/?text='+encodeURIComponent(message),'_blank');
 };
 
-window.openResaShare=async(bookingId)=>{
-  const b=_resaBookingsCache[bookingId];
-  if(!b){notify('⚠️','Erreur','Réservation introuvable.');return;}
-  S.shareBookingId=bookingId;
-  document.getElementById('rsTripInfo').textContent=`${b.from} → ${b.to} · ${b.date}${b.time?' '+b.time:''}`;
-  openModal('modalResaShare');
-  await refreshResaShareList(bookingId);
-};
-
-async function refreshResaShareList(bookingId){
-  const cont=document.getElementById('resaShareList');
-  const addBtn=document.getElementById('rsAddBtn');
-  cont.innerHTML='<div style="color:#555;font-size:12px;text-align:center;padding:12px;">Chargement…</div>';
+window.copyTicketLink=async(link)=>{
   try{
-    const bookSnap=await getDoc(doc(db,'tripBookings',bookingId));
-    if(!bookSnap.exists())return;
-    const b=bookSnap.data();
-    _resaBookingsCache[bookingId]=b;
-    document.getElementById('rsCount').textContent=`${b.sharesCount||0}/${b.places}`;
-    const snap=await getDocs(query(collection(db,'tripBookings',bookingId,'shares'),orderBy('seatIndex')));
-    const shares=snap.docs.map(d=>({id:d.id,...d.data()}));
-    if(!shares.length){cont.innerHTML='<div style="color:#555;font-size:12px;text-align:center;padding:12px;">Aucune place partagée pour l\'instant.</div>';}
-    else{
-      cont.innerHTML=shares.map(s=>`<div style="display:flex;align-items:center;gap:10px;background:#ffffff08;border-radius:12px;padding:10px;margin-bottom:8px;">
-        <div id="shareQR_${s.id}" style="flex-shrink:0;"></div>
-        <div style="flex:1;"><div style="font-weight:800;font-size:13px;">Place ${s.seatIndex}</div><div style="font-size:11px;color:${s.status==='boarded'?'#34d399':'#FDEF42'};">${s.status==='boarded'?'✅ Embarqué':'⏳ En attente'}</div></div>
-        <button onclick="shareResaShareWhatsapp('${bookingId}','${s.id}',${s.seatIndex})" style="background:#25D366;border:none;border-radius:10px;padding:8px 10px;cursor:pointer;font-size:15px;flex-shrink:0;" title="Partager via WhatsApp">📲</button>
-      </div>`).join('');
-      shares.forEach(s=>{
-        const data=`tatapay://resashare/${bookingId}/${s.id}`;
-        setTimeout(()=>renderQR(`shareQR_${s.id}`,data,64,'M'),50);
-      });
-    }
-    const full=(b.sharesCount||0)>=b.places;
-    if(addBtn){addBtn.disabled=full;addBtn.style.opacity=full?'0.4':'1';addBtn.textContent=full?'🚫 Toutes les places sont déjà partagées':'➕ Générer une place à partager';}
-  }catch(e){console.warn('[refreshResaShareList]',e);cont.innerHTML='<div style="color:#DF0024;font-size:12px;text-align:center;padding:12px;">Erreur de chargement.</div>';}
-}
-
-window.addResaShare=async(bookingId)=>{
-  if(!bookingId)return;
-  loader('Génération de la place partagée…');
-  try{
-    let seatIndex=0;
-    await runTransaction(db,async(tx)=>{
-      const bookRef=doc(db,'tripBookings',bookingId);
-      const bookSnap=await tx.get(bookRef);
-      if(!bookSnap.exists())throw new Error('Réservation introuvable.');
-      const b=bookSnap.data();
-      if(b.passengerUid!==S.uid)throw new Error('Cette réservation ne vous appartient pas.');
-      if(b.status!=='confirmed'&&b.status!=='boarded')throw new Error('Cette réservation n\'est plus valide.');
-      const current=b.sharesCount||0;
-      if(current>=b.places)throw new Error(`Refusé : les ${b.places} places de cette réservation sont déjà toutes partagées.`);
-      seatIndex=current+1;
-      tx.update(bookRef,{sharesCount:increment(1)});
-      const shareRef=doc(collection(db,'tripBookings',bookingId,'shares'));
-      tx.set(shareRef,{seatIndex,status:'pending',createdAt:serverTimestamp()});
-    });
-    loader('',false);
-    notify('✅','Place partagée créée',`Place ${seatIndex} — envoyez son QR à la personne concernée.`);
-    refreshResaShareList(bookingId);
-  }catch(e){loader('',false);notify('❌','Refusé',e.message);}
-};
-
-window.shareResaShareWhatsapp=(bookingId,shareId,seatIndex)=>{
-  const b=_resaBookingsCache[bookingId];
-  const tripTxt=b?`${b.from} → ${b.to} · ${b.date}${b.time?' '+b.time:''}`:'Trajet réservé';
-  const data=`tatapay://resashare/${bookingId}/${shareId}`;
-  const message=`🎟️ Ticket TataPay — Place ${seatIndex}\n${tripTxt}\nPrésentez ce QR au chauffeur pour confirmer l'embarquement.\n\nCode : ${data}`;
-  shareQRWhatsapp('shareQR_'+shareId,message,data);
+    await navigator.clipboard.writeText(link);
+    notify('✅','Lien copié','Le lien du ticket a été copié.');
+  }catch(e){
+    window.prompt('Copiez ce lien :',link);
+  }
 };
 
 window.openBookTrip=(tripId)=>{
@@ -3734,7 +3654,19 @@ function scanLoop(){if(!S.scanning)return;const video=document.getElementById('c
 function scanWithJsQR(video){if(!S.scanning)return;if(typeof jsQR==='function'){const w=video.videoWidth,h=video.videoHeight;if(w&&h){scanCanvas.width=w;scanCanvas.height=h;scanCtx.drawImage(video,0,0,w,h);try{const img=scanCtx.getImageData(0,0,w,h);const code=jsQR(img.data,w,h,{inversionAttempts:'dontInvert'});if(code?.data){handleQR(code.data);return;}}catch(e){}}}requestAnimationFrame(scanLoop);}
 window.stopCamera=()=>{S.scanning=false;if(scanHintTimer){clearTimeout(scanHintTimer);scanHintTimer=null;}document.getElementById('cameraScreen').classList.remove('open');document.getElementById('manualPanel')?.remove();if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null;}};
 window.flipCamera=async()=>{S.facing=S.facing==='environment'?'user':'environment';if(S.stream)S.stream.getTracks().forEach(t=>t.stop());await window.openCamera(S.camMode);};
-function handleQR(raw){stopCamera();raw=(raw||'').trim();const ticketM=raw.match(/tatapay:\/\/ticket\/(.+)/i);if(ticketM){if(document.getElementById('modalTicketFlow')?.style.display==='flex')closeModal('modalTicketFlow');importTicketFromQR(ticketM[1]);return;}const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);const balM=raw.match(/[?&]bal=(\d+)/);const tM=raw.match(/[?&]t=(\d+)/);const uidM=raw.match(/[?&]uid=([A-Za-z0-9]+)/);const resaM=raw.match(/tatapay:\/\/resa\/([A-Za-z0-9]+)/i);const resaShareM=raw.match(/tatapay:\/\/resashare\/([A-Za-z0-9]+)\/([A-Za-z0-9]+)/i);const qrBal=balM?parseInt(balM[1],10):null;const qrTs=tM?parseInt(tM[1],10):null;const qrUid=uidM?uidM[1]:null;if(S.camMode==='ticket'&&!ticketM){notify('❌','QR invalide','Ce n\'est pas un QR de ticket.');return;}if(S.camMode==='resa-scan'){if(resaShareM){confirmShareBoardingScan(resaShareM[1],resaShareM[2]);return;}if(!resaM){notify('❌','QR invalide','Ce n\'est pas un ticket de réservation.');return;}confirmBoardingScan(resaM[1],qrUid);}else if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Contenu: '+raw.slice(0,40));return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId,qrBal,qrTs,qrUid);}else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}}
+function handleQR(raw){stopCamera();raw=(raw||'').trim();
+  // Les tickets de réservation sont désormais encodés comme un lien web
+  // (https://…/?ticket=resa&id=…&uid=…) plutôt qu'un schéma tatapay://.
+  // On le convertit ici vers le format interne pour réutiliser le parsing existant.
+  if(/^https?:\/\//i.test(raw)&&/[?&]ticket=resa\b/i.test(raw)){
+    try{
+      const u=new URL(raw);
+      const rid=u.searchParams.get('id');
+      const ruid=u.searchParams.get('uid');
+      if(rid)raw=`tatapay://resa/${rid}`+(ruid?`?uid=${ruid}`:'');
+    }catch(e){}
+  }
+  const ticketM=raw.match(/tatapay:\/\/ticket\/(.+)/i);if(ticketM){if(document.getElementById('modalTicketFlow')?.style.display==='flex')closeModal('modalTicketFlow');importTicketFromQR(ticketM[1]);return;}const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);const balM=raw.match(/[?&]bal=(\d+)/);const tM=raw.match(/[?&]t=(\d+)/);const uidM=raw.match(/[?&]uid=([A-Za-z0-9]+)/);const resaM=raw.match(/tatapay:\/\/resa\/([A-Za-z0-9]+)/i);const resaShareM=raw.match(/tatapay:\/\/resashare\/([A-Za-z0-9]+)\/([A-Za-z0-9]+)/i);const qrBal=balM?parseInt(balM[1],10):null;const qrTs=tM?parseInt(tM[1],10):null;const qrUid=uidM?uidM[1]:null;if(S.camMode==='ticket'&&!ticketM){notify('❌','QR invalide','Ce n\'est pas un QR de ticket.');return;}if(S.camMode==='resa-scan'){if(resaShareM){confirmShareBoardingScan(resaShareM[1],resaShareM[2]);return;}if(!resaM){notify('❌','QR invalide','Ce n\'est pas un ticket de réservation.');return;}confirmBoardingScan(resaM[1],qrUid);}else if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Contenu: '+raw.slice(0,40));return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId,qrBal,qrTs,qrUid);}else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}}
 
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
