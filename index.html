@@ -462,6 +462,10 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div id="passResaList" style="margin-bottom:24px;"><div style="color:#555;font-size:13px;text-align:center;padding:20px;">Chargement…</div></div>
         <div style="font-weight:900;font-size:16px;margin-bottom:12px;color:#aaa;">Mes réservations</div>
         <div id="passResaMyList"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune réservation.</div></div>
+        <div id="passResaSharedSection" style="display:none;margin-top:24px;">
+          <div style="font-weight:900;font-size:16px;margin-bottom:12px;color:#aaa;">👥 Places reçues d'un ami</div>
+          <div id="passResaSharedList"></div>
+        </div>
       </div>
     </div>
     <div class="tab-content" id="passTab-profile">
@@ -1224,7 +1228,25 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div style="font-weight:800;font-size:13px;" id="rtStatus">—</div>
       <button id="rtWhatsappBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;border:none;border-radius:12px;padding:10px 16px;color:#052e17;font-weight:800;font-size:13px;cursor:pointer;margin-top:14px;width:100%;">📲 Partager via WhatsApp</button>
       <button id="rtCopyLinkBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#ffffff10;border:1px solid #ffffff22;border-radius:12px;padding:10px 16px;color:#fff;font-weight:800;font-size:13px;cursor:pointer;margin-top:10px;width:100%;">🔗 Copier le lien du ticket</button>
+      <div id="rtCancelledNote" style="display:none;background:#DF002415;border:1px solid #DF002444;border-radius:12px;padding:10px 14px;margin-top:14px;color:#ff8888;font-size:12px;font-weight:700;">❌ Cette réservation a été annulée. Le QR n'est plus valable.</div>
+      <div id="rtShareSection" style="margin-top:18px;text-align:left;">
+        <button id="rtShareBtn" class="btn btn-full" style="background:#7c3aed22;color:#a78bfa;font-weight:800;font-size:13px;padding:10px;" onclick="window._rtBookingId&&shareBookingSeat(window._rtBookingId)">👥 Partager une place avec un ami</button>
+        <div id="rtSharesList" style="margin-top:10px;"></div>
+      </div>
       <div style="font-size:11px;color:#888;margin-top:14px;line-height:1.6;">Présentez ce QR code au chauffeur à l'embarquement pour qu'il le scanne et confirme votre place.</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalShareResa" style="display:none;" onclick="if(event.target===this)closeModal('modalShareResa')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="height:3px;background:linear-gradient(90deg,#7c3aed,#4c1d95);border-radius:24px 24px 0 0;"></div>
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">👥 Place partagée</div><button class="modal-close" onclick="closeModal('modalShareResa')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body" style="text-align:center;">
+      <div style="font-size:12px;color:#aaa;margin-bottom:14px;">Envoyez ce lien à votre ami. En l'ouvrant, il verra cette place dans son propre espace TataPay.</div>
+      <div id="shareResaQRWrap" style="display:flex;justify-content:center;margin-bottom:14px;"></div>
+      <button id="srWhatsappBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;border:none;border-radius:12px;padding:10px 16px;color:#052e17;font-weight:800;font-size:13px;cursor:pointer;width:100%;">📲 Envoyer via WhatsApp</button>
+      <button id="srCopyLinkBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#ffffff10;border:1px solid #ffffff22;border-radius:12px;padding:10px 16px;color:#fff;font-weight:800;font-size:13px;cursor:pointer;margin-top:10px;width:100%;">🔗 Copier le lien</button>
     </div>
   </div>
 </div>
@@ -1256,7 +1278,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import{getFirestore,doc,setDoc,getDoc,getDocFromCache,updateDoc,addDoc,collection,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove,runTransaction}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,setDoc,getDoc,getDocFromCache,updateDoc,addDoc,collection,collectionGroup,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove,runTransaction}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FC={apiKey:"AIzaSyDeCSeZHu9-rsPYpwEJiVfbM0nX8cwD22o",authDomain:"tatapay-a4972.firebaseapp.com",databaseURL:"https://tatapay-a4972-default-rtdb.europe-west1.firebasedatabase.app",projectId:"tatapay-a4972",storageBucket:"tatapay-a4972.firebasestorage.app",messagingSenderId:"198930634776",appId:"1:198930634776:web:265d82fbda0db1b09b0b6d",measurementId:"G-ZEM9NZPL5R"};
