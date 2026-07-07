@@ -2091,7 +2091,7 @@ async function loadDirFullDashboard(){
     const receivers=recvSnap.docs.map(d=>({id:d.id,...d.data()}));
     const chSnap=await getDocs(query(collection(db,'users'),where('role','==','chauffeur'),where('directeurUid','==',S.uid)));
     const chauffeurs=chSnap.docs.map(d=>({id:d.id,...d.data()}));
-    const ownersSnap=await getDocs(query(collection(db,'users'),where('role','==','owner'),where('status','==','approved')));
+    const ownersSnap=await getDocs(query(collection(db,'users'),where('role','==','owner'),where('status','==','approved'),where('directeurUid','==',S.uid)));
     const owners=ownersSnap.docs.map(d=>({id:d.id,...d.data()}));
     const notifSnap=await getDocs(query(collection(db,'notifications'),where('toUid','==',S.uid),where('type','==','owner_request')));
     const ownerReqs=notifSnap.docs.map(d=>({notifId:d.id,...d.data()})).filter(n=>!n.processed);
@@ -2271,7 +2271,7 @@ async function loadDirOwners(){
   try{
     // Requête unique sur role=='owner' (index simple, toujours dispo) + filtrage côté client
     // pour éviter toute dépendance à un index composite Firestore manquant.
-    const qOwners=query(collection(db,'users'),where('role','==','owner'));
+    const qOwners=query(collection(db,'users'),where('role','==','owner'),where('directeurUid','==',S.uid));
     unsubDirOwnersA=onSnapshot(qOwners,snap=>{
       const dirOrg=(S.profile&&(S.profile.org||S.profile.company))||'';
       const all=snap.docs.map(d=>({id:d.id,...d.data()}));
@@ -2386,7 +2386,7 @@ window.openDirReceiverBack=(ownerUid)=>{closeModal('modalDirReceiverDetail');ope
 async function loadDirReceivers(){
   const cont=document.getElementById('dirReceiversList');
   try{
-    const snap=await getDocs(query(collection(db,'users'),where('role','==','receiver')));
+    const snap=await getDocs(query(collection(db,'users'),where('role','==','receiver'),where('directeurUid','==',S.uid)));
     if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun receveur.</div>';return;}
     cont.innerHTML=snap.docs.map(d=>{const u={id:d.id,...d.data()};const initials=(u.name||'??').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();const linkedCount=(u.linkedOwnerUids||[]).length;const approved=!!u.approvedOwnerUid;return`<div class="dir-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><div class="dir-recv-avatar">${initials}</div><div style="flex:1;min-width:0;"><div style="font-weight:800;color:#e2e8f0;">${u.name||'—'}</div><div style="font-size:11px;color:#888;">${u.email||'—'} · ${u.phone||'—'}</div><div style="font-size:11px;color:#888;">🪪 ${u.cni||'—'} · 📍 ${u.address||'—'}</div>${u.gie?`<div style="font-size:11px;color:#0ea5e9;margin-top:2px;">🚌 ${u.gie} · ${u.vehicle} · Ligne ${u.ligne} · Zone ${u.zone||'—'}</div><div style="font-size:11px;color:#7dd3fc;">🛣️ ${u.trajet||'—'} · Section ${u.section||'—'} · ${fmt(u.prix||0)} F</div>`:'<div style="font-size:11px;color:#FF6B00;">⚠️ Aucun bus assigné</div>'}<div style="font-size:11px;color:${approved?'#34d399':'#FF6B00'};margin-top:2px;">${approved?'✅ Approuvé par propriétaire':'⏳ En attente d\'approbation propriétaire'} · 🔗 ${linkedCount} proprio${linkedCount>1?'s':''}</div><div style="font-size:11px;color:#888;margin-top:2px;">💳 ${u.walletId||'—'} · Recettes jour: <strong style="color:#34d399;">${fmt(u.today||0)} F</strong> · Solde: <strong style="color:#FDEF42;">${fmt(u.balance||0)} F</strong></div></div><div>${statusBadge(u.status)}</div></div><div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="admin-action-btn btn-info" onclick="openAssignBusDir('${u.id}','${(u.name||'').replace(/'/g,'')}')">🚌 ${u.gie?'Modifier Bus':'Assigner Bus'}</button>${u.status==='approved'?`<button class="admin-action-btn btn-suspend" onclick="dirSuspendUser('${u.id}')">⚠️ Suspendre</button>`:''} ${u.status==='suspended'?`<button class="admin-action-btn btn-approve" onclick="dirReactivateUser('${u.id}')">♻️ Réactiver</button>`:''}</div></div>`;}).join('');
   }catch(e){cont.innerHTML='<div style="color:#DF0024;padding:16px;">Erreur chargement receveurs.</div>';}
