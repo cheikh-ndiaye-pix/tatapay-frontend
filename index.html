@@ -645,9 +645,10 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div class="ch-stat-grid">
         <div class="ch-stat"><div class="val" id="chTripCount">0</div><div class="lbl">Trajets aujourd'hui</div></div>
         <div class="ch-stat"><div class="val" id="chBusStatus" style="font-size:16px;">—</div><div class="lbl">Statut bus</div></div>
-        <div class="ch-stat"><div class="val" id="chTechStatus" style="font-size:14px;">—</div><div class="lbl">Statut technique</div></div>
-        <div class="ch-stat"><div class="val" id="chPendingVers" style="font-size:14px;color:#FF6B00;">0 F</div><div class="lbl">Non versé</div></div>
+        <div class="ch-stat" title="État mécanique du bus : révision, panne ou en ordre de marche."><div class="val" id="chTechStatus" style="font-size:14px;">—</div><div class="lbl">Statut technique ⓘ</div></div>
+        <div class="ch-stat" title="Argent encaissé par le receveur, pas encore reversé au GIE/propriétaire."><div class="val" id="chPendingVers" style="font-size:14px;color:#FF6B00;">0 F</div><div class="lbl">Reversement GIE en attente ⓘ</div></div>
       </div>
+      <div id="chGeoReminder" style="display:none;margin-bottom:14px;padding:12px 14px;background:#FF6B0022;border:1px solid #FF6B0055;border-radius:14px;font-size:12px;color:#FF6B00;font-weight:700;">⚠️ GPS désactivé depuis plus de 15 min. Pensez à activer le partage de position (onglet Bus).</div>
       <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">⚠️ Alertes</div>
       <div class="ch-card" id="chAlertsCard"><div id="chAlertsList"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune alerte.</div></div></div>
       <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">💰 Derniers paiements</div>
@@ -662,8 +663,8 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <button class="ch-ptab" onclick="chSetPeriod('mois',this)">Mois</button>
       </div>
       <div class="ch-stat-grid" style="margin-bottom:16px;">
-        <div class="ch-stat"><div class="val" id="chPeriodTotal">0</div><div class="lbl">Total encaissé</div></div>
         <div class="ch-stat"><div class="val" id="chPeriodTrips">0</div><div class="lbl">Tickets</div></div>
+        <div class="ch-stat"><div class="val" id="chPeriodTotal">0</div><div class="lbl">Montant total</div></div>
       </div>
       <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">🔴 Temps réel</div>
       <div class="ch-card" id="chLivePayments"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucun paiement récent.</div></div>
@@ -672,6 +673,14 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div id="chPendingVersSection" style="display:none;margin-top:18px;">
         <div style="font-size:11px;font-weight:800;color:#FF6B00;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">⏳ Versements à confirmer <span id="chPendingVersCount" style="color:#FF6B00;">(0)</span></div>
         <div id="chPendingVersList"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucun versement en attente.</div></div>
+      </div>
+      <div class="ch-card" style="margin-top:18px;">
+        <div style="font-size:12px;font-weight:800;color:#34d399;margin-bottom:8px;">📈 Performance (7 jours)</div>
+        <div class="ch-chart-wrap"><canvas id="chPerfChart"></canvas></div>
+      </div>
+      <div class="ch-card" style="margin-top:16px;">
+        <div style="font-size:12px;font-weight:800;color:#34d399;margin-bottom:8px;">📈 Recettes par période</div>
+        <div class="ch-chart-wrap"><canvas id="chRevChart"></canvas></div>
       </div>
     </div>
     <div class="tab-content" id="chTab-receveur" style="padding:18px 16px;">
@@ -691,7 +700,9 @@ select.input-field option{background:#0c1f12;color:#fff;}
         </div>
         <div style="font-size:12px;color:#888;line-height:1.8;" id="chRecvDetails">En attente d'assignation par le directeur.</div>
       </div>
-      <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">📊 Historique performances</div>
+      <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">📊 Performance (7 jours)</div>
+      <div class="ch-card" id="chRecvPerfChartCard" style="display:none;"><div class="ch-chart-wrap"><canvas id="chRecvPerfChart"></canvas></div></div>
+      <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;margin-top:16px;">🕓 Activité récente</div>
       <div class="ch-card" id="chRecvPerfList"><div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune donnée.</div></div>
     </div>
     <div class="tab-content" id="chTab-bus" style="padding:18px 16px;">
@@ -703,12 +714,12 @@ select.input-field option{background:#0c1f12;color:#fff;}
           <div><div style="font-size:10px;color:#666;text-transform:uppercase;">Ligne</div><div style="font-weight:800;font-size:14px;" id="chBusLigne">—</div></div>
           <div><div style="font-size:10px;color:#666;text-transform:uppercase;">Zone</div><div style="font-weight:800;font-size:14px;" id="chBusZone">—</div></div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid #05966915;">
-          <span style="font-size:13px;color:#888;">Statut technique</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid #05966915;" title="État mécanique du bus (révision, panne, ou en ordre de marche).">
+          <span style="font-size:13px;color:#888;">Statut technique ⓘ<br><span style="font-size:10px;color:#555;">État mécanique du bus</span></span>
           <span id="chBusTechBadge"><span class="ch-badge ch-badge-ok">Actif</span></span>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid #05966915;">
-          <span style="font-size:13px;color:#888;">Statut opérationnel</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid #05966915;" title="Le bus est-il actuellement disponible et en route sur sa ligne ?">
+          <span style="font-size:13px;color:#888;">Statut opérationnel ⓘ<br><span style="font-size:10px;color:#555;">Disponible sur la ligne</span></span>
           <span id="chBusOpBadge"><span class="ch-badge ch-badge-warn">Hors service</span></span>
         </div>
       </div>
@@ -717,7 +728,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">📍 Géolocalisation</div>
         <div class="ch-card">
           <div id="chGeoStatus" style="font-size:13px;color:#888;margin-bottom:10px;">GPS désactivé</div>
-          <button id="chGeoBtn" class="btn btn-primary btn-full" onclick="chToggleGeo()">📡 Démarrer le partage GPS</button>
+          <button id="chGeoBtn" class="btn btn-full" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;font-size:15px;padding:16px;box-shadow:0 4px 14px #0ea5e955;" onclick="chToggleGeo()">📡 Démarrer le partage GPS</button>
         </div>
         <div id="chOwnerMapSection" style="display:none;margin-top:12px;">
           <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">🗺️ Position du bus en direct</div>
@@ -736,21 +747,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
       </div>
       <div id="chResaList"><div style="color:#555;font-size:13px;text-align:center;padding:20px;">Chargement…</div></div>
     </div>
-    <div class="tab-content" id="chTab-stats" style="padding:18px 16px;">
-      <div style="font-weight:900;font-size:20px;color:#34d399;margin-bottom:16px;">📊 Statistiques</div>
-      <div class="ch-stat-grid" style="margin-bottom:16px;">
-        <div class="ch-stat"><div class="val" id="chStatDay">0</div><div class="lbl">Revenu jour</div></div>
-        <div class="ch-stat"><div class="val" id="chStatMonth">0</div><div class="lbl">Revenu mois</div></div>
-      </div>
-      <div class="ch-card">
-        <div style="font-size:12px;font-weight:800;color:#34d399;margin-bottom:8px;">📈 Performance (7 jours)</div>
-        <div class="ch-chart-wrap"><canvas id="chPerfChart"></canvas></div>
-      </div>
-      <div class="ch-card" style="margin-top:16px;">
-        <div style="font-size:12px;font-weight:800;color:#34d399;margin-bottom:8px;">📈 Recettes par période</div>
-        <div class="ch-chart-wrap"><canvas id="chRevChart"></canvas></div>
-      </div>
-    </div>
   </div>
   <div class="ch-nav" style="position:relative;">
     <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
@@ -759,7 +755,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <button class="ch-nav-btn" id="cnav-receveur" onclick="switchChauffeurTab('receveur')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Receveur</button>
     <button class="ch-nav-btn" id="cnav-bus" onclick="switchChauffeurTab('bus')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8l5 3v5h-5V8z"/></svg>Bus</button>
     <button class="ch-nav-btn" id="cnav-resa" onclick="switchChauffeurTab('resa')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Résa.</button>
-    <button class="ch-nav-btn" id="cnav-stats" onclick="switchChauffeurTab('stats')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Stats</button>
   </div>
 </div>
 
@@ -1313,9 +1308,9 @@ let activeTicketData=null;
 let unsubPending=null,unsubNotif=null,unsubBalance=null,unsubRecvBalance=null,unsubAdmin=null;
 let unsubChProfile=null,unsubChReceiver=null,unsubChTickets=null,unsubChNotif=null,unsubChVersements=null;
 let unsubChCandidatures=null,unsubChPendingVers=null,unsubBusLoc=null;
-let chMap=null,chMapMarker=null,chGeoWatchId=null,chGeoLastWrite=0;
+let chMap=null,chMapMarker=null,chGeoWatchId=null,chGeoLastWrite=0,chGeoDisabledSince=null;
 let recvGeoWatchId=null,recvGeoLastWrite=0;
-let dirRevChartInst=null,dirLineChartInst=null,chRevChartInst=null,chPerfChartInst=null;
+let dirRevChartInst=null,dirLineChartInst=null,chRevChartInst=null,chPerfChartInst=null,chRecvPerfChartInst=null;
 let chCurrentPeriod='jour';
 let chLastTickets=[];
 
@@ -1625,7 +1620,7 @@ onAuthStateChanged(auth,user=>{
   else{show('screenSplash');loader('',false);}
 });
 
-function detachListeners(){[unsubPending,unsubNotif,unsubBalance,unsubRecvBalance,unsubAdmin,unsubChProfile,unsubChReceiver,unsubChTickets,unsubChNotif,unsubChVersements,unsubChCandidatures,unsubChPendingVers,unsubBusLoc].forEach(u=>{if(u)u();});unsubPending=unsubNotif=unsubBalance=unsubRecvBalance=unsubAdmin=unsubChProfile=unsubChReceiver=unsubChTickets=unsubChNotif=unsubChVersements=unsubChCandidatures=unsubChPendingVers=unsubBusLoc=null;if(chRevChartInst){chRevChartInst.destroy();chRevChartInst=null;}if(chPerfChartInst){chPerfChartInst.destroy();chPerfChartInst=null;}if(chGeoWatchId!=null){try{navigator.geolocation.clearWatch(chGeoWatchId);}catch(e){}chGeoWatchId=null;}if(recvGeoWatchId!=null){try{navigator.geolocation.clearWatch(recvGeoWatchId);}catch(e){}recvGeoWatchId=null;}if(chMap){try{chMap.remove();}catch(e){}chMap=null;chMapMarker=null;}resetTrackBus();}
+function detachListeners(){[unsubPending,unsubNotif,unsubBalance,unsubRecvBalance,unsubAdmin,unsubChProfile,unsubChReceiver,unsubChTickets,unsubChNotif,unsubChVersements,unsubChCandidatures,unsubChPendingVers,unsubBusLoc].forEach(u=>{if(u)u();});unsubPending=unsubNotif=unsubBalance=unsubRecvBalance=unsubAdmin=unsubChProfile=unsubChReceiver=unsubChTickets=unsubChNotif=unsubChVersements=unsubChCandidatures=unsubChPendingVers=unsubBusLoc=null;if(chRevChartInst){chRevChartInst.destroy();chRevChartInst=null;}if(chPerfChartInst){chPerfChartInst.destroy();chPerfChartInst=null;}if(chRecvPerfChartInst){chRecvPerfChartInst.destroy();chRecvPerfChartInst=null;}if(chGeoWatchId!=null){try{navigator.geolocation.clearWatch(chGeoWatchId);}catch(e){}chGeoWatchId=null;}if(recvGeoWatchId!=null){try{navigator.geolocation.clearWatch(recvGeoWatchId);}catch(e){}recvGeoWatchId=null;}if(chMap){try{chMap.remove();}catch(e){}chMap=null;chMapMarker=null;}resetTrackBus();}
 
 // QR wallet du passager avec solde + horodatage intégrés : permet à N'IMPORTE QUEL
 // receveur (même hors-ligne et même s'il n'a jamais vu ce passager) de lire un solde
@@ -2509,7 +2504,6 @@ window.switchChauffeurTab=(tab)=>{
   if(tab==='receveur')loadChReceveur();
   if(tab==='bus'){loadChBusPanel();if(S.role==='owner')initChBusMap();}
   if(tab==='resa')loadChResa();
-  if(tab==='stats')loadChStats();
 };
 function initChauffeurDashboard(){
   updateChHomeUI(S.profile);
@@ -2541,7 +2535,7 @@ function attachChReceiverListener(){
     const r=snap.data();
     document.getElementById('chTodayRev').textContent=fmt(r.today||0)+' F';
     document.getElementById('chTripCount').textContent=r.count||0;
-    document.getElementById('chStatDay').textContent=fmt(r.today||0);
+    const sdEl=document.getElementById('chStatDay');if(sdEl)sdEl.textContent=fmt(r.today||0);
     loadChAlerts(r);
   });
 }
@@ -2585,10 +2579,10 @@ function updateChPeriodTotals(tickets){
   let total=0,count=0;tickets.forEach(t=>{const dt=t.ts?.toDate?.();if(!dt||dt<start)return;total+=t.price||0;count++;});
   document.getElementById('chPeriodTotal').textContent=fmt(total);
   document.getElementById('chPeriodTrips').textContent=count;
-  document.getElementById('chStatMonth').textContent=fmt(tickets.filter(t=>{const dt=t.ts?.toDate?.();return dt&&dt>=startMonth;}).reduce((s,t)=>s+(t.price||0),0));
+  const smEl=document.getElementById('chStatMonth');if(smEl)smEl.textContent=fmt(tickets.filter(t=>{const dt=t.ts?.toDate?.();return dt&&dt>=startMonth;}).reduce((s,t)=>s+(t.price||0),0));
 }
 window.chSetPeriod=(p,btn)=>{chCurrentPeriod=p;document.querySelectorAll('.ch-ptab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');updateChPeriodTotals(chLastTickets);};
-function loadChRecettes(){loadChVersements();}
+function loadChRecettes(){loadChVersements();loadChStats();}
 async function loadChReceveur(){
   const p=S.profile;const cont=document.getElementById('chRecvPerfList');
   if(S.role==='owner')loadChCandidatures();
@@ -2610,6 +2604,20 @@ async function loadChReceveur(){
       📊 Recettes jour: <strong style="color:#34d399;">${fmt(r.today||0)} FCFA</strong> · Tickets: <strong>${r.count||0}</strong> · Solde: <strong style="color:#FDEF42;">${fmt(r.balance||0)} F</strong>`;
     const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','==',p.receiverUid),orderBy('ts','desc'),limit(7)));
     if(cont){if(!tkSnap.size){cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune activité récente.</div>';}else{cont.innerHTML=tkSnap.docs.map(d=>{const t=d.data();const dt=t.ts?.toDate?.()?.toLocaleDateString('fr-FR')||'—';return`<div class="ch-live-row"><div style="flex:1;"><div style="font-weight:700;font-size:13px;">${dt} · ${t.from||'—'}→${t.to||'—'}</div></div><div style="font-weight:800;color:#34d399;">${fmt(t.price)} F</div></div>`;}).join('');}}
+    try{
+      const perfSnap=await getDocs(query(collection(db,'tickets'),where('busUid','==',p.receiverUid),orderBy('ts','desc'),limit(200)));
+      const perfTickets=perfSnap.docs.map(d=>d.data());
+      const now=new Date();const dayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+      const labels=[];const data=[];
+      for(let i=6;i>=0;i--){const d=new Date(dayStart);d.setDate(d.getDate()-i);const ds=d.toLocaleDateString('fr-FR');labels.push(d.toLocaleDateString('fr-FR',{weekday:'short'}));data.push(perfTickets.filter(t=>t.ts?.toDate?.()?.toLocaleDateString('fr-FR')===ds).reduce((s,t)=>s+(t.price||0),0));}
+      const chartCard=document.getElementById('chRecvPerfChartCard');
+      if(perfTickets.length&&chartCard){
+        chartCard.style.display='block';
+        if(chRecvPerfChartInst)chRecvPerfChartInst.destroy();
+        const rpCtx=document.getElementById('chRecvPerfChart');
+        if(rpCtx)chRecvPerfChartInst=new Chart(rpCtx,{type:'bar',data:{labels,datasets:[{label:'FCFA',data,backgroundColor:'#34d399',borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#666',font:{size:10},callback:v=>fmt(v/1000)+'k'},grid:{color:'#05966910'}}}}});
+      }else if(chartCard){chartCard.style.display='none';}
+    }catch(e){console.warn('[chRecvPerfChart]',e);}
   }catch(e){if(cont)cont.innerHTML='<div style="color:#DF0024;padding:12px;">Erreur chargement.</div>';}
 }
 function loadChBusPanel(){
@@ -2748,8 +2756,8 @@ async function loadChStats(){
     const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
     const dayTotal=tickets.filter(t=>{const dt=t.ts?.toDate?.();return dt&&dt>=dayStart;}).reduce((s,t)=>s+(t.price||0),0);
     const monthTotal=tickets.filter(t=>{const dt=t.ts?.toDate?.();return dt&&dt>=monthStart;}).reduce((s,t)=>s+(t.price||0),0);
-    document.getElementById('chStatDay').textContent=fmt(dayTotal);
-    document.getElementById('chStatMonth').textContent=fmt(monthTotal);
+    const sd2=document.getElementById('chStatDay');if(sd2)sd2.textContent=fmt(dayTotal);
+    const sm2=document.getElementById('chStatMonth');if(sm2)sm2.textContent=fmt(monthTotal);
     const labels=[];const data=[];for(let i=6;i>=0;i--){const d=new Date(dayStart);d.setDate(d.getDate()-i);const ds=d.toLocaleDateString('fr-FR');labels.push(d.toLocaleDateString('fr-FR',{weekday:'short'}));data.push(tickets.filter(t=>t.ts?.toDate?.()?.toLocaleDateString('fr-FR')===ds).reduce((s,t)=>s+(t.price||0),0));}
     if(chPerfChartInst)chPerfChartInst.destroy();
     const pCtx=document.getElementById('chPerfChart');
@@ -2782,22 +2790,34 @@ window.chToggleGeo=()=>{
   const btn=document.getElementById('chGeoBtn');const st=document.getElementById('chGeoStatus');
   if(chGeoWatchId!=null){
     navigator.geolocation.clearWatch(chGeoWatchId);chGeoWatchId=null;
-    btn.textContent='📡 Démarrer le partage GPS';btn.classList.remove('btn-danger');btn.classList.add('btn-primary');
+    btn.textContent='📡 Démarrer le partage GPS';btn.style.background='linear-gradient(135deg,#0ea5e9,#0369a1)';
     st.textContent='GPS désactivé';st.style.color='#888';
+    chGeoDisabledSince=Date.now();
     notify('🛰️','GPS','Partage de position arrêté.');
     return;
   }
   if(!navigator.geolocation){notify('⚠️','GPS','Géolocalisation non supportée.');return;}
   st.textContent='Activation…';st.style.color='#FF6B00';
+  chGeoDisabledSince=null;
+  const reminder=document.getElementById('chGeoReminder');if(reminder)reminder.style.display='none';
   chGeoWatchId=navigator.geolocation.watchPosition(async pos=>{
     const now=Date.now();if(now-chGeoLastWrite<15000)return;chGeoLastWrite=now;
     const {latitude:lat,longitude:lng,accuracy}=pos.coords;
     st.innerHTML=`🟢 Actif · ${lat.toFixed(4)}, ${lng.toFixed(4)} <span style="color:#555;">(±${Math.round(accuracy)}m)</span>`;st.style.color='#34d399';
     try{await setDoc(doc(db,'bus_locations',S.uid),{lat,lng,accuracy,updatedAt:serverTimestamp(),ownerUid:S.uid,vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||''});}catch(e){console.warn('[geo write]',e);}
-  },err=>{st.textContent='Erreur GPS: '+err.message;st.style.color='#DF0024';chGeoWatchId=null;btn.textContent='📡 Réessayer';},{enableHighAccuracy:true,maximumAge:10000,timeout:15000});
-  btn.textContent='🛑 Arrêter le partage GPS';btn.classList.remove('btn-primary');btn.classList.add('btn-danger');
+  },err=>{st.textContent='Erreur GPS: '+err.message;st.style.color='#DF0024';chGeoWatchId=null;btn.textContent='📡 Réessayer';chGeoDisabledSince=Date.now();},{enableHighAccuracy:true,maximumAge:10000,timeout:15000});
+  btn.textContent='🛑 Arrêter le partage GPS';btn.style.background='linear-gradient(135deg,#DF0024,#B71C1C)';
   notify('📡','GPS','Partage de position démarré.');
 };
+setInterval(()=>{
+  if((S.role!=='chauffeur'&&S.role!=='owner')||!S.profile)return;
+  const reminder=document.getElementById('chGeoReminder');if(!reminder)return;
+  const busActive=(S.profile.busStatus||'hors_service')==='en_service';
+  if(busActive&&chGeoWatchId==null){
+    if(!chGeoDisabledSince)chGeoDisabledSince=Date.now();
+    reminder.style.display=(Date.now()-chGeoDisabledSince>15*60*1000)?'block':'none';
+  }else{reminder.style.display='none';}
+},60000);
 function initChBusMap(){
   const sec=document.getElementById('chOwnerMapSection');if(!sec)return;
   if(S.role!=='owner'){sec.style.display='none';return;}
