@@ -1480,6 +1480,10 @@ window.doAuth=async()=>{
         await addDoc(collection(db,'notifications'),{toUid:directeurUid,type:'chauffeur_request',chauffeurUid:uid,chauffeurName:name,chauffeurEmail:email,phone,cni,address,read:false,ts:serverTimestamp()});
       }
       }finally{_authFlowInProgress=false;}
+      // Le receveur a déjà navigué lui-même (return plus haut) ; pour les autres rôles,
+      // on déclenche nous-mêmes la navigation vers le bon écran (attemptSessionRestore
+      // n'est plus appelé automatiquement pendant l'inscription, voir _authFlowInProgress).
+      await attemptSessionRestore(cred.user);
     }else{S.expectedLoginRole=S.authRole;await signInWithEmailAndPassword(auth,email,pass);}
     loader('',false);
   }catch(e){
@@ -3907,3 +3911,4 @@ function handleQR(raw){stopCamera();raw=(raw||'').trim();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
 </div>
+        
