@@ -1304,6 +1304,10 @@ const fbApp=initializeApp(FC);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
 const storage=getStorage(fbApp);
+if(location.protocol==='file:'){
+  document.body.innerHTML='<div style="position:fixed;inset:0;z-index:99999;background:#06120a;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;font-family:sans-serif;"><div style="font-size:56px;margin-bottom:16px;">🚫</div><div style="font-weight:900;font-size:20px;margin-bottom:12px;color:#DF0024;">Fichier ouvert directement (file://)</div><div style="max-width:420px;line-height:1.7;color:#ccc;font-size:14px;">Firebase (Auth, Firestore, Storage) bloque systématiquement les requêtes venant d\'un fichier ouvert en double-clic. Ce n\'est pas un bug de l\'app, ni des règles Firestore — c\'est une restriction de sécurité du navigateur/Firebase.<br><br><strong style="color:#FDEF42;">Pour tester, sers ce fichier via un serveur local :</strong><br><br><code style="background:#000;padding:8px 12px;border-radius:8px;display:inline-block;margin:4px 0;">npx serve .</code><br>ou<br><code style="background:#000;padding:8px 12px;border-radius:8px;display:inline-block;margin:4px 0;">python3 -m http.server 8080</code><br><br>puis ouvre <strong>http://localhost:...</strong> dans le navigateur.<br><br>Ou simplement teste directement sur ton URL Vercel déployée.</div></div>';
+  throw new Error('App ouverte en file:// — Firebase bloqué. Servir via http(s) local ou utiliser l\'URL déployée.');
+}
 try{enableIndexedDbPersistence(db).catch(e=>console.warn('[persistence]',e.code||e.message));}catch(e){}
 const ADMIN_EMAIL='papacheikh900@gmail.com';
 
@@ -1552,6 +1556,13 @@ async function attemptSessionRestore(user){
       notify('🔴','Hors-ligne','Reconnexion automatique dès que le réseau revient. Vos données en cache restent accessibles.');
       show('screenSplash');
     }else{
+      console.error('[attemptSessionRestore] échec lecture users/'+user.uid,'code=',e.code,'message=',e.message,e);
+      if(e.code==='permission-denied'){
+        // Session persistée mais lecture refusée (compte/doc incohérent, ex: créé puis jamais finalisé) :
+        // on déconnecte proprement pour éviter que l'erreur ne réapparaisse en boucle à chaque ouverture de l'app.
+        try{await signOut(auth);}catch(e2){}
+        show('screenSplash');
+      }
       notify('❌','Erreur',e.message);
     }
   }
