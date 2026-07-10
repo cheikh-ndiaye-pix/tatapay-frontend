@@ -1319,6 +1319,7 @@ let chCurrentPeriod='jour';
 let chLastTickets=[];
 
 let allAvailableOwners=[];
+let _authFlowInProgress=false;
 let recvBusSelection=new Set();
 let recvBusFilter='all';
 
@@ -1406,9 +1407,11 @@ window.doAuth=async()=>{
         if(!document.getElementById('authRecvPhoto')?.files[0]){loader('',false);notify('⚠️','Photo','Ajoutez votre photo (selfie).');return;}
         if(!document.getElementById('authRecvIdDoc')?.files[0]){loader('',false);notify('⚠️','Pièce d\'identité','Ajoutez un scan/photo de votre pièce d\'identité.');return;}
       }
+      _authFlowInProgress=true;
       const cred=await createUserWithEmailAndPassword(auth,email,pass);
       const uid=cred.user.uid;
       const phone=document.getElementById('authPhone').value.trim();
+      try{
       if(S.authRole==='passenger'){
         const walletId='TP-'+uid.slice(0,6).toUpperCase();
         await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'passenger',status:'approved',balance:0,createdAt:serverTimestamp()});
@@ -1472,9 +1475,11 @@ window.doAuth=async()=>{
         await setDoc(doc(db,'wallets',walletId),{uid,role:'chauffeur'});
         await addDoc(collection(db,'notifications'),{toUid:directeurUid,type:'chauffeur_request',chauffeurUid:uid,chauffeurName:name,chauffeurEmail:email,phone,cni,address,read:false,ts:serverTimestamp()});
       }
+      }finally{_authFlowInProgress=false;}
     }else{S.expectedLoginRole=S.authRole;await signInWithEmailAndPassword(auth,email,pass);}
     loader('',false);
   }catch(e){
+    _authFlowInProgress=false;
     loader('',false);
     if(e.code==='auth/network-request-failed'||!navigator.onLine){
       notify('🔴','Pas de réseau','Une première connexion nécessite internet. Si vous vous êtes déjà connecté sur cet appareil, votre session sera restaurée automatiquement.');
@@ -1634,6 +1639,7 @@ function setPublicTicketError(errEl,icon,title,text){
 onAuthStateChanged(auth,user=>{
   const pubTicket=document.getElementById('screenPublicTicket')?.classList.contains('active');
   if(pubTicket)return; // ne pas écraser l'écran public
+  if(_authFlowInProgress)return; // inscription en cours : doAuth() gère déjà tout, ne pas interférer (évite un signOut prématuré si le doc users/{uid} n'existe pas encore)
   if(user){attemptSessionRestore(user);}
   else{show('screenSplash');loader('',false);}
 });
