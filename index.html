@@ -1324,6 +1324,7 @@ let recvBusFilter='all';
 
 let trackMap=null,trackMapMarker=null,unsubTrackLoc=null;
 let dirOwnersMap=null,dirOwnersMarkers={},dirOwnersLocUnsubs={},dirOwnersLocData={};
+let unsubChOwnerBalance=null;
 
 function loader(msg='',show=true){const l=document.getElementById('globalLoader');l.className=show?'show':'';if(msg)document.getElementById('loaderMsg').textContent=msg;}
 let ntTimer=null;
@@ -1637,7 +1638,7 @@ onAuthStateChanged(auth,user=>{
   else{show('screenSplash');loader('',false);}
 });
 
-function detachListeners(){[unsubPending,unsubNotif,unsubBalance,unsubRecvBalance,unsubAdmin,unsubChProfile,unsubChReceiver,unsubChTickets,unsubChNotif,unsubChVersements,unsubChCandidatures,unsubChPendingVers,unsubBusLoc].forEach(u=>{if(u)u();});unsubPending=unsubNotif=unsubBalance=unsubRecvBalance=unsubAdmin=unsubChProfile=unsubChReceiver=unsubChTickets=unsubChNotif=unsubChVersements=unsubChCandidatures=unsubChPendingVers=unsubBusLoc=null;if(chRevChartInst){chRevChartInst.destroy();chRevChartInst=null;}if(chPerfChartInst){chPerfChartInst.destroy();chPerfChartInst=null;}if(chRecvPerfChartInst){chRecvPerfChartInst.destroy();chRecvPerfChartInst=null;}if(chGeoWatchId!=null){try{navigator.geolocation.clearWatch(chGeoWatchId);}catch(e){}chGeoWatchId=null;}if(recvGeoWatchId!=null){try{navigator.geolocation.clearWatch(recvGeoWatchId);}catch(e){}recvGeoWatchId=null;}if(chMap){try{chMap.remove();}catch(e){}chMap=null;chMapMarker=null;}resetTrackBus();}
+function detachListeners(){[unsubPending,unsubNotif,unsubBalance,unsubRecvBalance,unsubAdmin,unsubChProfile,unsubChReceiver,unsubChTickets,unsubChNotif,unsubChVersements,unsubChCandidatures,unsubChPendingVers,unsubBusLoc,unsubChOwnerBalance,unsubDirOwnersA].forEach(u=>{if(u){try{u();}catch(e){}}});unsubPending=unsubNotif=unsubBalance=unsubRecvBalance=unsubAdmin=unsubChProfile=unsubChReceiver=unsubChTickets=unsubChNotif=unsubChVersements=unsubChCandidatures=unsubChPendingVers=unsubBusLoc=unsubChOwnerBalance=unsubDirOwnersA=null;Object.keys(dirOwnersLocUnsubs).forEach(uid=>{try{dirOwnersLocUnsubs[uid]();}catch(e){}delete dirOwnersLocUnsubs[uid];});if(S.rgUnsub){try{S.rgUnsub();}catch(e){}S.rgUnsub=null;}if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}if(chRevChartInst){chRevChartInst.destroy();chRevChartInst=null;}if(chPerfChartInst){chPerfChartInst.destroy();chPerfChartInst=null;}if(chRecvPerfChartInst){chRecvPerfChartInst.destroy();chRecvPerfChartInst=null;}if(chGeoWatchId!=null){try{navigator.geolocation.clearWatch(chGeoWatchId);}catch(e){}chGeoWatchId=null;}if(recvGeoWatchId!=null){try{navigator.geolocation.clearWatch(recvGeoWatchId);}catch(e){}recvGeoWatchId=null;}if(chMap){try{chMap.remove();}catch(e){}chMap=null;chMapMarker=null;}resetTrackBus();}
 
 // QR wallet du passager avec solde + horodatage intégrés : permet à N'IMPORTE QUEL
 // receveur (même hors-ligne et même s'il n'a jamais vu ce passager) de lire un solde
@@ -1703,7 +1704,8 @@ function loginUI(){
     initChauffeurDashboard();
     const wb=document.getElementById('chOwnerWalletBox');
     if(wb){wb.style.display='block';}
-    try{onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){const b=snap.data().balance||0;S.profile.balance=b;const el=document.getElementById('chOwnerBalance');if(el)el.textContent=fmt(b);}});}catch(e){}
+    if(unsubChOwnerBalance){try{unsubChOwnerBalance();}catch(e){}unsubChOwnerBalance=null;}
+    try{unsubChOwnerBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){const b=snap.data().balance||0;S.profile.balance=b;const el=document.getElementById('chOwnerBalance');if(el)el.textContent=fmt(b);}});}catch(e){}
     notify('✅',S.role==='owner'?'Bienvenue Propriétaire':'Bienvenue Chauffeur',p.name);
   }else{show('screenSplash');}
   loader('',false);
