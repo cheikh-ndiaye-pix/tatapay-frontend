@@ -1350,8 +1350,13 @@ window.goAuth=(mode)=>{
   document.getElementById('authSwitchText').textContent=S.isReg?'Déjà inscrit ?':'Pas de compte ?';
   document.getElementById('authSwitchLink').textContent=S.isReg?'Se connecter':"S'inscrire";
   ['fieldName','fieldPhone','fieldPass2'].forEach(id=>document.getElementById(id).style.display=S.isReg?'block':'none');
-  ['fieldsReceiver','fieldsOwner','fieldsDirecteur','fieldsChauffeur'].forEach(id=>document.getElementById(id).style.display='none');
   show('screenAuth');
+  // Resynchronise l'onglet de rôle actif ET les champs additionnels correspondants.
+  // Avant ce correctif, goAuth() cachait les champs (fieldsReceiver, etc.) sans jamais
+  // réinitialiser le style de l'onglet sélectionné : si "Receveur" était resté actif
+  // visuellement d'un précédent passage, ses champs restaient cachés jusqu'à cliquer sur
+  // un autre onglet puis y revenir.
+  setRole(S.authRole||'passenger');
 };
 window.toggleAuthMode=()=>window.goAuth(S.isReg?'login':'register');
 window.setRole=async(r)=>{
@@ -3911,3 +3916,4 @@ function handleQR(raw){stopCamera();raw=(raw||'').trim();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
 </div>
+                                                                                                    
