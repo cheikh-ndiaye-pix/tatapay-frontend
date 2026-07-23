@@ -2915,14 +2915,24 @@ window.doRecvVersement=async()=>{
   try{
     const ref='VRS-'+Date.now().toString(36).toUpperCase();
     const date=new Date().toLocaleDateString('fr-FR');
-    await updateDoc(doc(db,'users',S.uid),{balance:increment(-amount)});
-    await addDoc(collection(db,'users',S.uid,'history'),{type:'versement_out',label:'Versement chauffeur — '+ref,amount:-amount,ref,ts:serverTimestamp()});
-    if(ownerUid){
-      await updateDoc(doc(db,'users',ownerUid),{balance:increment(amount)});
-      await addDoc(collection(db,'users',ownerUid,'history'),{type:'versement_in',label:'Versement reçu de '+(S.profile?.name||'receveur'),amount,ref,ts:serverTimestamp()});
-      await addDoc(collection(db,'notifications'),{toUid:ownerUid,type:'versement_confirmed',fromUid:S.uid,receiverName:S.profile?.name||'',amount,ref,mode,read:false,ts:serverTimestamp()});
-    }
-    await addDoc(collection(db,'versements'),{amount,mode,note,ref,date,receiverUid:S.uid,receiverName:S.profile?.name||'',ownerUid:ownerUid||'',status:'confirmed',ts:serverTimestamp()});
+    // Transaction : débit receveur (+ crédit propriétaire si lié) + trace dans
+    // /versements, tout ou rien. Le document /versements sert d'ancrage pour
+    // que les règles vérifient que le montant versé == montant débité == montant
+    // crédité au propriétaire (cf. firestore.rules).
+    const vRef=doc(collection(db,'versements'));
+    await runTransaction(db,async(tx)=>{
+      const meSnap=await tx.get(doc(db,'users',S.uid));
+      const me=meSnap.data();
+      if((me.balance||0)<amount)throw new Error('Solde insuffisant.');
+      tx.update(doc(db,'users',S.uid),{balance:increment(-amount)});
+      tx.set(doc(collection(db,'users',S.uid,'history')),{type:'versement_out',label:'Versement chauffeur — '+ref,amount:-amount,ref,ts:serverTimestamp()});
+      if(ownerUid){
+        tx.update(doc(db,'users',ownerUid),{balance:increment(amount)});
+        tx.set(doc(collection(db,'users',ownerUid,'history')),{type:'versement_in',label:'Versement reçu de '+(S.profile?.name||'receveur'),amount,ref,ts:serverTimestamp()});
+        tx.set(doc(collection(db,'notifications')),{toUid:ownerUid,type:'versement_confirmed',fromUid:S.uid,receiverName:S.profile?.name||'',amount,ref,mode,read:false,ts:serverTimestamp()});
+      }
+      tx.set(vRef,{amount,mode,note,ref,date,receiverUid:S.uid,receiverName:S.profile?.name||'',ownerUid:ownerUid||'',status:'confirmed',ts:serverTimestamp()});
+    });
     loader('',false);closeModal('modalRecvVersement');
     notify('✅','Versement effectué',`${fmt(amount)} FCFA débités${ownerUid?' et crédités au chauffeur':''}.`);
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
@@ -3028,12 +3038,20 @@ window.cancelTrip=async(tripId)=>{
     const bookSnap=await getDocs(query(collection(db,'tripBookings'),where('tripId','==',tripId),where('status','==','confirmed')));
     for(const bDoc of bookSnap.docs){
       const b=bDoc.data();
-      await updateDoc(doc(db,'users',b.passengerUid),{balance:increment(b.total)});
-      await updateDoc(doc(db,'users',trip.ownerUid),{balance:increment(-b.priceTotal)});
-      await updateDoc(bDoc.ref,{status:'refunded',refundedAt:serverTimestamp()});
-      await addDoc(collection(db,'commissions_resa'),{tripId,bookingId:bDoc.id,amount:-b.commission,ref:'REFUND-'+b.ref,ts:serverTimestamp()});
-      await addDoc(collection(db,'users',b.passengerUid,'history'),{type:'reservation_refund',label:`Remboursement trajet annulé — ${trip.from}→${trip.to}`,amount:b.total,ref:b.ref,ts:serverTimestamp()});
-      await addDoc(collection(db,'users',trip.ownerUid,'history'),{type:'reservation_refund_out',label:'Remboursement résa. annulée',amount:-b.priceTotal,ref:b.ref,ts:serverTimestamp()});
+      // Transaction : remboursement passager + débit propriétaire + passage du
+      // statut à 'refunded', tout ou rien. La règle de conservation sur
+      // tripBookings vérifie que les montants restitués sont exacts.
+      await runTransaction(db,async(tx)=>{
+        const freshSnap=await tx.get(bDoc.ref);
+        const fresh=freshSnap.data();
+        if(fresh.status!=='confirmed')return; // déjà traité entretemps
+        tx.update(doc(db,'users',b.passengerUid),{balance:increment(b.total)});
+        tx.update(doc(db,'users',trip.ownerUid),{balance:increment(-b.priceTotal)});
+        tx.update(bDoc.ref,{status:'refunded',refundedAt:serverTimestamp()});
+        tx.set(doc(collection(db,'commissions_resa')),{tripId,bookingId:bDoc.id,amount:-b.commission,ref:'REFUND-'+b.ref,ts:serverTimestamp()});
+        tx.set(doc(collection(db,'users',b.passengerUid,'history')),{type:'reservation_refund',label:`Remboursement trajet annulé — ${trip.from}→${trip.to}`,amount:b.total,ref:b.ref,ts:serverTimestamp()});
+        tx.set(doc(collection(db,'users',trip.ownerUid,'history')),{type:'reservation_refund_out',label:'Remboursement résa. annulée',amount:-b.priceTotal,ref:b.ref,ts:serverTimestamp()});
+      });
     }
     await updateDoc(tripRef,{status:'cancelled',placesLeft:0,cancelledAt:serverTimestamp()});
     loader('',false);
@@ -3236,13 +3254,20 @@ window.cancelBooking=async(bookingId)=>{
     if(!bookSnap.exists()){loader('',false);return;}
     const b=bookSnap.data();
     if(b.status!=='confirmed'){loader('',false);notify('⚠️','Déjà traité','Cette réservation a déjà été annulée ou remboursée.');return;}
-    await updateDoc(doc(db,'users',S.uid),{balance:increment(b.total)});
-    await updateDoc(doc(db,'users',b.ownerUid),{balance:increment(-b.priceTotal)});
-    await updateDoc(doc(db,'tripOffers',b.tripId),{placesLeft:increment(b.places)});
-    await updateDoc(bookRef,{status:'cancelled',cancelledAt:serverTimestamp()});
-    await addDoc(collection(db,'commissions_resa'),{tripId:b.tripId,bookingId,amount:-b.commission,ref:'CANCEL-'+b.ref,ts:serverTimestamp()});
-    await addDoc(collection(db,'users',S.uid,'history'),{type:'reservation_refund',label:`Annulation réservation — ${b.from}→${b.to}`,amount:b.total,ref:b.ref,ts:serverTimestamp()});
-    await addDoc(collection(db,'users',b.ownerUid,'history'),{type:'reservation_refund_out',label:'Réservation annulée par le passager',amount:-b.priceTotal,ref:b.ref,ts:serverTimestamp()});
+    // Transaction : remboursement passager + débit propriétaire + statut +
+    // libération des places, tout ou rien.
+    await runTransaction(db,async(tx)=>{
+      const freshSnap=await tx.get(bookRef);
+      const fresh=freshSnap.data();
+      if(fresh.status!=='confirmed')throw new Error('Cette réservation a déjà été annulée ou remboursée.');
+      tx.update(doc(db,'users',S.uid),{balance:increment(b.total)});
+      tx.update(doc(db,'users',b.ownerUid),{balance:increment(-b.priceTotal)});
+      tx.update(doc(db,'tripOffers',b.tripId),{placesLeft:increment(b.places)});
+      tx.update(bookRef,{status:'cancelled',cancelledAt:serverTimestamp()});
+      tx.set(doc(collection(db,'commissions_resa')),{tripId:b.tripId,bookingId,amount:-b.commission,ref:'CANCEL-'+b.ref,ts:serverTimestamp()});
+      tx.set(doc(collection(db,'users',S.uid,'history')),{type:'reservation_refund',label:`Annulation réservation — ${b.from}→${b.to}`,amount:b.total,ref:b.ref,ts:serverTimestamp()});
+      tx.set(doc(collection(db,'users',b.ownerUid,'history')),{type:'reservation_refund_out',label:'Réservation annulée par le passager',amount:-b.priceTotal,ref:b.ref,ts:serverTimestamp()});
+    });
     loader('',false);
     notify('✅','Réservation annulée',`${fmt(b.total)} FCFA remboursés.`);
     loadPassResa();
@@ -3655,8 +3680,28 @@ window.doSend=async()=>{
   if((S.profile.balance||0)<amt){notify('❌','Solde','Solde insuffisant.');return;}
   if(targetWid===S.profile.walletId){notify('⚠️','Erreur','Impossible de vous envoyer à vous-même.');return;}
   loader('Transfert…');
-  try{const wSnap=await getDoc(doc(db,'wallets',targetWid));if(!wSnap.exists()){loader('',false);notify('❌','Introuvable','Wallet destinataire inconnu.');return;}const destUid=wSnap.data().uid;const destSnap=await getDoc(doc(db,'users',destUid));const dest=destSnap.data();await updateDoc(doc(db,'users',S.uid),{balance:increment(-amt)});await updateDoc(doc(db,'users',destUid),{balance:increment(amt)});await addDoc(collection(db,'users',S.uid,'history'),{type:'transfer_out',label:'Transfert → '+dest.name,amount:-amt,ts:serverTimestamp()});await addDoc(collection(db,'users',destUid,'history'),{type:'transfer_in',label:'Reçu de '+S.profile.name,amount:amt,ts:serverTimestamp()});loader('',false);closeModal('modalSend');clearFriend();notify('✅','Envoyé',fmt(amt)+' FCFA → '+dest.name);}
-  catch(e){loader('',false);notify('❌','Erreur',e.message);}
+  try{
+    const wSnap=await getDoc(doc(db,'wallets',targetWid));
+    if(!wSnap.exists()){loader('',false);notify('❌','Introuvable','Wallet destinataire inconnu.');return;}
+    const destUid=wSnap.data().uid;
+    const destSnap=await getDoc(doc(db,'users',destUid));
+    const dest=destSnap.data();
+    // Transaction : débit + crédit + trace dans /transfers, tout ou rien.
+    // Le document /transfers sert d'ancrage pour que les règles Firestore
+    // vérifient que le montant débité == montant crédité (cf. firestore.rules).
+    const trRef=doc(collection(db,'transfers'));
+    await runTransaction(db,async(tx)=>{
+      const meSnap=await tx.get(doc(db,'users',S.uid));
+      const me=meSnap.data();
+      if((me.balance||0)<amt)throw new Error('Solde insuffisant.');
+      tx.update(doc(db,'users',S.uid),{balance:increment(-amt)});
+      tx.update(doc(db,'users',destUid),{balance:increment(amt)});
+      tx.set(trRef,{fromUid:S.uid,toUid:destUid,amount:amt,ts:serverTimestamp()});
+      tx.set(doc(collection(db,'users',S.uid,'history')),{type:'transfer_out',label:'Transfert → '+dest.name,amount:-amt,ts:serverTimestamp()});
+      tx.set(doc(collection(db,'users',destUid,'history')),{type:'transfer_in',label:'Reçu de '+S.profile.name,amount:amt,ts:serverTimestamp()});
+    });
+    loader('',false);closeModal('modalSend');clearFriend();notify('✅','Envoyé',fmt(amt)+' FCFA → '+dest.name);
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 window.openRecvCharge=()=>{document.getElementById('rcWalletId').value='';document.getElementById('rcAmt').value='';document.getElementById('rcPassengerPreview').style.display='none';document.getElementById('rcRecvBalance').textContent=fmt(S.profile?.balance||0)+' FCFA';openModal('modalRecvCharge');};
 window.rcClearPreview=()=>document.getElementById('rcPassengerPreview').style.display='none';
@@ -3665,8 +3710,27 @@ window.doRecvCharge=async()=>{
   if(!walletId){notify('⚠️','Wallet','Entrez ou scannez l\'ID wallet.');return;}if(!amt||amt<100){notify('⚠️','Montant','Minimum 100 FCFA.');return;}
   const recvBal=S.profile?.balance||0;if(amt>recvBal){notify('❌','Solde','Solde insuffisant.');return;}
   loader('Recharge…');
-  try{const wSnap=await getDoc(doc(db,'wallets',walletId));if(!wSnap.exists()){loader('',false);notify('❌','Introuvable','Wallet passager inconnu.');return;}const paxUid=wSnap.data().uid;const pSnap=await getDoc(doc(db,'users',paxUid));const pax=pSnap.data();await updateDoc(doc(db,'users',S.uid),{balance:increment(-amt)});await updateDoc(doc(db,'users',paxUid),{balance:increment(amt)});await addDoc(collection(db,'users',S.uid,'history'),{type:'recharge_given',label:'Recharge → '+pax.name,amount:-amt,ts:serverTimestamp()});await addDoc(collection(db,'users',paxUid,'history'),{type:'recharge',label:'Recharge par '+S.profile.name,amount:amt,ts:serverTimestamp()});loader('',false);closeModal('modalRecvCharge');notify('✅','Recharge effectuée',pax.name+' +'+fmt(amt)+' FCFA');refreshRecvStats();}
-  catch(e){loader('',false);notify('❌','Erreur',e.message);}
+  try{
+    const wSnap=await getDoc(doc(db,'wallets',walletId));
+    if(!wSnap.exists()){loader('',false);notify('❌','Introuvable','Wallet passager inconnu.');return;}
+    const paxUid=wSnap.data().uid;
+    const pSnap=await getDoc(doc(db,'users',paxUid));
+    const pax=pSnap.data();
+    // Transaction : débit receveur + crédit passager + trace dans /recharges,
+    // tout ou rien — même principe que le transfert et le ticket.
+    const rcRef=doc(collection(db,'recharges'));
+    await runTransaction(db,async(tx)=>{
+      const meSnap=await tx.get(doc(db,'users',S.uid));
+      const me=meSnap.data();
+      if((me.balance||0)<amt)throw new Error('Solde insuffisant.');
+      tx.update(doc(db,'users',S.uid),{balance:increment(-amt)});
+      tx.update(doc(db,'users',paxUid),{balance:increment(amt)});
+      tx.set(rcRef,{fromUid:S.uid,toUid:paxUid,amount:amt,ts:serverTimestamp()});
+      tx.set(doc(collection(db,'users',S.uid,'history')),{type:'recharge_given',label:'Recharge → '+pax.name,amount:-amt,ts:serverTimestamp()});
+      tx.set(doc(collection(db,'users',paxUid,'history')),{type:'recharge',label:'Recharge par '+S.profile.name,amount:amt,ts:serverTimestamp()});
+    });
+    loader('',false);closeModal('modalRecvCharge');notify('✅','Recharge effectuée',pax.name+' +'+fmt(amt)+' FCFA');refreshRecvStats();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 window.openAddTrajet=()=>{['trajetFrom','trajetTo','trajetSection','trajetPrice'].forEach(id=>document.getElementById(id).value='');openModal('modalAddTrajet');};
 window.doAddTrajet=async()=>{
