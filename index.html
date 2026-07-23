@@ -3913,7 +3913,86 @@ function handleQR(raw){stopCamera();raw=(raw||'').trim();
   }
   const ticketM=raw.match(/tatapay:\/\/ticket\/(.+)/i);if(ticketM){if(document.getElementById('modalTicketFlow')?.style.display==='flex')closeModal('modalTicketFlow');importTicketFromQR(ticketM[1]);return;}const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);const balM=raw.match(/[?&]bal=(\d+)/);const tM=raw.match(/[?&]t=(\d+)/);const uidM=raw.match(/[?&]uid=([A-Za-z0-9]+)/);const resaM=raw.match(/tatapay:\/\/resa\/([A-Za-z0-9]+)/i);const resaShareM=raw.match(/tatapay:\/\/resashare\/([A-Za-z0-9]+)\/([A-Za-z0-9]+)/i);const qrBal=balM?parseInt(balM[1],10):null;const qrTs=tM?parseInt(tM[1],10):null;const qrUid=uidM?uidM[1]:null;if(S.camMode==='ticket'&&!ticketM){notify('❌','QR invalide','Ce n\'est pas un QR de ticket.');return;}if(S.camMode==='resa-scan'){if(resaShareM){confirmShareBoardingScan(resaShareM[1],resaShareM[2]);return;}if(!resaM){notify('❌','QR invalide','Ce n\'est pas un ticket de réservation.');return;}confirmBoardingScan(resaM[1],qrUid);}else if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Contenu: '+raw.slice(0,40));return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId,qrBal,qrTs,qrUid);}else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}}
 
+// ===================== ASSISTANCE VOCALE (guide contextuel) =====================
+(function(){
+  const GUIDE_TEXTS={
+    // Passager
+    'screenPassenger|nav-home':"Vous êtes sur l'accueil passager. Vous voyez votre solde en haut, avec un Q R code que le receveur peut scanner pour vous faire payer. Les boutons en dessous permettent de recharger votre compte, d'acheter un ticket, ou d'envoyer de l'argent à un ami.",
+    'screenPassenger|nav-tickets':"Vous êtes dans l'onglet Tickets. Vous retrouvez ici vos dix derniers tickets de bus. Appuyez sur un ticket pour l'afficher en grand, même sans connexion internet.",
+    'screenPassenger|nav-history':"Vous êtes dans l'historique. Toutes vos transactions apparaissent ici : recharges, tickets, transferts, du plus récent au plus ancien.",
+    'screenPassenger|nav-resa':"Vous êtes dans l'onglet Réservation. Vous pouvez réserver une place à l'avance sur un trajet, et retrouver vos réservations en cours.",
+    'screenPassenger|nav-profile':"Vous êtes sur votre profil. Vous y trouvez vos informations personnelles et votre Q R code de portefeuille.",
+    // Receveur
+    'screenReceiver|rnav-home':"Vous êtes sur l'accueil receveur. Vous pouvez scanner le Q R code d'un passager pour encaisser un paiement, ou lui remettre un ticket.",
+    'screenReceiver|rnav-trajets':"Vous êtes dans l'onglet Trajets. Vous y gérez les trajets disponibles pour les réservations.",
+    'screenReceiver|rnav-tickets':"Vous êtes dans l'onglet Tickets. Vous voyez ici les dix derniers tickets que vous avez délivrés.",
+    'screenReceiver|rnav-historique':"Vous êtes dans l'historique receveur. Vous y retrouvez vos versements, vos tickets et vos notifications.",
+    // Chauffeur
+    'screenChauffeur|cnav-recettes':"Vous êtes sur les recettes du chauffeur. Vous voyez le résumé de l'argent encaissé pour vos trajets.",
+    'screenChauffeur|cnav-receveur':"Vous êtes dans l'onglet Receveur. Vous pouvez suivre ou gérer le receveur qui travaille avec vous.",
+    'screenChauffeur|cnav-bus':"Vous êtes dans l'onglet Bus. Vous y gérez les informations de votre véhicule.",
+    'screenChauffeur|cnav-resa':"Vous êtes dans l'onglet Réservations. Vous pouvez confirmer l'embarquement des passagers ayant réservé une place à l'avance.",
+    // Directeur
+    'screenDirecteur|dnav-home':"Vous êtes sur le tableau de bord du directeur. Vous avez une vue d'ensemble de l'activité de votre réseau de transport.",
+    'screenDirecteur|dnav-owners':"Vous êtes dans l'onglet Propriétaires. Vous gérez ici les propriétaires de véhicules rattachés à votre réseau.",
+    'screenDirecteur|dnav-receivers':"Vous êtes dans l'onglet Receveurs. Vous gérez ici les receveurs de votre réseau.",
+    // Admin
+    'screenAdmin|adminTab-dashboard':"Vous êtes sur le tableau de bord administrateur, avec une vue globale de toute la plateforme.",
+    'screenAdmin|adminTab-directeurs':"Vous gérez ici la liste des directeurs de réseau.",
+    'screenAdmin|adminTab-owners':"Vous gérez ici la liste des propriétaires de véhicules.",
+    'screenAdmin|adminTab-users':"Vous gérez ici l'ensemble des utilisateurs de l'application.",
+    'screenAdmin|adminTab-withdrawals':"Vous gérez ici les demandes de retrait en attente.",
+  };
+  const FALLBACK={
+    screenSplash:"Bienvenue sur TataPay, l'application de paiement pour le transport à Dakar.",
+    screenPublicTicket:"Vous consultez un ticket partagé.",
+    screenAuth:"Vous êtes sur l'écran de connexion. Entrez votre numéro de téléphone pour vous connecter ou créer un compte.",
+    screenPending:"Votre compte est en attente de validation.",
+    screenPassenger:"Vous êtes sur l'espace passager.",
+    screenReceiver:"Vous êtes sur l'espace receveur.",
+    screenChauffeur:"Vous êtes sur l'espace chauffeur.",
+    screenDirecteur:"Vous êtes sur l'espace directeur.",
+    screenAdmin:"Vous êtes sur l'espace administrateur."
+  };
+  function getActiveScreenId(){return document.querySelector('.screen.active')?.id||'screenSplash';}
+  function getActiveNavId(screenId){
+    const map={screenPassenger:'.nav-btn.active',screenReceiver:'.recv-nav-btn.active',screenChauffeur:'.ch-nav-btn.active',screenDirecteur:'.dir-nav-btn.active',screenAdmin:'.admin-tab.active'};
+    const sel=map[screenId];if(!sel)return null;
+    const el=document.querySelector(sel);
+    return el?el.id:null;
+  }
+  function getGuideText(){
+    const screenId=getActiveScreenId();
+    const navId=getActiveNavId(screenId);
+    return GUIDE_TEXTS[screenId+'|'+navId]||FALLBACK[screenId]||"Aucune information disponible pour cet écran.";
+  }
+  let speaking=false;
+  window.toggleVoiceGuide=()=>{
+    const btn=document.getElementById('voiceGuideBtn');
+    if(!('speechSynthesis' in window)){notify('⚠️','Indisponible',"L'assistance vocale n'est pas supportée sur ce navigateur.");return;}
+    if(speaking){speechSynthesis.cancel();speaking=false;if(btn)btn.textContent='🔊';return;}
+    const text=getGuideText();
+    const utter=new SpeechSynthesisUtterance(text);
+    utter.lang='fr-FR';utter.rate=0.95;
+    utter.onend=()=>{speaking=false;if(btn)btn.textContent='🔊';};
+    utter.onerror=()=>{speaking=false;if(btn)btn.textContent='🔊';};
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utter);
+    speaking=true;if(btn)btn.textContent='⏸';
+  };
+  function injectVoiceGuideButton(){
+    if(document.getElementById('voiceGuideBtn'))return;
+    const btn=document.createElement('button');
+    btn.id='voiceGuideBtn';
+    btn.textContent='🔊';
+    btn.title="Assistance vocale : explique cet écran";
+    btn.style.cssText='position:fixed;right:16px;bottom:78px;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#009A44,#059669);color:#fff;border:none;font-size:20px;box-shadow:0 4px 14px #00000055;z-index:9999;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+    btn.onclick=()=>window.toggleVoiceGuide();
+    document.body.appendChild(btn);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',injectVoiceGuideButton);else injectVoiceGuideButton();
+})();
+// ===================== FIN ASSISTANCE VOCALE =====================
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
 </div>
-                                                                                                    
