@@ -1294,7 +1294,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import{getFirestore,doc,setDoc,getDoc,getDocFromCache,updateDoc,addDoc,collection,collectionGroup,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove,runTransaction}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,setDoc,getDoc,getDocFromCache,updateDoc,addDoc,collection,collectionGroup,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove,runTransaction,writeBatch}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{getStorage,ref as storageRef,uploadBytes,getDownloadURL}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
@@ -3716,6 +3716,50 @@ window.showScanPanel=async(walletId,qrBal,qrTs,qrUid)=>{
     document.body.appendChild(div);}
   catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
+// ── Vente de ticket atomique, partagée par les 3 chemins d'encaissement ──
+// (scan QR en ligne, confirmation manuelle depuis la liste, encaissement
+// hors-ligne). Toutes les écritures (débit passager, crédit receveur,
+// création du ticket, historique, notif, suppression de la demande) passent
+// ensemble : soit tout est écrit, soit rien ne l'est — plus de risque de
+// solde débité sans ticket, ou de ticket sans débit, même en cas de coupure
+// réseau en plein milieu. Les règles Firestore vérifient en plus, à la
+// création du ticket, que le montant débité au passager == montant crédité
+// au receveur == prix du ticket (cf. firestore.rules).
+async function commitTicketSale(paxUid,price,ticketBase,{pendingId=null,offline=false}={}){
+  const tkRef=doc(collection(db,'tickets'));
+  const paxTkRef=doc(collection(db,'users',paxUid,'tickets'));
+  const paxHistRef=doc(collection(db,'users',paxUid,'history'));
+  const notifRef=doc(collection(db,'notifications'));
+  const ticket={...ticketBase,ts:serverTimestamp()};
+  if(offline){
+    // WriteBatch : contrairement à runTransaction, ça fonctionne hors-ligne
+    // (mise en file locale, synchro automatique plus tard) tout en restant
+    // atomique — les règles de conservation sont vérifiées à la synchro.
+    const batch=writeBatch(db);
+    batch.update(doc(db,'users',paxUid),{balance:increment(-price)});
+    batch.set(paxHistRef,{type:'ticket',label:`Ticket ${S.profile.gie}/${S.profile.vehicle}`,amount:-price,ts:serverTimestamp()});
+    batch.update(doc(db,'users',S.uid),{today:increment(price),count:increment(1),balance:increment(price)});
+    batch.set(tkRef,ticket);
+    batch.set(paxTkRef,{...ticket,ticketId:tkRef.id});
+    if(pendingId)batch.delete(doc(db,'pending',pendingId));
+    batch.set(notifRef,{toUid:paxUid,type:'ticket_validated',passenger:ticketBase.passenger,read:false,ts:serverTimestamp()});
+    batch.commit().then(()=>console.log('[sync] ticket',ticketBase.sn,'synchronisé ✅')).catch(err=>console.warn('[sync] ticket',ticketBase.sn,'erreur',err));
+  }else{
+    await runTransaction(db,async(tx)=>{
+      const paxSnap=await tx.get(doc(db,'users',paxUid));
+      const pax=paxSnap.data();
+      if((pax.balance||0)<price)throw new Error('Le passager n\'a pas assez.');
+      tx.update(doc(db,'users',paxUid),{balance:increment(-price)});
+      tx.set(paxHistRef,{type:'ticket',label:`Ticket ${S.profile.gie}/${S.profile.vehicle} → ${ticketBase.to}`,amount:-price,ts:serverTimestamp()});
+      tx.update(doc(db,'users',S.uid),{today:increment(price),count:increment(1),balance:increment(price)});
+      tx.set(tkRef,ticket);
+      tx.set(paxTkRef,{...ticket,ticketId:tkRef.id});
+      if(pendingId)tx.delete(doc(db,'pending',pendingId));
+      tx.set(notifRef,{toUid:paxUid,type:'ticket_validated',passenger:ticketBase.passenger,read:false,ts:serverTimestamp()});
+    });
+  }
+  return{...ticket,id:tkRef.id};
+}
 window.confirmManualScan=async(paxUid,walletId,passengerName,paxBalance)=>{
   const amt=parseInt(document.getElementById('manualAmt')?.value||0);const dest=(document.getElementById('manualDest')?.value||'').trim()||'—';
   if(!amt||amt<50){notify('⚠️','Montant','Entrez un montant valide (min 50 FCFA).');return;}
@@ -3725,35 +3769,25 @@ window.confirmManualScan=async(paxUid,walletId,passengerName,paxBalance)=>{
   loader(offline?'Encaissement (hors-ligne)…':'Encaissement…');
   const now=new Date();
   const sn=`${walletId.replace('TP-','')}*M${Math.floor(1000+Math.random()*9000)}`;
-  const ticket={busId:S.profile.walletId,busUid:S.uid,gie:S.profile.gie,vehicle:S.profile.vehicle,ligne:S.profile.ligne,zone:S.profile.zone,from:'—',to:dest,section:0,price:amt,method:'cash',passengerId:walletId,passengerUid:paxUid,passenger:passengerName,date:now.toLocaleDateString('fr-FR'),time:now.toLocaleTimeString('fr-FR'),sn,offline,ts:serverTimestamp()};
+  const ticketBase={busId:S.profile.walletId,busUid:S.uid,gie:S.profile.gie,vehicle:S.profile.vehicle,ligne:S.profile.ligne,zone:S.profile.zone,from:'—',to:dest,section:0,price:amt,method:'cash',passengerId:walletId,passengerUid:paxUid,passenger:passengerName,date:now.toLocaleDateString('fr-FR'),time:now.toLocaleTimeString('fr-FR'),sn,offline};
   try{
-    // Référence générée localement (aucun réseau requis) pour avoir l'ID tout de suite.
-    const tkRef=doc(collection(db,'tickets'));
-    const writes=()=>Promise.all([
-      updateDoc(doc(db,'users',paxUid),{balance:increment(-amt)}),
-      addDoc(collection(db,'users',paxUid,'history'),{type:'ticket',label:`Ticket ${S.profile.gie}/${S.profile.vehicle}`,amount:-amt,ts:serverTimestamp()}),
-      updateDoc(doc(db,'users',S.uid),{today:increment(amt),count:increment(1),balance:increment(amt)}),
-      setDoc(tkRef,ticket),
-      addDoc(collection(db,'users',paxUid,'tickets'),{...ticket,ticketId:tkRef.id})
-    ]);
-    if(offline){
-      // Hors-ligne : on n'attend PAS le serveur (sinon ça bloque tant qu'il n'y a pas de réseau).
-      // Les écritures partent en file d'attente locale et se synchronisent automatiquement plus tard.
-      writes().then(()=>console.log('[sync] ticket',sn,'synchronisé ✅')).catch(err=>console.warn('[sync] ticket',sn,'erreur',err));
-    }else{
-      await writes();
-    }
+    const ticket=await commitTicketSale(paxUid,amt,ticketBase,{offline});
     loader('',false);
     document.getElementById('scanPanelEl')?.remove();
     refreshRecvStats();loadRecvTickets();
-    showTicketData({...ticket,id:tkRef.id});
+    showTicketData(ticket);
     notify(offline?'📴':'✅',offline?'Encaissé (hors-ligne)':'Encaissé !',fmt(amt)+' FCFA de '+passengerName+(offline?' · sync en attente':''));
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 window.confirmScan=async()=>{
   if(!currentScanReq)return;const req=currentScanReq;loader('Validation ticket…');
-  try{const paxSnap=await getDoc(doc(db,'users',req.paxUid));const pax=paxSnap.data();if((pax.balance||0)<req.price){loader('',false);notify('❌','Solde insuffisant','Le passager n\'a pas assez.');return;}const now=new Date();const sn=`${req.passengerId.replace('TP-','')}*R${Math.floor(1000+Math.random()*9000)}`;const ticket={busId:S.profile.walletId,busUid:S.uid,gie:S.profile.gie,vehicle:S.profile.vehicle,ligne:S.profile.ligne,zone:S.profile.zone,from:req.from,to:req.to,section:req.section,price:req.price,method:'cash',passengerId:req.passengerId,passengerUid:req.paxUid,passenger:req.passengerName,date:now.toLocaleDateString('fr-FR'),time:now.toLocaleTimeString('fr-FR'),sn,ts:serverTimestamp()};await updateDoc(doc(db,'users',req.paxUid),{balance:increment(-req.price)});await addDoc(collection(db,'users',req.paxUid,'history'),{type:'ticket',label:`Ticket ${S.profile.gie}/${S.profile.vehicle} → ${req.to}`,amount:-req.price,ts:serverTimestamp()});await updateDoc(doc(db,'users',S.uid),{today:increment(req.price),count:increment(1),balance:increment(req.price)});const tkRef=await addDoc(collection(db,'tickets'),ticket);await addDoc(collection(db,'users',req.paxUid,'tickets'),{...ticket,ticketId:tkRef.id});await deleteDoc(doc(db,'pending',req.id));await addDoc(collection(db,'notifications'),{toUid:req.paxUid,type:'ticket_validated',passenger:req.passengerName,read:false,ts:serverTimestamp()});loader('',false);document.getElementById('scanPanelEl')?.remove();currentScanReq=null;refreshRecvStats();loadRecvTickets();showTicketData({...ticket,id:tkRef.id});notify('✅','Ticket validé !',fmt(req.price)+' FCFA encaissés.');}
-  catch(e){loader('',false);notify('❌','Erreur',e.message);}
+  try{
+    const now=new Date();
+    const sn=`${req.passengerId.replace('TP-','')}*R${Math.floor(1000+Math.random()*9000)}`;
+    const ticketBase={busId:S.profile.walletId,busUid:S.uid,gie:S.profile.gie,vehicle:S.profile.vehicle,ligne:S.profile.ligne,zone:S.profile.zone,from:req.from,to:req.to,section:req.section,price:req.price,method:'cash',passengerId:req.passengerId,passengerUid:req.paxUid,passenger:req.passengerName,date:now.toLocaleDateString('fr-FR'),time:now.toLocaleTimeString('fr-FR'),sn};
+    const ticket=await commitTicketSale(req.paxUid,req.price,ticketBase,{pendingId:req.id});
+    loader('',false);document.getElementById('scanPanelEl')?.remove();currentScanReq=null;refreshRecvStats();loadRecvTickets();showTicketData(ticket);notify('✅','Ticket validé !',fmt(req.price)+' FCFA encaissés.');
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 window.rejectScan=async()=>{if(!currentScanReq)return;await deleteDoc(doc(db,'pending',currentScanReq.id));document.getElementById('scanPanelEl')?.remove();currentScanReq=null;notify('❌','Rejeté','Demande annulée.');};
 function attachPendingListener(){const q=query(collection(db,'pending'),where('busUid','==',S.uid));unsubPending=onSnapshot(q,snap=>{renderPendingList(snap.docs.map(d=>({id:d.id,...d.data()})));});}
@@ -3763,8 +3797,13 @@ function showRecvToast(type,data){const stack=document.getElementById('recvToast
 function renderPendingList(items){const cont=document.getElementById('recvPending');if(!items.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:16px 0;font-size:13px;">Aucune demande en attente.</div>';return;}cont.innerHTML=items.map(req=>`<div style="background:#FFD10010;border:1px solid #FFD10044;border-radius:18px;padding:14px 16px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><div style="font-size:28px;">⏳</div><div style="flex:1;"><div style="font-weight:900;font-size:14px;">${req.passengerName||'Passager'}</div><div style="color:#888;font-size:11px;font-family:'JetBrains Mono',monospace;">${req.from}→${req.to} · S${req.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${req.price} F</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><button onclick="recvRejectTicket('${req.id}')" style="background:linear-gradient(135deg,#DF0024,#B71C1C);border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✗ Annuler</button><button onclick="recvConfirmTicket('${req.id}','${req.passengerUid}','${req.passengerId}','${req.passengerName}','${req.from}','${req.to}','${req.section}',${req.price},'${req.busUid||S.uid}')" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✅ Confirmer</button></div></div>`).join('');}
 window.recvConfirmTicket=async(pendingId,paxUid,passengerId,passengerName,from,to,section,price,busUid)=>{
   price=parseInt(price);section=parseInt(section);loader('Validation…');
-  try{const paxSnap=await getDoc(doc(db,'users',paxUid));const pax=paxSnap.data();if((pax.balance||0)<price){loader('',false);notify('❌','Solde insuffisant','Le passager n\'a pas assez.');return;}const now=new Date();const sn=`${passengerId.replace('TP-','')}*R${Math.floor(1000+Math.random()*9000)}`;const ticket={busId:S.profile.walletId,busUid:S.uid,gie:S.profile.gie,vehicle:S.profile.vehicle,ligne:S.profile.ligne,zone:S.profile.zone,from,to,section,price,method:'cash',passengerId,passengerUid:paxUid,passenger:passengerName,date:now.toLocaleDateString('fr-FR'),time:now.toLocaleTimeString('fr-FR'),sn,ts:serverTimestamp()};await updateDoc(doc(db,'users',paxUid),{balance:increment(-price)});await addDoc(collection(db,'users',paxUid,'history'),{type:'ticket',label:`Ticket ${S.profile.gie}/${S.profile.vehicle} → ${to}`,amount:-price,ts:serverTimestamp()});await updateDoc(doc(db,'users',S.uid),{today:increment(price),count:increment(1),balance:increment(price)});const tkRef=await addDoc(collection(db,'tickets'),ticket);await addDoc(collection(db,'users',paxUid,'tickets'),{...ticket,ticketId:tkRef.id});await deleteDoc(doc(db,'pending',pendingId));await addDoc(collection(db,'notifications'),{toUid:paxUid,type:'ticket_validated',passenger:passengerName,read:false,ts:serverTimestamp()});loader('',false);refreshRecvStats();loadRecvTickets();showTicketData({...ticket,id:tkRef.id});notify('✅','Ticket validé !',fmt(price)+' FCFA encaissés.');}
-  catch(e){loader('',false);notify('❌','Erreur',e.message);}
+  try{
+    const now=new Date();
+    const sn=`${passengerId.replace('TP-','')}*R${Math.floor(1000+Math.random()*9000)}`;
+    const ticketBase={busId:S.profile.walletId,busUid:S.uid,gie:S.profile.gie,vehicle:S.profile.vehicle,ligne:S.profile.ligne,zone:S.profile.zone,from,to,section,price,method:'cash',passengerId,passengerUid:paxUid,passenger:passengerName,date:now.toLocaleDateString('fr-FR'),time:now.toLocaleTimeString('fr-FR'),sn};
+    const ticket=await commitTicketSale(paxUid,price,ticketBase,{pendingId});
+    loader('',false);refreshRecvStats();loadRecvTickets();showTicketData(ticket);notify('✅','Ticket validé !',fmt(price)+' FCFA encaissés.');
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 window.recvRejectTicket=async(pendingId)=>{try{await deleteDoc(doc(db,'pending',pendingId));notify('❌','Annulé','Demande refusée.');}catch(e){notify('❌','Erreur',e.message);}};
 window.recvToggleGeo=()=>{
@@ -3913,86 +3952,7 @@ function handleQR(raw){stopCamera();raw=(raw||'').trim();
   }
   const ticketM=raw.match(/tatapay:\/\/ticket\/(.+)/i);if(ticketM){if(document.getElementById('modalTicketFlow')?.style.display==='flex')closeModal('modalTicketFlow');importTicketFromQR(ticketM[1]);return;}const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);const balM=raw.match(/[?&]bal=(\d+)/);const tM=raw.match(/[?&]t=(\d+)/);const uidM=raw.match(/[?&]uid=([A-Za-z0-9]+)/);const resaM=raw.match(/tatapay:\/\/resa\/([A-Za-z0-9]+)/i);const resaShareM=raw.match(/tatapay:\/\/resashare\/([A-Za-z0-9]+)\/([A-Za-z0-9]+)/i);const qrBal=balM?parseInt(balM[1],10):null;const qrTs=tM?parseInt(tM[1],10):null;const qrUid=uidM?uidM[1]:null;if(S.camMode==='ticket'&&!ticketM){notify('❌','QR invalide','Ce n\'est pas un QR de ticket.');return;}if(S.camMode==='resa-scan'){if(resaShareM){confirmShareBoardingScan(resaShareM[1],resaShareM[2]);return;}if(!resaM){notify('❌','QR invalide','Ce n\'est pas un ticket de réservation.');return;}confirmBoardingScan(resaM[1],qrUid);}else if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Contenu: '+raw.slice(0,40));return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId,qrBal,qrTs,qrUid);}else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}}
 
-// ===================== ASSISTANCE VOCALE (guide contextuel) =====================
-(function(){
-  const GUIDE_TEXTS={
-    // Passager
-    'screenPassenger|nav-home':"Vous êtes sur l'accueil passager. Vous voyez votre solde en haut, avec un Q R code que le receveur peut scanner pour vous faire payer. Les boutons en dessous permettent de recharger votre compte, d'acheter un ticket, ou d'envoyer de l'argent à un ami.",
-    'screenPassenger|nav-tickets':"Vous êtes dans l'onglet Tickets. Vous retrouvez ici vos dix derniers tickets de bus. Appuyez sur un ticket pour l'afficher en grand, même sans connexion internet.",
-    'screenPassenger|nav-history':"Vous êtes dans l'historique. Toutes vos transactions apparaissent ici : recharges, tickets, transferts, du plus récent au plus ancien.",
-    'screenPassenger|nav-resa':"Vous êtes dans l'onglet Réservation. Vous pouvez réserver une place à l'avance sur un trajet, et retrouver vos réservations en cours.",
-    'screenPassenger|nav-profile':"Vous êtes sur votre profil. Vous y trouvez vos informations personnelles et votre Q R code de portefeuille.",
-    // Receveur
-    'screenReceiver|rnav-home':"Vous êtes sur l'accueil receveur. Vous pouvez scanner le Q R code d'un passager pour encaisser un paiement, ou lui remettre un ticket.",
-    'screenReceiver|rnav-trajets':"Vous êtes dans l'onglet Trajets. Vous y gérez les trajets disponibles pour les réservations.",
-    'screenReceiver|rnav-tickets':"Vous êtes dans l'onglet Tickets. Vous voyez ici les dix derniers tickets que vous avez délivrés.",
-    'screenReceiver|rnav-historique':"Vous êtes dans l'historique receveur. Vous y retrouvez vos versements, vos tickets et vos notifications.",
-    // Chauffeur
-    'screenChauffeur|cnav-recettes':"Vous êtes sur les recettes du chauffeur. Vous voyez le résumé de l'argent encaissé pour vos trajets.",
-    'screenChauffeur|cnav-receveur':"Vous êtes dans l'onglet Receveur. Vous pouvez suivre ou gérer le receveur qui travaille avec vous.",
-    'screenChauffeur|cnav-bus':"Vous êtes dans l'onglet Bus. Vous y gérez les informations de votre véhicule.",
-    'screenChauffeur|cnav-resa':"Vous êtes dans l'onglet Réservations. Vous pouvez confirmer l'embarquement des passagers ayant réservé une place à l'avance.",
-    // Directeur
-    'screenDirecteur|dnav-home':"Vous êtes sur le tableau de bord du directeur. Vous avez une vue d'ensemble de l'activité de votre réseau de transport.",
-    'screenDirecteur|dnav-owners':"Vous êtes dans l'onglet Propriétaires. Vous gérez ici les propriétaires de véhicules rattachés à votre réseau.",
-    'screenDirecteur|dnav-receivers':"Vous êtes dans l'onglet Receveurs. Vous gérez ici les receveurs de votre réseau.",
-    // Admin
-    'screenAdmin|adminTab-dashboard':"Vous êtes sur le tableau de bord administrateur, avec une vue globale de toute la plateforme.",
-    'screenAdmin|adminTab-directeurs':"Vous gérez ici la liste des directeurs de réseau.",
-    'screenAdmin|adminTab-owners':"Vous gérez ici la liste des propriétaires de véhicules.",
-    'screenAdmin|adminTab-users':"Vous gérez ici l'ensemble des utilisateurs de l'application.",
-    'screenAdmin|adminTab-withdrawals':"Vous gérez ici les demandes de retrait en attente.",
-  };
-  const FALLBACK={
-    screenSplash:"Bienvenue sur TataPay, l'application de paiement pour le transport à Dakar.",
-    screenPublicTicket:"Vous consultez un ticket partagé.",
-    screenAuth:"Vous êtes sur l'écran de connexion. Entrez votre numéro de téléphone pour vous connecter ou créer un compte.",
-    screenPending:"Votre compte est en attente de validation.",
-    screenPassenger:"Vous êtes sur l'espace passager.",
-    screenReceiver:"Vous êtes sur l'espace receveur.",
-    screenChauffeur:"Vous êtes sur l'espace chauffeur.",
-    screenDirecteur:"Vous êtes sur l'espace directeur.",
-    screenAdmin:"Vous êtes sur l'espace administrateur."
-  };
-  function getActiveScreenId(){return document.querySelector('.screen.active')?.id||'screenSplash';}
-  function getActiveNavId(screenId){
-    const map={screenPassenger:'.nav-btn.active',screenReceiver:'.recv-nav-btn.active',screenChauffeur:'.ch-nav-btn.active',screenDirecteur:'.dir-nav-btn.active',screenAdmin:'.admin-tab.active'};
-    const sel=map[screenId];if(!sel)return null;
-    const el=document.querySelector(sel);
-    return el?el.id:null;
-  }
-  function getGuideText(){
-    const screenId=getActiveScreenId();
-    const navId=getActiveNavId(screenId);
-    return GUIDE_TEXTS[screenId+'|'+navId]||FALLBACK[screenId]||"Aucune information disponible pour cet écran.";
-  }
-  let speaking=false;
-  window.toggleVoiceGuide=()=>{
-    const btn=document.getElementById('voiceGuideBtn');
-    if(!('speechSynthesis' in window)){notify('⚠️','Indisponible',"L'assistance vocale n'est pas supportée sur ce navigateur.");return;}
-    if(speaking){speechSynthesis.cancel();speaking=false;if(btn)btn.textContent='🔊';return;}
-    const text=getGuideText();
-    const utter=new SpeechSynthesisUtterance(text);
-    utter.lang='fr-FR';utter.rate=0.95;
-    utter.onend=()=>{speaking=false;if(btn)btn.textContent='🔊';};
-    utter.onerror=()=>{speaking=false;if(btn)btn.textContent='🔊';};
-    speechSynthesis.cancel();
-    speechSynthesis.speak(utter);
-    speaking=true;if(btn)btn.textContent='⏸';
-  };
-  function injectVoiceGuideButton(){
-    if(document.getElementById('voiceGuideBtn'))return;
-    const btn=document.createElement('button');
-    btn.id='voiceGuideBtn';
-    btn.textContent='🔊';
-    btn.title="Assistance vocale : explique cet écran";
-    btn.style.cssText='position:fixed;right:16px;bottom:78px;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#009A44,#059669);color:#fff;border:none;font-size:20px;box-shadow:0 4px 14px #00000055;z-index:9999;cursor:pointer;display:flex;align-items:center;justify-content:center;';
-    btn.onclick=()=>window.toggleVoiceGuide();
-    document.body.appendChild(btn);
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',injectVoiceGuideButton);else injectVoiceGuideButton();
-})();
-// ===================== FIN ASSISTANCE VOCALE =====================
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
 </div>
+                                                                                                    
