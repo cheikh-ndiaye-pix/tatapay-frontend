@@ -4136,6 +4136,36 @@ window.playAssistGuide=()=>{
   }
 };
 
+// ---- Base de réponses gratuite par mots-clés (aucune API payante requise) ----
+// Chaque entrée : une liste de mots-clés (sans accents, en minuscules) + une réponse toute faite.
+// Le premier mot-clé trouvé dans la question de l'utilisateur déclenche la réponse correspondante.
+const ASSIST_FAQ=[
+  {kw:['inscri','creer un compte','nouveau compte'],a:"Pour vous inscrire, ouvrez l'écran de connexion, choisissez votre profil (Passager, Receveur, Propriétaire ou Directeur), remplissez le formulaire puis validez. Si vous êtes receveur, ajoutez votre photo et les deux photos (recto et verso) de votre carte d'identité."},
+  {kw:['carte identite','cni','recto','verso','piece identite'],a:"Pour la carte d'identité, il faut ajouter deux photos séparées : une du recto (le devant) et une du verso (le derrière). Les deux sont obligatoires pour valider votre inscription en tant que receveur."},
+  {kw:['connexion','se connecter','mot de passe','password'],a:"Pour vous connecter, entrez votre email et votre mot de passe sur l'écran de connexion. Si vous avez oublié votre mot de passe, utilisez le lien de réinitialisation présent sur cet écran."},
+  {kw:['scanner','qr code','scan bus'],a:"Pour scanner, ouvrez l'appareil photo dans l'application et pointez-le vers le QR code du bus ou du wallet. Le montant s'affiche automatiquement une fois le code reconnu."},
+  {kw:['ticket','acheter un ticket','payer le trajet'],a:"Pour acheter un ticket, scannez le QR code du bus, choisissez votre trajet, puis validez le paiement avec votre solde TataPay."},
+  {kw:['recharge','recharger','ajouter de largent','depot'],a:"Pour recharger votre compte, allez dans votre espace, appuyez sur Recharger, choisissez Wave, Orange Money ou Free Money, puis suivez les instructions de paiement."},
+  {kw:['retrait','retirer','sortir mon argent','withdraw'],a:"Pour retirer votre argent, allez dans votre espace, appuyez sur Retirer, indiquez le montant et votre numéro de téléphone Mobile Money, puis validez."},
+  {kw:['receveur','devenir receveur'],a:"Pour devenir receveur, inscrivez-vous en choisissant le profil Receveur, ajoutez votre photo et les photos recto/verso de votre carte d'identité, puis choisissez le propriétaire du bus. Votre demande sera validée par ce propriétaire."},
+  {kw:['proprietaire','owner','devenir proprietaire'],a:"Pour devenir propriétaire, inscrivez-vous en choisissant le profil Propriétaire et remplissez les informations de votre entreprise. Votre demande sera validée par l'administrateur."},
+  {kw:['solde','balance','combien jai'],a:"Votre solde s'affiche en haut de votre espace personnel. Il change automatiquement après chaque paiement, recharge ou retrait."},
+  {kw:['historique','mes transactions'],a:"L'historique de vos transactions se trouve dans l'onglet Historique de votre espace. Vous y voyez tous vos paiements, recharges et retraits."},
+  {kw:['commission'],a:"TataPay prélève une petite commission de 2% sur chaque ticket vendu, qui sert à faire fonctionner la plateforme."},
+  {kw:['hors ligne','offline','sans internet'],a:"Le paiement hors-ligne permet de payer même sans connexion internet, grâce à un QR code signé. La synchronisation se fait automatiquement dès que la connexion revient."},
+  {kw:['wallet','portefeuille'],a:"Votre wallet est votre compte TataPay. Chaque utilisateur a un identifiant unique visible sous forme de QR code, à scanner pour recevoir ou envoyer de l'argent."}
+];
+function normalizeText(s){return(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+function localAssistantAnswer(question,section){
+  const norm=normalizeText(question);
+  for(const entry of ASSIST_FAQ){
+    if(entry.kw.some(k=>norm.includes(k)))return entry.a;
+  }
+  // Repli : le texte du guide de la section actuelle
+  const guide=(ASSIST_SECTIONS[section]||ASSIST_SECTIONS.general).fr;
+  return "Je n'ai pas de réponse exacte pour cette question précise, mais voici ce qui peut vous aider : "+guide;
+}
+
 // ---- Chat texte / vocal -> réponse (audio) ----
 function assistAddMsg(text,who){
   const log=document.getElementById('assistChatLog');
@@ -4146,15 +4176,11 @@ window.assistSend=async()=>{
   const input=document.getElementById('assistInput');
   const q=input.value.trim();if(!q)return;
   assistAddMsg(q,'user');input.value='';
-  assistAddMsg('…',(document.getElementById('assistChatLog').lastChild?'bot':'bot'));
+  assistAddMsg('…','bot');
   const thinking=document.getElementById('assistChatLog').lastChild;
-  try{
-    const answer=await callAssistantAI(q,assistState.lang);
-    thinking.textContent=answer;
-    speakAssistAnswer(answer,assistState.lang);
-  }catch(e){
-    thinking.textContent="⚠️ L'assistant n'est pas encore connecté à un serveur de réponse. (Cette fonctionnalité nécessite une API côté serveur à configurer.)";
-  }
+  const answer=await callAssistantAI(q,assistState.lang,assistState.section);
+  thinking.textContent=answer;
+  speakAssistAnswer(answer,assistState.lang);
 };
 function speakAssistAnswer(text,lang){
   speechSynthesis.cancel();
@@ -4162,13 +4188,17 @@ function speakAssistAnswer(text,lang){
   u.lang=lang==='fr'?'fr-FR':'fr-FR'; // pas de voix wolof native dans les navigateurs ; on utilise le français comme repli
   speechSynthesis.speak(u);
 }
-// Point de branchement pour l'IA : à connecter à une fonction serveur (Firebase Cloud Function)
-// qui appelle l'API Claude avec une clé côté serveur. Voir note fournie séparément.
-async function callAssistantAI(question,lang){
-  if(!window.ASSIST_API_URL)throw new Error('no-backend-configured');
-  const r=await fetch(window.ASSIST_API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,lang})});
-  const j=await r.json();
-  return j.answer||'…';
+// Essaie d'abord un serveur IA (si configuré via window.ASSIST_API_URL + clé côté serveur).
+// Sinon, utilise gratuitement la base de réponses par mots-clés (aucun coût, fonctionne hors-ligne).
+async function callAssistantAI(question,lang,section){
+  if(window.ASSIST_API_URL){
+    try{
+      const r=await fetch(window.ASSIST_API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,lang})});
+      const j=await r.json();
+      if(j.answer)return j.answer;
+    }catch(e){console.warn('[assist backend]',e);}
+  }
+  return localAssistantAnswer(question,section);
 }
 
 // ---- Micro (dictée vocale de la question) ----
