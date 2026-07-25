@@ -227,6 +227,41 @@ select.input-field option{background:#0c1f12;color:#fff;}
 .ch-toast.out{animation:notifOut .3s ease forwards;}
 .track-modal-inner{padding:0;}
 .track-map-wrap{height:280px;border-radius:16px;overflow:hidden;border:1px solid #009A4444;background:#0a1e15;margin-top:12px;}
+/* ===== Assistant ===== */
+#assistFab{position:fixed;right:16px;bottom:90px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#CC4400);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 6px 18px #00000066;cursor:pointer;z-index:60;border:2px solid #ffffff22;}
+#assistFab.pulse{animation:assistPulse 1.8s ease-in-out infinite;}
+@keyframes assistPulse{0%,100%{box-shadow:0 6px 18px #00000066,0 0 0 0 #FF6B0055;}50%{box-shadow:0 6px 18px #00000066,0 0 0 10px #FF6B0000;}}
+#assistCTA{position:fixed;right:16px;bottom:152px;max-width:210px;background:#0c1f12;border:1px solid #FF6B0044;border-radius:14px;padding:9px 12px;z-index:60;box-shadow:0 6px 16px #00000055;animation:fadeIn .3s;}
+#assistCTA .wl{font-weight:800;font-size:12px;color:#FDEF42;line-height:1.4;}
+#assistCTA .fr{font-size:10.5px;color:#999;margin-top:2px;line-height:1.3;}
+#assistCTA .close-cta{position:absolute;top:-7px;right:-7px;width:18px;height:18px;border-radius:50%;background:#333;color:#ccc;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.assist-panel-overlay{position:fixed;inset:0;background:#000000aa;z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.assist-panel-overlay.open{display:flex;}
+.assist-panel{width:100%;max-width:430px;background:#0a1a0d;border-radius:22px 22px 0 0;max-height:86vh;display:flex;flex-direction:column;animation:slideUp .25s ease;border-top:1px solid #FF6B0033;}
+.assist-head{padding:16px 18px 12px;border-bottom:1px solid #ffffff10;display:flex;justify-content:space-between;align-items:center;}
+.assist-lang-toggle{display:flex;background:#ffffff0d;border-radius:10px;padding:3px;gap:3px;}
+.assist-lang-toggle button{flex:1;border:none;background:transparent;color:#888;font-size:11px;font-weight:800;padding:6px 10px;border-radius:8px;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
+.assist-lang-toggle button.active{background:var(--orange);color:#fff;}
+.assist-body{flex:1;overflow-y:auto;padding:14px 18px;}
+.assist-guide-card{background:#FF6B0012;border:1px solid #FF6B0038;border-radius:14px;padding:14px;margin-bottom:14px;}
+.assist-guide-text{font-size:13px;color:#ddd;line-height:1.6;margin-bottom:10px;}
+.assist-play-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--orange),#CC4400);color:#fff;font-weight:800;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
+.assist-chat-log{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;}
+.assist-msg{max-width:85%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.5;}
+.assist-msg.user{align-self:flex-end;background:var(--g);color:#fff;border-bottom-right-radius:4px;}
+.assist-msg.bot{align-self:flex-start;background:#ffffff10;color:#eee;border-bottom-left-radius:4px;}
+.assist-input-row{display:flex;gap:8px;padding:10px 18px 18px;border-top:1px solid #ffffff10;}
+.assist-input-row input{flex:1;padding:11px 14px;border-radius:12px;border:1.5px solid #2a3a2a;background:#ffffff0d;color:#fff;font-size:13px;font-family:'Space Grotesk',sans-serif;outline:none;}
+.assist-mic-btn{width:42px;height:42px;border-radius:12px;border:none;background:#ffffff12;color:#fff;font-size:17px;cursor:pointer;flex-shrink:0;}
+.assist-mic-btn.recording{background:var(--r);animation:assistPulse 1s infinite;}
+.assist-send-btn{width:42px;height:42px;border-radius:12px;border:none;background:var(--orange);color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;}
+.admin-assist-card{background:#ffffff08;border:1px solid #ffffff15;border-radius:14px;padding:14px;margin-bottom:12px;}
+.admin-assist-title{font-weight:800;font-size:14px;color:#FDEF42;margin-bottom:8px;}
+.admin-assist-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
+.admin-rec-btn{display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:10px;border:none;background:#DF002422;color:#ff8a8a;border:1px solid #DF002444;font-weight:700;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
+.admin-rec-btn.recording{background:var(--r);color:#fff;animation:assistPulse 1s infinite;}
+.admin-assist-audio{flex:1;min-width:160px;height:34px;}
+.admin-assist-fr-text{width:100%;min-height:70px;border-radius:10px;border:1.5px solid #2a3a2a;background:#ffffff0d;color:#fff;font-size:12px;padding:9px 11px;font-family:'Space Grotesk',sans-serif;resize:vertical;margin-bottom:8px;}
 </style>
 </head>
 <body>
@@ -361,7 +396,8 @@ select.input-field option{background:#0c1f12;color:#fff;}
       </div>
       <div class="input-wrap"><label class="input-label">Adresse / Quartier *</label><input class="input-field" id="authAddress" placeholder="ex: Médina, Dakar"/></div>
       <div class="input-wrap"><label class="input-label">Photo (selfie) *</label><input class="input-field" id="authRecvPhoto" type="file" accept="image/*"/></div>
-      <div class="input-wrap"><label class="input-label">Pièce d'identité (CNI) *</label><input class="input-field" id="authRecvIdDoc" type="file" accept="image/*,.pdf"/></div>
+      <div class="input-wrap"><label class="input-label">Pièce d'identité (CNI) — Recto *</label><input class="input-field" id="authRecvIdDocRecto" type="file" accept="image/*,.pdf"/></div>
+      <div class="input-wrap"><label class="input-label">Pièce d'identité (CNI) — Verso *</label><input class="input-field" id="authRecvIdDocVerso" type="file" accept="image/*,.pdf"/></div>
       <div class="input-wrap"><label class="input-label">Diplôme (optionnel)</label><input class="input-field" id="authRecvDiploma" type="file" accept="image/*,.pdf"/></div>
       <div class="input-wrap"><label class="input-label">CV (optionnel)</label><input class="input-field" id="authRecvCV" type="file" accept="image/*,.pdf"/></div>
       <div style="background:#009A4412;border:1px solid #009A4444;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#34d399;line-height:1.6;">✅ Aucun frais d'inscription n'est demandé.</div>
@@ -875,6 +911,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <button class="admin-nav-btn" onclick="switchAdminTab('owners')">🚌 Propriétaires</button>
     <button class="admin-nav-btn" onclick="switchAdminTab('users')">👥 Utilisateurs</button>
     <button class="admin-nav-btn" onclick="switchAdminTab('withdrawals')">💸 Retraits</button>
+    <button class="admin-nav-btn" onclick="switchAdminTab('assistant')">🎙️ Assistant</button>
   </div>
   <div style="flex:1;overflow-y:auto;padding:16px;">
     <div class="admin-tab active" id="adminTab-dashboard">
@@ -927,6 +964,12 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <button class="admin-action-btn" style="background:#ffffff10;color:#aaa;border:1px solid #ffffff20;" onclick="filterWithdrawals('all')">Tous</button>
       </div>
       <div id="adminWithdrawList"></div>
+    </div>
+    <div class="admin-tab" id="adminTab-assistant">
+      <div style="background:#FF6B0012;border:1px solid #FF6B0038;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FFB07A;line-height:1.6;">
+        🎙️ Pour chaque partie de l'app : enregistrez une explication <b>en wolof</b> (audio). Le texte en <b>français</b> est déjà pré-rempli, vous pouvez le modifier.
+      </div>
+      <div id="adminAssistList"></div>
     </div>
   </div>
 </div>
@@ -1337,7 +1380,7 @@ function notify(icon,title,body){['sygostIcon','sygostTitle','sygostBody'].forEa
 window.hideSygost=()=>document.getElementById('sygostNotif').classList.remove('show');
 function renderQR(id,text,size=130,ecc='H'){const el=document.getElementById(id);if(!el)return;el.innerHTML='';const canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;canvas.style.cssText=`border-radius:4px;display:block;width:${size}px;height:${size}px;background:#fff;`;el.appendChild(canvas);function fallbackImg(){el.innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&ecc=${ecc}&margin=10" width="${size}" height="${size}" style="border-radius:4px;display:block;" onerror="this.parentNode.innerHTML='<div style=&quot;color:#f66;font-size:11px;text-align:center;padding:20px;&quot;>QR indisponible (hors-ligne)</div>'"/>`;}if(window.QRCode&&QRCode.toCanvas){QRCode.toCanvas(canvas,text,{width:size,margin:2,errorCorrectionLevel:ecc},(err)=>{if(err){console.warn('[renderQR] local gen failed, fallback',err);fallbackImg();}});}else{console.warn('[renderQR] QRCode lib not loaded, fallback');fallbackImg();}}
 function renderMerchantQR(id,p,size=160){const el=document.getElementById(id);if(!el)return;const data=`tatapay://bus/${p.walletId}?gie=${encodeURIComponent(p.gie||'')}&vehicle=${encodeURIComponent(p.vehicle||'')}&ligne=${encodeURIComponent(p.ligne||'')}&zone=${encodeURIComponent(p.zone||'')}`;el.innerHTML=`<div style="background:#fff;border-radius:14px;padding:12px;display:inline-block;"><div id="${id}_canvasWrap"></div><div style="margin-top:8px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:#333;font-weight:700;line-height:1.6;">${p.gie||'—'} · ${p.vehicle||'—'} · Ligne ${p.ligne||'—'}<br><span style="color:#009A44;">${p.walletId}</span></div></div>`;const wrap=document.getElementById(id+'_canvasWrap');if(!wrap)return;const canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;canvas.style.cssText=`display:block;border-radius:4px;width:${size}px;height:${size}px;`;wrap.appendChild(canvas);function fallbackImg(){wrap.innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(data)}&ecc=H&margin=10" width="${size}" height="${size}" style="display:block;border-radius:4px;" onerror="this.parentNode.innerHTML='<div style=&quot;color:#c00;font-size:11px;padding:20px;&quot;>QR indisponible (hors-ligne)</div>'"/>`;}if(window.QRCode&&QRCode.toCanvas){QRCode.toCanvas(canvas,data,{width:size,margin:1,errorCorrectionLevel:'H'},(err)=>{if(err){console.warn('[renderMerchantQR] local gen failed, fallback',err);fallbackImg();}});}else{console.warn('[renderMerchantQR] QRCode lib not loaded, fallback');fallbackImg();}}
-function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id)?.classList.add('active');}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id)?.classList.add('active');if(window.setAssistScreen)window.setAssistScreen(id);}
 function statusBadge(s){const map={pending:'badge-pending',approved:'badge-approved',active:'badge-approved',rejected:'badge-rejected',suspended:'badge-suspended',done:'badge-done'};const label={pending:'En attente',approved:'Approuvé',active:'Actif',rejected:'Refusé',suspended:'Suspendu',done:'Traité'};return`<span class="admin-badge ${map[s]||'badge-pending'}">${label[s]||s}</span>`;}
 function roleBadge(r){const c={passenger:'#009A44',receiver:'#FF6B00',owner:'#7c3aed',chauffeur:'#059669',directeur:'#0ea5e9'};const ic={passenger:'🧍',receiver:'🎫',owner:'🚌',chauffeur:'👨‍✈️',directeur:'🏢'};return`<span style="font-size:11px;padding:3px 10px;border-radius:8px;background:${c[r]||'#444'}22;color:${c[r]||'#aaa'};border:1px solid ${c[r]||'#444'}44;font-weight:800;">${ic[r]||'👤'} ${r}</span>`;}
 function fmt(n){return Math.round(n||0).toLocaleString('fr-FR');}
@@ -1414,7 +1457,8 @@ window.doAuth=async()=>{
       if(S.authRole==='receiver'){
         if(!document.getElementById('authRecvCGU')?.checked){loader('',false);notify('⚠️','CGU','Veuillez accepter les CGU et la politique de confidentialité.');return;}
         if(!document.getElementById('authRecvPhoto')?.files[0]){loader('',false);notify('⚠️','Photo','Ajoutez votre photo (selfie).');return;}
-        if(!document.getElementById('authRecvIdDoc')?.files[0]){loader('',false);notify('⚠️','Pièce d\'identité','Ajoutez un scan/photo de votre pièce d\'identité.');return;}
+        if(!document.getElementById('authRecvIdDocRecto')?.files[0]){loader('',false);notify('⚠️','Pièce d\'identité','Ajoutez la photo recto de votre pièce d\'identité.');return;}
+        if(!document.getElementById('authRecvIdDocVerso')?.files[0]){loader('',false);notify('⚠️','Pièce d\'identité','Ajoutez la photo verso de votre pièce d\'identité.');return;}
       }
       _authFlowInProgress=true;
       const cred=await createUserWithEmailAndPassword(auth,email,pass);
@@ -1432,11 +1476,13 @@ window.doAuth=async()=>{
         const docUrls={};
         try{
           const photoFile=document.getElementById('authRecvPhoto')?.files[0];
-          const idFile=document.getElementById('authRecvIdDoc')?.files[0];
+          const idFileRecto=document.getElementById('authRecvIdDocRecto')?.files[0];
+          const idFileVerso=document.getElementById('authRecvIdDocVerso')?.files[0];
           const diplomaFile=document.getElementById('authRecvDiploma')?.files[0];
           const cvFile=document.getElementById('authRecvCV')?.files[0];
           if(photoFile){const r=storageRef(storage,`receivers/${uid}/photo_${Date.now()}_${photoFile.name}`);await uploadBytes(r,photoFile);docUrls.photoUrl=await getDownloadURL(r);}
-          if(idFile){const r=storageRef(storage,`receivers/${uid}/cni_${Date.now()}_${idFile.name}`);await uploadBytes(r,idFile);docUrls.idDocUrl=await getDownloadURL(r);}
+          if(idFileRecto){const r=storageRef(storage,`receivers/${uid}/cni_recto_${Date.now()}_${idFileRecto.name}`);await uploadBytes(r,idFileRecto);docUrls.idDocRectoUrl=await getDownloadURL(r);}
+          if(idFileVerso){const r=storageRef(storage,`receivers/${uid}/cni_verso_${Date.now()}_${idFileVerso.name}`);await uploadBytes(r,idFileVerso);docUrls.idDocVersoUrl=await getDownloadURL(r);}
           if(diplomaFile){const r=storageRef(storage,`receivers/${uid}/diplome_${Date.now()}_${diplomaFile.name}`);await uploadBytes(r,diplomaFile);docUrls.diplomaUrl=await getDownloadURL(r);}
           if(cvFile){const r=storageRef(storage,`receivers/${uid}/cv_${Date.now()}_${cvFile.name}`);await uploadBytes(r,cvFile);docUrls.cvUrl=await getDownloadURL(r);}
         }catch(e){console.warn('[receiver docs upload]',e);notify('⚠️','Documents','Compte créé, mais l\'envoi de certains documents a échoué. Vous pourrez les renvoyer plus tard.');}
@@ -4016,7 +4062,234 @@ function handleQR(raw){stopCamera();raw=(raw||'').trim();
   }
   const ticketM=raw.match(/tatapay:\/\/ticket\/(.+)/i);if(ticketM){if(document.getElementById('modalTicketFlow')?.style.display==='flex')closeModal('modalTicketFlow');importTicketFromQR(ticketM[1]);return;}const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);const balM=raw.match(/[?&]bal=(\d+)/);const tM=raw.match(/[?&]t=(\d+)/);const uidM=raw.match(/[?&]uid=([A-Za-z0-9]+)/);const resaM=raw.match(/tatapay:\/\/resa\/([A-Za-z0-9]+)/i);const resaShareM=raw.match(/tatapay:\/\/resashare\/([A-Za-z0-9]+)\/([A-Za-z0-9]+)/i);const qrBal=balM?parseInt(balM[1],10):null;const qrTs=tM?parseInt(tM[1],10):null;const qrUid=uidM?uidM[1]:null;if(S.camMode==='ticket'&&!ticketM){notify('❌','QR invalide','Ce n\'est pas un QR de ticket.');return;}if(S.camMode==='resa-scan'){if(resaShareM){confirmShareBoardingScan(resaShareM[1],resaShareM[2]);return;}if(!resaM){notify('❌','QR invalide','Ce n\'est pas un ticket de réservation.');return;}confirmBoardingScan(resaM[1],qrUid);}else if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Contenu: '+raw.slice(0,40));return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId,qrBal,qrTs,qrUid);}else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}}
 
+/* ============ ASSISTANT (guide Wolof/Français + questions texte/vocal) ============ */
+// Texte français rédigé par défaut pour chaque partie de l'app (l'admin peut le modifier).
+// L'audio Wolof, lui, est enregistré par l'admin directement dans l'app.
+const ASSIST_SECTIONS={
+  general:{title:'Bienvenue',fr:"Bienvenue sur TataPay. Choisissez votre profil (Passager, Receveur, Propriétaire ou Directeur) pour commencer, puis suivez les instructions à l'écran."},
+  auth:{title:'Inscription / Connexion',fr:"Pour vous inscrire, choisissez votre profil, remplissez vos informations, puis validez. Si vous êtes receveur, vous devez ajouter une photo de vous et les deux photos (recto et verso) de votre carte d'identité. Si vous avez déjà un compte, appuyez sur Connexion."},
+  passenger:{title:'Espace Passager',fr:"Ici vous pouvez scanner le QR code du bus pour acheter un ticket, voir votre solde, recharger votre compte et consulter l'historique de vos trajets."},
+  receiver:{title:'Espace Receveur',fr:"Ici vous scannez le wallet du passager pour encaisser le prix du trajet, vous suivez les recettes du jour et vous versez l'argent au propriétaire du bus."},
+  chauffeur:{title:'Espace Chauffeur',fr:"Ici vous consultez les informations du bus, le receveur assigné et l'historique des trajets effectués."},
+  directeur:{title:'Espace Directeur',fr:"Ici vous gérez les propriétaires, les receveurs et les chauffeurs de votre GIE : vous approuvez les candidatures et assignez les bus."},
+  admin:{title:'Espace Admin',fr:"Ici vous supervisez toute la plateforme : utilisateurs, directeurs, propriétaires, retraits et vous gérez les messages de l'assistant."}
+};
+const ASSIST_SCREEN_MAP={screenAuth:'auth',screenPassenger:'passenger',screenReceiver:'receiver',screenChauffeur:'chauffeur',screenDirecteur:'directeur',screenAdmin:'admin'};
+let assistState={section:'general',lang:'wo',data:{},recording:false,mediaRecorder:null,chunks:[],recognizing:false};
+
+window.setAssistScreen=(screenId)=>{
+  const key=ASSIST_SCREEN_MAP[screenId]||'general';
+  assistState.section=key;
+  const fab=document.getElementById('assistFab');
+  const cta=document.getElementById('assistCTA');
+  const showWidget=screenId!=='screenPublicTicket'&&screenId!=='screenPending';
+  if(fab)fab.style.display=showWidget?'flex':'none';
+  if(cta&&showWidget&&!sessionStorage.getItem('assistCTAHidden_'+key))cta.style.display='block';else if(cta)cta.style.display='none';
+};
+window.hideAssistCTA=()=>{sessionStorage.setItem('assistCTAHidden_'+assistState.section,'1');document.getElementById('assistCTA').style.display='none';};
+
+async function loadAssistData(key){
+  const fallback=ASSIST_SECTIONS[key]||ASSIST_SECTIONS.general;
+  try{
+    const snap=await getDoc(doc(db,'assistantGuides',key));
+    if(snap.exists()){const d=snap.data();return{title:fallback.title,fr:d.frenchText||fallback.fr,audioUrl:d.wolofAudioUrl||null};}
+  }catch(e){console.warn('[assist load]',e);}
+  return{title:fallback.title,fr:fallback.fr,audioUrl:null};
+}
+
+window.openAssistant=async()=>{
+  document.getElementById('assistCTA').style.display='none';
+  document.getElementById('assistPanelOverlay').classList.add('open');
+  document.getElementById('assistFab').classList.remove('pulse');
+  const key=assistState.section;
+  document.getElementById('assistSectionLabel').textContent=(ASSIST_SECTIONS[key]||ASSIST_SECTIONS.general).title;
+  document.getElementById('assistGuideText').textContent='Chargement…';
+  const data=await loadAssistData(key);
+  assistState.data=data;
+  updateAssistGuideDisplay();
+};
+window.closeAssistant=()=>{document.getElementById('assistPanelOverlay').classList.remove('open');speechSynthesis.cancel();const a=document.getElementById('assistAudioPlayer');if(a){a.pause();}};
+
+window.setAssistLang=(lang)=>{
+  assistState.lang=lang;
+  document.getElementById('assistLangWo').classList.toggle('active',lang==='wo');
+  document.getElementById('assistLangFr').classList.toggle('active',lang==='fr');
+  updateAssistGuideDisplay();
+};
+function updateAssistGuideDisplay(){
+  const d=assistState.data||{};
+  const isWo=assistState.lang==='wo';
+  document.getElementById('assistGuideText').textContent=isWo?(d.audioUrl?"🎧 Message vocal disponible en wolof — appuyez sur Écouter.":"Aucun message vocal wolof n'a encore été enregistré pour cette partie. Essayez la version française."):d.fr;
+  document.getElementById('assistPlayLabel').textContent=isWo?'Écouter en Wolof':'Écouter en Français';
+}
+window.playAssistGuide=()=>{
+  const d=assistState.data||{};
+  if(assistState.lang==='wo'){
+    if(!d.audioUrl){notify('⚠️','Pas encore','Aucun audio wolof enregistré pour cette partie.');return;}
+    let audio=document.getElementById('assistAudioPlayer');
+    if(!audio){audio=document.createElement('audio');audio.id='assistAudioPlayer';document.body.appendChild(audio);}
+    audio.src=d.audioUrl;audio.play().catch(()=>notify('⚠️','Erreur','Lecture audio impossible.'));
+  }else{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(d.fr||'');u.lang='fr-FR';u.rate=0.98;
+    speechSynthesis.speak(u);
+  }
+};
+
+// ---- Chat texte / vocal -> réponse (audio) ----
+function assistAddMsg(text,who){
+  const log=document.getElementById('assistChatLog');
+  const div=document.createElement('div');div.className='assist-msg '+who;div.textContent=text;
+  log.appendChild(div);log.scrollTop=log.scrollHeight;
+}
+window.assistSend=async()=>{
+  const input=document.getElementById('assistInput');
+  const q=input.value.trim();if(!q)return;
+  assistAddMsg(q,'user');input.value='';
+  assistAddMsg('…',(document.getElementById('assistChatLog').lastChild?'bot':'bot'));
+  const thinking=document.getElementById('assistChatLog').lastChild;
+  try{
+    const answer=await callAssistantAI(q,assistState.lang);
+    thinking.textContent=answer;
+    speakAssistAnswer(answer,assistState.lang);
+  }catch(e){
+    thinking.textContent="⚠️ L'assistant n'est pas encore connecté à un serveur de réponse. (Cette fonctionnalité nécessite une API côté serveur à configurer.)";
+  }
+};
+function speakAssistAnswer(text,lang){
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang=lang==='fr'?'fr-FR':'fr-FR'; // pas de voix wolof native dans les navigateurs ; on utilise le français comme repli
+  speechSynthesis.speak(u);
+}
+// Point de branchement pour l'IA : à connecter à une fonction serveur (Firebase Cloud Function)
+// qui appelle l'API Claude avec une clé côté serveur. Voir note fournie séparément.
+async function callAssistantAI(question,lang){
+  if(!window.ASSIST_API_URL)throw new Error('no-backend-configured');
+  const r=await fetch(window.ASSIST_API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,lang})});
+  const j=await r.json();
+  return j.answer||'…';
+}
+
+// ---- Micro (dictée vocale de la question) ----
+let assistRecognition=null;
+window.assistMicToggle=()=>{
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){notify('⚠️','Micro','Dictée vocale non disponible sur ce navigateur.');return;}
+  const btn=document.getElementById('assistMicBtn');
+  if(assistState.recognizing){assistRecognition?.stop();return;}
+  assistRecognition=new SR();
+  assistRecognition.lang=assistState.lang==='fr'?'fr-FR':'fr-FR';
+  assistRecognition.interimResults=false;
+  assistRecognition.onstart=()=>{assistState.recognizing=true;btn.classList.add('recording');};
+  assistRecognition.onend=()=>{assistState.recognizing=false;btn.classList.remove('recording');};
+  assistRecognition.onerror=()=>{assistState.recognizing=false;btn.classList.remove('recording');};
+  assistRecognition.onresult=(e)=>{document.getElementById('assistInput').value=e.results[0][0].transcript;};
+  assistRecognition.start();
+};
+
+// ---- Panneau Admin : enregistrer un message wolof + éditer le texte français ----
+window.renderAdminAssistList=async()=>{
+  const cont=document.getElementById('adminAssistList');if(!cont)return;
+  cont.innerHTML='<div style="text-align:center;color:#555;padding:16px;font-size:12px;">Chargement…</div>';
+  const keys=Object.keys(ASSIST_SECTIONS);
+  const cards=await Promise.all(keys.map(async(key)=>{
+    const d=await loadAssistData(key);
+    return`<div class="admin-assist-card" id="adminAssist-${key}">
+      <div class="admin-assist-title">${ASSIST_SECTIONS[key].title}</div>
+      <div class="admin-assist-row">
+        <button class="admin-rec-btn" id="rec-btn-${key}" onclick="adminToggleRecord('${key}')">🎙️ <span id="rec-label-${key}">Enregistrer (Wolof)</span></button>
+        ${d.audioUrl?`<audio class="admin-assist-audio" controls src="${d.audioUrl}"></audio><button class="admin-rec-btn" onclick="adminDeleteAudio('${key}')">🗑️</button>`:'<span style="font-size:11px;color:#666;">Aucun audio</span>'}
+      </div>
+      <textarea class="admin-assist-fr-text" id="fr-text-${key}">${(d.fr||'').replace(/</g,'&lt;')}</textarea>
+      <button class="admin-action-btn btn-approve" onclick="adminSaveAssistFrench('${key}')">💾 Enregistrer le texte français</button>
+    </div>`;
+  }));
+  cont.innerHTML=cards.join('');
+};
+window.adminSaveAssistFrench=async(key)=>{
+  const val=document.getElementById('fr-text-'+key).value.trim();
+  try{await setDoc(doc(db,'assistantGuides',key),{frenchText:val,updatedAt:serverTimestamp()},{merge:true});notify('✅','Enregistré','Texte français mis à jour.');}
+  catch(e){notify('❌','Erreur','Échec de l\'enregistrement.');}
+};
+window.adminDeleteAudio=async(key)=>{
+  try{await setDoc(doc(db,'assistantGuides',key),{wolofAudioUrl:''},{merge:true});notify('✅','Supprimé','Audio wolof retiré.');renderAdminAssistList();}
+  catch(e){notify('❌','Erreur','Échec de la suppression.');}
+};
+window.adminToggleRecord=async(key)=>{
+  const btn=document.getElementById('rec-btn-'+key),label=document.getElementById('rec-label-'+key);
+  if(assistState.recording===key){
+    assistState.mediaRecorder?.stop();
+    return;
+  }
+  if(assistState.recording){notify('⚠️','En cours','Terminez l\'enregistrement en cours d\'abord.');return;}
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const rec=new MediaRecorder(stream);
+    const chunks=[];
+    rec.ondataavailable=(e)=>chunks.push(e.data);
+    rec.onstop=async()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      assistState.recording=false;btn.classList.remove('recording');label.textContent='Enregistrer (Wolof)';
+      const blob=new Blob(chunks,{type:'audio/webm'});
+      try{
+        label.textContent='Envoi…';
+        const r=storageRef(storage,`assistantGuides/${key}/wolof_${Date.now()}.webm`);
+        await uploadBytes(r,blob);
+        const url=await getDownloadURL(r);
+        await setDoc(doc(db,'assistantGuides',key),{wolofAudioUrl:url,updatedAt:serverTimestamp()},{merge:true});
+        notify('✅','Enregistré','Message wolof sauvegardé.');
+        renderAdminAssistList();
+      }catch(e){console.warn('[assist upload]',e);notify('❌','Erreur','Échec de l\'envoi audio.');label.textContent='Enregistrer (Wolof)';}
+    };
+    rec.start();
+    assistState.mediaRecorder=rec;assistState.recording=key;
+    btn.classList.add('recording');label.textContent='⏹ Arrêter';
+  }catch(e){notify('⚠️','Micro','Accès au micro refusé ou indisponible.');}
+};
+// Charger la liste admin quand l'onglet Assistant est ouvert
+const _origSwitchAdminTab=window.switchAdminTab;
+window.switchAdminTab=(tab)=>{_origSwitchAdminTab(tab);if(tab==='assistant')renderAdminAssistList();};
+
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
+
+<div id="assistFab" class="pulse" onclick="openAssistant()" title="Assistant">🎙️</div>
+<div id="assistCTA" style="display:none;">
+  <div class="close-cta" onclick="event.stopPropagation();hideAssistCTA()">✕</div>
+  <div class="wl">Bësal fii ngir dégg ndigal yi 🎙️</div>
+  <div class="fr">(Appuie ici pour écouter les instructions)</div>
+</div>
+
+<div class="assist-panel-overlay" id="assistPanelOverlay" onclick="if(event.target===this)closeAssistant()">
+  <div class="assist-panel" onclick="event.stopPropagation()">
+    <div class="assist-head">
+      <div>
+        <div style="font-weight:900;font-size:16px;">🎙️ Assistant TataPay</div>
+        <div style="font-size:11px;color:#888;" id="assistSectionLabel">—</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="assist-lang-toggle">
+          <button id="assistLangWo" class="active" onclick="setAssistLang('wo')">Wolof</button>
+          <button id="assistLangFr" onclick="setAssistLang('fr')">Français</button>
+        </div>
+        <button onclick="closeAssistant()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px;cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>
+    <div class="assist-body">
+      <div class="assist-guide-card">
+        <div class="assist-guide-text" id="assistGuideText">Chargement du guide…</div>
+        <button class="assist-play-btn" onclick="playAssistGuide()">🔊 <span id="assistPlayLabel">Écouter en Wolof</span></button>
+      </div>
+      <div style="font-size:11px;color:#666;text-align:center;margin-bottom:10px;">— ou pose ta question ci-dessous —</div>
+      <div class="assist-chat-log" id="assistChatLog"></div>
+    </div>
+    <div class="assist-input-row">
+      <input id="assistInput" placeholder="Écris ta question…" onkeydown="if(event.key==='Enter')assistSend()"/>
+      <button class="assist-mic-btn" id="assistMicBtn" onclick="assistMicToggle()">🎤</button>
+      <button class="assist-send-btn" onclick="assistSend()">➤</button>
+    </div>
+  </div>
+</div>
 </div>
                                                                                                     
