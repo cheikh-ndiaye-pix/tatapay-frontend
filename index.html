@@ -3747,7 +3747,7 @@ window.doAddTrajet=async()=>{
 window.delTrajet=async(id)=>{try{await deleteDoc(doc(db,'users',S.uid,'destinations',id));loadTrajets();}catch(e){notify('❌','Erreur',e.message);}};
 async function loadTrajets(){if(S.role!=='receiver')return;const snap=await getDocs(collection(db,'users',S.uid,'destinations'));const cont=document.getElementById('trajetsList');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;color:#555;">Aucune section. Cliquez + Ajouter.</div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div class="trajet-row"><div style="flex:1;"><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.from}-->${t.to}</div><div style="color:#888;font-size:11px;margin-top:2px;">Section: ${t.section} == <strong style="color:var(--y);">${t.price} FCFA</strong></div></div><button onclick="delTrajet('${d.id}')" style="background:#DF002422;border:1px solid #DF002444;border-radius:10px;padding:8px;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>`;}).join('');}
 window.openTicketFlow=()=>{resetFlow();openModal('modalTicketFlow');};
-window.resetFlow=()=>{setDots(0);['ticketStep0','ticketStep1','ticketStep3'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('ticketStep0').style.display='block';S.ticketBus=null;S.ticketSection=null;document.getElementById('ticketPriceDisplay').textContent='— FCFA';document.getElementById('btnPayTicket').disabled=true;};
+window.resetFlow=()=>{setDots(0);['ticketStep0','ticketStep1','ticketStep3'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('ticketStep0').style.display='block';S.ticketBus=null;S.ticketSection=null;document.getElementById('ticketPriceDisplay').textContent='— FCFA';document.getElementById('btnPayTicket').disabled=true;if(unsubTicketWait){unsubTicketWait();unsubTicketWait=null;}};
 function setDots(s){for(let i=0;i<3;i++){const d=document.getElementById('tdot'+i);if(d)d.className='step-dot'+(i<s?' done':i===s?' active':'');}}
 async function loadBusInFlow(walletId){
   loader('Chargement bus…');
@@ -3758,9 +3758,37 @@ window.goPay=async()=>{
   if(!S.ticketSection){notify('⚠️','Section','Choisissez une destination.');return;}
   if((S.profile.balance||0)<S.ticketSection.price){notify('❌','Solde','Solde insuffisant.');return;}
   const recv=S.ticketBus;const sec=S.ticketSection;loader('Envoi…');
-  try{['pv_gie','pv_vehicle','pv_ligne','pv_trajet','pv_section','pv_price','pv_zone'].forEach((id,i)=>document.getElementById(id).textContent=[recv.gie,recv.vehicle,recv.ligne,`${sec.from}-->${sec.to}`,sec.section,sec.price,recv.zone][i]);await addDoc(collection(db,'pending'),{passengerId:S.profile.walletId,passengerUid:S.uid,passengerName:S.profile.name,busId:recv.walletId,busUid:recv.uid,from:sec.from,to:sec.to,section:sec.section,price:sec.price,ts:serverTimestamp()});await addDoc(collection(db,'notifications'),{toUid:recv.uid,type:'ticket_request',passenger:S.profile.name,from:sec.from,to:sec.to,price:sec.price,read:false,ts:serverTimestamp()});loader('',false);document.getElementById('ticketStep1').style.display='none';document.getElementById('ticketStep3').style.display='block';setDots(2);notify('✅','Demande envoyée','En attente du receveur.');}
+  try{['pv_gie','pv_vehicle','pv_ligne','pv_trajet','pv_section','pv_price','pv_zone'].forEach((id,i)=>document.getElementById(id).textContent=[recv.gie,recv.vehicle,recv.ligne,`${sec.from}-->${sec.to}`,sec.section,sec.price,recv.zone][i]);const ticketRequestSentAt=Date.now();const pendingRef=await addDoc(collection(db,'pending'),{passengerId:S.profile.walletId,passengerUid:S.uid,passengerName:S.profile.name,busId:recv.walletId,busUid:recv.uid,from:sec.from,to:sec.to,section:sec.section,price:sec.price,ts:serverTimestamp()});await addDoc(collection(db,'notifications'),{toUid:recv.uid,type:'ticket_request',passenger:S.profile.name,from:sec.from,to:sec.to,price:sec.price,read:false,ts:serverTimestamp()});loader('',false);document.getElementById('ticketStep1').style.display='none';document.getElementById('ticketStep3').style.display='block';setDots(2);notify('✅','Demande envoyée','En attente du receveur.');attachTicketWaitListener(pendingRef.id,ticketRequestSentAt);}
   catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
+// Écoute en temps réel : dès que le receveur traite la demande (accepte ou refuse),
+// on quitte automatiquement l'écran "En attente" pour montrer directement le ticket
+// (ou un message de refus), sans que le passager ait besoin de rafraîchir manuellement.
+let unsubTicketWait=null;
+function attachTicketWaitListener(pendingId,ticketRequestSentAt){
+  if(unsubTicketWait)unsubTicketWait();
+  unsubTicketWait=onSnapshot(doc(db,'pending',pendingId),async(snap)=>{
+    if(snap.exists())return; // toujours en attente du receveur
+    if(unsubTicketWait){unsubTicketWait();unsubTicketWait=null;}
+    try{
+      const tkSnap=await getDocs(query(collection(db,'users',S.uid,'tickets'),orderBy('ts','desc'),limit(1)));
+      const t=tkSnap.empty?null:tkSnap.docs[0].data();
+      const ticketTs=t?.ts?.toMillis?.()||0;
+      if(t&&ticketTs>=ticketRequestSentAt-3000){
+        // ✅ Le receveur a validé : on ferme le flux d'achat et on affiche directement le ticket.
+        document.getElementById('modalTicketFlow').style.display='none';
+        resetFlow();
+        showTicketData(t);
+        notify('✅','Ticket validé !','Votre trajet est confirmé.');
+      }else{
+        // ❌ La demande a été supprimée sans création de ticket : refusée par le receveur.
+        document.getElementById('modalTicketFlow').style.display='none';
+        resetFlow();
+        notify('❌','Demande refusée','Le receveur a annulé votre demande.');
+      }
+    }catch(e){console.warn('[ticketWait]',e);resetFlow();document.getElementById('modalTicketFlow').style.display='none';}
+  });
+}
 let currentScanReq=null;
 window.showScanPanel=async(walletId,qrBal,qrTs,qrUid)=>{
   document.getElementById('scanPanelEl')?.remove();loader('Recherche passager…');
