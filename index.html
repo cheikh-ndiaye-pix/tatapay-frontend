@@ -967,7 +967,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
     </div>
     <div class="admin-tab" id="adminTab-assistant">
       <div style="background:#FF6B0012;border:1px solid #FF6B0038;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FFB07A;line-height:1.6;">
-        🎙️ Pour chaque partie de l'app : enregistrez une explication <b>en wolof</b> (audio). Le texte en <b>français</b> est déjà pré-rempli, vous pouvez le modifier.
+        🎙️ Pour chaque partie de l'app : les textes <b>français</b> et <b>wolof</b> sont lus automatiquement par une voix de synthèse (féminine). Vous pouvez corriger les deux textes ci-dessous. Vous pouvez aussi enregistrer un vrai audio wolof, qui sera utilisé en priorité sur la voix automatique.
       </div>
       <div id="adminAssistList"></div>
     </div>
@@ -4068,13 +4068,27 @@ window.ASSIST_API_URL='https://tatapay-backend-1.onrender.com/api/assistant';
 // Texte français rédigé par défaut pour chaque partie de l'app (l'admin peut le modifier).
 // L'audio Wolof, lui, est enregistré par l'admin directement dans l'app.
 const ASSIST_SECTIONS={
-  general:{title:'Bienvenue',fr:"Bienvenue sur TataPay. Choisissez votre profil (Passager, Receveur, Propriétaire ou Directeur) pour commencer, puis suivez les instructions à l'écran."},
-  auth:{title:'Inscription / Connexion',fr:"Pour vous inscrire, choisissez votre profil, remplissez vos informations, puis validez. Si vous êtes receveur, vous devez ajouter une photo de vous et les deux photos (recto et verso) de votre carte d'identité. Si vous avez déjà un compte, appuyez sur Connexion."},
-  passenger:{title:'Espace Passager',fr:"Ici vous pouvez scanner le QR code du bus pour acheter un ticket, voir votre solde, recharger votre compte et consulter l'historique de vos trajets."},
-  receiver:{title:'Espace Receveur',fr:"Ici vous scannez le wallet du passager pour encaisser le prix du trajet, vous suivez les recettes du jour et vous versez l'argent au propriétaire du bus."},
-  chauffeur:{title:'Espace Chauffeur',fr:"Ici vous consultez les informations du bus, le receveur assigné et l'historique des trajets effectués."},
-  directeur:{title:'Espace Directeur',fr:"Ici vous gérez les propriétaires, les receveurs et les chauffeurs de votre GIE : vous approuvez les candidatures et assignez les bus."},
-  admin:{title:'Espace Admin',fr:"Ici vous supervisez toute la plateforme : utilisateurs, directeurs, propriétaires, retraits et vous gérez les messages de l'assistant."}
+  general:{title:'Bienvenue',
+    fr:"Bienvenue sur TataPay, l'application de paiement pour les bus et cars rapides au Sénégal. Choisissez votre profil : Passager, Receveur, Propriétaire, Chauffeur ou Directeur. Chaque profil a son propre espace avec ses propres outils. Une fois inscrit et validé, suivez simplement les instructions à l'écran.",
+    wo:"Dalal ak diam ci TataPay, aplikasion bi ñuy fey ci kaar rapid yi ci Senegaal. Tann sa profil : Passager, Receveur, Propriétaire, Chauffeur walla Directeur. Profil bu ne am na sa espace ak jumtukaay yu ci bokk. Bu la nangu, topp rekk instruction yi ci écran bi."},
+  auth:{title:'Inscription / Connexion',
+    fr:"Pour vous inscrire, choisissez votre profil, remplissez votre nom, email, téléphone et mot de passe, puis validez. Si vous êtes receveur, ajoutez une photo de vous et les deux photos de votre carte d'identité, recto et verso, elles sont obligatoires. Si vous êtes propriétaire, chauffeur ou receveur, vous devez aussi choisir votre directeur ou propriétaire de rattachement, et votre demande sera examinée avant validation. Si vous avez déjà un compte, appuyez simplement sur Connexion et entrez votre email et mot de passe.",
+    wo:"Ngir nga inscrire, tann sa profil, bind sa tur, email, numero telefon ak mot de passe, topu ko valider. Su fekkee yaa nekk receveur, boole sa foto ak ñaari foto CNI bi, recto ak verso, dañu koy laaj lu wóor. Su fekkee yaa nekk propriétaire, chauffeur walla receveur, war nga tann it sa directeur walla propriétaire, te dañu di xool sa demande bi laata ñu nangu ko. Su fekkee am nga déjà compte, bësal rekk Connexion te bind sa email ak mot de passe."},
+  passenger:{title:'Espace Passager',
+    fr:"Dans ton espace Passager, tu vois ton solde TataPay en haut de l'écran, avec ton QR code personnel. Pour payer un trajet, appuie sur Acheter Ticket et scanne le QR code du bus. Tu peux Recharger ton compte via Wave, Orange Money ou Free Money, ou faire un Transfert à un ami en scannant son QR. L'onglet Bus en direct te montre les bus proches qui partagent leur position. L'onglet Tickets liste tes tickets, l'onglet Historique montre toutes tes transactions, et l'onglet Résa. te permet de réserver un trajet à l'avance. Ton Profil affiche ton QR wallet à montrer à un ami.",
+    wo:"Ci sa espace Passager, dinga gis sa solde TataPay ci kaw écran bi, ak sa QR code bu ci sa bopp. Ngir fey sa trajet, bësal Acheter Ticket te scanne QR code bus bi. Mën nga Recharger sa kaarce ci Wave, Orange Money walla Free Money, walla def Transfert ci say xarit ci scan sa QR. Onglet Bus en direct wone la bus yi jege te wone fi ñu nekk. Onglet Tickets won na say tiket, onglet Historique won na say transaction yépp, onglet Résa. mën nga résèrve sa trajet lu jiitu. Sa Profil won na sa QR wallet ngir won ko say xarit."},
+  receiver:{title:'Espace Receveur',
+    fr:"Dans ton espace Receveur, tu vois ton solde et un bouton Retirer mon argent pour envoyer tes gains vers Mobile Money. Utilise Scanner Passager pour encaisser un trajet, et Recharger Wallet pour créditer un passager en espèces. Le bouton Verser au propriétaire permet d'envoyer les recettes de la journée à ton propriétaire. Le QR marchand officiel s'affiche pour que les passagers puissent te scanner directement. Active le partage GPS pour montrer la position du bus en temps réel. L'onglet Trajets gère les sections et lignes, Tickets liste les tickets émis, et Historique montre tous tes versements et actions avec les totaux versé et encaissé.",
+    wo:"Ci sa espace Receveur, dinga gis sa solde ak bouton Retirer mon argent ngir yónnee say xaalis ci Mobile Money. Jëfandikoo Scanner Passager ngir encaisser trajet bu passager, ak Recharger Wallet ngir def crédit ci passager ci kaarce. Bouton Verser au propriétaire dafay yónnee xaalis bu bés bi ci sa propriétaire. QR marchand officiel dafa feeñ ngir passager yi mën lañu la scanner directement. Démarrel partage GPS bi ngir won position bus bi ci saa si. Onglet Trajets moom nañu section ak ligne yi, Tickets won na tiket yi ñu génère, te Historique won na say versement ak action yépp ak montant yi ñu vers te encaisse."},
+  chauffeur:{title:'Espace Chauffeur / Propriétaire',
+    fr:"Cet espace sert au chauffeur et au propriétaire du bus. Tu vois ton wallet, les recettes du jour encaissées par ton receveur, et un bouton pour Mettre en service ton bus. Si tu es propriétaire, ton solde et un bouton Retirer via PayTech apparaissent aussi. L'onglet Recettes montre les paiements en temps réel, l'historique des versements, les versements à confirmer, et des graphiques de performance par jour, semaine ou mois. L'onglet Receveur affiche les candidatures reçues et les informations du receveur assigné. L'onglet Bus donne les informations du véhicule, permet de signaler un problème, et d'activer le partage GPS avec une carte en direct. L'onglet Résa. gère les réservations et permet de scanner ou créer un nouveau trajet.",
+    wo:"Espace bii dafa jëfandikoo chauffeur ak propriétaire bus bi. Dinga gis sa wallet, xaalis yi sa receveur encaisse bés bi, ak bouton ngir Mettre en service sa bus. Su fekkee yaa nekk propriétaire, sa solde ak bouton Retirer via PayTech dañu feeñ itam. Onglet Recettes won na paiement yi ci saa si, historique versement yi, versement yi war ñu confirmer, ak graphique performance ci bés, ayubés walla weer. Onglet Receveur won na candidature yi ñu jot ak info receveur bi ñu assigner. Onglet Bus dafay won info bus bi, mën nga signaler problème, te démarrel partage GPS ak carte ci saa si. Onglet Résa. moom na résèrvation yi, mën nga scanner walla sos trajet bu bees."},
+  directeur:{title:'Espace Directeur',
+    fr:"Dans ton espace Directeur, tu supervises tout ton GIE. L'accueil montre les recettes encaissées, les tickets validés, les versements, les retraits et le solde net, filtrables par jour, semaine, mois ou total, avec un graphique d'évolution. Tu vois aussi le nombre de bus actifs et inactifs, les recettes par ligne, et un classement du jour par bus ou par receveur. La section Demandes à traiter te permet d'approuver ou refuser les propriétaires et receveurs. Le bouton Rapport génère un récapitulatif à partager par WhatsApp. L'onglet Propriétaires liste ceux que tu as approuvés avec leur position GPS en direct, et l'onglet Receveurs affiche tous tes receveurs.",
+    wo:"Ci sa espace Directeur, dinga topp sa GIE bépp. Accueil bi won na xaalis yi ñu encaisse, tiket yi ñu valide, versement yi, retrait yi ak solde net bi, mën nga filtre ci bés, ayubés, weer walla total, ak graphique évolution. Dinga gis itam limu bus yu actif ak yu inactif, xaalis ci ligne bu ne, ak classement bés bi ci bus walla ci receveur. Xew-xew Demandes à traiter dinga mën nangu walla bañ propriétaire ak receveur yi. Bouton Rapport dafay génère résumé ngir partager ci WhatsApp. Onglet Propriétaires won na ñi nga nangu ak fi ñu nekk ci GPS ci saa si, te onglet Receveurs won na say receveur yépp."},
+  admin:{title:'Espace Admin',
+    fr:"Dans l'espace Admin, tu supervises toute la plateforme TataPay. Le Dashboard affiche les statistiques globales : utilisateurs, passagers, receveurs, propriétaires, directeurs, chauffeurs, demandes en attente, tickets émis, retraits et commissions. L'onglet Directeurs et l'onglet Propriétaires permettent de rechercher et gérer chaque compte. L'onglet Utilisateurs permet de rechercher, filtrer par rôle, et supprimer plusieurs comptes en même temps. L'onglet Retraits filtre les demandes en attente ou traitées. L'onglet Assistant, enfin, te permet de modifier les textes français et wolof lus par l'assistant vocal pour chaque espace de l'application.",
+    wo:"Ci espace Admin, dinga topp plateforme TataPay bépp. Dashboard bi won na statistik yépp : utilisateur, passager, receveur, propriétaire, directeur, chauffeur, demande yu ci biir, tiket yi ñu génère, retrait ak commission. Onglet Directeurs ak onglet Propriétaires dinga mën seet te moom kompt bu ne. Onglet Utilisateurs dinga mën seet, filtre ci rôle, te far plusieurs kompt ci benn yoon. Onglet Retraits filtre demande yi ci biir walla yi ñu jappal. Onglet Assistant, moom, dinga mën soppi texte français ak wolof yi assistant vocal bi di jàng ngir espace bu ne ci application bi."}
 };
 const ASSIST_SCREEN_MAP={screenAuth:'auth',screenPassenger:'passenger',screenReceiver:'receiver',screenChauffeur:'chauffeur',screenDirecteur:'directeur',screenAdmin:'admin'};
 let assistState={section:'general',lang:'wo',data:{},recording:false,mediaRecorder:null,chunks:[],recognizing:false};
@@ -4094,9 +4108,23 @@ async function loadAssistData(key){
   const fallback=ASSIST_SECTIONS[key]||ASSIST_SECTIONS.general;
   try{
     const snap=await getDoc(doc(db,'assistantGuides',key));
-    if(snap.exists()){const d=snap.data();return{title:fallback.title,fr:d.frenchText||fallback.fr,audioUrl:d.wolofAudioUrl||null};}
+    if(snap.exists()){const d=snap.data();return{title:fallback.title,fr:d.frenchText||fallback.fr,wo:d.wolofText||fallback.wo||fallback.fr,audioUrl:d.wolofAudioUrl||null};}
   }catch(e){console.warn('[assist load]',e);}
-  return{title:fallback.title,fr:fallback.fr,audioUrl:null};
+  return{title:fallback.title,fr:fallback.fr,wo:fallback.wo||fallback.fr,audioUrl:null};
+}
+
+// Choisit une voix féminine si disponible pour la synthèse vocale (lecture des guides).
+let _cachedFemaleVoice=null;
+function pickFemaleVoice(langPrefix){
+  const voices=speechSynthesis.getVoices();
+  if(!voices||!voices.length)return null;
+  const candidates=voices.filter(v=>v.lang&&v.lang.toLowerCase().startsWith(langPrefix));
+  const pool=candidates.length?candidates:voices;
+  // Cherche un nom évoquant une voix féminine (les navigateurs ne donnent pas toujours le genre explicitement).
+  const femaleHints=/female|femme|amelie|amélie|audrey|marie|julie|celine|céline|charlotte|léa|lea|google français|samantha|zira|hortense/i;
+  let found=pool.find(v=>femaleHints.test(v.name));
+  if(!found)found=pool[0];
+  return found||null;
 }
 
 window.openAssistant=async()=>{
@@ -4121,22 +4149,31 @@ window.setAssistLang=(lang)=>{
 function updateAssistGuideDisplay(){
   const d=assistState.data||{};
   const isWo=assistState.lang==='wo';
-  document.getElementById('assistGuideText').textContent=isWo?(d.audioUrl?"🎧 Message vocal disponible en wolof — appuyez sur Écouter.":"Aucun message vocal wolof n'a encore été enregistré pour cette partie. Essayez la version française."):d.fr;
-  document.getElementById('assistPlayLabel').textContent=isWo?'Écouter en Wolof':'Écouter en Français';
+  document.getElementById('assistGuideText').textContent=isWo?(d.wo||d.fr):d.fr;
+  document.getElementById('assistPlayLabel').textContent=isWo?'🔊 Écouter en Wolof':'🔊 Écouter en Français';
 }
 window.playAssistGuide=()=>{
   const d=assistState.data||{};
-  if(assistState.lang==='wo'){
-    if(!d.audioUrl){notify('⚠️','Pas encore','Aucun audio wolof enregistré pour cette partie.');return;}
+  const isWo=assistState.lang==='wo';
+  // Priorité à un audio wolof enregistré à la main s'il existe ; sinon, voix de synthèse automatique.
+  if(isWo&&d.audioUrl){
     let audio=document.getElementById('assistAudioPlayer');
     if(!audio){audio=document.createElement('audio');audio.id='assistAudioPlayer';document.body.appendChild(audio);}
     audio.src=d.audioUrl;audio.play().catch(()=>notify('⚠️','Erreur','Lecture audio impossible.'));
-  }else{
-    speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(d.fr||'');u.lang='fr-FR';u.rate=0.98;
-    speechSynthesis.speak(u);
+    return;
   }
+  const text=isWo?(d.wo||d.fr):d.fr;
+  if(!text){notify('⚠️','Pas encore','Aucun texte disponible pour cette partie.');return;}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='fr-FR'; // pas de voix wolof native dans les navigateurs ; le moteur français lit le texte wolof phonétiquement
+  u.rate=0.95;
+  const voice=pickFemaleVoice('fr');
+  if(voice)u.voice=voice;
+  speechSynthesis.speak(u);
 };
+// Certains navigateurs chargent la liste des voix de façon asynchrone.
+if(typeof speechSynthesis!=='undefined'){speechSynthesis.onvoiceschanged=()=>{_cachedFemaleVoice=null;};}
 
 // ---- Base de réponses gratuite par mots-clés (aucune API payante requise) ----
 // Chaque entrée : une liste de mots-clés (sans accents, en minuscules) + une réponse toute faite.
@@ -4187,7 +4224,10 @@ window.assistSend=async()=>{
 function speakAssistAnswer(text,lang){
   speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(text);
-  u.lang=lang==='fr'?'fr-FR':'fr-FR'; // pas de voix wolof native dans les navigateurs ; on utilise le français comme repli
+  u.lang='fr-FR'; // pas de voix wolof native dans les navigateurs ; on utilise le moteur français comme repli
+  u.rate=0.95;
+  const voice=pickFemaleVoice('fr');
+  if(voice)u.voice=voice;
   speechSynthesis.speak(u);
 }
 // Essaie d'abord un serveur IA (si configuré via window.ASSIST_API_URL + clé côté serveur).
@@ -4229,12 +4269,17 @@ window.renderAdminAssistList=async()=>{
     const d=await loadAssistData(key);
     return`<div class="admin-assist-card" id="adminAssist-${key}">
       <div class="admin-assist-title">${ASSIST_SECTIONS[key].title}</div>
+      <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:800;">🇫🇷 Texte français</div>
+      <textarea class="admin-assist-fr-text" id="fr-text-${key}">${(d.fr||'').replace(/</g,'&lt;')}</textarea>
+      <button class="admin-action-btn btn-approve" onclick="adminSaveAssistFrench('${key}')" style="margin-bottom:14px;">💾 Enregistrer le texte français</button>
+      <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:800;">🇸🇳 Texte wolof (lu automatiquement)</div>
+      <textarea class="admin-assist-fr-text" id="wo-text-${key}">${(d.wo||'').replace(/</g,'&lt;')}</textarea>
+      <button class="admin-action-btn btn-approve" onclick="adminSaveAssistWolof('${key}')" style="margin-bottom:14px;">💾 Enregistrer le texte wolof</button>
+      <div style="font-size:11px;color:#888;margin-bottom:6px;font-weight:800;">🎙️ Audio wolof (optionnel, prioritaire sur la voix automatique)</div>
       <div class="admin-assist-row">
         <button class="admin-rec-btn" id="rec-btn-${key}" onclick="adminToggleRecord('${key}')">🎙️ <span id="rec-label-${key}">Enregistrer (Wolof)</span></button>
         ${d.audioUrl?`<audio class="admin-assist-audio" controls src="${d.audioUrl}"></audio><button class="admin-rec-btn" onclick="adminDeleteAudio('${key}')">🗑️</button>`:'<span style="font-size:11px;color:#666;">Aucun audio</span>'}
       </div>
-      <textarea class="admin-assist-fr-text" id="fr-text-${key}">${(d.fr||'').replace(/</g,'&lt;')}</textarea>
-      <button class="admin-action-btn btn-approve" onclick="adminSaveAssistFrench('${key}')">💾 Enregistrer le texte français</button>
     </div>`;
   }));
   cont.innerHTML=cards.join('');
@@ -4242,6 +4287,11 @@ window.renderAdminAssistList=async()=>{
 window.adminSaveAssistFrench=async(key)=>{
   const val=document.getElementById('fr-text-'+key).value.trim();
   try{await setDoc(doc(db,'assistantGuides',key),{frenchText:val,updatedAt:serverTimestamp()},{merge:true});notify('✅','Enregistré','Texte français mis à jour.');}
+  catch(e){notify('❌','Erreur','Échec de l\'enregistrement.');}
+};
+window.adminSaveAssistWolof=async(key)=>{
+  const val=document.getElementById('wo-text-'+key).value.trim();
+  try{await setDoc(doc(db,'assistantGuides',key),{wolofText:val,updatedAt:serverTimestamp()},{merge:true});notify('✅','Enregistré','Texte wolof mis à jour.');}
   catch(e){notify('❌','Erreur','Échec de l\'enregistrement.');}
 };
 window.adminDeleteAudio=async(key)=>{
