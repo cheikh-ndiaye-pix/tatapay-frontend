@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="TataPay"/>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
 <meta http-equiv="Pragma" content="no-cache"/>
-<meta http-equiv="Expires" content="0"/>
+<meta http-equiv="Expires" content="0"/>w
 <link rel="manifest" href="/manifest.json"/>
 <link rel="apple-touch-icon" href="/icons/icon-192.png"/>
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png"/>
@@ -1561,7 +1561,7 @@ async function attemptSessionRestore(user){
       }
       S.expectedLoginRole=null;_pendingAuthUser=null;
       S.uid=user.uid;S.profile=snap.data();S.role=S.profile.role;if(user.email===ADMIN_EMAIL){show('screenAdmin');loader('',false);loadAdminDashboard();startAdminRealtime();return;}loginUI();
-    }else{loader('',false);await signOut(auth);}
+    }else{loader('',false);await signOut(auth);notify('❌','Compte introuvable','Votre profil a été supprimé ou n\'existe plus. Contactez l\'administrateur.');}
   }catch(e){
     loader('',false);
     if(!navigator.onLine||e.code==='unavailable'){
@@ -3418,7 +3418,7 @@ let adminCurrentRoleFilter='all',adminCurrentWdFilter='pending';
 window.switchAdminTab=(tab)=>{document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.admin-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('adminTab-'+tab)?.classList.add('active');document.querySelectorAll('.admin-nav-btn').forEach(b=>{if(b.textContent.toLowerCase().includes(tab.slice(0,4)))b.classList.add('active');});};
 async function loadAdminDashboard(){
   try{
-    const usersSnap=await getDocs(collection(db,'users'));adminAllUsers=usersSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const usersSnap=await getDocs(collection(db,'users'));adminAllUsers=usersSnap.docs.map(d=>({id:d.id,...d.data()})).filter(u=>u.email!==ADMIN_EMAIL);
     const total=adminAllUsers.length,passengers=adminAllUsers.filter(u=>u.role==='passenger').length,receivers=adminAllUsers.filter(u=>u.role==='receiver').length,owners=adminAllUsers.filter(u=>u.role==='owner').length,directeurs=adminAllUsers.filter(u=>u.role==='directeur').length,chauffeurs=adminAllUsers.filter(u=>u.role==='chauffeur').length,pending=adminAllUsers.filter(u=>u.status==='pending').length;
     document.getElementById('aStat-total').textContent=total;document.getElementById('aStat-passengers').textContent=passengers;document.getElementById('aStat-receivers').textContent=receivers;document.getElementById('aStat-owners').textContent=owners;document.getElementById('aStat-directeurs').textContent=directeurs;document.getElementById('aStat-chauffeurs').textContent=chauffeurs;document.getElementById('aStat-pending').textContent=pending;
     try{const tc=await getCountFromServer(collection(db,'tickets'));document.getElementById('aStat-tickets').textContent=tc.data().count;}catch(e){document.getElementById('aStat-tickets').textContent='—';}
