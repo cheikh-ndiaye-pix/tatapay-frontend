@@ -1200,7 +1200,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import{getFirestore,doc,setDoc,getDoc,getDocFromCache,updateDoc,addDoc,collection,collectionGroup,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove,runTransaction,writeBatch}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,setDoc,getDoc,getDocFromCache,updateDoc,addDoc,collection,collectionGroup,query,where,getDocs,onSnapshot,deleteDoc,deleteField,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove,runTransaction,writeBatch}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{getStorage,ref as storageRef,uploadBytes,getDownloadURL}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
@@ -1244,7 +1244,7 @@ window.hideSygost=()=>document.getElementById('sygostNotif').classList.remove('s
 function renderQR(id,text,size=130,ecc='H'){const el=document.getElementById(id);if(!el)return;el.innerHTML='';const canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;canvas.style.cssText=`border-radius:4px;display:block;width:${size}px;height:${size}px;background:#fff;`;el.appendChild(canvas);function fallbackImg(){el.innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&ecc=${ecc}&margin=10" width="${size}" height="${size}" style="border-radius:4px;display:block;" onerror="this.parentNode.innerHTML='<div style=&quot;color:#f66;font-size:11px;text-align:center;padding:20px;&quot;>QR indisponible (hors-ligne)</div>'"/>`;}if(window.QRCode&&QRCode.toCanvas){QRCode.toCanvas(canvas,text,{width:size,margin:2,errorCorrectionLevel:ecc},(err)=>{if(err){console.warn('[renderQR] local gen failed, fallback',err);fallbackImg();}});}else{console.warn('[renderQR] QRCode lib not loaded, fallback');fallbackImg();}}
 function renderMerchantQR(id,p,size=160){const el=document.getElementById(id);if(!el)return;const data=`tatapay://bus/${p.walletId}?gie=${encodeURIComponent(p.gie||'')}&vehicle=${encodeURIComponent(p.vehicle||'')}&ligne=${encodeURIComponent(p.ligne||'')}&zone=${encodeURIComponent(p.zone||'')}`;el.innerHTML=`<div style="background:#fff;border-radius:14px;padding:12px;display:inline-block;"><div id="${id}_canvasWrap"></div><div style="margin-top:8px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:#333;font-weight:700;line-height:1.6;">${p.gie||'—'} · ${p.vehicle||'—'} · Ligne ${p.ligne||'—'}<br><span style="color:#009A44;">${p.walletId}</span></div></div>`;const wrap=document.getElementById(id+'_canvasWrap');if(!wrap)return;const canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;canvas.style.cssText=`display:block;border-radius:4px;width:${size}px;height:${size}px;`;wrap.appendChild(canvas);function fallbackImg(){wrap.innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(data)}&ecc=H&margin=10" width="${size}" height="${size}" style="display:block;border-radius:4px;" onerror="this.parentNode.innerHTML='<div style=&quot;color:#c00;font-size:11px;padding:20px;&quot;>QR indisponible (hors-ligne)</div>'"/>`;}if(window.QRCode&&QRCode.toCanvas){QRCode.toCanvas(canvas,data,{width:size,margin:1,errorCorrectionLevel:'H'},(err)=>{if(err){console.warn('[renderMerchantQR] local gen failed, fallback',err);fallbackImg();}});}else{console.warn('[renderMerchantQR] QRCode lib not loaded, fallback');fallbackImg();}}
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id)?.classList.add('active');}
-function statusBadge(s){const map={pending:'badge-pending',approved:'badge-approved',active:'badge-approved',rejected:'badge-rejected',suspended:'badge-suspended',done:'badge-done'};const label={pending:'En attente',approved:'Approuvé',active:'Actif',rejected:'Refusé',suspended:'Suspendu',done:'Traité'};return`<span class="admin-badge ${map[s]||'badge-pending'}">${label[s]||s}</span>`;}
+function statusBadge(s){const map={pending:'badge-pending',approved:'badge-approved',active:'badge-approved',rejected:'badge-rejected',suspended:'badge-suspended',deleted:'badge-rejected',done:'badge-done'};const label={pending:'En attente',approved:'Approuvé',active:'Actif',rejected:'Refusé',suspended:'Suspendu',deleted:'Supprimé',done:'Traité'};return`<span class="admin-badge ${map[s]||'badge-pending'}">${label[s]||s}</span>`;}
 function roleBadge(r){const c={passenger:'#009A44',receiver:'#FF6B00',owner:'#7c3aed',chauffeur:'#059669',directeur:'#0ea5e9'};const ic={passenger:'🧍',receiver:'🎫',owner:'🚌',chauffeur:'👨‍✈️',directeur:'🏢'};return`<span style="font-size:11px;padding:3px 10px;border-radius:8px;background:${c[r]||'#444'}22;color:${c[r]||'#aaa'};border:1px solid ${c[r]||'#444'}44;font-weight:800;">${ic[r]||'👤'} ${r}</span>`;}
 function fmt(n){return Math.round(n||0).toLocaleString('fr-FR');}
 
@@ -1516,6 +1516,7 @@ function loginUI(){
   }
   if(p.status==='rejected'){document.getElementById('pendingIcon').textContent='❌';document.getElementById('pendingTitle').textContent='Demande refusée';document.getElementById('pendingBody').textContent='Contactez l\'administrateur.';show('screenPending');loader('',false);return;}
   if(p.status==='suspended'){document.getElementById('pendingIcon').textContent='⚠️';document.getElementById('pendingTitle').textContent='Compte suspendu';document.getElementById('pendingBody').textContent='Contactez l\'administrateur.';show('screenPending');loader('',false);return;}
+  if(p.status==='deleted'){document.getElementById('pendingIcon').textContent='🗑️';document.getElementById('pendingTitle').textContent='Compte supprimé';document.getElementById('pendingBody').textContent='Ce compte a été supprimé par l\'administrateur. Contactez-le si vous pensez qu\'il s\'agit d\'une erreur.';show('screenPending');loader('',false);return;}
   if(S.role==='passenger'){
     document.getElementById('passGreet').textContent=p.name.split(' ')[0];
     document.getElementById('passWalletId').textContent=p.walletId;
@@ -2937,24 +2938,33 @@ function renderAdminUserCard(u,compact=false,selectable=false){
 }
 function buildAdminActions(u){
   let btns='';
+  if(u.status==='deleted'){btns+=`<button class="admin-action-btn btn-approve" onclick="adminAction('restore','${u.id}','${u.role}')">♻️ Restaurer</button>`;btns+=`<button class="admin-action-btn btn-info" onclick="showAdminUserDetail('${u.id}')">👁️ Détail</button>`;return btns;}
   if(u.status==='pending'){btns+=`<button class="admin-action-btn btn-approve" onclick="adminAction('approve','${u.id}','${u.role}')">✅ Approuver</button>`;btns+=`<button class="admin-action-btn btn-reject" onclick="adminAction('reject','${u.id}','${u.role}')">❌ Refuser</button>`;if(u.role==='receiver'){btns+=`<button class="admin-action-btn btn-info" onclick="openAssignBusAdmin('${u.id}','${u.name||''}')">🚌 Assigner Bus</button>`;}}
   if(u.status==='approved'||u.status==='active'){btns+=`<button class="admin-action-btn btn-suspend" onclick="adminAction('suspend','${u.id}','${u.role}')">⚠️ Suspendre</button>`;if(u.role==='receiver'){btns+=`<button class="admin-action-btn btn-info" onclick="openAssignBusAdmin('${u.id}','${u.name||''}')">🚌 Modifier Bus</button>`;}}
   if(u.status==='suspended'){btns+=`<button class="admin-action-btn btn-approve" onclick="adminAction('reactivate','${u.id}','${u.role}')">♻️ Réactiver</button>`;}
   btns+=`<button class="admin-action-btn btn-info" onclick="showAdminUserDetail('${u.id}')">👁️ Détail</button>`;
-  btns+=`<button class="admin-action-btn btn-delete" onclick="adminAction('delete','${u.id}','${u.role}','${u.name||''}')">🗑️ Supprimer</button>`;
+  btns+=`<button class="admin-action-btn btn-delete" onclick="adminAction('delete','${u.id}','${u.role}','${(u.name||'').replace(/'/g,'')}','${u.status||'approved'}')">🗑️ Supprimer</button>`;
   return btns;
 }
-window.adminAction=async(action,uid,role,name='')=>{
-  const labels={approve:'Approuver',reject:'Refuser',suspend:'Suspendre',reactivate:'Réactiver',delete:'Supprimer'};
-  if(action==='delete'){if(!confirm(`Supprimer définitivement ${name} ?`))return;}
+window.adminAction=async(action,uid,role,name='',prevStatus='approved')=>{
+  const labels={approve:'Approuver',reject:'Refuser',suspend:'Suspendre',reactivate:'Réactiver',delete:'Supprimer',restore:'Restaurer'};
+  if(action==='delete'){if(!confirm(`Supprimer ${name} ? Le compte sera bloqué et déplacé dans la corbeille — vous pourrez le restaurer depuis l'onglet Corbeille.`))return;}
   loader(labels[action]+'…');
   try{
     if(action==='approve')await updateDoc(doc(db,'users',uid),{status:'approved'});
     else if(action==='reject')await updateDoc(doc(db,'users',uid),{status:'rejected'});
     else if(action==='suspend')await updateDoc(doc(db,'users',uid),{status:'suspended'});
     else if(action==='reactivate')await updateDoc(doc(db,'users',uid),{status:'approved'});
-    else if(action==='delete')await deleteDoc(doc(db,'users',uid));
-    loader('',false);notify({approve:'✅',reject:'❌',suspend:'⚠️',reactivate:'♻️',delete:'🗑️'}[action]||'✅',labels[action],'Effectué.');
+    // Soft-delete : le compte est bloqué (même écran que "suspendu"/"refusé") mais
+    // le document reste en base, avec son statut d'origine mémorisé pour pouvoir
+    // le restaurer exactement où il en était (pending/approved/suspended…).
+    else if(action==='delete')await updateDoc(doc(db,'users',uid),{status:'deleted',previousStatus:prevStatus||'approved',deletedAt:serverTimestamp(),deletedBy:S.uid});
+    else if(action==='restore'){
+      const snap=await getDoc(doc(db,'users',uid));
+      const prev=snap.data()?.previousStatus||'approved';
+      await updateDoc(doc(db,'users',uid),{status:prev,previousStatus:deleteField(),deletedAt:deleteField(),deletedBy:deleteField()});
+    }
+    loader('',false);notify({approve:'✅',reject:'❌',suspend:'⚠️',reactivate:'♻️',delete:'🗑️',restore:'♻️'}[action]||'✅',labels[action],'Effectué.');
     await loadAdminDashboard();
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
@@ -2975,10 +2985,11 @@ window.showAdminUserDetail=async(uid)=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 window.closeAdminDetail=()=>document.getElementById('adminDetailOverlay').style.display='none';
-function renderOwnersList(){const owners=adminAllUsers.filter(u=>u.role==='owner');const q=(document.getElementById('ownerSearch')?.value||'').toLowerCase();const filtered=q?owners.filter(u=>(u.name+u.email+(u.company||'')).toLowerCase().includes(q)):owners;const cont=document.getElementById('adminOwnersList');if(!filtered.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun propriétaire</div>';return;}cont.innerHTML=filtered.map(u=>renderAdminUserCard(u)).join('');}
-function renderDirecteursList(){const dirs=adminAllUsers.filter(u=>u.role==='directeur');const q=(document.getElementById('directeurSearch')?.value||'').toLowerCase();const filtered=q?dirs.filter(u=>(u.name+u.email+(u.org||'')).toLowerCase().includes(q)):dirs;const cont=document.getElementById('adminDirecteursList');if(!filtered.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun directeur</div>';return;}cont.innerHTML=filtered.map(u=>renderAdminUserCard(u)).join('');}
+function renderOwnersList(){const owners=adminAllUsers.filter(u=>u.role==='owner'&&u.status!=='deleted');const q=(document.getElementById('ownerSearch')?.value||'').toLowerCase();const filtered=q?owners.filter(u=>(u.name+u.email+(u.company||'')).toLowerCase().includes(q)):owners;const cont=document.getElementById('adminOwnersList');if(!filtered.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun propriétaire</div>';return;}cont.innerHTML=filtered.map(u=>renderAdminUserCard(u)).join('');}
+function renderDirecteursList(){const dirs=adminAllUsers.filter(u=>u.role==='directeur'&&u.status!=='deleted');const q=(document.getElementById('directeurSearch')?.value||'').toLowerCase();const filtered=q?dirs.filter(u=>(u.name+u.email+(u.org||'')).toLowerCase().includes(q)):dirs;const cont=document.getElementById('adminDirecteursList');if(!filtered.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun directeur</div>';return;}cont.innerHTML=filtered.map(u=>renderAdminUserCard(u)).join('');}
+function renderCorbeilleList(){const deleted=adminAllUsers.filter(u=>u.status==='deleted');const q=(document.getElementById('corbeilleSearch')?.value||'').toLowerCase();const filtered=q?deleted.filter(u=>(u.name+u.email+(u.walletId||'')).toLowerCase().includes(q)):deleted;const cont=document.getElementById('adminCorbeilleList');if(!cont)return;if(!filtered.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">🗑️ Corbeille vide</div>';return;}cont.innerHTML=filtered.map(u=>{const d=u.deletedAt?.toDate?.()?.toLocaleDateString('fr-FR')||'—';return`<div class="admin-user-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;"><div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:14px;">${u.name||'—'}</div><div style="font-size:11px;color:#888;">${u.email||'—'}</div><div style="font-size:11px;color:#666;margin-top:2px;">🗑️ Supprimé le ${d} · Solde: ${fmt(u.balance)} FCFA</div></div><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">${statusBadge(u.status)}${roleBadge(u.role)}</div></div><div class="admin-action-row">${buildAdminActions(u)}</div></div>`;}).join('');}
 let adminSelectedUsers=new Set();
-function adminGetVisibleFilteredUsers(){let users=adminAllUsers;if(adminCurrentRoleFilter!=='all')users=users.filter(u=>u.role===adminCurrentRoleFilter);const q=(document.getElementById('userSearch')?.value||'').toLowerCase();if(q)users=users.filter(u=>(u.name+u.email+(u.walletId||'')).toLowerCase().includes(q));return users;}
+function adminGetVisibleFilteredUsers(){let users=adminAllUsers.filter(u=>u.status!=='deleted');if(adminCurrentRoleFilter!=='all')users=users.filter(u=>u.role===adminCurrentRoleFilter);const q=(document.getElementById('userSearch')?.value||'').toLowerCase();if(q)users=users.filter(u=>(u.name+u.email+(u.walletId||'')).toLowerCase().includes(q));return users;}
 function renderUsersList(){const users=adminGetVisibleFilteredUsers();const cont=document.getElementById('adminUsersList');cont.innerHTML=`<div style="color:#888;font-size:12px;margin-bottom:12px;">${users.length} utilisateur(s)</div>`;if(!users.length){cont.innerHTML+='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucun utilisateur</div>';updateAdminBulkBar();updateAdminSelectAllLabel();return;}cont.innerHTML+=users.map(u=>renderAdminUserCard(u,false,true)).join('');updateAdminBulkBar();updateAdminSelectAllLabel();}
 window.adminToggleUserCheck=(uid)=>{if(adminSelectedUsers.has(uid))adminSelectedUsers.delete(uid);else adminSelectedUsers.add(uid);updateAdminBulkBar();updateAdminSelectAllLabel();};
 window.adminToggleSelectAll=()=>{
@@ -3003,16 +3014,19 @@ function updateAdminBulkBar(){
 window.adminBulkDelete=async()=>{
   const uids=[...adminSelectedUsers];
   if(!uids.length)return;
-  if(!confirm(`Supprimer définitivement ${uids.length} utilisateur(s) ? Cette action est irréversible.`))return;
+  if(!confirm(`Supprimer ${uids.length} utilisateur(s) ? Ils seront bloqués et déplacés dans la corbeille — vous pourrez les restaurer depuis l'onglet Corbeille.`))return;
   loader('Suppression de '+uids.length+' utilisateur(s)…');
   try{
     for(const uid of uids){
-      try{await deleteDoc(doc(db,'users',uid));}
+      try{
+        const cached=adminAllUsers.find(u=>u.id===uid);
+        await updateDoc(doc(db,'users',uid),{status:'deleted',previousStatus:cached?.status||'approved',deletedAt:serverTimestamp(),deletedBy:S.uid});
+      }
       catch(e){console.error('Erreur suppression',uid,e.message);}
     }
     adminSelectedUsers.clear();
     loader('',false);
-    notify('🗑️','Suppression terminée',uids.length+' utilisateur(s) supprimé(s).');
+    notify('🗑️','Suppression terminée',uids.length+' utilisateur(s) déplacé(s) vers la corbeille.');
     await loadAdminDashboard();
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
@@ -3535,4 +3549,3 @@ function handleQR(raw){stopCamera();raw=(raw||'').trim();
 
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
-
