@@ -2998,7 +2998,7 @@ window.doCreateTrip=async()=>{
   loader('Création du trajet…');
   try{
     await addDoc(collection(db,'tripOffers'),{
-      ownerUid:S.uid,ownerName:S.profile?.name||'',
+      ownerUid:S.uid,ownerName:S.profile?.name||'',ownerPhone:S.profile?.phone||'',
       gie:S.profile?.gie||S.profile?.company||'',vehicle:S.profile?.vehicle||'',
       ligne:S.profile?.ligne||'',zone:S.profile?.zone||'',
       from,to,date,time,totalPlaces:places,placesLeft:places,pricePerPlace:price,
@@ -3018,7 +3018,28 @@ window.loadChResa=async()=>{
     const snap=await getDocs(query(collection(db,'tripOffers'),where('ownerUid','==',S.uid)));
     const trips=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
     if(!trips.length){cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:20px;">Aucun trajet créé.</div>';return;}
-    cont.innerHTML=trips.map(t=>`<div class="ch-card" style="margin-bottom:10px;">
+    // Récupère les réservations actives (non annulées/remboursées) de tous les trajets
+    // du chauffeur pour afficher le prénom/nom + numéro de chaque client, avec un
+    // bouton d'acceptation.
+    let bookingsByTrip={};
+    try{
+      const bSnap=await getDocs(query(collection(db,'tripBookings'),where('ownerUid','==',S.uid),where('status','in',['confirmed','boarded'])));
+      bSnap.docs.forEach(d=>{
+        const bk={id:d.id,...d.data()};
+        (bookingsByTrip[bk.tripId]=bookingsByTrip[bk.tripId]||[]).push(bk);
+      });
+    }catch(e){console.warn('[loadChResa bookings]',e);}
+    cont.innerHTML=trips.map(t=>{
+      const bookings=(bookingsByTrip[t.id]||[]).sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+      const bookingsHtml=bookings.length?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid #ffffff12;display:flex;flex-direction:column;gap:8px;">${bookings.map(bk=>`
+        <div style="background:#ffffff08;border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <div style="min-width:0;">
+            <div style="font-weight:800;font-size:13px;">${bk.passengerName||'Passager'}</div>
+            <div style="font-size:11px;color:#888;font-family:'JetBrains Mono',monospace;">📞 ${bk.passengerPhone||'—'} · ${bk.places} pl.</div>
+          </div>
+          ${bk.accepted?'<span style="background:#05966922;color:#34d399;font-size:10px;padding:4px 9px;border-radius:8px;font-weight:800;white-space:nowrap;">✅ Accepté</span>':`<button style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:10px;padding:8px 12px;color:#fff;font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap;" onclick="acceptBooking('${bk.id}')">✅ Accepter</button>`}
+        </div>`).join('')}</div>`:'';
+      return `<div class="ch-card" style="margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
           <div style="font-weight:900;font-size:15px;">${t.from} → ${t.to}</div>
@@ -3027,9 +3048,26 @@ window.loadChResa=async()=>{
         </div>
         ${t.status==='active'?'<span style="background:#05966922;color:#34d399;font-size:10px;padding:3px 8px;border-radius:8px;font-weight:800;white-space:nowrap;">Actif</span>':'<span style="background:#DF002422;color:#DF0024;font-size:10px;padding:3px 8px;border-radius:8px;font-weight:800;white-space:nowrap;">Annulé</span>'}
       </div>
+      ${bookingsHtml}
       ${t.status==='active'?`<button class="btn btn-full" style="background:#DF002422;color:#DF0024;font-weight:800;margin-top:10px;font-size:13px;padding:10px;" onclick="cancelTrip('${t.id}')">❌ Annuler le trajet</button>`:''}
-    </div>`).join('');
+    </div>`;}).join('');
   }catch(e){console.warn('[loadChResa]',e);cont.innerHTML='<div style="color:#DF0024;font-size:13px;text-align:center;padding:20px;">Erreur de chargement.</div>';}
+};
+
+window.acceptBooking=async(bookingId)=>{
+  loader('Acceptation en cours…');
+  try{
+    const bookRef=doc(db,'tripBookings',bookingId);
+    const bookSnap=await getDoc(bookRef);
+    if(!bookSnap.exists()){loader('',false);return;}
+    const b=bookSnap.data();
+    if(b.ownerUid!==S.uid)throw new Error('Cette réservation ne correspond pas à un de vos trajets.');
+    await updateDoc(bookRef,{accepted:true,acceptedAt:serverTimestamp()});
+    try{await addDoc(collection(db,'notifications'),{toUid:b.passengerUid,type:'booking_accepted',bookingId,ownerName:S.profile?.name||'',ownerPhone:S.profile?.phone||'',from:b.from,to:b.to,read:false,ts:serverTimestamp()});}catch(e){}
+    loader('',false);
+    notify('✅','Réservation acceptée',`${b.passengerName||'Passager'} a été notifié.`);
+    loadChResa();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
 window.cancelTrip=async(tripId)=>{
@@ -3097,7 +3135,8 @@ window.loadPassResa=async()=>{
           const statusLabel=b.status==='confirmed'?'':(b.status==='boarded'?' · Embarqué ✅':(b.status==='refunded'?' · Remboursé (trajet annulé)':' · Annulé'));
           const ticketBtn=(b.status==='confirmed'||b.status==='boarded')?`<button style="background:#FDEF4222;color:#FDEF42;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;" onclick="showResaTicket('${b.id}')">🎟️ Ticket</button>`:'';
           const cancelBtn=b.status==='confirmed'?`<button style="background:#DF002422;color:#DF0024;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;" onclick="cancelBooking('${b.id}')">Annuler</button>`:'';
-          return `<div class="tx-row"><div style="flex:1;"><div style="font-weight:700;font-size:13px;">${b.from} → ${b.to} · ${b.places} pl.</div><div style="font-size:11px;color:#888;">${b.date} · ${fmt(b.total)} F${statusLabel}</div></div><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;max-width:150px;">${ticketBtn}${cancelBtn}</div></div>`;
+          const driverInfo=(b.status==='confirmed'||b.status==='boarded')?(b.accepted?`<div style="font-size:11px;color:#34d399;margin-top:3px;">👨‍✈️ ${b.ownerName||'Chauffeur'} · 📞 ${b.ownerPhone||'—'}</div>`:`<div style="font-size:11px;color:#FDEF42;margin-top:3px;">⏳ En attente d'acceptation du chauffeur</div>`):'';
+          return `<div class="tx-row"><div style="flex:1;"><div style="font-weight:700;font-size:13px;">${b.from} → ${b.to} · ${b.places} pl.</div><div style="font-size:11px;color:#888;">${b.date} · ${fmt(b.total)} F${statusLabel}</div>${driverInfo}</div><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;max-width:150px;">${ticketBtn}${cancelBtn}</div></div>`;
         }).join('');
       }
     }catch(e){console.warn('[loadPassResa my]',e);}
@@ -3233,7 +3272,7 @@ window.doBookTrip=async()=>{
       tx.update(passRef,{balance:increment(-total)});
       tx.update(doc(db,'users',trip.ownerUid),{balance:increment(priceTotal)});
       const bookingRef=doc(collection(db,'tripBookings'));
-      const bookingData={tripId:t.id,ownerUid:trip.ownerUid,ownerName:trip.ownerName,passengerUid:S.uid,passengerName:S.profile?.name||'',places,pricePerPlace:trip.pricePerPlace,priceTotal,commission,total,from:trip.from,to:trip.to,date:trip.date,time:trip.time,status:'confirmed',sharesCount:0,boardedCount:0,ref,createdAt:serverTimestamp()};
+      const bookingData={tripId:t.id,ownerUid:trip.ownerUid,ownerName:trip.ownerName,ownerPhone:trip.ownerPhone||'',passengerUid:S.uid,passengerName:S.profile?.name||'',passengerPhone:S.profile?.phone||'',places,pricePerPlace:trip.pricePerPlace,priceTotal,commission,total,from:trip.from,to:trip.to,date:trip.date,time:trip.time,status:'confirmed',accepted:false,sharesCount:0,boardedCount:0,ref,createdAt:serverTimestamp()};
       tx.set(bookingRef,bookingData);
       finalBookingId=bookingRef.id;finalBookingData=bookingData;
       tx.set(doc(collection(db,'commissions_resa')),{tripId:t.id,bookingId:bookingRef.id,amount:commission,ref,ts:serverTimestamp()});
@@ -3246,6 +3285,7 @@ window.doBookTrip=async()=>{
     if(finalBookingId&&finalBookingData){
       _resaBookingsCache[finalBookingId]=finalBookingData;
       setTimeout(()=>showResaTicket(finalBookingId),350);
+      try{await addDoc(collection(db,'notifications'),{toUid:t.ownerUid,type:'booking_request',bookingId:finalBookingId,passengerName:finalBookingData.passengerName,passengerPhone:finalBookingData.passengerPhone,from:finalBookingData.from,to:finalBookingData.to,places:finalBookingData.places,read:false,ts:serverTimestamp()});}catch(e){}
     }
   }catch(e){loader('',false);notify('❌','Échec',e.message);}
 };
@@ -4004,7 +4044,7 @@ window.closeTicket=()=>document.getElementById('ticketOverlay').style.display='n
 // Rafraîchir affichage quand la connexion revient
 window.addEventListener('online',()=>{if(S.role==='passenger')loadPassTickets();});
 window.addEventListener('offline',()=>{if(S.role==='passenger')renderPassTicketsList(getCachedTickets(),true);});
-window.openNotifPanel=async()=>{const q=query(collection(db,'notifications'),where('toUid','==',S.uid),orderBy('ts','desc'),limit(20));const snap=await getDocs(q);const cont=document.getElementById('notifList');if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';}else{cont.innerHTML=snap.docs.map(d=>{const n=d.data();let icon='🔔',title='Notification',body='',color='var(--orange)';if(n.type==='descendre'){icon='🛑';title='Passager veut descendre';body=`${n.passenger||'—'} · ${n.from||''}→${n.to||''}`;color='#DF0024';}else if(n.type==='ticket_request'){icon='🎫';title='Demande ticket';body=`${n.passenger||'—'} · ${n.price||0} FCFA`;color='var(--g)';}else if(n.type==='ticket_validated'){icon='✅';title='Ticket validé';body='Votre ticket a été validé !';color='var(--g)';}else if(n.type==='receiver_request'){icon='🎫';title='Nouveau receveur';body=`${n.receiverName||'—'}`;color='var(--orange)';}else if(n.type==='receiver_candidature'){icon='📥';title='Candidature receveur';body=`${n.receiverName||'—'} souhaite rejoindre — ${n.phone||''}`;color='#FF6B00';}else if(n.type==='owner_request'){icon='🚌';title='Nouveau propriétaire';body=`${n.ownerName||'—'} — ${n.company||'—'}`;color='#7c3aed';}else if(n.type==='chauffeur_request'){icon='👨‍✈️';title='Nouveau chauffeur';body=`${n.chauffeurName||'—'}`;color='#059669';}else if(n.type==='versement_alert'){icon='💸';title='Versement manquant';body=n.message||'Le receveur n\'a pas versé les recettes.';color='#DF0024';}else if(n.type==='fraud_alert'){icon='⚠️';title='Anomalie détectée';body=n.message||'Activité suspecte sur votre bus.';color='#FF6B00';}else if(n.type==='bus_panne'){icon='🔧';title='Panne signalée';body=n.message||'Problème technique sur le bus.';color='#DF0024';}else if(n.type==='bus_report'){icon='📋';title='Signalement bus';body=n.message||'—';color='#059669';}return`<div style="background:#ffffff08;border:1px solid ${color}33;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;"><div style="font-size:22px;">${icon}</div><div><div style="font-weight:800;font-size:13px;color:${color};">${title}</div><div style="font-size:12px;color:#ccc;margin-top:3px;">${body}</div></div></div>`;}).join('');}document.getElementById('notifPanel').style.display='flex';};
+window.openNotifPanel=async()=>{const q=query(collection(db,'notifications'),where('toUid','==',S.uid),orderBy('ts','desc'),limit(20));const snap=await getDocs(q);const cont=document.getElementById('notifList');if(snap.empty){cont.innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';}else{cont.innerHTML=snap.docs.map(d=>{const n=d.data();let icon='🔔',title='Notification',body='',color='var(--orange)';if(n.type==='descendre'){icon='🛑';title='Passager veut descendre';body=`${n.passenger||'—'} · ${n.from||''}→${n.to||''}`;color='#DF0024';}else if(n.type==='ticket_request'){icon='🎫';title='Demande ticket';body=`${n.passenger||'—'} · ${n.price||0} FCFA`;color='var(--g)';}else if(n.type==='ticket_validated'){icon='✅';title='Ticket validé';body='Votre ticket a été validé !';color='var(--g)';}else if(n.type==='receiver_request'){icon='🎫';title='Nouveau receveur';body=`${n.receiverName||'—'}`;color='var(--orange)';}else if(n.type==='receiver_candidature'){icon='📥';title='Candidature receveur';body=`${n.receiverName||'—'} souhaite rejoindre — ${n.phone||''}`;color='#FF6B00';}else if(n.type==='owner_request'){icon='🚌';title='Nouveau propriétaire';body=`${n.ownerName||'—'} — ${n.company||'—'}`;color='#7c3aed';}else if(n.type==='chauffeur_request'){icon='👨‍✈️';title='Nouveau chauffeur';body=`${n.chauffeurName||'—'}`;color='#059669';}else if(n.type==='versement_alert'){icon='💸';title='Versement manquant';body=n.message||'Le receveur n\'a pas versé les recettes.';color='#DF0024';}else if(n.type==='fraud_alert'){icon='⚠️';title='Anomalie détectée';body=n.message||'Activité suspecte sur votre bus.';color='#FF6B00';}else if(n.type==='bus_panne'){icon='🔧';title='Panne signalée';body=n.message||'Problème technique sur le bus.';color='#DF0024';}else if(n.type==='bus_report'){icon='📋';title='Signalement bus';body=n.message||'—';color='#059669';}else if(n.type==='booking_request'){icon='🎟️';title='Nouvelle réservation';body=`${n.passengerName||'—'} · 📞 ${n.passengerPhone||'—'} · ${n.from||''}→${n.to||''} · ${n.places||1} pl.`;color='var(--g)';}else if(n.type==='booking_accepted'){icon='✅';title='Réservation acceptée';body=`${n.ownerName||'Le chauffeur'} · 📞 ${n.ownerPhone||'—'} · ${n.from||''}→${n.to||''}`;color='var(--g)';}return`<div style="background:#ffffff08;border:1px solid ${color}33;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;"><div style="font-size:22px;">${icon}</div><div><div style="font-weight:800;font-size:13px;color:${color};">${title}</div><div style="font-size:12px;color:#ccc;margin-top:3px;">${body}</div></div></div>`;}).join('');}document.getElementById('notifPanel').style.display='flex';};
 window.clearNotifs=async()=>{const q=query(collection(db,'notifications'),where('toUid','==',S.uid));const snap=await getDocs(q);await Promise.all(snap.docs.map(d=>deleteDoc(doc(db,'notifications',d.id))));document.getElementById('notifList').innerHTML='<div style="text-align:center;color:#555;padding:32px 0;">Aucune notification.</div>';const b=document.getElementById('bellBadge');if(b)b.className='bell-badge';const cb=document.getElementById('chBellBadge');if(cb)cb.className='bell-badge';};
 
 let detector=null;
@@ -4050,4 +4090,3 @@ function handleQR(raw){stopCamera();raw=(raw||'').trim();
 
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
-
