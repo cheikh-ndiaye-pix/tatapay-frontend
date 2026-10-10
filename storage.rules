@@ -1,0 +1,17 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Vocaux de l'assistant : lecture libre, écriture réservée à l'admin (2 Mo max)
+    match /aiVoices/{file} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.auth.token.email != null
+        && request.auth.token.email.lower() == 'papacheikh900@gmail.com'
+        && request.resource.size < 2 * 1024 * 1024;
+    }
+
+    // ⚠️ Gardez ici vos règles existantes (ex. receivers/{uid}/...)
+    // en les copiant depuis la console Firebase > Storage > Règles.
+  }
+}
