@@ -1214,10 +1214,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
       <div class="input-wrap"><label class="input-label">Immatriculation *</label><input class="input-field" id="apprVehicle" placeholder="ex: AA809ST"/></div>
       <div class="input-wrap"><label class="input-label">Ligne *</label><input class="input-field" id="apprLigne" placeholder="ex: 72"/></div>
       <div class="input-wrap"><label class="input-label">Trajet *</label><input class="input-field" id="apprTrajet" placeholder="ex: Guediawaye → Kounoune"/></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="input-wrap"><label class="input-label">Section *</label><input class="input-field" id="apprSection" type="number" placeholder="1"/></div>
-        <div class="input-wrap"><label class="input-label">Prix (FCFA) *</label><input class="input-field" id="apprPrix" type="number" placeholder="150"/></div>
-      </div>
+      <div class="input-wrap"><label class="input-label">Section *</label><input class="input-field" id="apprSection" type="number" placeholder="1"/></div>
       <div class="input-wrap"><label class="input-label">Zone *</label><input class="input-field" id="apprZone" placeholder="ex: B"/></div>
       <input type="hidden" id="apprNotifId"/>
       <input type="hidden" id="apprReceiverUid"/>
@@ -2554,7 +2551,7 @@ async function loadChReceveur(){
       📍 ${r.address||'—'}<br>
       💳 Wallet: <code style="color:#FF6B00;">${r.walletId||'—'}</code><br>
       🚌 ${r.gie||p.gie||'—'} · ${r.vehicle||p.vehicle||'—'} · Ligne ${r.ligne||p.ligne||'—'} · Zone ${r.zone||p.zone||'—'}<br>
-      🛣️ Trajet: ${r.trajet||p.trajet||'—'} · Section ${r.section||p.section||'—'} · Prix ${fmt(r.prix||p.prix||0)} F<br>
+      🛣️ Trajet: ${r.trajet||p.trajet||'—'} · Section ${r.section||p.section||'—'}<br>
       📊 Recettes jour: <strong style="color:#34d399;">${fmt(r.today||0)} FCFA</strong> · Tickets: <strong>${r.count||0}</strong> · Solde: <strong style="color:#FDEF42;">${fmt(r.balance||0)} F</strong>`;
     const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','==',p.receiverUid),orderBy('ts','desc'),limit(7)));
     if(cont){if(!tkSnap.size){cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune activité récente.</div>';}else{cont.innerHTML=tkSnap.docs.map(d=>{const t=d.data();const dt=t.ts?.toDate?.()?.toLocaleDateString('fr-FR')||'—';return`<div class="ch-live-row"><div style="flex:1;"><div style="font-weight:700;font-size:13px;">${dt} · ${t.from||'—'}→${t.to||'—'}</div></div><div style="font-weight:800;color:#34d399;">${fmt(t.price)} F</div></div>`;}).join('');}}
@@ -2649,7 +2646,6 @@ window.acceptChCandidature=async(notifId,receiverUid,receiverName)=>{
   document.getElementById('apprLigne').value=p.ligne||'';
   document.getElementById('apprTrajet').value=p.trajet||'';
   document.getElementById('apprSection').value=p.section||'1';
-  document.getElementById('apprPrix').value=p.prix||'150';
   document.getElementById('apprZone').value=p.zone||'';
   openModal('modalApproveCandidature');
 };
@@ -2662,16 +2658,15 @@ window.doApproveCandidature=async()=>{
   const ligne=document.getElementById('apprLigne').value.trim();
   const trajet=document.getElementById('apprTrajet').value.trim();
   const section=parseInt(document.getElementById('apprSection').value||'1',10);
-  const prix=parseInt(document.getElementById('apprPrix').value||'0',10);
   const zone=document.getElementById('apprZone').value.trim();
-  if(!gie||!vehicle||!ligne||!trajet||!zone||!prix){notify('⚠️','Champs','Renseignez tous les champs du bus.');return;}
+  if(!gie||!vehicle||!ligne||!trajet||!zone){notify('⚠️','Champs','Renseignez tous les champs du bus.');return;}
   loader('Validation de la candidature…');
   try{
-    await updateDoc(doc(db,'users',receiverUid),{status:'approved',approvedOwnerUid:S.uid,approvedAt:serverTimestamp(),gie,vehicle,ligne,trajet,section,prix,zone,linkedOwnerUids:arrayUnion(S.uid),approvedOwnerUids:arrayUnion(S.uid)});
-    await updateDoc(doc(db,'users',S.uid),{receiverUid,receiverStatus:'actif',gie,vehicle,ligne,trajet,section,prix,zone});
-    S.profile.gie=gie;S.profile.vehicle=vehicle;S.profile.ligne=ligne;S.profile.trajet=trajet;S.profile.section=section;S.profile.prix=prix;S.profile.zone=zone;S.profile.receiverUid=receiverUid;
+    await updateDoc(doc(db,'users',receiverUid),{status:'approved',approvedOwnerUid:S.uid,approvedAt:serverTimestamp(),gie,vehicle,ligne,trajet,section,zone,linkedOwnerUids:arrayUnion(S.uid),approvedOwnerUids:arrayUnion(S.uid)});
+    await updateDoc(doc(db,'users',S.uid),{receiverUid,receiverStatus:'actif',gie,vehicle,ligne,trajet,section,zone});
+    S.profile.gie=gie;S.profile.vehicle=vehicle;S.profile.ligne=ligne;S.profile.trajet=trajet;S.profile.section=section;S.profile.zone=zone;S.profile.receiverUid=receiverUid;
     await updateDoc(doc(db,'notifications',notifId),{accepted:true,read:true,acceptedAt:serverTimestamp()});
-    try{await addDoc(collection(db,'notifications'),{toUid:receiverUid,type:'candidature_accepted',ownerUid:S.uid,ownerName:S.profile?.name||'Propriétaire',gie,vehicle,ligne,trajet,section,prix,zone,read:false,ts:serverTimestamp()});}catch(e){}
+    try{await addDoc(collection(db,'notifications'),{toUid:receiverUid,type:'candidature_accepted',ownerUid:S.uid,ownerName:S.profile?.name||'Propriétaire',gie,vehicle,ligne,trajet,section,zone,read:false,ts:serverTimestamp()});}catch(e){}
     loader('',false);closeModal('modalApproveCandidature');
     notify('✅','Candidature acceptée',`${receiverName} est activé sur ${vehicle} · Ligne ${ligne}.`);
     loadChReceveur();attachChReceiverListener();attachChTicketsListener();
