@@ -855,6 +855,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <button class="admin-nav-btn" onclick="switchAdminTab('owners')">🚌 Propriétaires</button>
     <button class="admin-nav-btn" onclick="switchAdminTab('users')">👥 Utilisateurs</button>
     <button class="admin-nav-btn" onclick="switchAdminTab('withdrawals')">💸 Retraits</button>
+    <button class="admin-nav-btn" onclick="switchAdminTab('voix')">🎙️ Voix IA</button>
   </div>
   <div style="flex:1;overflow-y:auto;padding:16px;">
     <div class="admin-tab active" id="adminTab-dashboard">
@@ -898,6 +899,11 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <button class="admin-action-btn btn-delete" onclick="adminBulkDelete()">🗑️ Supprimer la sélection</button>
       </div>
       <div id="adminUsersList"></div>
+    </div>
+    <div class="admin-tab" id="adminTab-voix">
+      <div style="font-weight:900;font-size:16px;margin-bottom:6px;">🎙️ Voix de l'assistant passager</div>
+      <div style="font-size:12px;color:#888;line-height:1.6;margin-bottom:14px;">Enregistrez ici la voix de l'assistant, phrase par phrase, pour chaque langue. Seul l'admin peut modifier ces vocaux. Sans enregistrement, l'assistant utilise la voix du téléphone.</div>
+      <div id="adminVoixList"><div style="color:#555;text-align:center;padding:20px;">Chargement…</div></div>
     </div>
     <div class="admin-tab" id="adminTab-withdrawals">
       <div style="display:flex;gap:8px;margin-bottom:12px;">
@@ -1600,7 +1606,7 @@ function loginUI(){
     updateBalanceUI();clearFriend();
     unsubBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;updateBalanceUI();refreshPassWalletQR();}});
     attachPassNotifListener();
-    loadPassHomeTx();loadPassTickets();show('screenPassenger');setTimeout(()=>aiGreet(),700);notify('✅','Bienvenue !',p.name);
+    loadPassHomeTx();loadPassTickets();show('screenPassenger');loadAiVoices().finally(()=>setTimeout(()=>aiGreet(),300));notify('✅','Bienvenue !',p.name);
     // Restaure le dernier ticket actif depuis le cache (utile hors-ligne)
     const _cachedActive=getCachedActiveTicket();if(_cachedActive)showDescendBtn(_cachedActive);
   }else if(S.role==='receiver'&&p.status==='approved'){
@@ -2992,7 +2998,7 @@ function attachPassNotifListener(){
 
 let adminAllUsers=[],adminAllWithdrawals=[];
 let adminCurrentRoleFilter='all',adminCurrentWdFilter='pending';
-window.switchAdminTab=(tab)=>{document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.admin-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('adminTab-'+tab)?.classList.add('active');document.querySelectorAll('.admin-nav-btn').forEach(b=>{if(b.textContent.toLowerCase().includes(tab.slice(0,4)))b.classList.add('active');});};
+window.switchAdminTab=(tab)=>{if(tab==='voix')renderAdminVoices();document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.admin-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('adminTab-'+tab)?.classList.add('active');document.querySelectorAll('.admin-nav-btn').forEach(b=>{if(b.textContent.toLowerCase().includes(tab.slice(0,4)))b.classList.add('active');});};
 // Annuaire public : uniquement nom + organisation des directeurs approuvés
 async function syncPublicDirecteurs(){
   try{
@@ -3425,20 +3431,42 @@ function aiInit(){
   }catch(e){}
 }
 window.aiPlace=()=>{const f=document.getElementById('aiFloat'),p=document.getElementById('aiPanel');if(!f||!p)return;const r=f.getBoundingClientRect();const left=(r.left+29)<innerWidth/2;p.style.left=left?'0':'auto';p.style.right=left?'auto':'0';const top=r.top<340;p.style.top=top?'66px':'auto';p.style.bottom=top?'auto':'66px';};
-window.aiOpen=(force)=>{const p=document.getElementById('aiPanel');if(!p)return;aiPlace();const open=force===undefined?p.style.display==='none':!!force;p.style.display=open?'block':'none';if(!open){try{speechSynthesis.cancel();}catch(e){}}};
-function aiSpeak(text){
+window.aiOpen=(force)=>{const p=document.getElementById('aiPanel');if(!p)return;aiPlace();const open=force===undefined?p.style.display==='none':!!force;p.style.display=open?'block':'none';if(!open&&force===undefined){try{speechSynthesis.cancel();S.aiAudio&&S.aiAudio.pause();}catch(e){}}};
+function aiTTS(text){
   try{
     if(!('speechSynthesis' in window))return;
     speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(String(text).replace(/[\u{1F300}-\u{1FAFF}\u2705\u274C]/gu,''));
+    const u=new SpeechSynthesisUtterance(String(text).replace(/[\u{1F300}-\u{1FAFF}✅❌]/gu,''));
     u.lang=AI_LOC[S.aiLang]||'fr-FR';u.rate=0.95;
-    u.onerror=()=>{S.aiPendingSpeak=text;};
+    u.onerror=()=>{S.aiPendingSpeak={text,key:null};};
     u.onstart=()=>{S.aiPendingSpeak=null;};
     speechSynthesis.speak(u);
-    setTimeout(()=>{if(!speechSynthesis.speaking&&!S.aiPendingSpeak)S.aiPendingSpeak=text;},700);
+    setTimeout(()=>{if(!speechSynthesis.speaking&&!S.aiPendingSpeak)S.aiPendingSpeak={text,key:null};},700);
   }catch(e){}
 }
-document.addEventListener('pointerdown',()=>{if(S.aiPendingSpeak&&document.getElementById('aiPanel')?.style.display==='block'){const t=S.aiPendingSpeak;S.aiPendingSpeak=null;aiSpeak(t);}},{passive:true});
+// key = nom de la phrase ; si l'admin a enregistré un vocal pour (langue, phrase) on le joue, sinon voix du téléphone
+function aiSpeak(text,key){
+  try{
+    try{S.aiAudio&&S.aiAudio.pause();}catch(e){}
+    try{speechSynthesis.cancel();}catch(e){}
+    const url=key&&S.aiVoices&&S.aiVoices[S.aiLang+'_'+key];
+    if(url){
+      const a=new Audio(url);S.aiAudio=a;
+      a.onerror=()=>aiTTS(text);
+      a.play().then(()=>{S.aiPendingSpeak=null;}).catch(()=>{S.aiPendingSpeak={text,key};});
+      return;
+    }
+    aiTTS(text);
+  }catch(e){}
+}
+async function loadAiVoices(){
+  try{
+    const sn=await withTimeout(getDocs(collection(db,'aiVoices')),4000,'voix');
+    const v={};sn.docs.forEach(d=>{const u=d.data().url;if(u)v[d.id]=u;});
+    S.aiVoices=v;try{localStorage.setItem('tatapay_aiVoices',JSON.stringify(v));}catch(e){}
+  }catch(e){try{S.aiVoices=JSON.parse(localStorage.getItem('tatapay_aiVoices')||'{}');}catch(_){S.aiVoices={};}}
+}
+document.addEventListener('pointerdown',()=>{if(S.aiPendingSpeak&&document.getElementById('aiPanel')?.style.display==='block'){const t=S.aiPendingSpeak;S.aiPendingSpeak=null;aiSpeak(t.text,t.key);}},{passive:true});
 
 (function(){
   const fab=document.getElementById('aiFab'),box=document.getElementById('aiFloat');if(!fab||!box)return;
@@ -3450,22 +3478,94 @@ document.addEventListener('pointerdown',()=>{if(S.aiPendingSpeak&&document.getEl
   fab.addEventListener('pointerup',end);fab.addEventListener('pointercancel',()=>{down=false;});
   window.addEventListener('resize',aiPlace);
 })();
-window.aiGreet=()=>{aiInit();aiOpen(true);aiSpeak(AI_TXT[S.aiLang].ask);};
-window.aiSetLang=(l)=>{S.aiLang=l;aiInit();aiSpeak(AI_TXT[l].ask);};
+
+/* ═══════════════ ADMIN : VOCAUX DE L'ASSISTANT ═══════════════ */
+const VC_KEYS=['ask','go','empty','found','none','nolist','mic'];
+const VC_LABEL={ask:'👋 Accueil (à l\'entrée dans l\'app)',go:'📷 Après la réponse (ouvre le scanner)',empty:'🤐 Le passager n\'a rien dit',found:'✅ Destination trouvée dans le bus',none:'❌ Destination absente de ce bus',nolist:'⚠️ Aucun trajet inscrit par le receveur',mic:'🎤 Micro : pas compris'};
+const VC_TXT={
+  wo:{found:'Baax na ! Destination bi nekk na ci bus bii. Duggal ko te fey.',none:'Gisuma ko ci bus bii. Laajal receveur bi.'},
+  fr:{found:'C\'est bon ! Cette destination est desservie par ce bus. Validez et payez.',none:'Cette destination n\'est pas inscrite dans ce bus. Demandez au receveur.'},
+  en:{found:'Good! This destination is served by this bus. Confirm and pay.',none:'This destination is not registered on this bus. Please ask the conductor.'}
+};
+const VC_LANG={wo:'Wolof',fr:'Français',en:'English'};
+let vcSaved={},vcPending={},vcRec=null,vcCur='wo';
+function vcText(l,k){return(VC_TXT[l]&&VC_TXT[l][k])||AI_TXT[l][k];}
+async function renderAdminVoices(){
+  const cont=document.getElementById('adminVoixList');if(!cont)return;
+  try{const sn=await getDocs(collection(db,'aiVoices'));vcSaved={};sn.docs.forEach(d=>{vcSaved[d.id]=d.data();});}catch(e){cont.innerHTML='<div style="color:#DF0024;padding:16px;font-size:12px;">Lecture impossible : '+(e.code||e.message)+' (règles Firestore pour aiVoices ?)</div>';return;}
+  vcDraw();
+}
+function vcDraw(){
+  const cont=document.getElementById('adminVoixList');if(!cont)return;
+  const tabs=Object.keys(VC_LANG).map(l=>`<button onclick="vcSetLang('${l}')" class="admin-action-btn" style="flex:1;${l===vcCur?'background:#7c3aed;color:#fff;border:1px solid #a78bfa;':'background:#ffffff10;color:#aaa;border:1px solid #ffffff20;'}">${VC_LANG[l]}</button>`).join('');
+  const rows=VC_KEYS.map(k=>{
+    const id=vcCur+'_'+k,sv=vcSaved[id],pd=vcPending[id],recording=vcRec&&vcRec.id===id;
+    const status=recording?'<span style="color:#DF0024;font-weight:800;">🔴 Enregistrement…</span>':pd?'<span style="color:#FF6B00;font-weight:800;">⏳ Nouveau vocal non sauvegardé</span>':sv?'<span style="color:#34d399;font-weight:800;">✅ Vocal enregistré</span>':'<span style="color:#666;">— voix du téléphone —</span>';
+    return `<div class="admin-user-card"><div style="font-weight:800;font-size:13px;margin-bottom:4px;">${VC_LABEL[k]}</div><div style="font-size:12px;color:#aaa;margin-bottom:6px;font-style:italic;">« ${vcText(vcCur,k)} »</div><div style="font-size:11px;margin-bottom:8px;">${status}</div><div class="admin-action-row" style="margin-top:0;">
+      <button class="admin-action-btn ${recording?'btn-reject':'btn-info'}" onclick="vcToggleRec('${vcCur}','${k}')">${recording?'⏹ Arrêter':'🎙️ Enregistrer'}</button>
+      ${(pd||sv)?`<button class="admin-action-btn btn-approve" onclick="vcPlay('${id}')">▶️ Écouter</button>`:''}
+      ${pd?`<button class="admin-action-btn btn-approve" onclick="vcSave('${vcCur}','${k}')">💾 Sauvegarder</button>`:''}
+      ${sv?`<button class="admin-action-btn btn-delete" onclick="vcDelete('${vcCur}','${k}')">🗑️</button>`:''}
+    </div></div>`;}).join('');
+  cont.innerHTML=`<div style="display:flex;gap:8px;margin-bottom:12px;">${tabs}</div>${rows}`;
+}
+window.vcSetLang=(l)=>{vcCur=l;vcDraw();};
+window.vcToggleRec=async(lang,key)=>{
+  const id=lang+'_'+key;
+  if(vcRec){const r=vcRec;if(r.id===id){r.mr.stop();return;}notify('⚠️','Enregistrement','Arrêtez d\'abord l\'enregistrement en cours.');return;}
+  if(!navigator.mediaDevices||!window.MediaRecorder){notify('⚠️','Micro','Enregistrement non supporté sur ce navigateur.');return;}
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const mime=MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':(MediaRecorder.isTypeSupported('audio/mp4')?'audio/mp4':'');
+    const mr=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
+    const chunks=[];
+    mr.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
+    mr.onstop=()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      const type=mr.mimeType||mime||'audio/webm';
+      const blob=new Blob(chunks,{type});
+      if(vcPending[id]?.url){try{URL.revokeObjectURL(vcPending[id].url);}catch(e){}}
+      vcPending[id]={blob,ext:type.includes('mp4')?'m4a':'webm',url:URL.createObjectURL(blob)};
+      vcRec=null;vcDraw();
+    };
+    vcRec={id,mr};mr.start();vcDraw();
+  }catch(e){notify('❌','Micro',e.name==='NotAllowedError'?'Permission micro refusée.':e.message);}
+};
+window.vcPlay=(id)=>{const u=vcPending[id]?.url||vcSaved[id]?.url;if(!u)return;try{new Audio(u).play();}catch(e){notify('❌','Lecture','Impossible de lire ce vocal.');}};
+window.vcSave=async(lang,key)=>{
+  const id=lang+'_'+key,pd=vcPending[id];if(!pd)return;
+  loader('Envoi du vocal…');
+  try{
+    const r=storageRef(storage,`aiVoices/${id}_${Date.now()}.${pd.ext}`);
+    await uploadBytes(r,pd.blob,{contentType:pd.blob.type||'audio/webm'});
+    const url=await getDownloadURL(r);
+    await setDoc(doc(db,'aiVoices',id),{lang,key,url,ext:pd.ext,by:S.uid,updatedAt:serverTimestamp()});
+    vcSaved[id]={lang,key,url};try{URL.revokeObjectURL(pd.url);}catch(e){}delete vcPending[id];
+    loader('',false);vcDraw();notify('✅','Vocal sauvegardé',VC_LABEL[key]);
+  }catch(e){loader('',false);notify('❌','Erreur',(e.code||e.message)+' — vérifiez les règles Storage/Firestore (admin).');}
+};
+window.vcDelete=async(lang,key)=>{
+  if(!confirm('Supprimer ce vocal ? L\'assistant reprendra la voix du téléphone.'))return;
+  const id=lang+'_'+key;
+  try{await deleteDoc(doc(db,'aiVoices',id));delete vcSaved[id];vcDraw();notify('🗑️','Supprimé','Vocal supprimé.');}catch(e){notify('❌','Erreur',e.message);}
+};
+
+window.aiGreet=()=>{aiInit();aiOpen(true);aiSpeak(AI_TXT[S.aiLang].ask,'ask');};
+window.aiSetLang=(l)=>{S.aiLang=l;aiInit();aiSpeak(AI_TXT[l].ask,'ask');};
 window.aiListen=()=>{
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){notify('🎤','Micro','Non supporté sur cet appareil : écrivez la destination.');return;}
   const rec=new SR();rec.lang=AI_LOC[S.aiLang]||'fr-FR';rec.interimResults=false;rec.maxAlternatives=1;
   const btn=document.getElementById('aiMicBtn');if(btn)btn.textContent='🔴';
   rec.onresult=e=>{const t=e.results[0][0].transcript;document.getElementById('aiDestInput').value=t;aiSubmit();};
-  rec.onerror=()=>{aiBubble(AI_TXT[S.aiLang].mic);};
+  rec.onerror=()=>{aiBubble(AI_TXT[S.aiLang].mic);aiSpeak(AI_TXT[S.aiLang].mic,'mic');};
   rec.onend=()=>{if(btn)btn.textContent='🎤';};
   try{rec.start();}catch(e){}
 };
 window.aiSubmit=()=>{
   const v=(document.getElementById('aiDestInput')?.value||'').trim();
-  if(!v){aiBubble(AI_TXT[S.aiLang].empty);return;}
-  aiBubble(AI_TXT[S.aiLang].go);aiOpen(false);
+  if(!v){aiBubble(AI_TXT[S.aiLang].empty);aiSpeak(AI_TXT[S.aiLang].empty,'empty');return;}
+  aiBubble(AI_TXT[S.aiLang].go);aiSpeak(AI_TXT[S.aiLang].go,'go');aiOpen(false);
   openTicketFlow();S.wantedDest=v;
   setTimeout(()=>openCamera('bus'),300);
 };
@@ -3485,7 +3585,7 @@ window.aiCheckDest=(cands)=>{
   box.style.display='block';
   if(ok){box.style.background='#00A65022';box.style.border='1.5px solid #009A44';box.style.color='#6ee7b7';box.textContent='🤖 '+T.found(ok.t.to,ok.t.price);ok.chip.click();ok.chip.scrollIntoView({block:'center'});}
   else{box.style.background='#DF002418';box.style.border='1.5px solid #DF002466';box.style.color='#ffb3b3';box.textContent='🤖 '+(cands.length?T.none(want):T.nolist);}
-  try{if('speechSynthesis' in window&&S.aiLang!=='wo'){const u=new SpeechSynthesisUtterance(box.textContent.replace(/[🤖✅❌]/g,''));u.lang=AI_LOC[S.aiLang];speechSynthesis.speak(u);}}catch(e){}
+  aiSpeak(box.textContent,ok?'found':(cands.length?'none':'nolist'));
 };
 window.openTicketFlow=()=>{resetFlow();openModal('modalTicketFlow');aiInit();};
 window.resetFlow=()=>{S.wantedDest=null;aiInit();setDots(0);['ticketStep0','ticketStep1','ticketStep3'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('ticketStep0').style.display='block';S.ticketBus=null;S.ticketSection=null;document.getElementById('ticketPriceDisplay').textContent='— FCFA';document.getElementById('btnPayTicket').disabled=true;if(unsubTicketWait){unsubTicketWait();unsubTicketWait=null;}};
