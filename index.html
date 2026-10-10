@@ -2929,7 +2929,9 @@ async function loadAdminDashboard(){
     const total=adminAllUsers.length,passengers=adminAllUsers.filter(u=>u.role==='passenger').length,receivers=adminAllUsers.filter(u=>u.role==='receiver').length,owners=adminAllUsers.filter(u=>u.role==='owner').length,directeurs=adminAllUsers.filter(u=>u.role==='directeur').length,chauffeurs=adminAllUsers.filter(u=>u.role==='chauffeur').length,pending=adminAllUsers.filter(u=>u.status==='pending').length;
     document.getElementById('aStat-total').textContent=total;document.getElementById('aStat-passengers').textContent=passengers;document.getElementById('aStat-receivers').textContent=receivers;document.getElementById('aStat-owners').textContent=owners;document.getElementById('aStat-directeurs').textContent=directeurs;document.getElementById('aStat-chauffeurs').textContent=chauffeurs;document.getElementById('aStat-pending').textContent=pending;
     try{const tc=await getCountFromServer(collection(db,'tickets'));document.getElementById('aStat-tickets').textContent=tc.data().count;}catch(e){document.getElementById('aStat-tickets').textContent='—';}
-    const wdSnap=await getDocs(collection(db,'withdrawal_requests'));adminAllWithdrawals=wdSnap.docs.map(d=>({id:d.id,...d.data()}));document.getElementById('aStat-withdraws').textContent=adminAllWithdrawals.filter(w=>w.status==='pending').length;
+    const wdSnap=await getDocs(collection(db,'withdrawal_requests'));adminAllWithdrawals=wdSnap.docs.map(d=>({id:d.id,...d.data()}));
+    try{const poSnap=await getDocs(collection(db,'payouts'));const stMap={pending_manual:'pending',success:'done',sent:'done',refunded:'rejected'};
+      poSnap.docs.forEach(d=>{const p=d.data();if(p.status==='pending_manual'||p.status==='success'||p.status==='refunded'){adminAllWithdrawals.push({id:d.id,manual:true,uid:p.uid,name:p.name,walletId:p.walletId,amount:p.amount,phone:p.phone,operator:'Wave',ref:d.id,status:stMap[p.status]||'pending',requestedAt:p.createdAt});}});}catch(e){console.warn('payouts',e);}document.getElementById('aStat-withdraws').textContent=adminAllWithdrawals.filter(w=>w.status==='pending').length;
     renderDashPending();renderOwnersList();renderDirecteursList();renderUsersList();renderWithdrawalsList();
   }catch(e){console.error('Admin dashboard error:',e);}
 }
@@ -3038,8 +3040,16 @@ function renderWithdrawalsList(){let wds=adminAllWithdrawals;if(adminCurrentWdFi
 window.filterAdminList=(type)=>{if(type==='owners')renderOwnersList();else if(type==='directeurs')renderDirecteursList();else if(type==='users')renderUsersList();};
 window.filterByRole=(role)=>{adminCurrentRoleFilter=role;renderUsersList();};
 window.filterWithdrawals=(f)=>{adminCurrentWdFilter=f;renderWithdrawalsList();};
-window.markWithdrawDone=async(docId)=>{try{await updateDoc(doc(db,'withdrawal_requests',docId),{status:'done',treatedAt:serverTimestamp()});notify('✅','Traité','Demande marquée comme traitée.');await loadAdminDashboard();}catch(e){notify('❌','Erreur',e.message);}};
+async function adminPayoutCall(id,action){
+  const token=await auth.currentUser.getIdToken();
+  const res=await fetch(BACKEND_URL+'/api/admin/payouts/'+encodeURIComponent(id)+'/'+action,{method:'POST',headers:{'Authorization':'Bearer '+token}});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(data.error||'Erreur serveur');
+}
+window.markWithdrawDone=async(docId)=>{const w0=adminAllWithdrawals.find(x=>x.id===docId);if(w0?.manual){try{await adminPayoutCall(docId,'done');notify('✅','Traité','Retrait marqué comme envoyé.');await loadAdminDashboard();}catch(e){notify('❌','Erreur',e.message);}return;}try{await updateDoc(doc(db,'withdrawal_requests',docId),{status:'done',treatedAt:serverTimestamp()});notify('✅','Traité','Demande marquée comme traitée.');await loadAdminDashboard();}catch(e){notify('❌','Erreur',e.message);}};
 window.rejectWithdraw=async(docId)=>{
+  const w0=adminAllWithdrawals.find(x=>x.id===docId);
+  if(w0?.manual){try{if(!confirm('Refuser ? Le montant sera remboursé au client.'))return;await adminPayoutCall(docId,'reject');notify('❌','Rejeté','Retrait refusé et remboursé.');await loadAdminDashboard();}catch(e){notify('❌','Erreur',e.message);}return;}
   try{
     if(!confirm('Refuser cette demande ? Le montant sera remboursé au solde du client.'))return;
     const w=adminAllWithdrawals.find(x=>x.id===docId);
