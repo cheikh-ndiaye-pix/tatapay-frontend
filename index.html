@@ -35,6 +35,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bk);color:var(--w);
 @keyframes slideDown{0%{transform:translateX(-50%) translateY(-80px);opacity:0}100%{transform:translateX(-50%) translateY(0);opacity:1}}
 @keyframes infoSlide{0%{transform:translateX(110%);}18%{transform:translateX(0);}55%{transform:translateX(0);}78%{transform:translateX(-110%);}100%{transform:translateX(-110%);}}
 .recv-info-marquee{display:inline-block;animation:infoSlide 6s ease-in-out infinite;}
+@keyframes aiFloatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes bellShake{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-15deg)}40%,80%{transform:rotate(15deg)}}
 @keyframes notifIn{0%{transform:translateX(110%);opacity:0}100%{transform:translateX(0);opacity:1}}
 @keyframes notifOut{0%{transform:translateX(0);opacity:1}100%{transform:translateX(110%);opacity:0}}
@@ -239,6 +240,25 @@ select.input-field option{background:#0c1f12;color:#fff;}
 
 <div id="globalLoader"><div class="spinner"></div><div style="color:#009A44;font-weight:800;font-size:15px;" id="loaderMsg">Chargement…</div></div>
 
+<div id="aiFloat" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:96px;width:100%;max-width:430px;z-index:140;pointer-events:none;padding:0 12px;box-sizing:border-box;">
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+    <div id="aiPanel" style="pointer-events:auto;display:none;width:100%;max-width:330px;background:#0c1f12;border:1.5px solid #7c3aed88;border-radius:18px;padding:12px;box-shadow:0 8px 28px #000a;animation:fadeIn .3s ease;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-weight:900;font-size:13px;color:#c4b5fd;">🤖 Assistant TataPay</div><button onclick="aiOpen(false)" style="background:#ffffff15;border:none;border-radius:8px;padding:4px 9px;color:#aaa;cursor:pointer;font-size:12px;">✕</button></div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <button class="ai-lang" data-l="wo" onclick="aiSetLang('wo')" style="flex:1;padding:7px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">Wolof</button>
+        <button class="ai-lang" data-l="fr" onclick="aiSetLang('fr')" style="flex:1;padding:7px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">Français</button>
+        <button class="ai-lang" data-l="en" onclick="aiSetLang('en')" style="flex:1;padding:7px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">English</button>
+      </div>
+      <div id="aiBubble" style="background:#7c3aed22;border:1px solid #7c3aed55;border-radius:14px;padding:10px 12px;font-size:13.5px;line-height:1.5;color:#e2e8f0;margin-bottom:8px;"></div>
+      <div style="display:flex;gap:8px;">
+        <input class="input-field" id="aiDestInput" placeholder="Ex: Liberté 6, Pikine…" style="flex:1;padding:10px 12px;" onkeydown="if(event.key==='Enter')aiSubmit()"/>
+        <button id="aiMicBtn" onclick="aiListen()" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);border:none;border-radius:12px;padding:0 14px;cursor:pointer;font-size:20px;">🎤</button>
+      </div>
+      <button class="btn btn-purple btn-full" style="margin-top:8px;padding:11px;font-size:13px;" onclick="aiSubmit()">✅ Valider et ouvrir le scanner</button>
+    </div>
+    <button id="aiFab" onclick="aiOpen()" style="pointer-events:auto;width:58px;height:58px;border-radius:29px;border:2px solid #a78bfa;background:linear-gradient(135deg,#7c3aed,#4c1d95);font-size:28px;cursor:pointer;box-shadow:0 6px 20px #7c3aed88;animation:aiFloatY 3s ease-in-out infinite;">🤖</button>
+  </div>
+</div>
 <div class="sygost" id="sygostNotif">
   <div class="sygost-inner">
     <div style="font-size:22px;" id="sygostIcon">📋</div>
@@ -420,21 +440,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
             <button onclick="doLogout()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px;cursor:pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
           </div>
         </div>
-        <div style="background:#7c3aed15;border:1.5px solid #7c3aed55;border-radius:18px;padding:14px;margin-bottom:18px;">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><div style="width:38px;height:38px;border-radius:19px;background:linear-gradient(135deg,#7c3aed,#4c1d95);display:flex;align-items:center;justify-content:center;font-size:20px;">🤖</div><div style="font-weight:900;font-size:14px;color:#c4b5fd;">Assistant TataPay</div></div>
-  <div style="display:flex;gap:6px;margin-bottom:10px;">
-    <button class="ai-lang" data-l="wo" onclick="aiSetLang('wo')" style="flex:1;padding:8px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">Wolof</button>
-    <button class="ai-lang" data-l="fr" onclick="aiSetLang('fr')" style="flex:1;padding:8px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">Français</button>
-    <button class="ai-lang" data-l="en" onclick="aiSetLang('en')" style="flex:1;padding:8px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">English</button>
-  </div>
-  <div id="aiBubble" style="background:#0c1f12;border:1px solid #7c3aed44;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.5;color:#e2e8f0;margin-bottom:10px;"></div>
-  <div style="display:flex;gap:8px;">
-    <input class="input-field" id="aiDestInput" placeholder="Ex: Liberté 6, Pikine…" style="flex:1;" onkeydown="if(event.key==='Enter')aiSubmit()"/>
-    <button id="aiMicBtn" onclick="aiListen()" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);border:none;border-radius:12px;padding:0 14px;cursor:pointer;font-size:20px;">🎤</button>
-  </div>
-  <button class="btn btn-purple btn-full" style="margin-top:10px;" onclick="aiSubmit()">✅ Valider et ouvrir le scanner</button>
-</div>
-<div style="background:linear-gradient(135deg,#061a0a,#0d2e10);border-radius:24px;padding:22px 20px 20px;margin-bottom:18px;border:1px solid #009A4433;position:relative;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#061a0a,#0d2e10);border-radius:24px;padding:22px 20px 20px;margin-bottom:18px;border:1px solid #009A4433;position:relative;overflow:hidden;">
           <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);"></div>
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
             <div style="font-size:11px;color:#ffffff55;">Solde TataPay</div>
@@ -1273,7 +1279,7 @@ function notify(icon,title,body){['sygostIcon','sygostTitle','sygostBody'].forEa
 window.hideSygost=()=>document.getElementById('sygostNotif').classList.remove('show');
 function renderQR(id,text,size=130,ecc='H'){const el=document.getElementById(id);if(!el)return;el.innerHTML='';const canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;canvas.style.cssText=`border-radius:4px;display:block;width:${size}px;height:${size}px;background:#fff;`;el.appendChild(canvas);function fallbackImg(){el.innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&ecc=${ecc}&margin=10" width="${size}" height="${size}" style="border-radius:4px;display:block;" onerror="this.parentNode.innerHTML='<div style=&quot;color:#f66;font-size:11px;text-align:center;padding:20px;&quot;>QR indisponible (hors-ligne)</div>'"/>`;}if(window.QRCode&&QRCode.toCanvas){QRCode.toCanvas(canvas,text,{width:size,margin:2,errorCorrectionLevel:ecc},(err)=>{if(err){console.warn('[renderQR] local gen failed, fallback',err);fallbackImg();}});}else{console.warn('[renderQR] QRCode lib not loaded, fallback');fallbackImg();}}
 function renderMerchantQR(id,p,size=160){const el=document.getElementById(id);if(!el)return;const data=`tatapay://bus/${p.walletId}?gie=${encodeURIComponent(p.gie||'')}&vehicle=${encodeURIComponent(p.vehicle||'')}&ligne=${encodeURIComponent(p.ligne||'')}&zone=${encodeURIComponent(p.zone||'')}`;el.innerHTML=`<div style="background:#fff;border-radius:14px;padding:12px;display:inline-block;"><div id="${id}_canvasWrap"></div><div style="margin-top:8px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:#333;font-weight:700;line-height:1.6;">${p.gie||'—'} · ${p.vehicle||'—'} · Ligne ${p.ligne||'—'}<br><span style="color:#009A44;">${p.walletId}</span></div></div>`;const wrap=document.getElementById(id+'_canvasWrap');if(!wrap)return;const canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;canvas.style.cssText=`display:block;border-radius:4px;width:${size}px;height:${size}px;`;wrap.appendChild(canvas);function fallbackImg(){wrap.innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(data)}&ecc=H&margin=10" width="${size}" height="${size}" style="display:block;border-radius:4px;" onerror="this.parentNode.innerHTML='<div style=&quot;color:#c00;font-size:11px;padding:20px;&quot;>QR indisponible (hors-ligne)</div>'"/>`;}if(window.QRCode&&QRCode.toCanvas){QRCode.toCanvas(canvas,data,{width:size,margin:1,errorCorrectionLevel:'H'},(err)=>{if(err){console.warn('[renderMerchantQR] local gen failed, fallback',err);fallbackImg();}});}else{console.warn('[renderMerchantQR] QRCode lib not loaded, fallback');fallbackImg();}}
-function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id)?.classList.add('active');}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));{const f=document.getElementById('aiFloat');if(f)f.style.display=id==='screenPassenger'?'block':'none';if(id!=='screenPassenger'){try{speechSynthesis.cancel();}catch(e){}}}document.getElementById(id)?.classList.add('active');}
 function statusBadge(s){const map={pending:'badge-pending',approved:'badge-approved',active:'badge-approved',rejected:'badge-rejected',suspended:'badge-suspended',done:'badge-done'};const label={pending:'En attente',approved:'Approuvé',active:'Actif',rejected:'Refusé',suspended:'Suspendu',done:'Traité'};return`<span class="admin-badge ${map[s]||'badge-pending'}">${label[s]||s}</span>`;}
 function roleBadge(r){const c={passenger:'#009A44',receiver:'#FF6B00',owner:'#7c3aed',chauffeur:'#059669',directeur:'#0ea5e9'};const ic={passenger:'🧍',receiver:'🎫',owner:'🚌',chauffeur:'👨‍✈️',directeur:'🏢'};return`<span style="font-size:11px;padding:3px 10px;border-radius:8px;background:${c[r]||'#444'}22;color:${c[r]||'#aaa'};border:1px solid ${c[r]||'#444'}44;font-weight:800;">${ic[r]||'👤'} ${r}</span>`;}
 function fmt(n){return Math.round(n||0).toLocaleString('fr-FR');}
@@ -1590,11 +1596,11 @@ function loginUI(){
     document.getElementById('passWalletId').textContent=p.walletId;
     document.getElementById('profileName').textContent=p.name;
     document.getElementById('profileEmail').textContent=p.email;
-    refreshPassWalletQR();aiInit();
+    refreshPassWalletQR();
     updateBalanceUI();clearFriend();
     unsubBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;updateBalanceUI();refreshPassWalletQR();}});
     attachPassNotifListener();
-    loadPassHomeTx();loadPassTickets();show('screenPassenger');notify('✅','Bienvenue !',p.name);
+    loadPassHomeTx();loadPassTickets();show('screenPassenger');setTimeout(()=>aiGreet(),700);notify('✅','Bienvenue !',p.name);
     // Restaure le dernier ticket actif depuis le cache (utile hors-ligne)
     const _cachedActive=getCachedActiveTicket();if(_cachedActive)showDescendBtn(_cachedActive);
   }else if(S.role==='receiver'&&p.status==='approved'){
@@ -3418,7 +3424,22 @@ function aiInit(){
     const r=document.getElementById('aiResult');if(r)r.style.display='none';
   }catch(e){}
 }
-window.aiSetLang=(l)=>{S.aiLang=l;aiInit();};
+window.aiOpen=(force)=>{const p=document.getElementById('aiPanel');if(!p)return;const open=force===undefined?p.style.display==='none':!!force;p.style.display=open?'block':'none';if(!open){try{speechSynthesis.cancel();}catch(e){}}};
+function aiSpeak(text){
+  try{
+    if(!('speechSynthesis' in window))return;
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(String(text).replace(/[\u{1F300}-\u{1FAFF}\u2705\u274C]/gu,''));
+    u.lang=AI_LOC[S.aiLang]||'fr-FR';u.rate=0.95;
+    u.onerror=()=>{S.aiPendingSpeak=text;};
+    u.onstart=()=>{S.aiPendingSpeak=null;};
+    speechSynthesis.speak(u);
+    setTimeout(()=>{if(!speechSynthesis.speaking&&!S.aiPendingSpeak)S.aiPendingSpeak=text;},700);
+  }catch(e){}
+}
+document.addEventListener('pointerdown',()=>{if(S.aiPendingSpeak&&document.getElementById('aiPanel')?.style.display==='block'){const t=S.aiPendingSpeak;S.aiPendingSpeak=null;aiSpeak(t);}},{passive:true});
+window.aiGreet=()=>{aiInit();aiOpen(true);aiSpeak(AI_TXT[S.aiLang].ask);};
+window.aiSetLang=(l)=>{S.aiLang=l;aiInit();aiSpeak(AI_TXT[l].ask);};
 window.aiListen=()=>{
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){notify('🎤','Micro','Non supporté sur cet appareil : écrivez la destination.');return;}
@@ -3432,7 +3453,7 @@ window.aiListen=()=>{
 window.aiSubmit=()=>{
   const v=(document.getElementById('aiDestInput')?.value||'').trim();
   if(!v){aiBubble(AI_TXT[S.aiLang].empty);return;}
-  aiBubble(AI_TXT[S.aiLang].go);
+  aiBubble(AI_TXT[S.aiLang].go);aiOpen(false);
   openTicketFlow();S.wantedDest=v;
   setTimeout(()=>openCamera('bus'),300);
 };
