@@ -433,6 +433,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
             <button onclick="openTicketFlow()" style="background:linear-gradient(160deg,#6d28d9,#3b0764);border:2px solid #a78bfa66;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">🎫</div>Acheter Ticket</button>
             <button onclick="openSend()" style="background:linear-gradient(160deg,#059669,#065f46);border:2px solid #34d39966;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">📷</div>Scan Ami</button>
           </div>
+          <button onclick="openWithdraw()" style="width:100%;margin-top:10px;background:linear-gradient(135deg,#1dc8f2,#0891b2);border:none;border-radius:14px;padding:13px 16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;"><span style="font-size:20px;">🌊</span> Retour de mon argent vers Wave</button>
         </div>
         <button onclick="openTrackBus()" style="width:100%;background:linear-gradient(135deg,#0ea5e9,#0369a1);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
           <div style="font-size:24px;">📍</div>
@@ -900,16 +901,18 @@ select.input-field option{background:#0c1f12;color:#fff;}
 <div class="modal-overlay" id="modalWithdraw" style="display:none;" onclick="if(event.target===this)closeModal('modalWithdraw')">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
-    <div class="modal-header"><div><div style="font-weight:900;font-size:18px;">💸 Retirer mon argent</div></div><button class="modal-close" onclick="closeModal('modalWithdraw')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-header"><div><div style="font-weight:900;font-size:18px;">🌊 Retour vers Wave</div></div><button class="modal-close" onclick="closeModal('modalWithdraw')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="modal-body">
       <div style="background:#009A4415;border:1.5px solid #009A4444;border-radius:14px;padding:12px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;"><div style="font-size:13px;color:#aaa;">Solde disponible</div><div style="font-weight:900;font-size:20px;color:var(--y);" id="withdrawAvailable">0 FCFA</div></div>
       <div id="wdStep1">
         <div class="quick-grid"><button class="quick-btn" onclick="document.getElementById('wdAmt').value=1000">1 000</button><button class="quick-btn" onclick="document.getElementById('wdAmt').value=2000">2 000</button><button class="quick-btn" onclick="document.getElementById('wdAmt').value=5000">5 000</button><button class="quick-btn" onclick="document.getElementById('wdAmt').value=10000">10 000</button></div>
-        <input class="input-field" id="wdAmt" type="number" placeholder="Montant en FCFA" style="margin-bottom:16px;"/>
+        <input class="input-field" id="wdAmt" type="number" placeholder="Montant en FCFA (min 500)" style="margin-bottom:12px;"/>
+        <label class="input-label">Numéro Wave qui recevra l'argent *</label>
+        <input class="input-field" id="wdPhone" type="tel" placeholder="ex: 77 123 45 67" style="margin-bottom:16px;"/>
         <button class="btn btn-primary btn-full" onclick="wdGoStep2()">Continuer →</button>
       </div>
       <div id="wdStep2" style="display:none;">
-        <div style="background:#ffffff08;border-radius:18px;padding:24px;text-align:center;margin-bottom:18px;"><div style="font-size:13px;color:#888;margin-bottom:6px;">Montant à retirer</div><div style="font-weight:900;font-size:32px;color:var(--y);" id="wdAmtBig">— FCFA</div></div>
+        <div style="background:#ffffff08;border-radius:18px;padding:24px;text-align:center;margin-bottom:18px;"><div style="font-size:13px;color:#888;margin-bottom:6px;">Montant à retirer</div><div style="font-weight:900;font-size:32px;color:var(--y);" id="wdAmtBig">— FCFA</div><div style="font-size:12px;color:#7dd3fc;margin-top:10px;">🌊 Wave → <span id="wdPhoneBig">—</span></div><div style="font-size:11px;color:#888;margin-top:8px;line-height:1.5;">Le montant est retiré de votre solde dès l'envoi de la demande. S'il est refusé, il vous est remboursé.</div></div>
         <button class="btn btn-full" onclick="doWithdraw()" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-weight:900;font-size:15px;padding:16px;">📤 Envoyer la demande</button>
         <button onclick="resetWithdraw()" style="width:100%;background:none;border:none;color:#888;margin-top:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">← Retour</button>
       </div>
@@ -1276,7 +1279,7 @@ async function loadDirecteurList(){
   const sels=[document.getElementById('authDirecteurSelect'),document.getElementById('authChDirecteurSelect'),document.getElementById('authOwnerGIESelect'),document.getElementById('modalRecvGIESelect')].filter(Boolean);
   if(!sels.length)return;
   sels.forEach(sel=>sel.innerHTML='<option value="">Chargement…</option>');
-  try{const snap=await getDocs(query(collection(db,'users'),where('role','==','directeur'),where('status','==','approved')));sels.forEach(sel=>{sel.innerHTML='<option value="">— Choisir un directeur —</option>';if(snap.empty){sel.innerHTML='<option value="">Aucun directeur disponible</option>';return;}snap.docs.forEach(d=>{const u=d.data();const opt=document.createElement('option');opt.value=d.id;opt.textContent=`${u.name} — ${u.org||u.email}`;sel.appendChild(opt);});});}catch(e){sels.forEach(sel=>sel.innerHTML='<option value="">Erreur — réessayez</option>');}
+  try{const snap=await getDocs(collection(db,'publicDirecteurs'));sels.forEach(sel=>{sel.innerHTML='<option value="">— Choisir un directeur —</option>';if(snap.empty){sel.innerHTML='<option value="">Aucun directeur disponible</option>';return;}snap.docs.forEach(d=>{const u=d.data();const opt=document.createElement('option');opt.value=d.id;opt.textContent=`${u.name} — ${u.org||''}`;sel.appendChild(opt);});});}catch(e){sels.forEach(sel=>sel.innerHTML='<option value="">Erreur — réessayez</option>');}
 }
 window.authSelectedOwners=new Set();
 window.modalSelectedOwners=new Set();
@@ -2751,10 +2754,10 @@ window.doRecvVersement=async()=>{
       const meSnap=await tx.get(doc(db,'users',S.uid));
       const me=meSnap.data();
       if((me.balance||0)<amount)throw new Error('Solde insuffisant.');
-      tx.update(doc(db,'users',S.uid),{balance:increment(-amount)});
+      tx.update(doc(db,'users',S.uid),{balance:increment(-amount),opCol:'versements',opId:vRef.id});
       tx.set(doc(collection(db,'users',S.uid,'history')),{type:'versement_out',label:'Versement chauffeur — '+ref,amount:-amount,ref,ts:serverTimestamp()});
       if(ownerUid){
-        tx.update(doc(db,'users',ownerUid),{balance:increment(amount)});
+        tx.update(doc(db,'users',ownerUid),{balance:increment(amount),opCol:'versements',opId:vRef.id});
         tx.set(doc(collection(db,'users',ownerUid,'history')),{type:'versement_in',label:'Versement reçu de '+(S.profile?.name||'receveur'),amount,ref,ts:serverTimestamp()});
         tx.set(doc(collection(db,'notifications')),{toUid:ownerUid,type:'versement_confirmed',fromUid:S.uid,receiverName:S.profile?.name||'',amount,ref,mode,read:false,ts:serverTimestamp()});
       }
@@ -2786,9 +2789,12 @@ window.doOwnerWithdraw=async()=>{
     const res=await fetch('/api/public/paytech-payout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,phone,operator,ref,ownerName:S.profile?.name||''})});
     const data=await res.json().catch(()=>({}));
     if(!res.ok||!data.success){loader('',false);notify('❌','Échec PayTech',data?.error||'Retrait refusé par PayTech.');return;}
-    await updateDoc(doc(db,'users',S.uid),{balance:increment(-amount)});
-    await addDoc(collection(db,'users',S.uid,'history'),{type:'withdraw',label:`Retrait PayTech ${operator} → ${phone}`,amount:-amount,ref,ts:serverTimestamp()});
-    await addDoc(collection(db,'withdrawals'),{ownerUid:S.uid,ownerName:S.profile?.name||'',amount,phone,operator,ref,status:'sent',ts:serverTimestamp()});
+    const wdRef=doc(collection(db,'withdrawals'));
+    const wdBatch=writeBatch(db);
+    wdBatch.update(doc(db,'users',S.uid),{balance:increment(-amount),opCol:'withdrawals',opId:wdRef.id});
+    wdBatch.set(doc(collection(db,'users',S.uid,'history')),{type:'withdraw',label:`Retrait PayTech ${operator} → ${phone}`,amount:-amount,ref,ts:serverTimestamp()});
+    wdBatch.set(wdRef,{ownerUid:S.uid,ownerName:S.profile?.name||'',amount,phone,operator,ref,status:'sent',ts:serverTimestamp()});
+    await wdBatch.commit();
     loader('',false);closeModal('modalOwnerWithdraw');
     notify('✅','Retrait envoyé',`${fmt(amount)} FCFA → ${phone}`);
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
@@ -2914,9 +2920,21 @@ function attachPassNotifListener(){
 let adminAllUsers=[],adminAllWithdrawals=[];
 let adminCurrentRoleFilter='all',adminCurrentWdFilter='pending';
 window.switchAdminTab=(tab)=>{document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.admin-nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('adminTab-'+tab)?.classList.add('active');document.querySelectorAll('.admin-nav-btn').forEach(b=>{if(b.textContent.toLowerCase().includes(tab.slice(0,4)))b.classList.add('active');});};
+// Annuaire public : uniquement nom + organisation des directeurs approuvés
+async function syncPublicDirecteurs(){
+  try{
+    const wanted=new Map(adminAllUsers.filter(u=>u.role==='directeur'&&(u.status==='approved'||u.status==='active')).map(u=>[u.id,{name:u.name||'',org:u.org||''}]));
+    const cur=await getDocs(collection(db,'publicDirecteurs'));
+    const batch=writeBatch(db);let n=0;
+    cur.docs.forEach(d=>{if(!wanted.has(d.id)){batch.delete(d.ref);n++;}});
+    wanted.forEach((v,id)=>{const c=cur.docs.find(d=>d.id===id)?.data();if(!c||c.name!==v.name||c.org!==v.org){batch.set(doc(db,'publicDirecteurs',id),v);n++;}});
+    if(n)await batch.commit();
+  }catch(e){console.warn('syncPublicDirecteurs',e);}
+}
 async function loadAdminDashboard(){
   try{
     const usersSnap=await getDocs(collection(db,'users'));adminAllUsers=usersSnap.docs.map(d=>({id:d.id,...d.data()}));
+    syncPublicDirecteurs();
     const total=adminAllUsers.length,passengers=adminAllUsers.filter(u=>u.role==='passenger').length,receivers=adminAllUsers.filter(u=>u.role==='receiver').length,owners=adminAllUsers.filter(u=>u.role==='owner').length,directeurs=adminAllUsers.filter(u=>u.role==='directeur').length,chauffeurs=adminAllUsers.filter(u=>u.role==='chauffeur').length,pending=adminAllUsers.filter(u=>u.status==='pending').length;
     document.getElementById('aStat-total').textContent=total;document.getElementById('aStat-passengers').textContent=passengers;document.getElementById('aStat-receivers').textContent=receivers;document.getElementById('aStat-owners').textContent=owners;document.getElementById('aStat-directeurs').textContent=directeurs;document.getElementById('aStat-chauffeurs').textContent=chauffeurs;document.getElementById('aStat-pending').textContent=pending;
     try{const tc=await getCountFromServer(collection(db,'tickets'));document.getElementById('aStat-tickets').textContent=tc.data().count;}catch(e){document.getElementById('aStat-tickets').textContent='—';}
@@ -3025,12 +3043,26 @@ window.adminBulkDelete=async()=>{
     await loadAdminDashboard();
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
-function renderWithdrawalsList(){let wds=adminAllWithdrawals;if(adminCurrentWdFilter!=='all')wds=wds.filter(w=>w.status===adminCurrentWdFilter);wds.sort((a,b)=>(b.requestedAt?.seconds||0)-(a.requestedAt?.seconds||0));const cont=document.getElementById('adminWithdrawList');cont.innerHTML=`<div style="color:#888;font-size:12px;margin-bottom:12px;">${wds.length} demande(s)</div>`;if(!wds.length){cont.innerHTML+='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucune demande</div>';return;}cont.innerHTML+=wds.map(w=>{const date=w.requestedAt?.toDate?.()?.toLocaleDateString('fr-FR')||'—';return`<div class="admin-user-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div style="font-weight:800;">${w.name||'—'}</div><div style="font-size:11px;color:#888;">${w.walletId||'—'}</div><div style="font-size:11px;color:#888;">Ref: ${w.ref||'—'} · ${date}</div></div><div style="text-align:right;"><div style="font-weight:900;font-size:18px;color:#FDEF42;">${fmt(w.amount)} F</div>${statusBadge(w.status)}</div></div>${w.status==='pending'?`<div class="admin-action-row"><button class="admin-action-btn btn-approve" onclick="markWithdrawDone('${w.id}')">✅ Marquer traité</button><button class="admin-action-btn btn-reject" onclick="rejectWithdraw('${w.id}')">❌ Refuser</button></div>`:''}</div>`;}).join('');}
+function renderWithdrawalsList(){let wds=adminAllWithdrawals;if(adminCurrentWdFilter!=='all')wds=wds.filter(w=>w.status===adminCurrentWdFilter);wds.sort((a,b)=>(b.requestedAt?.seconds||0)-(a.requestedAt?.seconds||0));const cont=document.getElementById('adminWithdrawList');cont.innerHTML=`<div style="color:#888;font-size:12px;margin-bottom:12px;">${wds.length} demande(s)</div>`;if(!wds.length){cont.innerHTML+='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucune demande</div>';return;}cont.innerHTML+=wds.map(w=>{const date=w.requestedAt?.toDate?.()?.toLocaleDateString('fr-FR')||'—';return`<div class="admin-user-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div style="font-weight:800;">${w.name||'—'}</div><div style="font-size:11px;color:#888;">${w.walletId||'—'}</div>${w.phone?`<div style="font-size:12px;color:#7dd3fc;font-weight:700;">🌊 ${w.operator||'Wave'} → ${w.phone}</div>`:''}<div style="font-size:11px;color:#888;">Ref: ${w.ref||'—'} · ${date}</div></div><div style="text-align:right;"><div style="font-weight:900;font-size:18px;color:#FDEF42;">${fmt(w.amount)} F</div>${statusBadge(w.status)}</div></div>${w.status==='pending'?`<div class="admin-action-row"><button class="admin-action-btn btn-approve" onclick="markWithdrawDone('${w.id}')">✅ Marquer traité</button><button class="admin-action-btn btn-reject" onclick="rejectWithdraw('${w.id}')">❌ Refuser</button></div>`:''}</div>`;}).join('');}
 window.filterAdminList=(type)=>{if(type==='owners')renderOwnersList();else if(type==='directeurs')renderDirecteursList();else if(type==='users')renderUsersList();};
 window.filterByRole=(role)=>{adminCurrentRoleFilter=role;renderUsersList();};
 window.filterWithdrawals=(f)=>{adminCurrentWdFilter=f;renderWithdrawalsList();};
 window.markWithdrawDone=async(docId)=>{try{await updateDoc(doc(db,'withdrawal_requests',docId),{status:'done',treatedAt:serverTimestamp()});notify('✅','Traité','Demande marquée comme traitée.');await loadAdminDashboard();}catch(e){notify('❌','Erreur',e.message);}};
-window.rejectWithdraw=async(docId)=>{try{await updateDoc(doc(db,'withdrawal_requests',docId),{status:'rejected',treatedAt:serverTimestamp()});notify('❌','Rejeté','Demande rejetée.');await loadAdminDashboard();}catch(e){notify('❌','Erreur',e.message);}};
+window.rejectWithdraw=async(docId)=>{
+  try{
+    if(!confirm('Refuser cette demande ? Le montant sera remboursé au solde du client.'))return;
+    const w=adminAllWithdrawals.find(x=>x.id===docId);
+    const b=writeBatch(db);
+    b.update(doc(db,'withdrawal_requests',docId),{status:'rejected',treatedAt:serverTimestamp()});
+    // Remboursement : le montant avait été retiré du solde à la demande
+    if(w&&w.uid&&w.status==='pending'&&w.operator==='Wave'){ // anciennes demandes (sans retrait de solde) : pas de remboursement
+      b.update(doc(db,'users',w.uid),{balance:increment(w.amount)});
+      b.set(doc(collection(db,'users',w.uid,'history')),{type:'withdraw_refund',label:'Retour Wave refusé — remboursé ('+(w.ref||'')+')',amount:w.amount,ts:serverTimestamp()});
+    }
+    await b.commit();
+    notify('❌','Rejeté','Demande rejetée et montant remboursé.');await loadAdminDashboard();
+  }catch(e){notify('❌','Erreur',e.message);}
+};
 function startAdminRealtime(){if(unsubAdmin)unsubAdmin();unsubAdmin=onSnapshot(query(collection(db,'users'),where('status','==','pending'),where('role','==','directeur')),snap=>{const n=snap.size;document.querySelectorAll('.admin-nav-btn').forEach(b=>{if(b.textContent.includes('Dashboard'))b.textContent=n>0?`📊 Dashboard (${n})`:'📊 Dashboard';});});}
 
 window.switchTab=(tab)=>{document.querySelectorAll('#screenPassenger .tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('passTab-'+tab)?.classList.add('active');document.getElementById('nav-'+tab)?.classList.add('active');if(tab==='tickets')loadPassTickets();if(tab==='history')loadPassHistory();};
@@ -3101,14 +3133,26 @@ window.demandDescendre=async()=>{
   notify('🛑','Signal envoyé !','Le receveur et le chauffeur ont été prévenus.');
 };
 window.showActiveTicket=()=>{if(activeTicketData)showTicketData(activeTicketData);};
-window.openWithdraw=()=>{resetWithdraw();document.getElementById('withdrawAvailable').textContent=fmt(S.profile?.balance||0)+' FCFA';openModal('modalWithdraw');};
+window.openWithdraw=()=>{resetWithdraw();{const ph=document.getElementById('wdPhone');if(ph)ph.value=S.profile?.phone||'';}document.getElementById('withdrawAvailable').textContent=fmt(S.profile?.balance||0)+' FCFA';openModal('modalWithdraw');};
 function resetWithdraw(){['wdStep1','wdStep2','wdStep3','wdStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const w=document.getElementById('wdAmt');if(w)w.value='';}
-window.wdGoStep2=()=>{const amt=parseInt(document.getElementById('wdAmt').value||0);const bal=S.profile?.balance||0;if(!amt||amt<500){notify('⚠️','Montant','Minimum 500 FCFA.');return;}if(amt>bal){notify('❌','Solde','Solde insuffisant ('+fmt(bal)+' FCFA).');return;}S.wdAmt=amt;document.getElementById('wdAmtBig').textContent=fmt(amt)+' FCFA';document.getElementById('wdStep1').style.display='none';document.getElementById('wdStep2').style.display='block';};
+window.wdGoStep2=()=>{const amt=parseInt(document.getElementById('wdAmt').value||0);const bal=S.profile?.balance||0;if(!amt||amt<500){notify('⚠️','Montant','Minimum 500 FCFA.');return;}if(amt>bal){notify('❌','Solde','Solde insuffisant ('+fmt(bal)+' FCFA).');return;}const wph=(document.getElementById('wdPhone').value||'').replace(/\s+/g,'');if(!/^\+?\d{8,15}$/.test(wph)){notify('⚠️','Numéro Wave','Numéro invalide.');return;}S.wdPhone=wph;document.getElementById('wdPhoneBig').textContent=wph;S.wdAmt=amt;document.getElementById('wdAmtBig').textContent=fmt(amt)+' FCFA';document.getElementById('wdStep1').style.display='none';document.getElementById('wdStep2').style.display='block';};
 window.doWithdraw=async()=>{
-  const amt=S.wdAmt;if(!amt)return;
+  const amt=S.wdAmt,phone=S.wdPhone;if(!amt||!phone)return;
+  if(amt>(S.profile?.balance||0)){notify('❌','Solde','Solde insuffisant.');return;}
   document.getElementById('wdStep2').style.display='none';document.getElementById('wdStep3').style.display='block';
-  try{await new Promise(r=>setTimeout(r,1200));const ref='WD-'+Date.now();await setDoc(doc(collection(db,'withdrawal_requests')),{uid:S.uid,name:S.profile.name,walletId:S.profile.walletId,amount:amt,status:'pending',ref,requestedAt:serverTimestamp()});await addDoc(collection(db,'users',S.uid,'history'),{type:'withdraw_request',label:'Demande de retrait — '+ref,amount:-amt,ref,ts:serverTimestamp()});document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep4').style.display='block';document.getElementById('wdSuccessDesc').textContent=fmt(amt)+' FCFA demandés';document.getElementById('wdSuccessRef').textContent='Ref: '+ref;}
-  catch(e){notify('❌','Erreur',e.message);document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep2').style.display='block';}
+  try{
+    const ref='WD-'+Date.now();
+    const reqRef=doc(collection(db,'withdrawal_requests'));
+    // Un seul batch : le solde est retiré ET la demande créée, tout ou rien.
+    const b=writeBatch(db);
+    b.update(doc(db,'users',S.uid),{balance:increment(-amt),opCol:'withdrawal_requests',opId:reqRef.id});
+    b.set(reqRef,{uid:S.uid,name:S.profile.name,walletId:S.profile.walletId,amount:amt,operator:'Wave',phone,status:'pending',ref,requestedAt:serverTimestamp()});
+    b.set(doc(collection(db,'users',S.uid,'history')),{type:'withdraw_request',label:'Retour vers Wave → '+phone+' — '+ref,amount:-amt,ref,ts:serverTimestamp()});
+    await b.commit();
+    document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep4').style.display='block';
+    document.getElementById('wdSuccessDesc').textContent=fmt(amt)+' FCFA → Wave '+phone;
+    document.getElementById('wdSuccessRef').textContent='Ref: '+ref;
+  }catch(e){notify('❌','Erreur',e.message);document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep2').style.display='block';}
 };
 window.openRecharge=()=>{resetRecharge();openModal('modalRecharge');};
 function resetRecharge(){['rgStep1','rgStep2','rgStep3','rgStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const amt=document.getElementById('rechargeAmt');if(amt)amt.value='';document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));if(S.rgUnsub){S.rgUnsub();S.rgUnsub=null;}if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}}
@@ -3205,8 +3249,8 @@ window.doSend=async()=>{
       const meSnap=await tx.get(doc(db,'users',S.uid));
       const me=meSnap.data();
       if((me.balance||0)<amt)throw new Error('Solde insuffisant.');
-      tx.update(doc(db,'users',S.uid),{balance:increment(-amt)});
-      tx.update(doc(db,'users',destUid),{balance:increment(amt)});
+      tx.update(doc(db,'users',S.uid),{balance:increment(-amt),opCol:'transfers',opId:trRef.id});
+      tx.update(doc(db,'users',destUid),{balance:increment(amt),opCol:'transfers',opId:trRef.id});
       tx.set(trRef,{fromUid:S.uid,toUid:destUid,amount:amt,ts:serverTimestamp()});
       tx.set(doc(collection(db,'users',S.uid,'history')),{type:'transfer_out',label:'Transfert → '+dest.name,amount:-amt,ts:serverTimestamp()});
       tx.set(doc(collection(db,'users',destUid,'history')),{type:'transfer_in',label:'Reçu de '+S.profile.name,amount:amt,ts:serverTimestamp()});
@@ -3234,8 +3278,8 @@ window.doRecvCharge=async()=>{
       const meSnap=await tx.get(doc(db,'users',S.uid));
       const me=meSnap.data();
       if((me.balance||0)<amt)throw new Error('Solde insuffisant.');
-      tx.update(doc(db,'users',S.uid),{balance:increment(-amt)});
-      tx.update(doc(db,'users',paxUid),{balance:increment(amt)});
+      tx.update(doc(db,'users',S.uid),{balance:increment(-amt),opCol:'recharges',opId:rcRef.id});
+      tx.update(doc(db,'users',paxUid),{balance:increment(amt),opCol:'recharges',opId:rcRef.id});
       tx.set(rcRef,{fromUid:S.uid,toUid:paxUid,amount:amt,ts:serverTimestamp()});
       tx.set(doc(collection(db,'users',S.uid,'history')),{type:'recharge_given',label:'Recharge → '+pax.name,amount:-amt,ts:serverTimestamp()});
       tx.set(doc(collection(db,'users',paxUid,'history')),{type:'recharge',label:'Recharge par '+S.profile.name,amount:amt,ts:serverTimestamp()});
@@ -3339,9 +3383,9 @@ async function commitTicketSale(paxUid,price,ticketBase,{pendingId=null,offline=
     // (mise en file locale, synchro automatique plus tard) tout en restant
     // atomique — les règles de conservation sont vérifiées à la synchro.
     const batch=writeBatch(db);
-    batch.update(doc(db,'users',paxUid),{balance:increment(-price)});
+    batch.update(doc(db,'users',paxUid),{balance:increment(-price),opCol:'tickets',opId:tkRef.id});
     batch.set(paxHistRef,{type:'ticket',label:`Ticket ${S.profile.gie}/${S.profile.vehicle}`,amount:-price,ts:serverTimestamp()});
-    batch.update(doc(db,'users',S.uid),{today:increment(price),count:increment(1),balance:increment(price)});
+    batch.update(doc(db,'users',S.uid),{today:increment(price),count:increment(1),balance:increment(price),opCol:'tickets',opId:tkRef.id});
     batch.set(tkRef,ticket);
     batch.set(paxTkRef,{...ticket,ticketId:tkRef.id});
     if(pendingId)batch.delete(doc(db,'pending',pendingId));
@@ -3352,9 +3396,9 @@ async function commitTicketSale(paxUid,price,ticketBase,{pendingId=null,offline=
       const paxSnap=await tx.get(doc(db,'users',paxUid));
       const pax=paxSnap.data();
       if((pax.balance||0)<price)throw new Error('Le passager n\'a pas assez.');
-      tx.update(doc(db,'users',paxUid),{balance:increment(-price)});
+      tx.update(doc(db,'users',paxUid),{balance:increment(-price),opCol:'tickets',opId:tkRef.id});
       tx.set(paxHistRef,{type:'ticket',label:`Ticket ${S.profile.gie}/${S.profile.vehicle} → ${ticketBase.to}`,amount:-price,ts:serverTimestamp()});
-      tx.update(doc(db,'users',S.uid),{today:increment(price),count:increment(1),balance:increment(price)});
+      tx.update(doc(db,'users',S.uid),{today:increment(price),count:increment(1),balance:increment(price),opCol:'tickets',opId:tkRef.id});
       tx.set(tkRef,ticket);
       tx.set(paxTkRef,{...ticket,ticketId:tkRef.id});
       if(pendingId)tx.delete(doc(db,'pending',pendingId));
