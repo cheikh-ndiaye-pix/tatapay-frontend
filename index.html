@@ -3426,32 +3426,37 @@ function aiInit(){
   }catch(e){}
 }
 window.aiPlace=()=>{const f=document.getElementById('aiFloat'),p=document.getElementById('aiPanel');if(!f||!p)return;const r=f.getBoundingClientRect();const left=(r.left+29)<innerWidth/2;p.style.left=left?'0':'auto';p.style.right=left?'auto':'0';const top=r.top<340;p.style.top=top?'66px':'auto';p.style.bottom=top?'auto':'66px';};
-window.aiOpen=(force)=>{const p=document.getElementById('aiPanel');if(!p)return;aiPlace();const open=force===undefined?p.style.display==='none':!!force;p.style.display=open?'block':'none';if(!open&&force===undefined){try{speechSynthesis.cancel();S.aiAudio&&S.aiAudio.pause();}catch(e){}}};
-function aiTTS(text){
+window.aiOpen=(force)=>{const p=document.getElementById('aiPanel');if(!p)return;aiPlace();const open=force===undefined?p.style.display==='none':!!force;p.style.display=open?'block':'none';if(!open){aiStopListen();if(force===undefined){try{speechSynthesis.cancel();S.aiAudio&&S.aiAudio.pause();}catch(e){}}}};
+function aiTTS(text,onEnd,key){
   try{
-    if(!('speechSynthesis' in window))return;
+    if(!('speechSynthesis' in window)){if(onEnd)onEnd();return;}
     speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(String(text).replace(/[\u{1F300}-\u{1FAFF}✅❌]/gu,''));
     u.lang=AI_LOC[S.aiLang]||'fr-FR';u.rate=0.95;
-    u.onerror=()=>{S.aiPendingSpeak={text,key:null};};
+    u.onerror=(ev)=>{if(ev&&(ev.error==='canceled'||ev.error==='interrupted'))return;S.aiPendingSpeak={text,key:key||null,onEnd};};
     u.onstart=()=>{S.aiPendingSpeak=null;};
+    u.onend=()=>{if(onEnd)onEnd();};
     speechSynthesis.speak(u);
-    setTimeout(()=>{if(!speechSynthesis.speaking&&!S.aiPendingSpeak)S.aiPendingSpeak={text,key:null};},700);
-  }catch(e){}
+    setTimeout(()=>{if(!speechSynthesis.speaking&&!S.aiPendingSpeak)S.aiPendingSpeak={text,key:key||null,onEnd};},700);
+  }catch(e){if(onEnd)onEnd();}
 }
+function aiStopListen(){try{if(S.aiRec){const r=S.aiRec;S.aiRec=null;r.onend=null;r.onerror=null;r.onresult=null;r.abort();}}catch(e){}const b=document.getElementById('aiMicBtn');if(b)b.textContent='🎤';}
 // key = nom de la phrase ; si l'admin a enregistré un vocal pour (langue, phrase) on le joue, sinon voix du téléphone
-function aiSpeak(text,key){
+// onEnd = appelé quand l'assistant a fini de parler (sert à ouvrir le micro automatiquement)
+function aiSpeak(text,key,onEnd){
   try{
+    aiStopListen();
     try{S.aiAudio&&S.aiAudio.pause();}catch(e){}
     try{speechSynthesis.cancel();}catch(e){}
     const url=key&&S.aiVoices&&S.aiVoices[S.aiLang+'_'+key];
     if(url){
       const a=new Audio(url);S.aiAudio=a;
-      a.onerror=()=>aiTTS(text);
-      a.play().then(()=>{S.aiPendingSpeak=null;}).catch(()=>{S.aiPendingSpeak={text,key};});
+      a.onended=()=>{if(S.aiAudio===a&&onEnd)onEnd();};
+      a.onerror=()=>aiTTS(text,onEnd,key);
+      a.play().then(()=>{S.aiPendingSpeak=null;}).catch(()=>{S.aiPendingSpeak={text,key,onEnd};});
       return;
     }
-    aiTTS(text);
+    aiTTS(text,onEnd,key);
   }catch(e){}
 }
 async function loadAiVoices(){
@@ -3461,7 +3466,7 @@ async function loadAiVoices(){
     S.aiVoices=v;try{localStorage.setItem('tatapay_aiVoices',JSON.stringify(v));}catch(e){}
   }catch(e){try{S.aiVoices=JSON.parse(localStorage.getItem('tatapay_aiVoices')||'{}');}catch(_){S.aiVoices={};}}
 }
-document.addEventListener('pointerdown',()=>{if(S.aiPendingSpeak&&document.getElementById('aiPanel')?.style.display==='block'){const t=S.aiPendingSpeak;S.aiPendingSpeak=null;aiSpeak(t.text,t.key);}},{passive:true});
+document.addEventListener('pointerdown',()=>{if(S.aiPendingSpeak&&document.getElementById('aiPanel')?.style.display==='block'){const t=S.aiPendingSpeak;S.aiPendingSpeak=null;aiSpeak(t.text,t.key,t.onEnd);}},{passive:true});
 
 (function(){
   const fab=document.getElementById('aiFab'),box=document.getElementById('aiFloat');if(!fab||!box)return;
@@ -3545,21 +3550,29 @@ window.vcDelete=async(lang,key)=>{
   try{await deleteDoc(doc(db,'aiVoices',id));delete vcSaved[id];vcDraw();notify('🗑️','Supprimé','Vocal supprimé.');}catch(e){notify('❌','Erreur',e.message);}
 };
 
-window.aiGreet=()=>{aiInit();aiOpen(true);aiSpeak(AI_TXT[S.aiLang].ask,'ask');};
-window.aiSetLang=(l)=>{S.aiLang=l;aiInit();aiSpeak(AI_TXT[l].ask,'ask');};
-window.aiListen=()=>{
+const aiAutoListen=()=>{const p=document.getElementById('aiPanel');if(p&&p.style.display==='block')aiListen(true);};
+window.aiGreet=()=>{aiInit();aiOpen(true);aiSpeak(AI_TXT[S.aiLang].ask,'ask',aiAutoListen);};
+window.aiSetLang=(l)=>{S.aiLang=l;aiInit();aiSpeak(AI_TXT[l].ask,'ask',aiAutoListen);};
+window.aiListen=(auto)=>{
+  auto=auto===true;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){notify('🎤','Micro','Non supporté sur cet appareil : écrivez la destination.');return;}
+  if(!SR){if(!auto)notify('🎤','Micro','Non supporté sur cet appareil : écrivez la destination.');return;}
+  // un clic sur 🎤 pendant l'écoute l'arrête ; pendant que l'assistant parle, on le coupe
+  if(S.aiRec&&!auto){aiStopListen();return;}
+  aiStopListen();
+  try{speechSynthesis.cancel();S.aiAudio&&S.aiAudio.pause();}catch(e){}
   const rec=new SR();rec.lang=AI_LOC[S.aiLang]||'fr-FR';rec.interimResults=false;rec.maxAlternatives=1;
+  S.aiRec=rec;
   const btn=document.getElementById('aiMicBtn');if(btn)btn.textContent='🔴';
-  rec.onresult=e=>{const t=e.results[0][0].transcript;document.getElementById('aiDestInput').value=t;aiSubmit();};
-  rec.onerror=()=>{aiBubble(AI_TXT[S.aiLang].mic);aiSpeak(AI_TXT[S.aiLang].mic,'mic');};
-  rec.onend=()=>{if(btn)btn.textContent='🎤';};
-  try{rec.start();}catch(e){}
+  if(auto)aiBubble('🎤 '+({wo:'Dégg naa la… waxal.',fr:'Je vous écoute… parlez.',en:'I\'m listening… speak now.'}[S.aiLang]));
+  rec.onresult=e=>{S.aiRec=null;const t=e.results[0][0].transcript;document.getElementById('aiDestInput').value=t;aiSubmit();};
+  rec.onerror=(ev)=>{S.aiRec=null;const silent=ev&&(ev.error==='no-speech'||ev.error==='aborted');if(auto&&silent){aiBubble(AI_TXT[S.aiLang].ask);return;}aiBubble(AI_TXT[S.aiLang].mic);aiSpeak(AI_TXT[S.aiLang].mic,'mic');};
+  rec.onend=()=>{if(S.aiRec===rec)S.aiRec=null;if(btn)btn.textContent='🎤';};
+  try{rec.start();}catch(e){S.aiRec=null;if(btn)btn.textContent='🎤';}
 };
 window.aiSubmit=()=>{
   const v=(document.getElementById('aiDestInput')?.value||'').trim();
-  if(!v){aiBubble(AI_TXT[S.aiLang].empty);aiSpeak(AI_TXT[S.aiLang].empty,'empty');return;}
+  if(!v){aiBubble(AI_TXT[S.aiLang].empty);aiSpeak(AI_TXT[S.aiLang].empty,'empty',aiAutoListen);return;}
   aiBubble(AI_TXT[S.aiLang].go);aiSpeak(AI_TXT[S.aiLang].go,'go');aiOpen(false);
   openTicketFlow();S.wantedDest=v;
   setTimeout(()=>openCamera('bus'),300);
