@@ -3462,7 +3462,7 @@ function aiSpeak(text,key){
 async function loadAiVoices(){
   try{
     const sn=await withTimeout(getDocs(collection(db,'aiVoices')),4000,'voix');
-    const v={};sn.docs.forEach(d=>{const u=d.data().url;if(u)v[d.id]=u;});
+    const v={};sn.docs.forEach(d=>{const u=d.data().data||d.data().url;if(u)v[d.id]=u;});
     S.aiVoices=v;try{localStorage.setItem('tatapay_aiVoices',JSON.stringify(v));}catch(e){}
   }catch(e){try{S.aiVoices=JSON.parse(localStorage.getItem('tatapay_aiVoices')||'{}');}catch(_){S.aiVoices={};}}
 }
@@ -3531,18 +3531,18 @@ window.vcToggleRec=async(lang,key)=>{
     vcRec={id,mr};mr.start();vcDraw();
   }catch(e){notify('❌','Micro',e.name==='NotAllowedError'?'Permission micro refusée.':e.message);}
 };
-window.vcPlay=(id)=>{const u=vcPending[id]?.url||vcSaved[id]?.url;if(!u)return;try{new Audio(u).play();}catch(e){notify('❌','Lecture','Impossible de lire ce vocal.');}};
+window.vcPlay=(id)=>{const u=vcPending[id]?.url||vcSaved[id]?.data||vcSaved[id]?.url;if(!u)return;try{new Audio(u).play();}catch(e){notify('❌','Lecture','Impossible de lire ce vocal.');}};
 window.vcSave=async(lang,key)=>{
   const id=lang+'_'+key,pd=vcPending[id];if(!pd)return;
-  loader('Envoi du vocal…');
+  loader('Sauvegarde du vocal…');
   try{
-    const r=storageRef(storage,`aiVoices/${id}_${Date.now()}.${pd.ext}`);
-    await uploadBytes(r,pd.blob,{contentType:pd.blob.type||'audio/webm'});
-    const url=await getDownloadURL(r);
-    await setDoc(doc(db,'aiVoices',id),{lang,key,url,ext:pd.ext,by:S.uid,updatedAt:serverTimestamp()});
-    vcSaved[id]={lang,key,url};try{URL.revokeObjectURL(pd.url);}catch(e){}delete vcPending[id];
+    // Le vocal est stocké directement dans Firestore (pas de Storage) : plus simple et sans blocage
+    const data=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>rej(new Error('Lecture du vocal impossible.'));fr.readAsDataURL(pd.blob);});
+    if(data.length>900000)throw new Error('Vocal trop long (max ≈ 30 secondes). Raccourcissez-le.');
+    await withTimeout(setDoc(doc(db,'aiVoices',id),{lang,key,data,ext:pd.ext,by:S.uid,updatedAt:serverTimestamp()}),20000,'sauvegarde');
+    vcSaved[id]={lang,key,data};try{URL.revokeObjectURL(pd.url);}catch(e){}delete vcPending[id];
     loader('',false);vcDraw();notify('✅','Vocal sauvegardé',VC_LABEL[key]);
-  }catch(e){loader('',false);notify('❌','Erreur',(e.code||e.message)+' — vérifiez les règles Storage/Firestore (admin).');}
+  }catch(e){loader('',false);notify('❌','Erreur',e.timeout?'Pas de réponse du serveur. Vérifiez la connexion puis réessayez.':((e.code?e.code+' — ':'')+e.message));}
 };
 window.vcDelete=async(lang,key)=>{
   if(!confirm('Supprimer ce vocal ? L\'assistant reprendra la voix du téléphone.'))return;
