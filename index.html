@@ -2783,9 +2783,18 @@ window.doOwnerWithdraw=async()=>{
   if(!amount||amount<500){notify('⚠️','Montant','Minimum 500 FCFA.');return;}
   if(amount>bal){notify('⚠️','Solde insuffisant',`Solde: ${fmt(bal)} FCFA.`);return;}
   if(!/^\+?\d{8,15}$/.test(phone)){notify('⚠️','Numéro','Numéro mobile invalide.');return;}
-  loader('Retrait Wave en cours…');
+  loader('Retrait via PayTech…');
   try{
-    await callServerWithdraw(amount,phone,'wave');
+    const ref='WD-'+Date.now().toString(36).toUpperCase();
+    const res=await fetch('/api/public/paytech-payout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,phone,operator,ref,ownerName:S.profile?.name||''})});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok||!data.success){loader('',false);notify('❌','Échec PayTech',data?.error||'Retrait refusé par PayTech.');return;}
+    const wdRef=doc(collection(db,'withdrawals'));
+    const wdBatch=writeBatch(db);
+    wdBatch.update(doc(db,'users',S.uid),{balance:increment(-amount),opCol:'withdrawals',opId:wdRef.id});
+    wdBatch.set(doc(collection(db,'users',S.uid,'history')),{type:'withdraw',label:`Retrait PayTech ${operator} → ${phone}`,amount:-amount,ref,ts:serverTimestamp()});
+    wdBatch.set(wdRef,{ownerUid:S.uid,ownerName:S.profile?.name||'',amount,phone,operator,ref,status:'sent',ts:serverTimestamp()});
+    await wdBatch.commit();
     loader('',false);closeModal('modalOwnerWithdraw');
     notify('✅','Retrait envoyé',`${fmt(amount)} FCFA → ${phone}`);
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
@@ -2929,9 +2938,7 @@ async function loadAdminDashboard(){
     const total=adminAllUsers.length,passengers=adminAllUsers.filter(u=>u.role==='passenger').length,receivers=adminAllUsers.filter(u=>u.role==='receiver').length,owners=adminAllUsers.filter(u=>u.role==='owner').length,directeurs=adminAllUsers.filter(u=>u.role==='directeur').length,chauffeurs=adminAllUsers.filter(u=>u.role==='chauffeur').length,pending=adminAllUsers.filter(u=>u.status==='pending').length;
     document.getElementById('aStat-total').textContent=total;document.getElementById('aStat-passengers').textContent=passengers;document.getElementById('aStat-receivers').textContent=receivers;document.getElementById('aStat-owners').textContent=owners;document.getElementById('aStat-directeurs').textContent=directeurs;document.getElementById('aStat-chauffeurs').textContent=chauffeurs;document.getElementById('aStat-pending').textContent=pending;
     try{const tc=await getCountFromServer(collection(db,'tickets'));document.getElementById('aStat-tickets').textContent=tc.data().count;}catch(e){document.getElementById('aStat-tickets').textContent='—';}
-    const wdSnap=await getDocs(collection(db,'withdrawal_requests'));adminAllWithdrawals=wdSnap.docs.map(d=>({id:d.id,...d.data()}));
-    try{const poSnap=await getDocs(collection(db,'payouts'));const stMap={pending_manual:'pending',success:'done',sent:'done',refunded:'rejected'};
-      poSnap.docs.forEach(d=>{const p=d.data();if(p.status==='pending_manual'||p.status==='success'||p.status==='refunded'){adminAllWithdrawals.push({id:d.id,manual:true,uid:p.uid,name:p.name,walletId:p.walletId,amount:p.amount,phone:p.phone,operator:'Wave',ref:d.id,status:stMap[p.status]||'pending',requestedAt:p.createdAt});}});}catch(e){console.warn('payouts',e);}document.getElementById('aStat-withdraws').textContent=adminAllWithdrawals.filter(w=>w.status==='pending').length;
+    const wdSnap=await getDocs(collection(db,'withdrawal_requests'));adminAllWithdrawals=wdSnap.docs.map(d=>({id:d.id,...d.data()}));adminAllWithdrawals.push(...await loadServerPayouts());document.getElementById('aStat-withdraws').textContent=adminAllWithdrawals.filter(w=>w.status==='pending').length;
     renderDashPending();renderOwnersList();renderDirecteursList();renderUsersList();renderWithdrawalsList();
   }catch(e){console.error('Admin dashboard error:',e);}
 }
@@ -3039,20 +3046,30 @@ window.adminBulkDelete=async()=>{
 function renderWithdrawalsList(){let wds=adminAllWithdrawals;if(adminCurrentWdFilter!=='all')wds=wds.filter(w=>w.status===adminCurrentWdFilter);wds.sort((a,b)=>(b.requestedAt?.seconds||0)-(a.requestedAt?.seconds||0));const cont=document.getElementById('adminWithdrawList');cont.innerHTML=`<div style="color:#888;font-size:12px;margin-bottom:12px;">${wds.length} demande(s)</div>`;if(!wds.length){cont.innerHTML+='<div style="text-align:center;color:#555;padding:30px;font-size:13px;">Aucune demande</div>';return;}cont.innerHTML+=wds.map(w=>{const date=w.requestedAt?.toDate?.()?.toLocaleDateString('fr-FR')||'—';return`<div class="admin-user-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div style="font-weight:800;">${w.name||'—'}</div><div style="font-size:11px;color:#888;">${w.walletId||'—'}</div>${w.phone?`<div style="font-size:12px;color:#7dd3fc;font-weight:700;">🌊 ${w.operator||'Wave'} → ${w.phone}</div>`:''}<div style="font-size:11px;color:#888;">Ref: ${w.ref||'—'} · ${date}</div></div><div style="text-align:right;"><div style="font-weight:900;font-size:18px;color:#FDEF42;">${fmt(w.amount)} F</div>${statusBadge(w.status)}</div></div>${w.status==='pending'?`<div class="admin-action-row"><button class="admin-action-btn btn-approve" onclick="markWithdrawDone('${w.id}')">✅ Marquer traité</button><button class="admin-action-btn btn-reject" onclick="rejectWithdraw('${w.id}')">❌ Refuser</button></div>`:''}</div>`;}).join('');}
 window.filterAdminList=(type)=>{if(type==='owners')renderOwnersList();else if(type==='directeurs')renderDirecteursList();else if(type==='users')renderUsersList();};
 window.filterByRole=(role)=>{adminCurrentRoleFilter=role;renderUsersList();};
-window.filterWithdrawals=(f)=>{adminCurrentWdFilter=f;renderWithdrawalsList();};
-async function adminPayoutCall(id,action){
+const PAYOUT_STATUS_MAP={pending_manual:'pending',success:'done',refunded:'rejected'};
+async function loadServerPayouts(){
+  try{
+    const token=await auth.currentUser.getIdToken();
+    const res=await fetch(BACKEND_URL+'/api/admin/payouts?status=all',{headers:{Authorization:'Bearer '+token}});
+    if(!res.ok)return [];
+    const data=await res.json();
+    return (data.payouts||[]).map(p=>({id:p.id,isPayout:true,name:p.name,walletId:p.walletId||'',amount:p.amount,operator:'Wave',phone:p.phone,status:PAYOUT_STATUS_MAP[p.status]||p.status,ref:p.id,requestedAt:p.createdAt?{seconds:p.createdAt/1000,toDate:()=>new Date(p.createdAt)}:null}));
+  }catch(e){console.warn('payouts',e);return [];}
+}
+async function payoutAction(id,action){
   const token=await auth.currentUser.getIdToken();
-  const res=await fetch(BACKEND_URL+'/api/admin/payouts/'+encodeURIComponent(id)+'/'+action,{method:'POST',headers:{'Authorization':'Bearer '+token}});
+  const res=await fetch(BACKEND_URL+'/api/admin/payouts/'+encodeURIComponent(id)+'/'+action,{method:'POST',headers:{Authorization:'Bearer '+token}});
   const data=await res.json().catch(()=>({}));
   if(!res.ok)throw new Error(data.error||'Erreur serveur');
+  return data;
 }
-window.markWithdrawDone=async(docId)=>{const w0=adminAllWithdrawals.find(x=>x.id===docId);if(w0?.manual){try{await adminPayoutCall(docId,'done');notify('✅','Traité','Retrait marqué comme envoyé.');await loadAdminDashboard();}catch(e){notify('❌','Erreur',e.message);}return;}try{await updateDoc(doc(db,'withdrawal_requests',docId),{status:'done',treatedAt:serverTimestamp()});notify('✅','Traité','Demande marquée comme traitée.');await loadAdminDashboard();}catch(e){notify('❌','Erreur',e.message);}};
+window.filterWithdrawals=(f)=>{adminCurrentWdFilter=f;renderWithdrawalsList();};
+window.markWithdrawDone=async(docId)=>{try{const _p=adminAllWithdrawals.find(x=>x.id===docId);if(_p&&_p.isPayout){const r=await payoutAction(docId,'done');notify('✅','Traité',r.message);await loadAdminDashboard();return;}await updateDoc(doc(db,'withdrawal_requests',docId),{status:'done',treatedAt:serverTimestamp()});notify('✅','Traité','Demande marquée comme traitée.');await loadAdminDashboard();}catch(e){notify('❌','Erreur',e.message);}};
 window.rejectWithdraw=async(docId)=>{
-  const w0=adminAllWithdrawals.find(x=>x.id===docId);
-  if(w0?.manual){try{if(!confirm('Refuser ? Le montant sera remboursé au client.'))return;await adminPayoutCall(docId,'reject');notify('❌','Rejeté','Retrait refusé et remboursé.');await loadAdminDashboard();}catch(e){notify('❌','Erreur',e.message);}return;}
   try{
     if(!confirm('Refuser cette demande ? Le montant sera remboursé au solde du client.'))return;
     const w=adminAllWithdrawals.find(x=>x.id===docId);
+    if(w&&w.isPayout){const r=await payoutAction(docId,'reject');notify('❌','Rejeté',r.message);await loadAdminDashboard();return;}
     const b=writeBatch(db);
     b.update(doc(db,'withdrawal_requests',docId),{status:'rejected',treatedAt:serverTimestamp()});
     // Remboursement : le montant avait été retiré du solde à la demande
@@ -3134,21 +3151,6 @@ window.demandDescendre=async()=>{
   notify('🛑','Signal envoyé !','Le receveur et le chauffeur ont été prévenus.');
 };
 window.showActiveTicket=()=>{if(activeTicketData)showTicketData(activeTicketData);};
-async function callServerWithdraw(amount,phone,method){
-  const token=await auth.currentUser.getIdToken();
-  const requestId=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(36).slice(2)).replace(/-/g,'').slice(0,32);
-  let lastErr=null;
-  // Réessais sûrs : même requestId => le serveur ne paie jamais deux fois.
-  for(let i=0;i<3;i++){
-    try{
-      const res=await fetch(BACKEND_URL+'/api/withdraw',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({amount,phone,method,requestId})});
-      const data=await res.json().catch(()=>({}));
-      if(!res.ok&&res.status!==202)throw Object.assign(new Error(data.error||'Retrait refusé'),{final:true});
-      return data;
-    }catch(e){lastErr=e;if(e.final)throw e;await new Promise(r=>setTimeout(r,i===0?4000:8000));}
-  }
-  throw new Error('Serveur injoignable. Réessayez dans un instant (votre solde n\'a pas été débité si aucun message de succès).');
-}
 window.openWithdraw=()=>{resetWithdraw();{const ph=document.getElementById('wdPhone');if(ph)ph.value=S.profile?.phone||'';}document.getElementById('withdrawAvailable').textContent=fmt(S.profile?.balance||0)+' FCFA';openModal('modalWithdraw');};
 function resetWithdraw(){['wdStep1','wdStep2','wdStep3','wdStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const w=document.getElementById('wdAmt');if(w)w.value='';}
 window.wdGoStep2=()=>{const amt=parseInt(document.getElementById('wdAmt').value||0);const bal=S.profile?.balance||0;if(!amt||amt<500){notify('⚠️','Montant','Minimum 500 FCFA.');return;}if(amt>bal){notify('❌','Solde','Solde insuffisant ('+fmt(bal)+' FCFA).');return;}const wph=(document.getElementById('wdPhone').value||'').replace(/\s+/g,'');if(!/^\+?\d{8,15}$/.test(wph)){notify('⚠️','Numéro Wave','Numéro invalide.');return;}S.wdPhone=wph;document.getElementById('wdPhoneBig').textContent=wph;S.wdAmt=amt;document.getElementById('wdAmtBig').textContent=fmt(amt)+' FCFA';document.getElementById('wdStep1').style.display='none';document.getElementById('wdStep2').style.display='block';};
@@ -3156,12 +3158,26 @@ window.doWithdraw=async()=>{
   const amt=S.wdAmt,phone=S.wdPhone;if(!amt||!phone)return;
   if(amt>(S.profile?.balance||0)){notify('❌','Solde','Solde insuffisant.');return;}
   document.getElementById('wdStep2').style.display='none';document.getElementById('wdStep3').style.display='block';
-  try{
-    const r=await callServerWithdraw(amt,phone,'wave');
-    document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep4').style.display='block';
-    document.getElementById('wdSuccessDesc').textContent=fmt(amt)+' FCFA → Wave '+phone;
-    document.getElementById('wdSuccessRef').textContent='Ref: '+(r.ref||'');
-  }catch(e){notify('❌','Retrait',e.message);document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep2').style.display='block';}
+  // requestId unique par demande : renvoyer la même requête ne débite jamais deux fois
+  if(!S.wdReqId)S.wdReqId=(crypto.randomUUID?crypto.randomUUID().replace(/-/g,''):(Date.now().toString(36)+Math.random().toString(36).slice(2,12)));
+  const fail=(msg)=>{notify('❌','Erreur',msg);document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep2').style.display='block';};
+  for(let attempt=1;attempt<=3;attempt++){
+    try{
+      const token=await auth.currentUser.getIdToken();
+      const res=await fetch(BACKEND_URL+'/api/withdraw',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({amount:amt,phone,method:'wave',requestId:S.wdReqId})});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok){S.wdReqId=null;return fail(data.error||'Demande refusée.');}
+      S.wdReqId=null;
+      document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep4').style.display='block';
+      document.getElementById('wdSuccessDesc').textContent=fmt(amt)+' FCFA → Wave '+phone;
+      document.getElementById('wdSuccessRef').textContent='Ref: '+(data.ref||'');
+      return;
+    }catch(e){
+      // serveur en veille (Render) : on réessaie avec le même requestId
+      if(attempt<3){await new Promise(r=>setTimeout(r,attempt===1?4000:8000));continue;}
+      return fail('Le serveur ne répond pas. Vérifiez votre solde avant de réessayer.');
+    }
+  }
 };
 window.openRecharge=()=>{resetRecharge();openModal('modalRecharge');};
 function resetRecharge(){['rgStep1','rgStep2','rgStep3','rgStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const amt=document.getElementById('rechargeAmt');if(amt)amt.value='';document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));if(S.rgUnsub){S.rgUnsub();S.rgUnsub=null;}if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}}
