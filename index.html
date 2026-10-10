@@ -432,6 +432,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
             <button onclick="openRecharge()" style="background:linear-gradient(160deg,#1a56db,#0d3a8c);border:2px solid #4d8aff66;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">💳</div>Recharger</button>
             <button onclick="openTicketFlow()" style="background:linear-gradient(160deg,#6d28d9,#3b0764);border:2px solid #a78bfa66;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">🎫</div>Acheter Ticket</button>
             <button onclick="openSend()" style="background:linear-gradient(160deg,#059669,#065f46);border:2px solid #34d39966;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">📷</div>Scan Ami</button>
+            <button onclick="demandDescendre()" style="grid-column:1/-1;justify-self:center;width:calc((100% - 20px)/3);background:linear-gradient(160deg,#DF0024,#7f1d1d);border:2px solid #ff6b6b66;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">🛑</div>Descendre</button>
           </div>
         </div>
         <button onclick="openTrackBus()" style="width:100%;background:linear-gradient(135deg,#0ea5e9,#0369a1);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
@@ -442,7 +443,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
         <div id="activeTicketBanner" style="display:none;background:#DF002415;border:2px solid #DF002466;border-radius:18px;padding:14px 16px;margin-bottom:16px;cursor:pointer;" onclick="showActiveTicket()">
           <div style="font-size:10px;color:#ff8888;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">🚌 Ticket en cours</div>
           <div style="font-weight:900;font-size:15px;" id="activeTicketLabel">—</div>
-          <div style="color:#ff8888;font-size:12px;margin-top:2px;">Appuyez pour voir · Bouton descendre en bas 👇</div>
+          <div style="color:#ff8888;font-size:12px;margin-top:2px;">Appuyez pour voir votre ticket</div>
         </div>
         <div style="font-weight:800;font-size:15px;margin-bottom:12px;">Dernières transactions</div>
         <div id="passHomeTx"></div>
@@ -3197,10 +3198,11 @@ function renderRecvHistorique(){
 window.openModal=(id)=>document.getElementById(id).style.display='flex';
 window.closeModal=(id)=>{document.getElementById(id).style.display='none';if(id==='modalTicketFlow')resetFlow();if(id==='modalWithdraw')resetWithdraw();if(id==='modalRecharge')resetRecharge();};
 function updateBalanceUI(){document.getElementById('passBalance').textContent=fmt(S.profile?.balance||0);}
-function showDescendBtn(t){activeTicketData=t;document.getElementById('descendInfo').textContent=`${t.from}→${t.to} · ${t.price} FCFA`;document.getElementById('descendBtn').style.display='block';document.getElementById('activeTicketBanner').style.display='block';document.getElementById('activeTicketLabel').textContent=`🚌 ${t.gie}/${t.vehicle} — ${t.from}→${t.to}`;}
+function showDescendBtn(t){activeTicketData=t;document.getElementById('descendInfo').textContent=`${t.from}→${t.to} · ${t.price} FCFA`;document.getElementById('activeTicketBanner').style.display='block';document.getElementById('activeTicketLabel').textContent=`🚌 ${t.gie}/${t.vehicle} — ${t.from}→${t.to}`;}
 function hideDescendBtn(){document.getElementById('descendBtn').style.display='none';document.getElementById('activeTicketBanner').style.display='none';activeTicketData=null;}
 window.demandDescendre=async()=>{
-  if(!activeTicketData)return;
+  if(!activeTicketData){const c=getCachedActiveTicket();if(c)activeTicketData=c;}
+  if(!activeTicketData){notify('🎫','Aucun ticket actif','Achetez d\'abord un ticket pour prévenir le receveur.');return;}
   const payload={type:'descendre',passenger:S.profile.name,from:activeTicketData.from,to:activeTicketData.to,vehicle:activeTicketData.vehicle||'',gie:activeTicketData.gie||'',read:false,ts:serverTimestamp()};
   await addDoc(collection(db,'notifications'),{...payload,toUid:activeTicketData.busUid});
   try{
