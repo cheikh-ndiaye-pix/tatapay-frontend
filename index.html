@@ -240,9 +240,9 @@ select.input-field option{background:#0c1f12;color:#fff;}
 
 <div id="globalLoader"><div class="spinner"></div><div style="color:#009A44;font-weight:800;font-size:15px;" id="loaderMsg">Chargement…</div></div>
 
-<div id="aiFloat" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:96px;width:100%;max-width:430px;z-index:140;pointer-events:none;padding:0 12px;box-sizing:border-box;">
-  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-    <div id="aiPanel" style="pointer-events:auto;display:none;width:100%;max-width:330px;background:#0c1f12;border:1.5px solid #7c3aed88;border-radius:18px;padding:12px;box-shadow:0 8px 28px #000a;animation:fadeIn .3s ease;">
+<div id="aiFloat" style="display:none;position:fixed;right:12px;bottom:96px;width:58px;height:58px;z-index:140;">
+  <div>
+    <div id="aiPanel" style="position:absolute;bottom:66px;right:0;display:none;width:min(330px,calc(100vw - 24px));background:#0c1f12;border:1.5px solid #7c3aed88;border-radius:18px;padding:12px;box-shadow:0 8px 28px #000a;animation:fadeIn .3s ease;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-weight:900;font-size:13px;color:#c4b5fd;">🤖 Assistant TataPay</div><button onclick="aiOpen(false)" style="background:#ffffff15;border:none;border-radius:8px;padding:4px 9px;color:#aaa;cursor:pointer;font-size:12px;">✕</button></div>
       <div style="display:flex;gap:6px;margin-bottom:8px;">
         <button class="ai-lang" data-l="wo" onclick="aiSetLang('wo')" style="flex:1;padding:7px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">Wolof</button>
@@ -256,7 +256,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
       </div>
       <button class="btn btn-purple btn-full" style="margin-top:8px;padding:11px;font-size:13px;" onclick="aiSubmit()">✅ Valider et ouvrir le scanner</button>
     </div>
-    <button id="aiFab" onclick="aiOpen()" style="pointer-events:auto;width:58px;height:58px;border-radius:29px;border:2px solid #a78bfa;background:linear-gradient(135deg,#7c3aed,#4c1d95);font-size:28px;cursor:pointer;box-shadow:0 6px 20px #7c3aed88;animation:aiFloatY 3s ease-in-out infinite;">🤖</button>
+    <button id="aiFab" style="position:absolute;right:0;bottom:0;touch-action:none;user-select:none;-webkit-user-select:none;width:58px;height:58px;border-radius:29px;border:2px solid #a78bfa;background:linear-gradient(135deg,#7c3aed,#4c1d95);font-size:28px;cursor:pointer;box-shadow:0 6px 20px #7c3aed88;animation:aiFloatY 3s ease-in-out infinite;">🤖</button>
   </div>
 </div>
 <div class="sygost" id="sygostNotif">
@@ -3409,7 +3409,7 @@ async function loadTrajets(){if(S.role!=='receiver')return;const snap=await getD
 
 /* ═══════════════ ASSISTANT IA (Wolof / Français / English) ═══════════════ */
 const AI_TXT={
- wo:{ask:'Salaam aleekum ! 👋 Fan ngay dem ? Wax ma tur bi (walla bind ko).',ph:'Ex: Liberté 6, Pikine…',go:'Baax na ! Tey scanil QR bu bus bi.',empty:'Wax ma fan ngay dem.',found:(d,p)=>`Baax na ! ✅ ${d} nekk na ci bus bii : ${p} FCFA. Duggal ko te fey.`,none:d=>`Gisuma "${d}" ci bus bii. ❌ Laajal receveur bi.`,nolist:'Receveur bi dalul ba tey ay trajet ci bus bii. Laajal ko.',mic:'Mënuma dégg. Bind tur bi.'},
+ wo:{ask:'Salaam aleekum ! 👋 Fan nga dem ?',ph:'Ex: Liberté 6, Pikine…',go:'Baax na ! Tey scanil QR bu bus bi.',empty:'Wax ma fan ngay dem.',found:(d,p)=>`Baax na ! ✅ ${d} nekk na ci bus bii : ${p} FCFA. Duggal ko te fey.`,none:d=>`Gisuma "${d}" ci bus bii. ❌ Laajal receveur bi.`,nolist:'Receveur bi dalul ba tey ay trajet ci bus bii. Laajal ko.',mic:'Mënuma dégg. Bind tur bi.'},
  fr:{ask:'Bonjour ! 👋 Où allez-vous ? Dites-moi le nom de votre destination (ou écrivez-le).',ph:'Ex : Liberté 6, Pikine…',go:'Parfait ! Scannez maintenant le QR du bus.',empty:'Dites-moi où vous allez.',found:(d,p)=>`C'est bon ! ✅ ${d} est desservi par ce bus : ${p} FCFA. Validez et payez.`,none:d=>`« ${d} » n'est pas inscrit dans ce bus. ❌ Demandez au receveur.`,nolist:'Le receveur n\'a pas encore inscrit de trajets dans ce bus. Demandez-lui.',mic:'Je n\'ai pas compris. Écrivez le nom.'},
  en:{ask:'Hello! 👋 Where are you going? Tell me the name of your destination (or type it).',ph:'e.g. Liberté 6, Pikine…',go:'Great! Now scan the bus QR code.',empty:'Please tell me where you are going.',found:(d,p)=>`Good! ✅ ${d} is served by this bus: ${p} FCFA. Confirm and pay.`,none:d=>`"${d}" is not registered on this bus. ❌ Please ask the conductor.`,nolist:'The conductor has not registered any routes on this bus yet. Please ask them.',mic:'I could not hear you. Please type the name.'}
 };
@@ -3424,7 +3424,8 @@ function aiInit(){
     const r=document.getElementById('aiResult');if(r)r.style.display='none';
   }catch(e){}
 }
-window.aiOpen=(force)=>{const p=document.getElementById('aiPanel');if(!p)return;const open=force===undefined?p.style.display==='none':!!force;p.style.display=open?'block':'none';if(!open){try{speechSynthesis.cancel();}catch(e){}}};
+window.aiPlace=()=>{const f=document.getElementById('aiFloat'),p=document.getElementById('aiPanel');if(!f||!p)return;const r=f.getBoundingClientRect();const left=(r.left+29)<innerWidth/2;p.style.left=left?'0':'auto';p.style.right=left?'auto':'0';const top=r.top<340;p.style.top=top?'66px':'auto';p.style.bottom=top?'auto':'66px';};
+window.aiOpen=(force)=>{const p=document.getElementById('aiPanel');if(!p)return;aiPlace();const open=force===undefined?p.style.display==='none':!!force;p.style.display=open?'block':'none';if(!open){try{speechSynthesis.cancel();}catch(e){}}};
 function aiSpeak(text){
   try{
     if(!('speechSynthesis' in window))return;
@@ -3438,6 +3439,17 @@ function aiSpeak(text){
   }catch(e){}
 }
 document.addEventListener('pointerdown',()=>{if(S.aiPendingSpeak&&document.getElementById('aiPanel')?.style.display==='block'){const t=S.aiPendingSpeak;S.aiPendingSpeak=null;aiSpeak(t);}},{passive:true});
+
+(function(){
+  const fab=document.getElementById('aiFab'),box=document.getElementById('aiFloat');if(!fab||!box)return;
+  try{const sv=JSON.parse(localStorage.getItem('tatapay_aiPos')||'null');if(sv){box.style.left=Math.min(Math.max(0,sv.x),innerWidth-58)+'px';box.style.top=Math.min(Math.max(0,sv.y),innerHeight-58)+'px';box.style.right='auto';box.style.bottom='auto';}}catch(e){}
+  let sx=0,sy=0,ox=0,oy=0,moved=false,down=false;
+  fab.addEventListener('pointerdown',e=>{down=true;moved=false;sx=e.clientX;sy=e.clientY;const r=box.getBoundingClientRect();ox=r.left;oy=r.top;try{fab.setPointerCapture(e.pointerId);}catch(_){}});
+  fab.addEventListener('pointermove',e=>{if(!down)return;const dx=e.clientX-sx,dy=e.clientY-sy;if(!moved&&Math.hypot(dx,dy)<6)return;moved=true;const x=Math.min(Math.max(0,ox+dx),innerWidth-58),y=Math.min(Math.max(0,oy+dy),innerHeight-58);box.style.left=x+'px';box.style.top=y+'px';box.style.right='auto';box.style.bottom='auto';aiPlace();});
+  const end=()=>{if(!down)return;down=false;if(moved){try{const r=box.getBoundingClientRect();localStorage.setItem('tatapay_aiPos',JSON.stringify({x:r.left,y:r.top}));}catch(e){}aiPlace();}else{aiOpen();}};
+  fab.addEventListener('pointerup',end);fab.addEventListener('pointercancel',()=>{down=false;});
+  window.addEventListener('resize',aiPlace);
+})();
 window.aiGreet=()=>{aiInit();aiOpen(true);aiSpeak(AI_TXT[S.aiLang].ask);};
 window.aiSetLang=(l)=>{S.aiLang=l;aiInit();aiSpeak(AI_TXT[l].ask);};
 window.aiListen=()=>{
