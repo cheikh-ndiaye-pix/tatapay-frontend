@@ -1038,10 +1038,26 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
   <div style="flex:1;overflow-y:auto;padding:20px;">
     <div class="step-dots"><div class="step-dot active" id="tdot0"></div><div class="step-dot" id="tdot1"></div><div class="step-dot" id="tdot2"></div></div>
-    <div id="ticketStep0"><div style="font-weight:900;font-size:20px;margin-bottom:4px;">Étape 1 · Scanner le Bus</div><div style="color:#888;font-size:13px;margin-bottom:24px;">Scannez le QR marchand dans le bus.</div><button class="btn btn-primary btn-full" onclick="openCamera('bus')" style="padding:18px;">📷 Scanner QR du Bus</button><div style="display:flex;align-items:center;gap:10px;margin:18px 0;"><div style="flex:1;height:1px;background:#2a3a2a;"></div><div style="color:#666;font-size:11px;font-weight:700;">OU</div><div style="flex:1;height:1px;background:#2a3a2a;"></div></div><div style="color:#888;font-size:13px;margin-bottom:10px;">Le receveur vous a déjà montré votre ticket ? Scannez-le pour le recevoir, même sans connexion.</div><button class="btn btn-orange btn-full" onclick="openCamera('ticket')" style="padding:18px;">📷 Scanner mon Ticket</button></div>
+    <div id="ticketStep0"><div style="font-weight:900;font-size:20px;margin-bottom:4px;">Étape 1 · Assistant & Scan</div>
+<div style="background:#7c3aed15;border:1.5px solid #7c3aed55;border-radius:18px;padding:14px;margin-bottom:16px;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><div style="width:38px;height:38px;border-radius:19px;background:linear-gradient(135deg,#7c3aed,#4c1d95);display:flex;align-items:center;justify-content:center;font-size:20px;">🤖</div><div style="font-weight:900;font-size:14px;color:#c4b5fd;">Assistant TataPay</div></div>
+  <div style="display:flex;gap:6px;margin-bottom:10px;">
+    <button class="ai-lang" data-l="wo" onclick="aiSetLang('wo')" style="flex:1;padding:8px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">Wolof</button>
+    <button class="ai-lang" data-l="fr" onclick="aiSetLang('fr')" style="flex:1;padding:8px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">Français</button>
+    <button class="ai-lang" data-l="en" onclick="aiSetLang('en')" style="flex:1;padding:8px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">English</button>
+  </div>
+  <div id="aiBubble" style="background:#0c1f12;border:1px solid #7c3aed44;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.5;color:#e2e8f0;margin-bottom:10px;"></div>
+  <div style="display:flex;gap:8px;">
+    <input class="input-field" id="aiDestInput" placeholder="Ex: Liberté 6, Pikine…" style="flex:1;" onkeydown="if(event.key==='Enter')aiSubmit()"/>
+    <button id="aiMicBtn" onclick="aiListen()" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);border:none;border-radius:12px;padding:0 14px;cursor:pointer;font-size:20px;">🎤</button>
+  </div>
+  <button class="btn btn-purple btn-full" style="margin-top:10px;" onclick="aiSubmit()">✅ Valider et scanner le bus</button>
+</div>
+<button class="btn btn-primary btn-full" onclick="openCamera('bus')" style="padding:18px;">📷 Scanner QR du Bus</button><div style="display:flex;align-items:center;gap:10px;margin:18px 0;"><div style="flex:1;height:1px;background:#2a3a2a;"></div><div style="color:#666;font-size:11px;font-weight:700;">OU</div><div style="flex:1;height:1px;background:#2a3a2a;"></div></div><div style="color:#888;font-size:13px;margin-bottom:10px;">Le receveur vous a déjà montré votre ticket ? Scannez-le pour le recevoir, même sans connexion.</div><button class="btn btn-orange btn-full" onclick="openCamera('ticket')" style="padding:18px;">📷 Scanner mon Ticket</button></div>
     <div id="ticketStep1" style="display:none;">
       <div style="font-weight:900;font-size:20px;margin-bottom:4px;">Étape 2 · Destination</div>
       <div style="background:#00A65015;border:2px solid #00A65044;border-radius:14px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px;"><div style="font-size:24px;">🚌</div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;" id="detectedBusInfo">—</div></div>
+      <div id="aiResult" style="display:none;border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:1.5;font-weight:700;"></div>
       <div id="destList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
       <div style="background:#ffffff0a;border-radius:12px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;"><div style="color:#888;font-size:13px;">À payer</div><div style="font-weight:900;font-size:22px;color:var(--y);" id="ticketPriceDisplay">— FCFA</div></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button class="btn btn-secondary" onclick="resetFlow()">← Retour</button><button class="btn btn-primary" id="btnPayTicket" onclick="goPay()" disabled>Payer →</button></div>
@@ -3384,12 +3400,65 @@ window.doAddTrajet=async()=>{
 };
 window.delTrajet=async(id)=>{try{await deleteDoc(doc(db,'users',S.uid,'destinations',id));loadTrajets();}catch(e){notify('❌','Erreur',e.message);}};
 async function loadTrajets(){if(S.role!=='receiver')return;const snap=await getDocs(collection(db,'users',S.uid,'destinations'));const cont=document.getElementById('trajetsList');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;color:#555;">Aucune section. Cliquez + Ajouter.</div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div class="trajet-row"><div style="flex:1;"><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.from}-->${t.to}</div><div style="color:#888;font-size:11px;margin-top:2px;">Section: ${t.section} == <strong style="color:var(--y);">${t.price} FCFA</strong></div></div><button onclick="delTrajet('${d.id}')" style="background:#DF002422;border:1px solid #DF002444;border-radius:10px;padding:8px;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>`;}).join('');}
+
+/* ═══════════════ ASSISTANT IA (Wolof / Français / English) ═══════════════ */
+const AI_TXT={
+ wo:{ask:'Salaam aleekum ! 👋 Fan ngay dem ? Wax ma tur bi (walla bind ko).',ph:'Ex: Liberté 6, Pikine…',go:'Baax na ! Tey scanil QR bu bus bi.',empty:'Wax ma fan ngay dem.',found:(d,p)=>`Baax na ! ✅ ${d} nekk na ci bus bii : ${p} FCFA. Duggal ko te fey.`,none:d=>`Gisuma "${d}" ci bus bii. ❌ Laajal receveur bi.`,nolist:'Receveur bi dalul ba tey ay trajet ci bus bii. Laajal ko.',mic:'Mënuma dégg. Bind tur bi.'},
+ fr:{ask:'Bonjour ! 👋 Où allez-vous ? Dites-moi le nom de votre destination (ou écrivez-le).',ph:'Ex : Liberté 6, Pikine…',go:'Parfait ! Scannez maintenant le QR du bus.',empty:'Dites-moi où vous allez.',found:(d,p)=>`C'est bon ! ✅ ${d} est desservi par ce bus : ${p} FCFA. Validez et payez.`,none:d=>`« ${d} » n'est pas inscrit dans ce bus. ❌ Demandez au receveur.`,nolist:'Le receveur n\'a pas encore inscrit de trajets dans ce bus. Demandez-lui.',mic:'Je n\'ai pas compris. Écrivez le nom.'},
+ en:{ask:'Hello! 👋 Where are you going? Tell me the name of your destination (or type it).',ph:'e.g. Liberté 6, Pikine…',go:'Great! Now scan the bus QR code.',empty:'Please tell me where you are going.',found:(d,p)=>`Good! ✅ ${d} is served by this bus: ${p} FCFA. Confirm and pay.`,none:d=>`"${d}" is not registered on this bus. ❌ Please ask the conductor.`,nolist:'The conductor has not registered any routes on this bus yet. Please ask them.',mic:'I could not hear you. Please type the name.'}
+};
+const AI_LOC={wo:'fr-SN',fr:'fr-FR',en:'en-US'};
+S.aiLang=S.aiLang||'fr';
+function aiBubble(txt){const b=document.getElementById('aiBubble');if(b)b.textContent=txt;}
+function aiInit(){
+  try{
+    document.querySelectorAll('.ai-lang').forEach(b=>{const on=b.dataset.l===S.aiLang;b.style.background=on?'#7c3aed':'#ffffff0d';b.style.color=on?'#fff':'#ccc';b.style.borderColor=on?'#a78bfa':'#ffffff22';});
+    aiBubble(AI_TXT[S.aiLang].ask);
+    const i=document.getElementById('aiDestInput');if(i){i.placeholder=AI_TXT[S.aiLang].ph;i.value='';}
+    const r=document.getElementById('aiResult');if(r)r.style.display='none';
+  }catch(e){}
+}
+window.aiSetLang=(l)=>{S.aiLang=l;aiInit();};
+window.aiListen=()=>{
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){notify('🎤','Micro','Non supporté sur cet appareil : écrivez la destination.');return;}
+  const rec=new SR();rec.lang=AI_LOC[S.aiLang]||'fr-FR';rec.interimResults=false;rec.maxAlternatives=1;
+  const btn=document.getElementById('aiMicBtn');if(btn)btn.textContent='🔴';
+  rec.onresult=e=>{const t=e.results[0][0].transcript;document.getElementById('aiDestInput').value=t;aiSubmit();};
+  rec.onerror=()=>{aiBubble(AI_TXT[S.aiLang].mic);};
+  rec.onend=()=>{if(btn)btn.textContent='🎤';};
+  try{rec.start();}catch(e){}
+};
+window.aiSubmit=()=>{
+  const v=(document.getElementById('aiDestInput')?.value||'').trim();
+  if(!v){aiBubble(AI_TXT[S.aiLang].empty);return;}
+  S.wantedDest=v;aiBubble(AI_TXT[S.aiLang].go);
+  setTimeout(()=>openCamera('bus'),600);
+};
+function aiNorm(x){return String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();}
+function aiLev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=Array.from({length:n+1},(_,j)=>j);for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c;}return p[n];}
+const AI_STOP=new(Set)(['je','vais','a','au','aux','de','du','des','la','le','les','en','dem','ma','bi','ci','fan','i','go','to','am','going','want','vers','pour','a','jusqu','jusquau','bëgg','begg','ngi','ak','ba']);
+function aiMatches(input,dest){
+  const nu=aiNorm(input),nd=aiNorm(dest);if(!nu||!nd)return false;
+  if(nu.includes(nd)||(nu.length>=4&&nd.includes(nu)))return true;
+  const tu=nu.split(' ').filter(w=>w.length>=3&&!AI_STOP.has(w)),td=nd.split(' ').filter(w=>w.length>=3&&!AI_STOP.has(w));
+  if(!tu.length||!td.length)return false;
+  return td.every(d=>tu.some(u=>aiLev(u,d)<=(d.length<=5?1:2)));
+}
+window.aiCheckDest=(cands)=>{
+  const want=S.wantedDest;const box=document.getElementById('aiResult');if(!want||!box)return;
+  const T=AI_TXT[S.aiLang];const ok=cands.find(c=>aiMatches(want,c.t.to));
+  box.style.display='block';
+  if(ok){box.style.background='#00A65022';box.style.border='1.5px solid #009A44';box.style.color='#6ee7b7';box.textContent='🤖 '+T.found(ok.t.to,ok.t.price);ok.chip.click();ok.chip.scrollIntoView({block:'center'});}
+  else{box.style.background='#DF002418';box.style.border='1.5px solid #DF002466';box.style.color='#ffb3b3';box.textContent='🤖 '+(cands.length?T.none(want):T.nolist);}
+  try{if('speechSynthesis' in window&&S.aiLang!=='wo'){const u=new SpeechSynthesisUtterance(box.textContent.replace(/[🤖✅❌]/g,''));u.lang=AI_LOC[S.aiLang];speechSynthesis.speak(u);}}catch(e){}
+};
 window.openTicketFlow=()=>{resetFlow();openModal('modalTicketFlow');};
-window.resetFlow=()=>{setDots(0);['ticketStep0','ticketStep1','ticketStep3'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('ticketStep0').style.display='block';S.ticketBus=null;S.ticketSection=null;document.getElementById('ticketPriceDisplay').textContent='— FCFA';document.getElementById('btnPayTicket').disabled=true;if(unsubTicketWait){unsubTicketWait();unsubTicketWait=null;}};
+window.resetFlow=()=>{S.wantedDest=null;aiInit();setDots(0);['ticketStep0','ticketStep1','ticketStep3'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('ticketStep0').style.display='block';S.ticketBus=null;S.ticketSection=null;document.getElementById('ticketPriceDisplay').textContent='— FCFA';document.getElementById('btnPayTicket').disabled=true;if(unsubTicketWait){unsubTicketWait();unsubTicketWait=null;}};
 function setDots(s){for(let i=0;i<3;i++){const d=document.getElementById('tdot'+i);if(d)d.className='step-dot'+(i<s?' done':i===s?' active':'');}}
 async function loadBusInFlow(walletId){
   loader('Chargement bus…');
-  try{const wSnap=await getDoc(doc(db,'wallets',walletId));if(!wSnap.exists()){loader('',false);notify('❌','Bus inconnu','QR non reconnu.');return;}const recvUid=wSnap.data().uid;const rSnap=await getDoc(doc(db,'users',recvUid));if(!rSnap.exists()){loader('',false);notify('❌','Erreur','Receveur introuvable.');return;}const recv={...rSnap.data(),uid:recvUid};S.ticketBus=recv;S.ticketSection=null;document.getElementById('detectedBusInfo').innerHTML=`GIE:${recv.gie} = ${recv.vehicle} = Ligne:${recv.ligne}<br>Zone:${recv.zone}`;const destSnap=await getDocs(collection(db,'users',recvUid,'destinations'));const destList=document.getElementById('destList');destList.innerHTML='';if(destSnap.empty){destList.innerHTML='<div style="background:#FFD10015;border:1px solid #FFD10044;border-radius:12px;padding:12px;color:#888;font-size:13px;text-align:center;">Aucune section définie.</div>';}else{destSnap.docs.forEach(d=>{const t=d.data();const chip=document.createElement('div');chip.style.cssText='background:#ffffff0d;border:1.5px solid #2a3a2a;border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .2s;';chip.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.from}-->${t.to}</div><div style="color:#888;font-size:11px;">Section ${t.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${t.price} F</div></div>`;chip.onclick=()=>{S.ticketSection={...t,docId:d.id};destList.querySelectorAll('div').forEach(c=>{c.style.background='#ffffff0d';c.style.borderColor='#2a3a2a';});chip.style.background='#00A65033';chip.style.borderColor='var(--g)';document.getElementById('ticketPriceDisplay').textContent=t.price.toLocaleString('fr-FR')+' FCFA';document.getElementById('btnPayTicket').disabled=false;};destList.appendChild(chip);});}loader('',false);document.getElementById('ticketStep0').style.display='none';document.getElementById('ticketStep1').style.display='block';setDots(1);notify('🚌','Bus détecté',recv.vehicle+' · Ligne '+recv.ligne);}
+  try{const wSnap=await getDoc(doc(db,'wallets',walletId));if(!wSnap.exists()){loader('',false);notify('❌','Bus inconnu','QR non reconnu.');return;}const recvUid=wSnap.data().uid;const rSnap=await getDoc(doc(db,'users',recvUid));if(!rSnap.exists()){loader('',false);notify('❌','Erreur','Receveur introuvable.');return;}const recv={...rSnap.data(),uid:recvUid};S.ticketBus=recv;S.ticketSection=null;document.getElementById('detectedBusInfo').innerHTML=`GIE:${recv.gie} = ${recv.vehicle} = Ligne:${recv.ligne}<br>Zone:${recv.zone}`;const destSnap=await getDocs(collection(db,'users',recvUid,'destinations'));const destList=document.getElementById('destList');destList.innerHTML='';if(destSnap.empty){destList.innerHTML='<div style="background:#FFD10015;border:1px solid #FFD10044;border-radius:12px;padding:12px;color:#888;font-size:13px;text-align:center;">Aucune section définie.</div>';}else{const aiCands=[];destSnap.docs.forEach(d=>{const t=d.data();const chip=document.createElement('div');chip.style.cssText='background:#ffffff0d;border:1.5px solid #2a3a2a;border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .2s;';chip.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.from}-->${t.to}</div><div style="color:#888;font-size:11px;">Section ${t.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${t.price} F</div></div>`;chip.onclick=()=>{S.ticketSection={...t,docId:d.id};destList.querySelectorAll('div').forEach(c=>{c.style.background='#ffffff0d';c.style.borderColor='#2a3a2a';});chip.style.background='#00A65033';chip.style.borderColor='var(--g)';document.getElementById('ticketPriceDisplay').textContent=t.price.toLocaleString('fr-FR')+' FCFA';document.getElementById('btnPayTicket').disabled=false;};destList.appendChild(chip);aiCands.push({t,chip});});aiCheckDest(aiCands);}if(destSnap.empty)aiCheckDest([]);loader('',false);document.getElementById('ticketStep0').style.display='none';document.getElementById('ticketStep1').style.display='block';setDots(1);notify('🚌','Bus détecté',recv.vehicle+' · Ligne '+recv.ligne);}
   catch(e){loader('',false);notify('❌','Erreur',e.message);}
 }
 window.goPay=async()=>{
