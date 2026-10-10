@@ -3408,7 +3408,7 @@ const AI_TXT={
  en:{ask:'Hello! 👋 Where are you going? Tell me the name of your destination (or type it).',ph:'e.g. Liberté 6, Pikine…',go:'Great! Now scan the bus QR code.',empty:'Please tell me where you are going.',found:(d,p)=>`Good! ✅ ${d} is served by this bus: ${p} FCFA. Confirm and pay.`,none:d=>`"${d}" is not registered on this bus. ❌ Please ask the conductor.`,nolist:'The conductor has not registered any routes on this bus yet. Please ask them.',mic:'I could not hear you. Please type the name.'}
 };
 const AI_LOC={wo:'fr-SN',fr:'fr-FR',en:'en-US'};
-S.aiLang=S.aiLang||'fr';
+S.aiLang=S.aiLang||'wo';
 function aiBubble(txt){const b=document.getElementById('aiBubble');if(b)b.textContent=txt;}
 function aiInit(){
   try{
@@ -3453,7 +3453,7 @@ window.aiCheckDest=(cands)=>{
   else{box.style.background='#DF002418';box.style.border='1.5px solid #DF002466';box.style.color='#ffb3b3';box.textContent='🤖 '+(cands.length?T.none(want):T.nolist);}
   try{if('speechSynthesis' in window&&S.aiLang!=='wo'){const u=new SpeechSynthesisUtterance(box.textContent.replace(/[🤖✅❌]/g,''));u.lang=AI_LOC[S.aiLang];speechSynthesis.speak(u);}}catch(e){}
 };
-window.openTicketFlow=()=>{resetFlow();openModal('modalTicketFlow');};
+window.openTicketFlow=()=>{resetFlow();openModal('modalTicketFlow');aiInit();};
 window.resetFlow=()=>{S.wantedDest=null;aiInit();setDots(0);['ticketStep0','ticketStep1','ticketStep3'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('ticketStep0').style.display='block';S.ticketBus=null;S.ticketSection=null;document.getElementById('ticketPriceDisplay').textContent='— FCFA';document.getElementById('btnPayTicket').disabled=true;if(unsubTicketWait){unsubTicketWait();unsubTicketWait=null;}};
 function setDots(s){for(let i=0;i<3;i++){const d=document.getElementById('tdot'+i);if(d)d.className='step-dot'+(i<s?' done':i===s?' active':'');}}
 async function loadBusInFlow(walletId){
