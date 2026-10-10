@@ -1337,8 +1337,27 @@ window.doAuth=async()=>{
         if(!document.getElementById('authRecvIdDocRecto')?.files[0]){loader('',false);notify('⚠️','Pièce d\'identité','Ajoutez la photo recto de votre pièce d\'identité.');return;}
         if(!document.getElementById('authRecvIdDocVerso')?.files[0]){loader('',false);notify('⚠️','Pièce d\'identité','Ajoutez la photo verso de votre pièce d\'identité.');return;}
       }
+      if(S.authRole==='receiver'&&!(document.getElementById('authAddress')?.value.trim())){loader('',false);notify('⚠️','Adresse','Entrez votre adresse.');return;}
+      if(S.authRole==='owner'&&!(document.getElementById('authOwnerGIESelect')?.value)){loader('',false);notify('⚠️','GIE','Choisissez le GIE auquel vous appartenez.');return;}
+      if(S.authRole==='directeur'&&!(document.getElementById('authDirecteurOrg')?.value.trim())){loader('',false);notify('⚠️','Champs','Nom de l\'organisation requis.');return;}
+      if(S.authRole==='chauffeur'){
+        if(!(document.getElementById('authChCNI')?.value.trim())){loader('',false);notify('⚠️','CNI','Entrez votre numéro de CNI.');return;}
+        if(!(document.getElementById('authChAddress')?.value.trim())){loader('',false);notify('⚠️','Adresse','Entrez votre adresse.');return;}
+        if(!(document.getElementById('authChDirecteurSelect')?.value)){loader('',false);notify('⚠️','Directeur','Choisissez un directeur de GIE.');return;}
+      }
       _authFlowInProgress=true;
-      const cred=await createUserWithEmailAndPassword(auth,email,pass);
+      let cred;
+      try{cred=await createUserWithEmailAndPassword(auth,email,pass);}
+      catch(eCreate){
+        if(eCreate.code!=='auth/email-already-in-use')throw eCreate;
+        // Compte créé lors d'une tentative précédente interrompue (sans profil) : on le reprend
+        let c2=null;
+        try{c2=await signInWithEmailAndPassword(auth,email,pass);}catch(_){}
+        if(!c2)throw eCreate;
+        const ex=await getDoc(doc(db,'users',c2.user.uid));
+        if(ex.exists()){await signOut(auth);throw eCreate;}
+        cred=c2;
+      }
       const uid=cred.user.uid;
       const phone=document.getElementById('authPhone').value.trim();
       try{
@@ -1392,13 +1411,13 @@ window.doAuth=async()=>{
         try{
           await addDoc(collection(db,'notifications'),{toUid:directeurUid,type:'owner_request',ownerUid:uid,ownerName:name,ownerEmail:email,company,phone,read:false,ts:serverTimestamp()});
         }catch(e){console.warn('[owner_request notif]',e);}
-        await addDoc(collection(db,'adminNotifications'),{type:'owner_request',ownerUid:uid,ownerName:name,ownerEmail:email,company,phone,read:false,ts:serverTimestamp()});
+        try{await addDoc(collection(db,'adminNotifications'),{type:'owner_request',ownerUid:uid,ownerName:name,ownerEmail:email,company,phone,read:false,ts:serverTimestamp()});}catch(e){console.warn('[admin notif owner]',e);}
       }else if(S.authRole==='directeur'){
         const org=document.getElementById('authDirecteurOrg')?.value.trim()||'';
         if(!org){loader('',false);notify('⚠️','Champs','Nom de l\'organisation requis.');return;}
         const walletId='DR-'+uid.slice(0,6).toUpperCase();
         await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'directeur',status:'pending',org,balance:0,createdAt:serverTimestamp()});
-        await addDoc(collection(db,'adminNotifications'),{type:'directeur_request',directeurUid:uid,directeurName:name,directeurEmail:email,org,phone,read:false,ts:serverTimestamp()});
+        try{await addDoc(collection(db,'adminNotifications'),{type:'directeur_request',directeurUid:uid,directeurName:name,directeurEmail:email,org,phone,read:false,ts:serverTimestamp()});}catch(e){console.warn('[admin notif directeur]',e);}
       }else if(S.authRole==='chauffeur'){
         const directeurUid=document.getElementById('authChDirecteurSelect')?.value||'';
         const cni=document.getElementById('authChCNI')?.value.trim()||'';
@@ -1409,7 +1428,7 @@ window.doAuth=async()=>{
         const walletId='CH-'+uid.slice(0,6).toUpperCase();
         await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'chauffeur',status:'pending',directeurUid,cni,address,receiverUid:'',gie:'',vehicle:'',ligne:'',zone:'',busStatus:'hors_service',techStatus:'actif',receiverStatus:'absent',today:0,tripCount:0,balance:0,createdAt:serverTimestamp()});
         await setDoc(doc(db,'wallets',walletId),{uid,role:'chauffeur'});
-        await addDoc(collection(db,'notifications'),{toUid:directeurUid,type:'chauffeur_request',chauffeurUid:uid,chauffeurName:name,chauffeurEmail:email,phone,cni,address,read:false,ts:serverTimestamp()});
+        try{await addDoc(collection(db,'notifications'),{toUid:directeurUid,type:'chauffeur_request',chauffeurUid:uid,chauffeurName:name,chauffeurEmail:email,phone,cni,address,read:false,ts:serverTimestamp()});}catch(e){console.warn('[chauffeur notif]',e);}
       }
       }finally{_authFlowInProgress=false;}
       // Le receveur a déjà navigué lui-même (return plus haut) ; pour les autres rôles,
@@ -1423,6 +1442,18 @@ window.doAuth=async()=>{
     loader('',false);
     if(e.code==='auth/network-request-failed'||!navigator.onLine){
       notify('🔴','Pas de réseau','Une première connexion nécessite internet. Si vous vous êtes déjà connecté sur cet appareil, votre session sera restaurée automatiquement.');
+    }else if(e.code==='auth/email-already-in-use'){
+      notify('❌','Email déjà utilisé','Ce compte existe déjà. Cliquez sur « Se connecter », ou « Mot de passe oublié » si besoin.');
+    }else if(e.code==='auth/weak-password'){
+      notify('❌','Mot de passe faible','Utilisez au moins 6 caractères.');
+    }else if(e.code==='auth/invalid-email'){
+      notify('❌','Email invalide','Vérifiez l\'adresse email saisie.');
+    }else if(e.code==='auth/operation-not-allowed'){
+      notify('❌','Inscription désactivée','La connexion par email/mot de passe n\'est pas activée dans Firebase (Authentication > Sign-in method).');
+    }else if(e.code==='auth/unauthorized-domain'){
+      notify('❌','Domaine non autorisé','Ajoutez ce site dans Firebase > Authentication > Settings > Domaines autorisés.');
+    }else if(e.code==='auth/too-many-requests'){
+      notify('⏳','Trop de tentatives','Patientez quelques minutes puis réessayez.');
     }else if(e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found'){
       notify('❌','Identifiants incorrects','Email ou mot de passe invalide.');
     }else{
@@ -2953,14 +2984,25 @@ async function syncPublicDirecteurs(){
 }
 async function loadAdminDashboard(){
   try{
-    const usersSnap=await getDocs(collection(db,'users'));adminAllUsers=usersSnap.docs.map(d=>({id:d.id,...d.data()}));
+    let _uDocs;
+    try{_uDocs=(await getDocs(collection(db,'users'))).docs;}
+    catch(e1){
+      console.warn('[admin] lecture globale refusée, lecture par rôle',e1);
+      const _roles=['passenger','receiver','owner','directeur','chauffeur'];
+      const _parts=await Promise.allSettled(_roles.map(r=>getDocs(query(collection(db,'users'),where('role','==',r)))));
+      _uDocs=_parts.flatMap(x=>x.status==='fulfilled'?x.value.docs:[]);
+      const _bad=_roles.filter((r,i)=>_parts[i].status==='rejected');
+      if(_bad.length)notify('⚠️','Droits Firestore','Lecture refusée pour : '+_bad.join(', ')+' ('+(e1.code||e1.message)+')');
+    }
+    adminAllUsers=_uDocs.map(d=>({id:d.id,...d.data()}));
     syncPublicDirecteurs();
     const total=adminAllUsers.length,passengers=adminAllUsers.filter(u=>u.role==='passenger').length,receivers=adminAllUsers.filter(u=>u.role==='receiver').length,owners=adminAllUsers.filter(u=>u.role==='owner').length,directeurs=adminAllUsers.filter(u=>u.role==='directeur').length,chauffeurs=adminAllUsers.filter(u=>u.role==='chauffeur').length,pending=adminAllUsers.filter(u=>u.status==='pending').length;
     document.getElementById('aStat-total').textContent=total;document.getElementById('aStat-passengers').textContent=passengers;document.getElementById('aStat-receivers').textContent=receivers;document.getElementById('aStat-owners').textContent=owners;document.getElementById('aStat-directeurs').textContent=directeurs;document.getElementById('aStat-chauffeurs').textContent=chauffeurs;document.getElementById('aStat-pending').textContent=pending;
     try{const tc=await getCountFromServer(collection(db,'tickets'));document.getElementById('aStat-tickets').textContent=tc.data().count;}catch(e){document.getElementById('aStat-tickets').textContent='—';}
-    const wdSnap=await getDocs(collection(db,'withdrawal_requests'));adminAllWithdrawals=wdSnap.docs.map(d=>({id:d.id,...d.data()}));adminAllWithdrawals.push(...await loadServerPayouts());document.getElementById('aStat-withdraws').textContent=adminAllWithdrawals.filter(w=>w.status==='pending').length;
+    try{const wdSnap=await getDocs(collection(db,'withdrawal_requests'));adminAllWithdrawals=wdSnap.docs.map(d=>({id:d.id,...d.data()}));}catch(e){console.warn('[admin] withdrawal_requests',e);adminAllWithdrawals=[];}
+    adminAllWithdrawals.push(...await loadServerPayouts());document.getElementById('aStat-withdraws').textContent=adminAllWithdrawals.filter(w=>w.status==='pending').length;
     renderDashPending();renderOwnersList();renderDirecteursList();renderUsersList();renderWithdrawalsList();
-  }catch(e){console.error('Admin dashboard error:',e);}
+  }catch(e){console.error('Admin dashboard error:',e);notify('❌','Erreur admin',e.code||e.message);}
 }
 function renderDashPending(){const pendingDirs=adminAllUsers.filter(u=>u.status==='pending'&&u.role==='directeur');const cont=document.getElementById('adminDashPending');if(!pendingDirs.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:16px;font-size:13px;">Aucun directeur en attente ✅</div>';return;}cont.innerHTML=pendingDirs.map(u=>renderAdminUserCard(u,true)).join('');}
 function renderAdminUserCard(u,compact=false,selectable=false){
