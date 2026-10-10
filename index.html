@@ -1239,6 +1239,7 @@ let trackMap=null,trackMapMarker=null,unsubTrackLoc=null;
 let dirOwnersMap=null,dirOwnersMarkers={},dirOwnersLocUnsubs={},dirOwnersLocData={};
 let unsubChOwnerBalance=null;
 
+const withTimeout=(p,ms,label)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(Object.assign(new Error('Délai dépassé ('+label+')'),{timeout:true})),ms))]);
 function loader(msg='',show=true){const l=document.getElementById('globalLoader');l.className=show?'show':'';if(msg)document.getElementById('loaderMsg').textContent=msg;}
 let ntTimer=null;
 function notify(icon,title,body){['sygostIcon','sygostTitle','sygostBody'].forEach((id,i)=>document.getElementById(id).textContent=[icon,title,body][i]);const el=document.getElementById('sygostNotif');el.classList.add('show');if(ntTimer)clearTimeout(ntTimer);ntTimer=setTimeout(hideSygost,4500);}
@@ -1345,11 +1346,11 @@ window.doAuth=async()=>{
           const idFileVerso=document.getElementById('authRecvIdDocVerso')?.files[0];
           const diplomaFile=document.getElementById('authRecvDiploma')?.files[0];
           const cvFile=document.getElementById('authRecvCV')?.files[0];
-          if(photoFile){const r=storageRef(storage,`receivers/${uid}/photo_${Date.now()}_${photoFile.name}`);await uploadBytes(r,photoFile);docUrls.photoUrl=await getDownloadURL(r);}
-          if(idFileRecto){const r=storageRef(storage,`receivers/${uid}/cni_recto_${Date.now()}_${idFileRecto.name}`);await uploadBytes(r,idFileRecto);docUrls.idDocRectoUrl=await getDownloadURL(r);}
-          if(idFileVerso){const r=storageRef(storage,`receivers/${uid}/cni_verso_${Date.now()}_${idFileVerso.name}`);await uploadBytes(r,idFileVerso);docUrls.idDocVersoUrl=await getDownloadURL(r);}
-          if(diplomaFile){const r=storageRef(storage,`receivers/${uid}/diplome_${Date.now()}_${diplomaFile.name}`);await uploadBytes(r,diplomaFile);docUrls.diplomaUrl=await getDownloadURL(r);}
-          if(cvFile){const r=storageRef(storage,`receivers/${uid}/cv_${Date.now()}_${cvFile.name}`);await uploadBytes(r,cvFile);docUrls.cvUrl=await getDownloadURL(r);}
+          if(photoFile){const r=storageRef(storage,`receivers/${uid}/photo_${Date.now()}_${photoFile.name}`);await withTimeout(uploadBytes(r,photoFile),40000,'upload');docUrls.photoUrl=await withTimeout(getDownloadURL(r),15000,'lien');}
+          if(idFileRecto){const r=storageRef(storage,`receivers/${uid}/cni_recto_${Date.now()}_${idFileRecto.name}`);await withTimeout(uploadBytes(r,idFileRecto),40000,'upload');docUrls.idDocRectoUrl=await withTimeout(getDownloadURL(r),15000,'lien');}
+          if(idFileVerso){const r=storageRef(storage,`receivers/${uid}/cni_verso_${Date.now()}_${idFileVerso.name}`);await withTimeout(uploadBytes(r,idFileVerso),40000,'upload');docUrls.idDocVersoUrl=await withTimeout(getDownloadURL(r),15000,'lien');}
+          if(diplomaFile){const r=storageRef(storage,`receivers/${uid}/diplome_${Date.now()}_${diplomaFile.name}`);await withTimeout(uploadBytes(r,diplomaFile),40000,'upload');docUrls.diplomaUrl=await withTimeout(getDownloadURL(r),15000,'lien');}
+          if(cvFile){const r=storageRef(storage,`receivers/${uid}/cv_${Date.now()}_${cvFile.name}`);await withTimeout(uploadBytes(r,cvFile),40000,'upload');docUrls.cvUrl=await withTimeout(getDownloadURL(r),15000,'lien');}
         }catch(e){console.warn('[receiver docs upload]',e);notify('⚠️','Documents','Compte créé, mais l\'envoi de certains documents a échoué. Vous pourrez les renvoyer plus tard.');}
         loader('Finalisation…');
         const walletId='RV-'+uid.slice(0,6).toUpperCase();
@@ -1424,13 +1425,17 @@ window.doSubmitReceiverCandidature=async()=>{
   const {uid,name,email,phone,address}=data;
   loader('Envoi de votre candidature…');
   try{
-    await updateDoc(doc(db,'users',uid),{pendingOwnerUids:ownerUids,directeurUid});
-    for(const ouid of ownerUids){
-      try{await addDoc(collection(db,'notifications'),{toUid:ouid,type:'receiver_candidature',receiverUid:uid,receiverName:name,receiverEmail:email,phone,address,read:false,ts:serverTimestamp()});}
-      catch(err){console.warn('[notif owner]',ouid,err);}
-    }
-    try{await addDoc(collection(db,'notifications'),{toUid:directeurUid,type:'receiver_candidature',receiverUid:uid,receiverName:name,receiverEmail:email,phone,address,read:false,ts:serverTimestamp()});}
-    catch(err){console.warn('[notif directeur]',err);}
+    const T=15000;
+    const notifBase={type:'receiver_candidature',receiverUid:uid,receiverName:name,receiverEmail:email,phone,address,read:false};
+    const jobs=[withTimeout(updateDoc(doc(db,'users',uid),{pendingOwnerUids:ownerUids,directeurUid}),T,'profil')];
+    for(const ouid of ownerUids)jobs.push(withTimeout(addDoc(collection(db,'notifications'),{...notifBase,toUid:ouid,ts:serverTimestamp()}),T,'notif propriétaire'));
+    jobs.push(withTimeout(addDoc(collection(db,'notifications'),{...notifBase,toUid:directeurUid,ts:serverTimestamp()}),T,'notif directeur'));
+    const results=await Promise.allSettled(jobs);
+    results.forEach((r,i)=>{if(r.status==='rejected')console.warn('[candidature]',i,r.reason);});
+    // Refus explicite (droits Firestore, etc.) sur le profil : on affiche l'erreur
+    if(results[0].status==='rejected'&&!results[0].reason?.timeout){throw results[0].reason;}
+    // Délai dépassé : l'envoi reste en file d'attente et partira dès que le réseau revient
+    if(results.some(r=>r.status==='rejected'&&r.reason?.timeout)){notify('⏳','Connexion lente','Votre candidature sera envoyée dès que la connexion sera meilleure.');}
     window.pendingReceiverData=null;
     closeModal('modalRecvOwners');
     loader('',false);
