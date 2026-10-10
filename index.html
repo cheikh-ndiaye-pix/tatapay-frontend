@@ -2783,18 +2783,9 @@ window.doOwnerWithdraw=async()=>{
   if(!amount||amount<500){notify('⚠️','Montant','Minimum 500 FCFA.');return;}
   if(amount>bal){notify('⚠️','Solde insuffisant',`Solde: ${fmt(bal)} FCFA.`);return;}
   if(!/^\+?\d{8,15}$/.test(phone)){notify('⚠️','Numéro','Numéro mobile invalide.');return;}
-  loader('Retrait via PayTech…');
+  loader('Retrait Wave en cours…');
   try{
-    const ref='WD-'+Date.now().toString(36).toUpperCase();
-    const res=await fetch('/api/public/paytech-payout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,phone,operator,ref,ownerName:S.profile?.name||''})});
-    const data=await res.json().catch(()=>({}));
-    if(!res.ok||!data.success){loader('',false);notify('❌','Échec PayTech',data?.error||'Retrait refusé par PayTech.');return;}
-    const wdRef=doc(collection(db,'withdrawals'));
-    const wdBatch=writeBatch(db);
-    wdBatch.update(doc(db,'users',S.uid),{balance:increment(-amount),opCol:'withdrawals',opId:wdRef.id});
-    wdBatch.set(doc(collection(db,'users',S.uid,'history')),{type:'withdraw',label:`Retrait PayTech ${operator} → ${phone}`,amount:-amount,ref,ts:serverTimestamp()});
-    wdBatch.set(wdRef,{ownerUid:S.uid,ownerName:S.profile?.name||'',amount,phone,operator,ref,status:'sent',ts:serverTimestamp()});
-    await wdBatch.commit();
+    await callServerWithdraw(amount,phone,'wave');
     loader('',false);closeModal('modalOwnerWithdraw');
     notify('✅','Retrait envoyé',`${fmt(amount)} FCFA → ${phone}`);
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
@@ -3133,6 +3124,21 @@ window.demandDescendre=async()=>{
   notify('🛑','Signal envoyé !','Le receveur et le chauffeur ont été prévenus.');
 };
 window.showActiveTicket=()=>{if(activeTicketData)showTicketData(activeTicketData);};
+async function callServerWithdraw(amount,phone,method){
+  const token=await auth.currentUser.getIdToken();
+  const requestId=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(36).slice(2)).replace(/-/g,'').slice(0,32);
+  let lastErr=null;
+  // Réessais sûrs : même requestId => le serveur ne paie jamais deux fois.
+  for(let i=0;i<3;i++){
+    try{
+      const res=await fetch(BACKEND_URL+'/api/withdraw',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({amount,phone,method,requestId})});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok&&res.status!==202)throw Object.assign(new Error(data.error||'Retrait refusé'),{final:true});
+      return data;
+    }catch(e){lastErr=e;if(e.final)throw e;await new Promise(r=>setTimeout(r,i===0?4000:8000));}
+  }
+  throw new Error('Serveur injoignable. Réessayez dans un instant (votre solde n\'a pas été débité si aucun message de succès).');
+}
 window.openWithdraw=()=>{resetWithdraw();{const ph=document.getElementById('wdPhone');if(ph)ph.value=S.profile?.phone||'';}document.getElementById('withdrawAvailable').textContent=fmt(S.profile?.balance||0)+' FCFA';openModal('modalWithdraw');};
 function resetWithdraw(){['wdStep1','wdStep2','wdStep3','wdStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const w=document.getElementById('wdAmt');if(w)w.value='';}
 window.wdGoStep2=()=>{const amt=parseInt(document.getElementById('wdAmt').value||0);const bal=S.profile?.balance||0;if(!amt||amt<500){notify('⚠️','Montant','Minimum 500 FCFA.');return;}if(amt>bal){notify('❌','Solde','Solde insuffisant ('+fmt(bal)+' FCFA).');return;}const wph=(document.getElementById('wdPhone').value||'').replace(/\s+/g,'');if(!/^\+?\d{8,15}$/.test(wph)){notify('⚠️','Numéro Wave','Numéro invalide.');return;}S.wdPhone=wph;document.getElementById('wdPhoneBig').textContent=wph;S.wdAmt=amt;document.getElementById('wdAmtBig').textContent=fmt(amt)+' FCFA';document.getElementById('wdStep1').style.display='none';document.getElementById('wdStep2').style.display='block';};
@@ -3141,18 +3147,11 @@ window.doWithdraw=async()=>{
   if(amt>(S.profile?.balance||0)){notify('❌','Solde','Solde insuffisant.');return;}
   document.getElementById('wdStep2').style.display='none';document.getElementById('wdStep3').style.display='block';
   try{
-    const ref='WD-'+Date.now();
-    const reqRef=doc(collection(db,'withdrawal_requests'));
-    // Un seul batch : le solde est retiré ET la demande créée, tout ou rien.
-    const b=writeBatch(db);
-    b.update(doc(db,'users',S.uid),{balance:increment(-amt),opCol:'withdrawal_requests',opId:reqRef.id});
-    b.set(reqRef,{uid:S.uid,name:S.profile.name,walletId:S.profile.walletId,amount:amt,operator:'Wave',phone,status:'pending',ref,requestedAt:serverTimestamp()});
-    b.set(doc(collection(db,'users',S.uid,'history')),{type:'withdraw_request',label:'Retour vers Wave → '+phone+' — '+ref,amount:-amt,ref,ts:serverTimestamp()});
-    await b.commit();
+    const r=await callServerWithdraw(amt,phone,'wave');
     document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep4').style.display='block';
     document.getElementById('wdSuccessDesc').textContent=fmt(amt)+' FCFA → Wave '+phone;
-    document.getElementById('wdSuccessRef').textContent='Ref: '+ref;
-  }catch(e){notify('❌','Erreur',e.message);document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep2').style.display='block';}
+    document.getElementById('wdSuccessRef').textContent='Ref: '+(r.ref||'');
+  }catch(e){notify('❌','Retrait',e.message);document.getElementById('wdStep3').style.display='none';document.getElementById('wdStep2').style.display='block';}
 };
 window.openRecharge=()=>{resetRecharge();openModal('modalRecharge');};
 function resetRecharge(){['rgStep1','rgStep2','rgStep3','rgStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const amt=document.getElementById('rechargeAmt');if(amt)amt.value='';document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));if(S.rgUnsub){S.rgUnsub();S.rgUnsub=null;}if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}}
