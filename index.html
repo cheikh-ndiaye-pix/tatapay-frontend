@@ -1240,6 +1240,17 @@ let dirOwnersMap=null,dirOwnersMarkers={},dirOwnersLocUnsubs={},dirOwnersLocData
 let unsubChOwnerBalance=null;
 
 const withTimeout=(p,ms,label)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(Object.assign(new Error('Délai dépassé ('+label+')'),{timeout:true})),ms))]);
+async function compressImage(file,maxDim=1280,quality=0.7){
+  if(!file||!file.type||!file.type.startsWith('image/'))return file;
+  try{
+    const bmp=await createImageBitmap(file);
+    const sc=Math.min(1,maxDim/Math.max(bmp.width,bmp.height));
+    const c=document.createElement('canvas');c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);
+    c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+    const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',quality));
+    return(blob&&blob.size<file.size)?new File([blob],(file.name||'photo').replace(/\.\w+$/,'')+'.jpg',{type:'image/jpeg'}):file;
+  }catch(e){return file;}
+}
 function loader(msg='',show=true){const l=document.getElementById('globalLoader');l.className=show?'show':'';if(msg)document.getElementById('loaderMsg').textContent=msg;}
 let ntTimer=null;
 function notify(icon,title,body){['sygostIcon','sygostTitle','sygostBody'].forEach((id,i)=>document.getElementById(id).textContent=[icon,title,body][i]);const el=document.getElementById('sygostNotif');el.classList.add('show');if(ntTimer)clearTimeout(ntTimer);ntTimer=setTimeout(hideSygost,4500);}
@@ -1341,16 +1352,20 @@ window.doAuth=async()=>{
         loader('Envoi des documents…');
         const docUrls={};
         try{
-          const photoFile=document.getElementById('authRecvPhoto')?.files[0];
-          const idFileRecto=document.getElementById('authRecvIdDocRecto')?.files[0];
-          const idFileVerso=document.getElementById('authRecvIdDocVerso')?.files[0];
-          const diplomaFile=document.getElementById('authRecvDiploma')?.files[0];
-          const cvFile=document.getElementById('authRecvCV')?.files[0];
-          if(photoFile){const r=storageRef(storage,`receivers/${uid}/photo_${Date.now()}_${photoFile.name}`);await withTimeout(uploadBytes(r,photoFile),40000,'upload');docUrls.photoUrl=await withTimeout(getDownloadURL(r),15000,'lien');}
-          if(idFileRecto){const r=storageRef(storage,`receivers/${uid}/cni_recto_${Date.now()}_${idFileRecto.name}`);await withTimeout(uploadBytes(r,idFileRecto),40000,'upload');docUrls.idDocRectoUrl=await withTimeout(getDownloadURL(r),15000,'lien');}
-          if(idFileVerso){const r=storageRef(storage,`receivers/${uid}/cni_verso_${Date.now()}_${idFileVerso.name}`);await withTimeout(uploadBytes(r,idFileVerso),40000,'upload');docUrls.idDocVersoUrl=await withTimeout(getDownloadURL(r),15000,'lien');}
-          if(diplomaFile){const r=storageRef(storage,`receivers/${uid}/diplome_${Date.now()}_${diplomaFile.name}`);await withTimeout(uploadBytes(r,diplomaFile),40000,'upload');docUrls.diplomaUrl=await withTimeout(getDownloadURL(r),15000,'lien');}
-          if(cvFile){const r=storageRef(storage,`receivers/${uid}/cv_${Date.now()}_${cvFile.name}`);await withTimeout(uploadBytes(r,cvFile),40000,'upload');docUrls.cvUrl=await withTimeout(getDownloadURL(r),15000,'lien');}
+          const failed=[];
+          const specs=[['photoUrl','photo','authRecvPhoto'],['idDocRectoUrl','cni_recto','authRecvIdDocRecto'],['idDocVersoUrl','cni_verso','authRecvIdDocVerso'],['diplomaUrl','diplome','authRecvDiploma'],['cvUrl','cv','authRecvCV']];
+          // Photos réduites (≈ 1280 px, JPEG) puis envoyées en parallèle, 30 s max chacune
+          await Promise.all(specs.map(async([key,label,inputId])=>{
+            const f=document.getElementById(inputId)?.files[0];if(!f)return;
+            try{
+              const small=await compressImage(f);
+              const safeName=String(small.name||label).replace(/[^\w.\-]/g,'_');
+              const r=storageRef(storage,`receivers/${uid}/${label}_${Date.now()}_${safeName}`);
+              await withTimeout(uploadBytes(r,small),30000,'upload '+label);
+              docUrls[key]=await withTimeout(getDownloadURL(r),10000,'lien '+label);
+            }catch(err){console.warn('[receiver upload]',label,err);failed.push(label);}
+          }));
+          if(failed.length)notify('⚠️','Documents','Compte créé, mais ces documents n\'ont pas pu être envoyés : '+failed.join(', ')+'. Vous pourrez les renvoyer plus tard.');
         }catch(e){console.warn('[receiver docs upload]',e);notify('⚠️','Documents','Compte créé, mais l\'envoi de certains documents a échoué. Vous pourrez les renvoyer plus tard.');}
         loader('Finalisation…');
         const walletId='RV-'+uid.slice(0,6).toUpperCase();
