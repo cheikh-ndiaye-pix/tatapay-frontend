@@ -3489,7 +3489,7 @@ function aiSpeak(text,key,onEnd){
     aiStopListen();
     try{S.aiAudio&&S.aiAudio.pause();}catch(e){}
     try{speechSynthesis.cancel();}catch(e){}
-    const url=key&&S.aiVoices&&S.aiVoices[S.aiLang+'_'+key];
+    const url=key&&S.aiVoices&&(S.aiVoices[S.aiLang+'_'+key]||(VC_FALLBACK[key]&&S.aiVoices[S.aiLang+'_'+VC_FALLBACK[key]]));
     if(url){
       const a=new Audio(url);S.aiAudio=a;
       a.onended=()=>{if(S.aiAudio===a&&onEnd)onEnd();};
@@ -3521,12 +3521,14 @@ document.addEventListener('pointerdown',()=>{if(S.aiPendingSpeak&&document.getEl
 })();
 
 /* ═══════════════ ADMIN : VOCAUX DE L'ASSISTANT ═══════════════ */
-const VC_KEYS=['ask','go','empty','found','none','nolist','mic'];
-const VC_LABEL={ask:'👋 Accueil (à l\'entrée dans l\'app)',go:'📷 Après la réponse (ouvre le scanner)',empty:'🤐 Le passager n\'a rien dit',found:'✅ Destination trouvée dans le bus',none:'❌ Destination absente de ce bus',nolist:'⚠️ Aucun trajet inscrit par le receveur',mic:'🎤 Micro : pas compris'};
+const VC_KEYS=['ask','go','empty','found','none','nolist','mic','routes','similar','noroute','pick'];
+// Tant qu'un vocal n'est pas enregistré pour une nouvelle phrase, on rejoue celui de la phrase la plus proche
+const VC_FALLBACK={routes:'found',similar:'found',noroute:'none',pick:'go'};
+const VC_LABEL={ask:'👋 Accueil (à l\'entrée dans l\'app)',go:'📷 Après la réponse (ouvre le scanner)',empty:'🤐 Le passager n\'a rien dit',found:'✅ Destination trouvée dans le bus',none:'❌ Destination absente de ce bus',nolist:'⚠️ Aucun trajet inscrit par le receveur',mic:'🎤 Micro : pas compris',routes:'📋 Trajets trouvés : « choisissez le vôtre »',similar:'🔎 Pas exact, voici des destinations similaires',noroute:'🚫 Aucun trajet trouvé (le scanner s\'ouvre ensuite)',pick:'👆 Trajet choisi : « scannez le QR du bus »'};
 const VC_TXT={
-  wo:{found:'Baax na ! Destination bi nekk na ci bus bii. Duggal ko te fey.',none:'Gisuma ko ci bus bii. Laajal receveur bi.'},
-  fr:{found:'C\'est bon ! Cette destination est desservie par ce bus. Validez et payez.',none:'Cette destination n\'est pas inscrite dans ce bus. Demandez au receveur.'},
-  en:{found:'Good! This destination is served by this bus. Confirm and pay.',none:'This destination is not registered on this bus. Please ask the conductor.'}
+  wo:{routes:'Baax na ! Gis naa trajet yi. Tànnal bi la neex.',similar:'Gisuma ko bu leer, waaye gis naa yu mel ni ko. Tànnal bi la neex.',noroute:'Gisuma trajet ngir destination bi. Scanil bus bi.',pick:'Baax na ! Scanil QR bu bus bi.',found:'Baax na ! Destination bi nekk na ci bus bii. Duggal ko te fey.',none:'Gisuma ko ci bus bii. Laajal receveur bi.'},
+  fr:{routes:'J\'ai trouvé des trajets pour cette destination. Choisissez le vôtre.',similar:'Je n\'ai pas trouvé exactement, mais voici des destinations similaires. Choisissez la bonne.',noroute:'Aucun trajet trouvé pour cette destination. Scannez directement le bus.',pick:'Parfait ! Scannez maintenant le QR de ce bus.',found:'C\'est bon ! Cette destination est desservie par ce bus. Validez et payez.',none:'Cette destination n\'est pas inscrite dans ce bus. Demandez au receveur.'},
+  en:{routes:'I found routes for this destination. Please choose yours.',similar:'I did not find an exact match, but here are similar destinations. Please choose the right one.',noroute:'No route found for this destination. Please scan the bus directly.',pick:'Great! Now scan this bus QR code.',found:'Good! This destination is served by this bus. Confirm and pay.',none:'This destination is not registered on this bus. Please ask the conductor.'}
 };
 const VC_LANG={wo:'Wolof',fr:'Français',en:'English'};
 let vcSaved={},vcPending={},vcRec=null,vcCur='wo';
@@ -3669,11 +3671,11 @@ async function aiShowRoutes(want){
     const routes=await aiFindRoutes(want);
     if(S.wantedDest!==want)return; // le passager a quitté entre-temps
     S.aiRoutes=routes;
-    if(!routes.length){aiSpeak(T.none(want),null);aiGoScanner();return;}
+    if(!routes.length){aiSpeak(T.none(want),'noroute');aiGoScanner();return;}
     const nEx=routes.filter(r=>!r.sim).length;
     const head=t=>`<div style="font-size:11px;font-weight:800;color:#FF6B00;letter-spacing:1px;text-transform:uppercase;margin:4px 0;">${t}</div>`;
     list.innerHTML=routes.map((r,i)=>(r.sim&&i===nEx?head(nEx?'Destinations similaires':'Destinations similaires à ce que vous avez dit'):'')+aiRouteCard(r,i)).join('');
-    aiSpeak(nEx?T.n(nEx,want):T.sim(want),null);
+    aiSpeak(nEx?T.n(nEx,want):T.sim(want),nEx?'routes':'similar');
   }catch(e){
     console.error('[aiShowRoutes]',e);
     aiGoScanner();
@@ -3686,7 +3688,7 @@ window.aiPickRoute=(i)=>{
   const b=document.getElementById('aiPickBanner');
   b.innerHTML=`✅ Vous avez choisi : <b>Ligne ${r.recv.ligne||'—'} · ${r.recv.gie||'—'}</b><br>${r.from||'—'}→${r.to} · ${r.price} FCFA · Bus ${r.recv.vehicle||'—'}`;b.style.display='block';
   document.getElementById('ticketStep0').style.display='block';
-  const T=AI_RT[S.aiLang];aiBubble(T.pick);aiSpeak(T.pick,null);
+  const T=AI_RT[S.aiLang];aiBubble(T.pick);aiSpeak(T.pick,'pick');
   setTimeout(()=>openCamera('bus'),300);
 };
 window.aiRoutesSkip=()=>{S.aiPick=null;document.getElementById('ticketStepAI').style.display='none';const b=document.getElementById('aiPickBanner');if(b)b.style.display='none';document.getElementById('ticketStep0').style.display='block';};
