@@ -3590,11 +3590,16 @@ window.aiSubmit=()=>{
   aiShowRoutes(v);
 };
 const AI_RT={
- wo:{n:(k,d)=>`Baax na ! Gis naa ${k} trajet ngir ${d}. Tànnal bi la neex.`,none:d=>`Gisuma trajet bu receveur bind ngir "${d}". Jéemal beneen tur walla scanil bus bi.`,pick:'Baax na ! Scanil QR bu bus bi.'},
- fr:{n:(k,d)=>`J'ai trouvé ${k} trajet${k>1?'s':''} pour ${d}. Choisissez le vôtre.`,none:d=>`Aucun receveur n'a enregistré de trajet pour « ${d} ». Essayez un autre nom ou scannez directement le bus.`,pick:'Parfait ! Scannez maintenant le QR de ce bus.'},
- en:{n:(k,d)=>`I found ${k} route${k>1?'s':''} for ${d}. Please choose yours.`,none:d=>`No conductor has registered a route for "${d}". Try another name or scan the bus directly.`,pick:'Great! Now scan this bus QR code.'}
+ wo:{sim:d=>`Gisuma "${d}" bu leer, waaye gis naa yu mel ni ko. Tànnal bi la neex.`,n:(k,d)=>`Baax na ! Gis naa ${k} trajet ngir ${d}. Tànnal bi la neex.`,none:d=>`Gisuma trajet bu receveur bind ngir "${d}". Jéemal beneen tur walla scanil bus bi.`,pick:'Baax na ! Scanil QR bu bus bi.'},
+ fr:{sim:d=>`Je n'ai pas trouvé exactement « ${d} », mais voici des destinations similaires. Choisissez la bonne.`,n:(k,d)=>`J'ai trouvé ${k} trajet${k>1?'s':''} pour ${d}. Choisissez le vôtre.`,none:d=>`Aucun receveur n'a enregistré de trajet pour « ${d} ». Essayez un autre nom ou scannez directement le bus.`,pick:'Parfait ! Scannez maintenant le QR de ce bus.'},
+ en:{sim:d=>`I did not find exactly "${d}", but here are similar destinations. Please choose the right one.`,n:(k,d)=>`I found ${k} route${k>1?'s':''} for ${d}. Please choose yours.`,none:d=>`No conductor has registered a route for "${d}". Try another name or scan the bus directly.`,pick:'Great! Now scan this bus QR code.'}
 };
-// Cherche, chez tous les receveurs approuvés, les trajets dont l'arrivée correspond à ce que le passager a dit
+function aiSimilar(input,dest){
+  const tu=aiNorm(input).split(' ').filter(w=>w.length>=3&&!AI_STOP.has(w)),td=aiNorm(dest).split(' ').filter(w=>w.length>=3&&!AI_STOP.has(w));
+  if(!tu.length||!td.length)return false;
+  return td.some(d=>tu.some(u=>aiLev(u,d)<=(d.length<=5?1:2)||(u.length>=4&&d.length>=4&&(d.includes(u)||u.includes(d)))));
+}
+// Cherche, chez tous les receveurs approuvés, les trajets dont l'arrivée correspond (exact) ou ressemble (similaire) à ce que le passager a dit
 async function aiFindRoutes(want){
   let docs=[];
   try{
@@ -3606,12 +3611,24 @@ async function aiFindRoutes(want){
     const parts=await Promise.allSettled(rs.docs.map(async r=>{const sn=await getDocs(collection(db,'users',r.id,'destinations'));return sn.docs.map(d=>({recvUid:r.id,id:d.id,...d.data()}));}));
     docs=parts.flatMap(x=>x.status==='fulfilled'?x.value:[]);
   }
-  const matched=docs.filter(d=>d.to&&aiMatches(want,d.to));
-  const uids=[...new Set(matched.map(d=>d.recvUid))];
+  const exact=docs.filter(d=>d.to&&aiMatches(want,d.to));
+  const similar=docs.filter(d=>d.to&&!aiMatches(want,d.to)&&aiSimilar(want,d.to));
+  const uids=[...new Set([...exact,...similar].map(d=>d.recvUid))];
   const info={};
   await Promise.allSettled(uids.map(async u=>{const sn=await getDoc(doc(db,'users',u));if(sn.exists())info[u]=sn.data();}));
-  return matched.filter(d=>{const r=info[d.recvUid];return r&&r.status==='approved'&&r.vehicle;}).map(d=>({...d,recv:info[d.recvUid]}))
-    .sort((a,b)=>(a.price||0)-(b.price||0)).slice(0,20);
+  const fin=(arr,sim)=>arr.filter(d=>{const r=info[d.recvUid];return r&&r.status==='approved'&&r.vehicle;}).map(d=>({...d,recv:info[d.recvUid],sim})).sort((a,b)=>(a.price||0)-(b.price||0));
+  return [...fin(exact,false).slice(0,20),...fin(similar,true).slice(0,8)];
+}
+function aiRouteCard(r,i){
+  return `<div onclick="aiPickRoute(${i})" style="background:#ffffff0d;border:1.5px solid ${r.sim?'#FF6B0066':'#7c3aed66'};border-radius:14px;padding:12px 14px;cursor:pointer;"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;"><div style="min-width:0;"><div style="font-weight:900;font-size:14px;color:#e2e8f0;">Ligne ${r.recv.ligne||'—'} · ${r.recv.gie||'—'}</div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;margin-top:3px;">${r.from||'—'}--&gt;${r.to}</div><div style="color:#888;font-size:11px;margin-top:2px;">Bus ${r.recv.vehicle||'—'} · Zone ${r.recv.zone||'—'} · Section ${r.section||'—'}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);white-space:nowrap;">${r.price} F</div></div></div>`;
+}
+// Aucun trajet : l'assistant le dit, puis le scanner s'ouvre tout seul (le passager n'a rien à toucher)
+function aiGoScanner(){
+  S.aiPick=null;
+  document.getElementById('ticketStepAI').style.display='none';
+  const b=document.getElementById('aiPickBanner');if(b)b.style.display='none';
+  document.getElementById('ticketStep0').style.display='block';
+  openCamera('bus');
 }
 async function aiShowRoutes(want){
   const stepAI=document.getElementById('ticketStepAI'),list=document.getElementById('aiRoutesList');
@@ -3623,20 +3640,19 @@ async function aiShowRoutes(want){
     const routes=await aiFindRoutes(want);
     if(S.wantedDest!==want)return; // le passager a quitté entre-temps
     S.aiRoutes=routes;
-    if(!routes.length){
-      list.innerHTML='<div style="background:#DF002418;border:1.5px solid #DF002466;border-radius:14px;padding:14px;color:#ffb3b3;font-size:13px;line-height:1.5;">🤖 '+T.none(want).replace(/</g,'&lt;')+'</div>';
-      aiSpeak(T.none(want),null);return;
-    }
-    list.innerHTML=routes.map((r,i)=>`<div onclick="aiPickRoute(${i})" style="background:#ffffff0d;border:1.5px solid #7c3aed66;border-radius:14px;padding:12px 14px;cursor:pointer;"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;"><div style="min-width:0;"><div style="font-weight:900;font-size:14px;color:#e2e8f0;">Ligne ${r.recv.ligne||'—'} · ${r.recv.gie||'—'}</div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;margin-top:3px;">${r.from||'—'}--&gt;${r.to}</div><div style="color:#888;font-size:11px;margin-top:2px;">Bus ${r.recv.vehicle||'—'} · Zone ${r.recv.zone||'—'} · Section ${r.section||'—'}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);white-space:nowrap;">${r.price} F</div></div></div>`).join('');
-    aiSpeak(T.n(routes.length,want),null);
+    if(!routes.length){aiSpeak(T.none(want),null);aiGoScanner();return;}
+    const nEx=routes.filter(r=>!r.sim).length;
+    const head=t=>`<div style="font-size:11px;font-weight:800;color:#FF6B00;letter-spacing:1px;text-transform:uppercase;margin:4px 0;">${t}</div>`;
+    list.innerHTML=routes.map((r,i)=>(r.sim&&i===nEx?head(nEx?'Destinations similaires':'Destinations similaires à ce que vous avez dit'):'')+aiRouteCard(r,i)).join('');
+    aiSpeak(nEx?T.n(nEx,want):T.sim(want),null);
   }catch(e){
     console.error('[aiShowRoutes]',e);
-    list.innerHTML='<div style="background:#DF002418;border:1.5px solid #DF002466;border-radius:14px;padding:14px;color:#ffb3b3;font-size:13px;line-height:1.5;">Impossible de charger les trajets ('+(e.code||e.message||'erreur')+'). Scannez directement le bus.</div>';
+    aiGoScanner();
   }
 }
 window.aiPickRoute=(i)=>{
   const r=S.aiRoutes&&S.aiRoutes[i];if(!r)return;
-  S.aiPick={recvUid:r.recvUid,destId:r.id};
+  S.aiPick={recvUid:r.recvUid,destId:r.id};S.wantedDest=r.to;
   document.getElementById('ticketStepAI').style.display='none';
   const b=document.getElementById('aiPickBanner');
   b.innerHTML=`✅ Vous avez choisi : <b>Ligne ${r.recv.ligne||'—'} · ${r.recv.gie||'—'}</b><br>${r.from||'—'}→${r.to} · ${r.price} FCFA · Bus ${r.recv.vehicle||'—'}`;b.style.display='block';
