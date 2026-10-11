@@ -2610,7 +2610,22 @@ async function loadChCandidatures(){
     renderChCandidatures(items);
   }catch(e){console.warn('[cand load]',e);}
 }
-function renderChCandidatures(items){
+let _candRenderTok=0;
+async function renderChCandidatures(rawItems){
+  const tok=++_candRenderTok;
+  let items=rawItems;
+  try{
+    const checks=await Promise.all(rawItems.map(async n=>{
+      if(!n.receiverUid)return{n,ok:false,ghost:true};
+      try{const sn=await getDoc(doc(db,'users',n.receiverUid));return{n,ok:sn.exists()&&sn.data().status==='pending',ghost:!sn.exists()};}
+      catch(e){return{n,ok:true,ghost:false};}
+    }));
+    if(tok!==_candRenderTok)return;
+    // compte supprimé : la candidature est orpheline, on la retire pour de bon
+    checks.filter(c=>c.ghost).forEach(c=>{deleteDoc(doc(db,'notifications',c.n.id)).catch(()=>{});});
+    items=checks.filter(c=>c.ok).map(c=>c.n);
+  }catch(e){console.warn('[renderChCandidatures] vérification',e);}
+  if(tok!==_candRenderTok)return;
   const sec=document.getElementById('chCandSection');
   const list=document.getElementById('chCandList');
   const cnt=document.getElementById('chCandCount');
@@ -2642,6 +2657,14 @@ function renderChCandidatures(items){
   }).join('');
 }
 window.acceptChCandidature=async(notifId,receiverUid,receiverName)=>{
+  try{
+    const chk=await getDoc(doc(db,'users',receiverUid));
+    if(!chk.exists()){
+      deleteDoc(doc(db,'notifications',notifId)).catch(()=>{});
+      notify('⚠️','Compte introuvable',`${receiverName||'Ce receveur'} n'existe plus (compte supprimé). La candidature a été retirée.`);
+      return;
+    }
+  }catch(e){console.warn('[acceptChCandidature] vérification',e);}
   document.getElementById('approveCandName').textContent='Receveur: '+receiverName;
   document.getElementById('apprNotifId').value=notifId;
   document.getElementById('apprReceiverUid').value=receiverUid;
