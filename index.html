@@ -1064,7 +1064,13 @@ select.input-field option{background:#0c1f12;color:#fff;}
   </div>
   <div style="flex:1;overflow-y:auto;padding:20px;">
     <div class="step-dots"><div class="step-dot active" id="tdot0"></div><div class="step-dot" id="tdot1"></div><div class="step-dot" id="tdot2"></div></div>
-    <div id="ticketStep0"><div style="font-weight:900;font-size:20px;margin-bottom:4px;">Étape 1 · Scanner le Bus</div><div style="color:#888;font-size:13px;margin-bottom:24px;">Scannez le QR marchand dans le bus.</div>
+    <div id="ticketStepAI" style="display:none;">
+      <div style="font-weight:900;font-size:20px;margin-bottom:4px;">🤖 Trajets trouvés</div>
+      <div id="aiRoutesTitle" style="color:#a78bfa;font-size:13px;font-weight:700;margin-bottom:14px;">—</div>
+      <div id="aiRoutesList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button class="btn btn-secondary" onclick="aiRoutesRetry()">🎤 Autre destination</button><button class="btn btn-primary" onclick="aiRoutesSkip()">📷 Scanner un bus</button></div>
+    </div>
+    <div id="ticketStep0"><div id="aiPickBanner" style="display:none;background:#7c3aed22;border:1.5px solid #7c3aed88;border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#e2e8f0;line-height:1.6;"></div><div style="font-weight:900;font-size:20px;margin-bottom:4px;">Étape 1 · Scanner le Bus</div><div style="color:#888;font-size:13px;margin-bottom:24px;">Scannez le QR marchand dans le bus.</div>
 <button class="btn btn-primary btn-full" onclick="openCamera('bus')" style="padding:18px;">📷 Scanner QR du Bus</button><div style="display:flex;align-items:center;gap:10px;margin:18px 0;"><div style="flex:1;height:1px;background:#2a3a2a;"></div><div style="color:#666;font-size:11px;font-weight:700;">OU</div><div style="flex:1;height:1px;background:#2a3a2a;"></div></div><div style="color:#888;font-size:13px;margin-bottom:10px;">Le receveur vous a déjà montré votre ticket ? Scannez-le pour le recevoir, même sans connexion.</div><button class="btn btn-orange btn-full" onclick="openCamera('ticket')" style="padding:18px;">📷 Scanner mon Ticket</button></div>
     <div id="ticketStep1" style="display:none;">
       <div style="font-weight:900;font-size:20px;margin-bottom:4px;">Étape 2 · Destination</div>
@@ -2661,16 +2667,22 @@ window.doApproveCandidature=async()=>{
   const zone=document.getElementById('apprZone').value.trim();
   if(!gie||!vehicle||!ligne||!trajet||!zone){notify('⚠️','Champs','Renseignez tous les champs du bus.');return;}
   loader('Validation de la candidature…');
+  let step='activation du receveur';
   try{
     await updateDoc(doc(db,'users',receiverUid),{status:'approved',approvedOwnerUid:S.uid,approvedAt:serverTimestamp(),gie,vehicle,ligne,trajet,section,zone,linkedOwnerUids:arrayUnion(S.uid),approvedOwnerUids:arrayUnion(S.uid)});
-    await updateDoc(doc(db,'users',S.uid),{receiverUid,receiverStatus:'actif',gie,vehicle,ligne,trajet,section,zone});
+    // Le receveur est activé : les étapes suivantes sont secondaires, une erreur ici ne doit pas annuler l'approbation
+    const warns=[];
+    step='mise à jour de votre compte';
+    try{await updateDoc(doc(db,'users',S.uid),{receiverUid,receiverStatus:'actif',gie,vehicle,ligne,trajet,section,zone});}catch(e){console.warn('[approve] '+step,e);warns.push(step+' ('+(e.code||e.message)+')');}
     S.profile.gie=gie;S.profile.vehicle=vehicle;S.profile.ligne=ligne;S.profile.trajet=trajet;S.profile.section=section;S.profile.zone=zone;S.profile.receiverUid=receiverUid;
-    await updateDoc(doc(db,'notifications',notifId),{accepted:true,read:true,acceptedAt:serverTimestamp()});
-    try{await addDoc(collection(db,'notifications'),{toUid:receiverUid,type:'candidature_accepted',ownerUid:S.uid,ownerName:S.profile?.name||'Propriétaire',gie,vehicle,ligne,trajet,section,zone,read:false,ts:serverTimestamp()});}catch(e){}
+    step='clôture de la candidature';
+    try{await updateDoc(doc(db,'notifications',notifId),{accepted:true,read:true,acceptedAt:serverTimestamp()});}catch(e){console.warn('[approve] '+step,e);warns.push(step+' ('+(e.code||e.message)+')');}
+    step='notification au receveur';
+    try{await addDoc(collection(db,'notifications'),{toUid:receiverUid,type:'candidature_accepted',ownerUid:S.uid,ownerName:S.profile?.name||'Propriétaire',gie,vehicle,ligne,trajet,section,zone,read:false,ts:serverTimestamp()});}catch(e){console.warn('[approve] '+step,e);warns.push(step+' ('+(e.code||e.message)+')');}
     loader('',false);closeModal('modalApproveCandidature');
-    notify('✅','Candidature acceptée',`${receiverName} est activé sur ${vehicle} · Ligne ${ligne}.`);
-    loadChReceveur();attachChReceiverListener();attachChTicketsListener();
-  }catch(e){loader('',false);notify('⚠️','Erreur',e.message||'Impossible d\'accepter.');}
+    notify('✅','Candidature acceptée',`${receiverName} est activé sur ${vehicle} · Ligne ${ligne}.`+(warns.length?' ⚠️ '+warns.join(', '):''));
+    try{loadChReceveur();attachChReceiverListener();attachChTicketsListener();}catch(e){console.warn('[approve] rafraîchissement',e);}
+  }catch(e){console.error('[doApproveCandidature] échec à l\'étape : '+step,e);loader('',false);notify('⚠️','Échec : '+step,(e.code||'')+' — '+(e.message||'Impossible d\'accepter.'));}
 };
 window.rejectChCandidature=async(notifId,receiverUid)=>{
   if(!confirm('Refuser cette candidature ?'))return;
@@ -3289,7 +3301,7 @@ async function rgAttemptInit(amt,attempt){
     const data=await res.json().catch(()=>({}));
     if(!res.ok||!(data.payment_url||data.redirect_url)){
       document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';
-      notify('❌','Échec',data?.error||"Impossible d'initier le paiement.");
+      console.error('[recharge] init refusé',res.status,data);notify('❌','Échec recharge (HTTP '+res.status+')',String(data?.error||data?.message||"Le serveur de paiement a refusé la demande.").slice(0,160));
       return;
     }
     rgProceedAfterInit(data,amt);
@@ -3301,8 +3313,8 @@ async function rgAttemptInit(amt,attempt){
       await new Promise(r=>setTimeout(r,attempt===1?4000:8000));
       return rgAttemptInit(amt,attempt+1);
     }
-    document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';
-    notify('❌','Erreur réseau',"Le serveur ne répond pas. Vérifiez votre connexion et réessayez dans un instant.");
+    console.error('[recharge] réseau',e);document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';
+    notify('❌','Erreur réseau ('+(e&&e.message||'?')+')',"Le serveur ne répond pas. Vérifiez votre connexion et réessayez dans un instant.");
   }
 }
 function rgProceedAfterInit(data,amt){
@@ -3474,7 +3486,7 @@ document.addEventListener('pointerdown',()=>{if(S.aiPendingSpeak&&document.getEl
   let sx=0,sy=0,ox=0,oy=0,moved=false,down=false;
   fab.addEventListener('pointerdown',e=>{down=true;moved=false;sx=e.clientX;sy=e.clientY;const r=box.getBoundingClientRect();ox=r.left;oy=r.top;try{fab.setPointerCapture(e.pointerId);}catch(_){}});
   fab.addEventListener('pointermove',e=>{if(!down)return;const dx=e.clientX-sx,dy=e.clientY-sy;if(!moved&&Math.hypot(dx,dy)<6)return;moved=true;const x=Math.min(Math.max(0,ox+dx),innerWidth-58),y=Math.min(Math.max(0,oy+dy),innerHeight-58);box.style.left=x+'px';box.style.top=y+'px';box.style.right='auto';box.style.bottom='auto';aiPlace();});
-  const end=()=>{if(!down)return;down=false;if(moved){try{const r=box.getBoundingClientRect();localStorage.setItem('tatapay_aiPos',JSON.stringify({x:r.left,y:r.top}));}catch(e){}aiPlace();}else{aiOpen();}};
+  const end=()=>{if(!down)return;down=false;if(moved){try{const r=box.getBoundingClientRect();localStorage.setItem('tatapay_aiPos',JSON.stringify({x:r.left,y:r.top}));}catch(e){}aiPlace();}else{const _p=document.getElementById('aiPanel');if(_p&&_p.style.display==='block')aiOpen();else aiGreet();}};
   fab.addEventListener('pointerup',end);fab.addEventListener('pointercancel',()=>{down=false;});
   window.addEventListener('resize',aiPlace);
 })();
@@ -3573,10 +3585,68 @@ window.aiListen=(auto)=>{
 window.aiSubmit=()=>{
   const v=(document.getElementById('aiDestInput')?.value||'').trim();
   if(!v){aiBubble(AI_TXT[S.aiLang].empty);aiSpeak(AI_TXT[S.aiLang].empty,'empty',aiAutoListen);return;}
-  aiBubble(AI_TXT[S.aiLang].go);aiSpeak(AI_TXT[S.aiLang].go,'go');aiOpen(false);
+  aiStopListen();aiOpen(false);
   openTicketFlow();S.wantedDest=v;
+  aiShowRoutes(v);
+};
+const AI_RT={
+ wo:{n:(k,d)=>`Baax na ! Gis naa ${k} trajet ngir ${d}. Tànnal bi la neex.`,none:d=>`Gisuma trajet bu receveur bind ngir "${d}". Jéemal beneen tur walla scanil bus bi.`,pick:'Baax na ! Scanil QR bu bus bi.'},
+ fr:{n:(k,d)=>`J'ai trouvé ${k} trajet${k>1?'s':''} pour ${d}. Choisissez le vôtre.`,none:d=>`Aucun receveur n'a enregistré de trajet pour « ${d} ». Essayez un autre nom ou scannez directement le bus.`,pick:'Parfait ! Scannez maintenant le QR de ce bus.'},
+ en:{n:(k,d)=>`I found ${k} route${k>1?'s':''} for ${d}. Please choose yours.`,none:d=>`No conductor has registered a route for "${d}". Try another name or scan the bus directly.`,pick:'Great! Now scan this bus QR code.'}
+};
+// Cherche, chez tous les receveurs approuvés, les trajets dont l'arrivée correspond à ce que le passager a dit
+async function aiFindRoutes(want){
+  let docs=[];
+  try{
+    const sn=await withTimeout(getDocs(collectionGroup(db,'destinations')),12000,'trajets');
+    docs=sn.docs.filter(d=>d.ref.parent.parent&&d.ref.parent.parent.parent&&d.ref.parent.parent.parent.id==='users').map(d=>({recvUid:d.ref.parent.parent.id,id:d.id,...d.data()}));
+  }catch(e1){
+    console.warn('[aiFindRoutes] collectionGroup refusé, lecture receveur par receveur',e1);
+    const rs=await withTimeout(getDocs(query(collection(db,'users'),where('role','==','receiver'),where('status','==','approved'))),12000,'receveurs');
+    const parts=await Promise.allSettled(rs.docs.map(async r=>{const sn=await getDocs(collection(db,'users',r.id,'destinations'));return sn.docs.map(d=>({recvUid:r.id,id:d.id,...d.data()}));}));
+    docs=parts.flatMap(x=>x.status==='fulfilled'?x.value:[]);
+  }
+  const matched=docs.filter(d=>d.to&&aiMatches(want,d.to));
+  const uids=[...new Set(matched.map(d=>d.recvUid))];
+  const info={};
+  await Promise.allSettled(uids.map(async u=>{const sn=await getDoc(doc(db,'users',u));if(sn.exists())info[u]=sn.data();}));
+  return matched.filter(d=>{const r=info[d.recvUid];return r&&r.status==='approved'&&r.vehicle;}).map(d=>({...d,recv:info[d.recvUid]}))
+    .sort((a,b)=>(a.price||0)-(b.price||0)).slice(0,20);
+}
+async function aiShowRoutes(want){
+  const stepAI=document.getElementById('ticketStepAI'),list=document.getElementById('aiRoutesList');
+  document.getElementById('ticketStep0').style.display='none';stepAI.style.display='block';
+  document.getElementById('aiRoutesTitle').textContent='« '+want+' »';
+  list.innerHTML='<div style="text-align:center;color:#888;padding:24px;font-size:13px;"><div class="spinner" style="margin:0 auto 12px;width:30px;height:30px;"></div>Recherche des trajets…</div>';
+  const T=AI_RT[S.aiLang];
+  try{
+    const routes=await aiFindRoutes(want);
+    if(S.wantedDest!==want)return; // le passager a quitté entre-temps
+    S.aiRoutes=routes;
+    if(!routes.length){
+      list.innerHTML='<div style="background:#DF002418;border:1.5px solid #DF002466;border-radius:14px;padding:14px;color:#ffb3b3;font-size:13px;line-height:1.5;">🤖 '+T.none(want).replace(/</g,'&lt;')+'</div>';
+      aiSpeak(T.none(want),null);return;
+    }
+    list.innerHTML=routes.map((r,i)=>`<div onclick="aiPickRoute(${i})" style="background:#ffffff0d;border:1.5px solid #7c3aed66;border-radius:14px;padding:12px 14px;cursor:pointer;"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;"><div style="min-width:0;"><div style="font-weight:900;font-size:14px;color:#e2e8f0;">Ligne ${r.recv.ligne||'—'} · ${r.recv.gie||'—'}</div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;margin-top:3px;">${r.from||'—'}--&gt;${r.to}</div><div style="color:#888;font-size:11px;margin-top:2px;">Bus ${r.recv.vehicle||'—'} · Zone ${r.recv.zone||'—'} · Section ${r.section||'—'}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);white-space:nowrap;">${r.price} F</div></div></div>`).join('');
+    aiSpeak(T.n(routes.length,want),null);
+  }catch(e){
+    console.error('[aiShowRoutes]',e);
+    list.innerHTML='<div style="background:#DF002418;border:1.5px solid #DF002466;border-radius:14px;padding:14px;color:#ffb3b3;font-size:13px;line-height:1.5;">Impossible de charger les trajets ('+(e.code||e.message||'erreur')+'). Scannez directement le bus.</div>';
+  }
+}
+window.aiPickRoute=(i)=>{
+  const r=S.aiRoutes&&S.aiRoutes[i];if(!r)return;
+  S.aiPick={recvUid:r.recvUid,destId:r.id};
+  document.getElementById('ticketStepAI').style.display='none';
+  const b=document.getElementById('aiPickBanner');
+  b.innerHTML=`✅ Vous avez choisi : <b>Ligne ${r.recv.ligne||'—'} · ${r.recv.gie||'—'}</b><br>${r.from||'—'}→${r.to} · ${r.price} FCFA · Bus ${r.recv.vehicle||'—'}`;b.style.display='block';
+  document.getElementById('ticketStep0').style.display='block';
+  const T=AI_RT[S.aiLang];aiBubble(T.pick);aiSpeak(T.pick,null);
   setTimeout(()=>openCamera('bus'),300);
 };
+window.aiRoutesSkip=()=>{S.aiPick=null;document.getElementById('ticketStepAI').style.display='none';const b=document.getElementById('aiPickBanner');if(b)b.style.display='none';document.getElementById('ticketStep0').style.display='block';};
+window.aiRoutesRetry=()=>{closeModal('modalTicketFlow');aiGreet();};
+
 function aiNorm(x){return String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();}
 function aiLev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=Array.from({length:n+1},(_,j)=>j);for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c;}return p[n];}
 const AI_STOP=new(Set)(['je','vais','a','au','aux','de','du','des','la','le','les','en','dem','ma','bi','ci','fan','i','go','to','am','going','want','vers','pour','a','jusqu','jusquau','bëgg','begg','ngi','ak','ba']);
@@ -3596,11 +3666,11 @@ window.aiCheckDest=(cands)=>{
   aiSpeak(box.textContent,ok?'found':(cands.length?'none':'nolist'));
 };
 window.openTicketFlow=()=>{resetFlow();openModal('modalTicketFlow');aiInit();};
-window.resetFlow=()=>{S.wantedDest=null;aiInit();setDots(0);['ticketStep0','ticketStep1','ticketStep3'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('ticketStep0').style.display='block';S.ticketBus=null;S.ticketSection=null;document.getElementById('ticketPriceDisplay').textContent='— FCFA';document.getElementById('btnPayTicket').disabled=true;if(unsubTicketWait){unsubTicketWait();unsubTicketWait=null;}};
+window.resetFlow=()=>{S.wantedDest=null;S.aiPick=null;S.aiRoutes=null;const _pb=document.getElementById('aiPickBanner');if(_pb)_pb.style.display='none';aiInit();setDots(0);['ticketStepAI','ticketStep0','ticketStep1','ticketStep3'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('ticketStep0').style.display='block';S.ticketBus=null;S.ticketSection=null;document.getElementById('ticketPriceDisplay').textContent='— FCFA';document.getElementById('btnPayTicket').disabled=true;if(unsubTicketWait){unsubTicketWait();unsubTicketWait=null;}};
 function setDots(s){for(let i=0;i<3;i++){const d=document.getElementById('tdot'+i);if(d)d.className='step-dot'+(i<s?' done':i===s?' active':'');}}
 async function loadBusInFlow(walletId){
   loader('Chargement bus…');
-  try{const wSnap=await getDoc(doc(db,'wallets',walletId));if(!wSnap.exists()){loader('',false);notify('❌','Bus inconnu','QR non reconnu.');return;}const recvUid=wSnap.data().uid;const rSnap=await getDoc(doc(db,'users',recvUid));if(!rSnap.exists()){loader('',false);notify('❌','Erreur','Receveur introuvable.');return;}const recv={...rSnap.data(),uid:recvUid};S.ticketBus=recv;S.ticketSection=null;document.getElementById('detectedBusInfo').innerHTML=`GIE:${recv.gie} = ${recv.vehicle} = Ligne:${recv.ligne}<br>Zone:${recv.zone}`;const destSnap=await getDocs(collection(db,'users',recvUid,'destinations'));const destList=document.getElementById('destList');destList.innerHTML='';if(destSnap.empty){destList.innerHTML='<div style="background:#FFD10015;border:1px solid #FFD10044;border-radius:12px;padding:12px;color:#888;font-size:13px;text-align:center;">Aucune section définie.</div>';}else{const aiCands=[];destSnap.docs.forEach(d=>{const t=d.data();const chip=document.createElement('div');chip.style.cssText='background:#ffffff0d;border:1.5px solid #2a3a2a;border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .2s;';chip.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.from}-->${t.to}</div><div style="color:#888;font-size:11px;">Section ${t.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${t.price} F</div></div>`;chip.onclick=()=>{S.ticketSection={...t,docId:d.id};destList.querySelectorAll('div').forEach(c=>{c.style.background='#ffffff0d';c.style.borderColor='#2a3a2a';});chip.style.background='#00A65033';chip.style.borderColor='var(--g)';document.getElementById('ticketPriceDisplay').textContent=t.price.toLocaleString('fr-FR')+' FCFA';document.getElementById('btnPayTicket').disabled=false;};destList.appendChild(chip);aiCands.push({t,chip});});aiCheckDest(aiCands);}if(destSnap.empty)aiCheckDest([]);loader('',false);document.getElementById('ticketStep0').style.display='none';document.getElementById('ticketStep1').style.display='block';setDots(1);notify('🚌','Bus détecté',recv.vehicle+' · Ligne '+recv.ligne);}
+  try{const wSnap=await getDoc(doc(db,'wallets',walletId));if(!wSnap.exists()){loader('',false);notify('❌','Bus inconnu','QR non reconnu.');return;}const recvUid=wSnap.data().uid;const rSnap=await getDoc(doc(db,'users',recvUid));if(!rSnap.exists()){loader('',false);notify('❌','Erreur','Receveur introuvable.');return;}const recv={...rSnap.data(),uid:recvUid};S.ticketBus=recv;S.ticketSection=null;document.getElementById('detectedBusInfo').innerHTML=`GIE:${recv.gie} = ${recv.vehicle} = Ligne:${recv.ligne}<br>Zone:${recv.zone}`;const destSnap=await getDocs(collection(db,'users',recvUid,'destinations'));const destList=document.getElementById('destList');destList.innerHTML='';if(destSnap.empty){destList.innerHTML='<div style="background:#FFD10015;border:1px solid #FFD10044;border-radius:12px;padding:12px;color:#888;font-size:13px;text-align:center;">Aucune section définie.</div>';}else{const aiCands=[];destSnap.docs.forEach(d=>{const t=d.data();const chip=document.createElement('div');chip.style.cssText='background:#ffffff0d;border:1.5px solid #2a3a2a;border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .2s;';chip.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.from}-->${t.to}</div><div style="color:#888;font-size:11px;">Section ${t.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${t.price} F</div></div>`;chip.onclick=()=>{S.ticketSection={...t,docId:d.id};destList.querySelectorAll('div').forEach(c=>{c.style.background='#ffffff0d';c.style.borderColor='#2a3a2a';});chip.style.background='#00A65033';chip.style.borderColor='var(--g)';document.getElementById('ticketPriceDisplay').textContent=t.price.toLocaleString('fr-FR')+' FCFA';document.getElementById('btnPayTicket').disabled=false;};destList.appendChild(chip);aiCands.push({t,chip,id:d.id});});const _pk=S.aiPick&&recv.uid===S.aiPick.recvUid?aiCands.find(x=>x.id===S.aiPick.destId):null;if(S.aiPick&&!_pk){notify('⚠️','Autre bus','Ce n\'est pas le bus que vous avez choisi.');}aiCheckDest(_pk?[_pk]:aiCands);}if(destSnap.empty)aiCheckDest([]);loader('',false);document.getElementById('ticketStep0').style.display='none';{const _ai=document.getElementById('ticketStepAI');if(_ai)_ai.style.display='none';}document.getElementById('ticketStep1').style.display='block';setDots(1);notify('🚌','Bus détecté',recv.vehicle+' · Ligne '+recv.ligne);}
   catch(e){loader('',false);notify('❌','Erreur',e.message);}
 }
 window.goPay=async()=>{
