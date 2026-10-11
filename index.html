@@ -2682,7 +2682,13 @@ window.doApproveCandidature=async()=>{
     loader('',false);closeModal('modalApproveCandidature');
     notify('✅','Candidature acceptée',`${receiverName} est activé sur ${vehicle} · Ligne ${ligne}.`+(warns.length?' ⚠️ '+warns.join(', '):''));
     try{loadChReceveur();attachChReceiverListener();attachChTicketsListener();}catch(e){console.warn('[approve] rafraîchissement',e);}
-  }catch(e){console.error('[doApproveCandidature] échec à l\'étape : '+step,e);loader('',false);notify('⚠️','Échec : '+step,(e.code||'')+' — '+(e.message||'Impossible d\'accepter.'));}
+  }catch(e){
+    console.error('[doApproveCandidature] échec à l\'étape : '+step,e);
+    // Diagnostic : on relit le vrai profil du propriétaire et celui du receveur tels que le serveur les voit
+    let diag='';
+    try{const [m,r]=await Promise.all([getDoc(doc(db,'users',S.uid)),getDoc(doc(db,'users',receiverUid))]);const md=m.exists()?m.data():{},rd=r.exists()?r.data():{};diag=` [vous: rôle=${md.role||'?'} statut=${md.status||'?'} · receveur: rôle=${rd.role||'?'} statut=${rd.status||'?'}]`;}catch(e2){diag=' [diagnostic impossible: '+(e2.code||e2.message)+']';}
+    loader('',false);notify('⚠️','Échec : '+step,(e.code||'')+' — '+(e.message||'Impossible d\'accepter.')+diag);
+  }
 };
 window.rejectChCandidature=async(notifId,receiverUid)=>{
   if(!confirm('Refuser cette candidature ?'))return;
