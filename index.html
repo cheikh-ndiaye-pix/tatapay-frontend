@@ -2564,7 +2564,7 @@ async function loadChReceveur(){
     const [cls,lbl]=badgeMap[rs]||badgeMap.actif;
     document.getElementById('chRecvStatusBadge').innerHTML=`<span class="ch-badge ${cls}">${lbl}</span>`;
     document.getElementById('chRecvDetails').innerHTML=`
-      📞 ${r.phone||'—'} &nbsp;·&nbsp; 🪪 CNI: ${r.cni||'—'}<br>
+      📞 ${r.phone||'—'}<br>
       📍 ${r.address||'—'}<br>
       💳 Wallet: <code style="color:#FF6B00;">${r.walletId||'—'}</code><br>
       🚌 ${r.gie||p.gie||'—'} · ${r.vehicle||p.vehicle||'—'} · Ligne ${r.ligne||p.ligne||'—'} · Zone ${r.zone||p.zone||'—'}<br>
@@ -2576,6 +2576,9 @@ async function loadChReceveur(){
         ${_dirDocChip(r.photoUrl,'🪪','Photo')}
         ${_dirDocChip(r.idDocRectoUrl,'🆔','CNI recto')}
         ${_dirDocChip(r.idDocVersoUrl,'🆔','CNI verso')}
+      </div>
+      <div style="margin-top:14px;">
+        <button class="admin-action-btn btn-delete" onclick="ownerDeleteReceiver('${p.receiverUid}','${(r.name||'').replace(/'/g,'')}')">🗑️ Supprimer ce receveur</button>
       </div>`;
     const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','==',p.receiverUid),orderBy('ts','desc'),limit(7)));
     if(cont){if(!tkSnap.size){cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune activité récente.</div>';}else{cont.innerHTML=tkSnap.docs.map(d=>{const t=d.data();const dt=t.ts?.toDate?.()?.toLocaleDateString('fr-FR')||'—';return`<div class="ch-live-row"><div style="flex:1;"><div style="font-weight:700;font-size:13px;">${dt} · ${t.from||'—'}→${t.to||'—'}</div></div><div style="font-weight:800;color:#34d399;">${fmt(t.price)} F</div></div>`;}).join('');}}
@@ -2595,6 +2598,19 @@ async function loadChReceveur(){
     }catch(e){console.warn('[chRecvPerfChart]',e);}
   }catch(e){if(cont)cont.innerHTML='<div style="color:#DF0024;padding:12px;">Erreur chargement.</div>';}
 }
+window.ownerDeleteReceiver=async(receiverUid,name='')=>{
+  if(!confirm(`Supprimer définitivement ${name||'ce receveur'} ? Il perdra son accès et devra se réinscrire.`))return;
+  loader('Suppression…');
+  try{
+    const p=S.profile;
+    await updateDoc(doc(db,'users',S.uid),{receiverUid:''});
+    try{await deleteDoc(doc(db,'users',receiverUid));}catch(e){console.warn('[ownerDeleteReceiver] delete receiver doc',e);}
+    S.profile.receiverUid='';
+    loader('',false);
+    notify('✅','Receveur supprimé',`${name||'Le receveur'} a été retiré de votre bus.`);
+    await loadChReceveur();
+  }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
 function loadChBusPanel(){
   const p=S.profile;
   document.getElementById('chBusGie').textContent=p.gie||'—';
@@ -2674,7 +2690,6 @@ async function renderChCandidatures(rawItems){
       </div>
       <div style="font-size:12px;color:#aaa;line-height:1.7;margin-bottom:12px;">
         📞 ${n.phone||'—'}<br>
-        🪪 CNI: ${n.cni||'—'}<br>
         📍 ${n.address||'—'}
       </div>
       ${docsRow}
