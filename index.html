@@ -2310,6 +2310,9 @@ async function loadDirOwners(){
 function _dirDetailField(label,value){
   return `<div style="margin-bottom:10px;"><div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:1px;">${label}</div><div style="font-size:14px;color:#e2e8f0;font-weight:700;">${value||'—'}</div></div>`;
 }
+function _dirDocChip(url,icon,label){
+  return url?`<a href="${url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;background:#0ea5e922;border:1px solid #0ea5e955;color:#7dd3fc;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:800;text-decoration:none;">${icon} ${label}</a>`:`<span style="display:inline-flex;align-items:center;gap:4px;background:#ffffff08;border:1px solid #ffffff15;color:#555;border-radius:8px;padding:5px 10px;font-size:11px;">${icon} ${label} non fourni</span>`;
+}
 window.openDirOwnerDetail=async(ownerUid)=>{
   openModal('modalDirOwnerDetail');
   const body=document.getElementById('dirOwnerDetailBody');
@@ -2396,6 +2399,14 @@ window.openDirReceiverDetail=async(receiverUid,backOwnerUid)=>{
         ${_dirDetailField('Ligne / Zone',(r.ligne||'—')+' · '+(r.zone||'—'))}
         ${_dirDetailField('Recettes du jour',fmt(r.today||0)+' F')}
         ${_dirDetailField('Tickets émis',r.count||0)}
+      </div>
+      <div style="font-size:11px;font-weight:800;color:#7dd3fc;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">📎 Documents</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
+        ${_dirDocChip(r.cvUrl,'📄','CV')}
+        ${_dirDocChip(r.diplomaUrl,'🎓','Diplôme')}
+        ${_dirDocChip(r.photoUrl,'🪪','Photo')}
+        ${_dirDocChip(r.idDocRectoUrl,'🆔','CNI recto')}
+        ${_dirDocChip(r.idDocVersoUrl,'🆔','CNI verso')}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="admin-action-btn btn-info" onclick="openAssignBusDir('${receiverUid}','${(r.name||'').replace(/'/g,'')}');closeModal('modalDirReceiverDetail')">🚌 ${r.gie?'Modifier Bus':'Assigner Bus'}</button>
@@ -2558,7 +2569,14 @@ async function loadChReceveur(){
       💳 Wallet: <code style="color:#FF6B00;">${r.walletId||'—'}</code><br>
       🚌 ${r.gie||p.gie||'—'} · ${r.vehicle||p.vehicle||'—'} · Ligne ${r.ligne||p.ligne||'—'} · Zone ${r.zone||p.zone||'—'}<br>
       🛣️ Trajet: ${r.trajet||p.trajet||'—'} · Section ${r.section||p.section||'—'}<br>
-      📊 Recettes jour: <strong style="color:#34d399;">${fmt(r.today||0)} FCFA</strong> · Tickets: <strong>${r.count||0}</strong> · Solde: <strong style="color:#FDEF42;">${fmt(r.balance||0)} F</strong>`;
+      📊 Recettes jour: <strong style="color:#34d399;">${fmt(r.today||0)} FCFA</strong> · Tickets: <strong>${r.count||0}</strong> · Solde: <strong style="color:#FDEF42;">${fmt(r.balance||0)} F</strong>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
+        ${_dirDocChip(r.cvUrl,'📄','CV')}
+        ${_dirDocChip(r.diplomaUrl,'🎓','Diplôme')}
+        ${_dirDocChip(r.photoUrl,'🪪','Photo')}
+        ${_dirDocChip(r.idDocRectoUrl,'🆔','CNI recto')}
+        ${_dirDocChip(r.idDocVersoUrl,'🆔','CNI verso')}
+      </div>`;
     const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','==',p.receiverUid),orderBy('ts','desc'),limit(7)));
     if(cont){if(!tkSnap.size){cont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune activité récente.</div>';}else{cont.innerHTML=tkSnap.docs.map(d=>{const t=d.data();const dt=t.ts?.toDate?.()?.toLocaleDateString('fr-FR')||'—';return`<div class="ch-live-row"><div style="flex:1;"><div style="font-weight:700;font-size:13px;">${dt} · ${t.from||'—'}→${t.to||'—'}</div></div><div style="font-weight:800;color:#34d399;">${fmt(t.price)} F</div></div>`;}).join('');}}
     try{
@@ -2617,13 +2635,15 @@ async function renderChCandidatures(rawItems){
   try{
     const checks=await Promise.all(rawItems.map(async n=>{
       if(!n.receiverUid)return{n,ok:false,ghost:true};
-      try{const sn=await getDoc(doc(db,'users',n.receiverUid));return{n,ok:sn.exists()&&sn.data().status==='pending',ghost:!sn.exists()};}
-      catch(e){return{n,ok:true,ghost:false};}
+      try{const sn=await getDoc(doc(db,'users',n.receiverUid));return{n,ok:sn.exists()&&sn.data().status==='pending',ghost:!sn.exists(),doc:sn.exists()?sn.data():null};}
+      catch(e){return{n,ok:true,ghost:false,doc:null};}
     }));
     if(tok!==_candRenderTok)return;
     // compte supprimé : la candidature est orpheline, on la retire pour de bon
     checks.filter(c=>c.ghost).forEach(c=>{deleteDoc(doc(db,'notifications',c.n.id)).catch(()=>{});});
-    items=checks.filter(c=>c.ok).map(c=>c.n);
+    // on complète chaque candidature avec les documents (CV, diplôme, photo, CNI) du profil receveur,
+    // que la notification elle-même ne contient pas — ils ont été uploadés à l'inscription.
+    items=checks.filter(c=>c.ok).map(c=>({...c.n,...(c.doc?{photoUrl:c.doc.photoUrl,idDocRectoUrl:c.doc.idDocRectoUrl,idDocVersoUrl:c.doc.idDocVersoUrl,diplomaUrl:c.doc.diplomaUrl,cvUrl:c.doc.cvUrl}:{})}));
   }catch(e){console.warn('[renderChCandidatures] vérification',e);}
   if(tok!==_candRenderTok)return;
   const sec=document.getElementById('chCandSection');
@@ -2636,9 +2656,17 @@ async function renderChCandidatures(rawItems){
   if(!items.length){list.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">Aucune candidature en attente.</div>';return;}
   list.innerHTML=items.map(n=>{
     const initials=(n.receiverName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const docChip=(url,icon,label)=>url?`<a href="${url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:4px;background:#0ea5e922;border:1px solid #0ea5e955;color:#7dd3fc;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:800;text-decoration:none;">${icon} ${label}</a>`:`<span style="display:inline-flex;align-items:center;gap:4px;background:#ffffff08;border:1px solid #ffffff15;color:#555;border-radius:8px;padding:5px 10px;font-size:11px;">${icon} ${label} non fourni</span>`;
+    const docsRow=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+        ${docChip(n.cvUrl,'📄','CV')}
+        ${docChip(n.diplomaUrl,'🎓','Diplôme')}
+        ${docChip(n.photoUrl,'🪪','Photo')}
+        ${n.idDocRectoUrl?docChip(n.idDocRectoUrl,'🆔','CNI recto'):''}
+        ${n.idDocVersoUrl?docChip(n.idDocVersoUrl,'🆔','CNI verso'):''}
+      </div>`;
     return `<div class="ch-card" style="border:1.5px solid #FF6B0033;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-        <div style="width:46px;height:46px;border-radius:23px;background:#FF6B0022;border:1.5px solid #FF6B0055;display:flex;align-items:center;justify-content:center;font-weight:900;color:#FF6B00;">${initials}</div>
+        ${n.photoUrl?`<img src="${n.photoUrl}" style="width:46px;height:46px;border-radius:23px;object-fit:cover;border:1.5px solid #FF6B0055;" onclick="window.open('${n.photoUrl}','_blank')"/>`:`<div style="width:46px;height:46px;border-radius:23px;background:#FF6B0022;border:1.5px solid #FF6B0055;display:flex;align-items:center;justify-content:center;font-weight:900;color:#FF6B00;">${initials}</div>`}
         <div style="flex:1;min-width:0;">
           <div style="font-weight:900;font-size:15px;color:#e2e8f0;">${n.receiverName||'—'}</div>
           <div style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.receiverEmail||'—'}</div>
@@ -2649,6 +2677,7 @@ async function renderChCandidatures(rawItems){
         🪪 CNI: ${n.cni||'—'}<br>
         📍 ${n.address||'—'}
       </div>
+      ${docsRow}
       <div style="display:flex;gap:8px;">
         <button class="btn btn-primary" style="flex:1;font-size:13px;padding:10px;" onclick="acceptChCandidature('${n.id}','${n.receiverUid}','${(n.receiverName||'').replace(/'/g,"\\'")}')">✅ Accepter</button>
         <button class="btn btn-danger" style="flex:1;font-size:13px;padding:10px;" onclick="rejectChCandidature('${n.id}','${n.receiverUid}')">❌ Refuser</button>
