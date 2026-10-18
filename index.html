@@ -510,7 +510,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
             <div id="recvOnlineDot" style="margin-top:6px;font-size:10px;font-weight:800;color:#34d399;display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#34d399;display:inline-block;"></span>En ligne</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <button id="btToggleBtn" onclick="toggleBluetooth()" title="Bluetooth" style="background:#1a56db22;border:1px solid #1a56db55;border-radius:12px;padding:8px 10px;cursor:pointer;color:#7aa7ff;font-size:12px;font-weight:800;font-family:'Space Grotesk',sans-serif;display:flex;align-items:center;gap:4px;"><span style="font-size:16px;">&#x1F535;</span><span id="btToggleLbl">BT</span></button>
             <button onclick="openNotifPanel()" style="background:#FF6B0022;border:1px solid #FF6B0044;border-radius:12px;padding:10px;cursor:pointer;">
               <div class="bell-wrap"><svg id="bellIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B00" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg><span class="bell-badge" id="bellBadge">0</span></div>
             </button>
@@ -542,6 +541,19 @@ select.input-field option{background:#0c1f12;color:#fff;}
           <div style="font-weight:800;font-size:14px;margin-bottom:10px;">📍 Partage de position du bus</div>
           <div id="recvGeoStatus" style="font-size:12px;color:#888;margin-bottom:12px;">GPS désactivé</div>
           <button id="recvGeoBtn" class="btn btn-full" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;" onclick="recvToggleGeo()">📡 Démarrer le partage GPS</button>
+        </div>
+        <div style="background:#ffffff08;border:1px solid #a78bfa44;border-radius:18px;padding:16px;margin-bottom:16px;">
+          <div style="font-weight:800;font-size:14px;margin-bottom:10px;">🖨️ Imprimante tickets (Bluetooth)</div>
+          <div id="btPrinterStatus" style="font-size:12px;color:#888;margin-bottom:12px;">Aucune imprimante connectée</div>
+          <button id="btPrinterBtn" class="btn btn-purple btn-full" onclick="btPrinterSearch()">🔍 Rechercher une imprimante</button>
+          <div id="btPrinterActions" style="display:none;margin-top:10px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <button class="btn btn-secondary" style="padding:11px;font-size:12px;" onclick="btPrinterTest()">🧾 Test impression</button>
+              <button class="btn btn-secondary" style="padding:11px;font-size:12px;" onclick="btPrinterDisconnect()">⛔ Déconnecter</button>
+            </div>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:#aaa;cursor:pointer;"><input type="checkbox" id="btAutoPrint" onchange="btSetAuto(this.checked)"/> Imprimer automatiquement chaque ticket validé</label>
+          </div>
+          <div id="btPrinterHint" style="font-size:11px;color:#666;margin-top:10px;line-height:1.5;">Allumez l'imprimante, activez le Bluetooth du téléphone, puis appuyez sur « Rechercher ». Fonctionne avec Chrome/Edge sur Android.</div>
         </div>
         <div id="recvDirecteurInfo" style="display:none;background:#0ea5e910;border:1px solid #0ea5e933;border-radius:14px;padding:12px 16px;margin-bottom:16px;">
           <div style="font-size:11px;color:#7dd3fc;font-weight:800;margin-bottom:4px;">🏢 Votre Directeur de GIE</div>
@@ -3963,6 +3975,7 @@ async function commitTicketSale(paxUid,price,ticketBase,{pendingId=null,offline=
       tx.set(notifRef,{toUid:paxUid,type:'ticket_validated',passenger:ticketBase.passenger,read:false,ts:serverTimestamp()});
     });
   }
+  window._btJustSold=true;
   return{...ticket,id:tkRef.id};
 }
 window.confirmManualScan=async(paxUid,walletId,passengerName,paxBalance)=>{
@@ -4082,6 +4095,11 @@ window.showTicketData=(t)=>{
     handoff.style.display='block';
     handoff.innerHTML=`<div style="text-align:center;font-size:11px;color:#888;margin:10px 0 6px;">👇 Faites scanner ce code par le passager pour qu'il reçoive son ticket</div><div id="ticketHandoffQRWrap" style="display:flex;justify-content:center;"></div>`;
     renderQR('ticketHandoffQRWrap',payload,240,'M');
+    window._btLastTicket=t;
+    handoff.insertAdjacentHTML('beforeend','<button class="btn btn-purple btn-full" style="margin-top:12px;" onclick="btPrintCurrent()">🖨️ Imprimer le ticket</button>');
+    let _auto=true;try{_auto=localStorage.getItem('tatapay_btAuto')!=='0';}catch(e){}
+    if(window._btJustSold&&_auto&&btChar&&btDev&&btDev.gatt.connected){printTicketBT(t,true);}
+    window._btJustSold=false;
   }else if(handoff){handoff.style.display='none';handoff.innerHTML='';}
   if(S.role==='passenger'){cacheTicket(t);cacheActiveTicket(t);showDescendBtn(t);}
 };
@@ -4144,62 +4162,120 @@ window.flipCamera=async()=>{S.facing=S.facing==='environment'?'user':'environmen
 function handleQR(raw){stopCamera();raw=(raw||'').trim();
   const ticketM=raw.match(/tatapay:\/\/ticket\/(.+)/i);if(ticketM){if(document.getElementById('modalTicketFlow')?.style.display==='flex')closeModal('modalTicketFlow');importTicketFromQR(ticketM[1]);return;}const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);const balM=raw.match(/[?&]bal=(\d+)/);const tM=raw.match(/[?&]t=(\d+)/);const uidM=raw.match(/[?&]uid=([A-Za-z0-9]+)/);const qrBal=balM?parseInt(balM[1],10):null;const qrTs=tM?parseInt(tM[1],10):null;const qrUid=uidM?uidM[1]:null;if(S.camMode==='ticket'&&!ticketM){notify('❌','QR invalide','Ce n\'est pas un QR de ticket.');return;}if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Contenu: '+raw.slice(0,40));return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId,qrBal,qrTs,qrUid);}else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}}
 
-// ── Bluetooth receveur (optionnel) : n'affecte aucune fonction existante ──
-// Le site ne peut pas allumer le Bluetooth du téléphone : il ouvre la liste des
-// appareils (Web Bluetooth, Chrome Android / Bluefy iPhone) et mémorise la connexion.
-const BT_SERVICES=['generic_access','battery_service','device_information',0x18f0,0xffe0,0xff00,0xfee7,'e7810a71-73ae-499d-8c15-faa9aef0c3f2','49535343-fe7d-4ae5-8fa9-9fafd205e455'];
-window.TP_BT={device:null,server:null};
-function btUI(on,name){const b=document.getElementById('btToggleBtn'),l=document.getElementById('btToggleLbl');if(!b||!l)return;b.style.background=on?'#00A65033':'#1a56db22';b.style.borderColor=on?'#34d399aa':'#1a56db55';b.style.color=on?'#34d399':'#7aa7ff';l.textContent=on?(name||'BT').slice(0,8):'BT';}
-const BT_KEY='tatapay_bt_devices';
-function btSaved(){try{return JSON.parse(localStorage.getItem(BT_KEY)||'[]');}catch(e){return [];}}
-function btRemember(dev){try{const l=btSaved().filter(d=>d.id!==dev.id);l.unshift({id:dev.id,name:dev.name||'Appareil'});localStorage.setItem(BT_KEY,JSON.stringify(l.slice(0,5)));}catch(e){}}
-function btAttach(dev,server){
-  window.TP_BT.device=dev;window.TP_BT.server=server;
-  dev.addEventListener('gattserverdisconnected',()=>{btUI(false);notify('🔵','Bluetooth','Appareil déconnecté.');});
-  btUI(true,dev.name);btRemember(dev);notify('✅','Bluetooth connecté',dev.name||'Appareil connecté');
+/* ═══════════════ IMPRIMANTE BLUETOOTH (ESC/POS) — RECEVEUR ═══════════════ */
+const BT_SERVICES=['000018f0-0000-1000-8000-00805f9b34fb','0000ffe0-0000-1000-8000-00805f9b34fb','0000ff00-0000-1000-8000-00805f9b34fb','0000fee7-0000-1000-8000-00805f9b34fb','e7810a71-73ae-499d-8c15-faa9aef0c3f2','49535343-fe7d-4ae5-8fa9-9fafd205e455','0000ae30-0000-1000-8000-00805f9b34fb','00001101-0000-1000-8000-00805f9b34fb'];
+let btDev=null,btChar=null,btBusy=false;
+function btSetStatus(txt,color){const el=document.getElementById('btPrinterStatus');if(el){el.textContent=txt;el.style.color=color||'#888';}}
+function btRefreshUI(){
+  const on=!!(btChar&&btDev&&btDev.gatt&&btDev.gatt.connected);
+  const act=document.getElementById('btPrinterActions');if(act)act.style.display=on?'block':'none';
+  const b=document.getElementById('btPrinterBtn');if(b)b.textContent=on?'🔄 Changer d\'imprimante':'🔍 Rechercher une imprimante';
+  if(on)btSetStatus('🟢 Connectée : '+(btDev.name||'Imprimante'),'#34d399');
+  else btSetStatus(btDev?'🔴 Déconnectée : '+(btDev.name||'Imprimante'):'Aucune imprimante connectée',btDev?'#DF0024':'#888');
+  const cb=document.getElementById('btAutoPrint');if(cb){try{cb.checked=localStorage.getItem('tatapay_btAuto')!=='0';}catch(e){}}
 }
-// 1) tente de se reconnecter aux appareils déjà utilisés (si le navigateur le permet)
-async function btTryKnown(){
-  if(!navigator.bluetooth.getDevices)return false;
-  let known=[];try{known=await navigator.bluetooth.getDevices();}catch(e){return false;}
-  const ids=btSaved().map(d=>d.id);
-  known=known.filter(d=>ids.includes(d.id)).sort((x,y)=>ids.indexOf(x.id)-ids.indexOf(y.id));
-  for(const d of known){
-    notify('🔎','Recherche',`Appareil connu : ${d.name||'—'}…`);
-    try{
-      const server=await Promise.race([d.gatt.connect(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),6000))]);
-      btAttach(d,server);return true;
-    }catch(e){try{d.gatt.disconnect();}catch(_){}}
+window.btSetAuto=(v)=>{try{localStorage.setItem('tatapay_btAuto',v?'1':'0');}catch(e){}};
+async function btFindChar(server){
+  const services=await server.getPrimaryServices();
+  for(const sv of services){
+    try{const chars=await sv.getCharacteristics();
+      const w=chars.find(c=>c.properties.writeWithoutResponse||c.properties.write);
+      if(w)return w;}catch(e){}
   }
-  return false;
+  return null;
 }
-window.toggleBluetooth=async()=>{
+async function btConnectDevice(dev){
+  btSetStatus('⏳ Connexion à '+(dev.name||'imprimante')+'…','#FF6B00');
+  const server=await dev.gatt.connect();
+  const ch=await btFindChar(server);
+  if(!ch){try{dev.gatt.disconnect();}catch(e){}throw new Error('Aucun canal d\'impression trouvé sur cet appareil. Est-ce bien une imprimante Bluetooth BLE ?');}
+  btDev=dev;btChar=ch;
+  dev.removeEventListener('gattserverdisconnected',btOnDisc);
+  dev.addEventListener('gattserverdisconnected',btOnDisc);
+  try{localStorage.setItem('tatapay_btName',dev.name||'');localStorage.setItem('tatapay_btId',dev.id||'');}catch(e){}
+  btRefreshUI();
+}
+function btOnDisc(){btChar=null;btRefreshUI();notify('🔴','Imprimante','Connexion Bluetooth perdue.');}
+window.btPrinterSearch=async()=>{
+  if(!navigator.bluetooth){notify('⚠️','Bluetooth','Non supporté ici. Utilisez Chrome ou Edge sur Android (page en HTTPS).');return;}
   try{
-    const T=window.TP_BT;
-    if(T.server&&T.server.connected){T.server.disconnect();return;}
-    if(!navigator.bluetooth){
-      const ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
-      if(ios){
-        if(confirm('Le Bluetooth sur iPhone nécessite le navigateur gratuit Bluefy.\n\nOuvrir l’App Store pour l’installer ?\n(L’adresse de TataPay sera copiée : collez-la ensuite dans Bluefy.)')){
-          try{navigator.clipboard.writeText('https://tatapay-frontend.vercel.app');}catch(e){}
-          window.location.href='https://apps.apple.com/app/id1492822055';
-        }
-      }else{
-        notify('ℹ️','Bluetooth indisponible','Ouvrez TataPay avec Chrome. Le scan par caméra reste disponible.');
-      }
-      return;
-    }
-    if(await btTryKnown())return;
-    // 2) sinon : recherche de tous les appareils Bluetooth proches
-    notify('🔎','Recherche Bluetooth','Activez le Bluetooth du téléphone, puis choisissez votre appareil dans la liste.');
     const dev=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:BT_SERVICES});
-    const server=await dev.gatt.connect();
-    btAttach(dev,server);
+    await btConnectDevice(dev);
+    notify('✅','Imprimante connectée',dev.name||'Bluetooth');
   }catch(e){
-    btUI(false);
-    if(e&&e.name==='NotFoundError')notify('ℹ️','Bluetooth','Aucun appareil choisi.');
-    else notify('⚠️','Bluetooth',(e&&e.message)||'Connexion impossible. Le scan par caméra reste disponible.');
+    if(e&&e.name==='NotFoundError'){btRefreshUI();return;} // l'utilisateur a fermé la fenêtre
+    console.warn('[bt]',e);btRefreshUI();notify('❌','Bluetooth',e.message||'Connexion impossible.');
   }
 };
+window.btPrinterDisconnect=()=>{try{if(btDev&&btDev.gatt.connected)btDev.gatt.disconnect();}catch(e){}btChar=null;btDev=null;try{localStorage.removeItem('tatapay_btName');localStorage.removeItem('tatapay_btId');}catch(e){}btRefreshUI();notify('⛔','Imprimante','Déconnectée.');};
+async function btEnsure(){
+  if(btChar&&btDev&&btDev.gatt.connected)return true;
+  if(btDev){try{await btConnectDevice(btDev);return true;}catch(e){console.warn('[bt reconnect]',e);}}
+  return false;
+}
+async function btSend(bytes){
+  const ch=btChar;if(!ch)throw new Error('Imprimante non connectée.');
+  const size=100;
+  for(let i=0;i<bytes.length;i+=size){
+    const part=bytes.slice(i,i+size);
+    if(ch.properties.writeWithoutResponse)await ch.writeValueWithoutResponse(part);else await ch.writeValueWithResponse(part);
+    await new Promise(r=>setTimeout(r,25));
+  }
+}
+function btAscii(x){return String(x==null?'':x).replace(/→|-->/g,'->').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\x20-\x7E]/g,'?');}
+function btBuildTicket(t){
+  const e=[];const push=(...a)=>a.forEach(v=>e.push(v));
+  const text=(s)=>{for(const c of btAscii(s))e.push(c.charCodeAt(0));};
+  const line=(s)=>{text(s);push(10);};
+  push(0x1B,0x40);                 // init
+  push(0x1B,0x61,1);               // centre
+  push(0x1B,0x45,1);push(0x1D,0x21,0x11);line('TATAPAY');push(0x1D,0x21,0);push(0x1B,0x45,0);
+  line('--------------------------------');
+  push(0x1B,0x61,0);               // gauche
+  line('GIE: '+(t.gie||'-'));
+  line('Bus: '+(t.vehicle||'-')+'  Ligne: '+(t.ligne||'-'));
+  line('Zone: '+(t.zone||'-'));
+  line('Trajet: '+(t.from||'-')+' -> '+(t.to||'-'));
+  line('Section: '+(t.section||'-'));
+  push(0x1B,0x45,1);line('PRIX: '+(t.price||0)+' FCFA');push(0x1B,0x45,0);
+  line('Date: '+(t.date||'')+' '+(t.time||''));
+  line('Passager: '+(t.passenger||'-'));
+  push(0x1B,0x61,1);
+  line('--------------------------------');
+  line('SN: '+(t.sn||'-'));
+  line('Merci et bon voyage !');
+  push(10,10,10);
+  return new Uint8Array(e);
+}
+window.printTicketBT=async(t,silent)=>{
+  if(btBusy)return;
+  if(!navigator.bluetooth){if(!silent)notify('⚠️','Bluetooth','Non supporté sur cet appareil.');return;}
+  btBusy=true;
+  try{
+    if(!(await btEnsure())){
+      if(silent){notify('🖨️','Imprimante','Non connectée — ticket non imprimé.');return;}
+      btBusy=false;await btPrinterSearch();if(!(btChar&&btDev?.gatt?.connected))return;btBusy=true;
+    }
+    await btSend(btBuildTicket(t));
+    notify('🖨️','Impression','Ticket envoyé à l\'imprimante.');
+  }catch(e){console.warn('[bt print]',e);notify('❌','Impression',e.message||'Échec.');}
+  finally{btBusy=false;}
+};
+window.btPrinterTest=()=>printTicketBT({gie:'TEST',vehicle:'DK-0000-A',ligne:'0',zone:'A',from:'Depart',to:'Arrivee',section:1,price:150,date:new Date().toLocaleDateString('fr-FR'),time:new Date().toLocaleTimeString('fr-FR'),passenger:'Test',sn:'TEST-0001'});
+window.btPrintCurrent=()=>{if(window._btLastTicket)printTicketBT(window._btLastTicket);};
+// Reconnexion automatique à la dernière imprimante (si le navigateur l'autorise)
+async function btAutoReconnect(){
+  try{
+    if(!navigator.bluetooth||!navigator.bluetooth.getDevices)return;
+    const id=localStorage.getItem('tatapay_btId');if(!id)return;
+    const devs=await navigator.bluetooth.getDevices();
+    const d=devs.find(x=>x.id===id);if(!d)return;
+    btDev=d;btRefreshUI();
+    d.addEventListener('advertisementreceived',async()=>{if(btChar)return;try{await btConnectDevice(d);}catch(e){}},{once:true});
+    try{await d.watchAdvertisements();}catch(e){}
+  }catch(e){console.warn('[bt auto]',e);}
+}
+setTimeout(()=>{btRefreshUI();btAutoReconnect();},1500);
+
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
