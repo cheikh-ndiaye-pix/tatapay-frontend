@@ -4150,6 +4150,29 @@ function handleQR(raw){stopCamera();raw=(raw||'').trim();
 const BT_SERVICES=['generic_access','battery_service','device_information',0x18f0,0xffe0,0xff00,0xfee7,'e7810a71-73ae-499d-8c15-faa9aef0c3f2','49535343-fe7d-4ae5-8fa9-9fafd205e455'];
 window.TP_BT={device:null,server:null};
 function btUI(on,name){const b=document.getElementById('btToggleBtn'),l=document.getElementById('btToggleLbl');if(!b||!l)return;b.style.background=on?'#00A65033':'#1a56db22';b.style.borderColor=on?'#34d399aa':'#1a56db55';b.style.color=on?'#34d399':'#7aa7ff';l.textContent=on?(name||'BT').slice(0,8):'BT';}
+const BT_KEY='tatapay_bt_devices';
+function btSaved(){try{return JSON.parse(localStorage.getItem(BT_KEY)||'[]');}catch(e){return [];}}
+function btRemember(dev){try{const l=btSaved().filter(d=>d.id!==dev.id);l.unshift({id:dev.id,name:dev.name||'Appareil'});localStorage.setItem(BT_KEY,JSON.stringify(l.slice(0,5)));}catch(e){}}
+function btAttach(dev,server){
+  window.TP_BT.device=dev;window.TP_BT.server=server;
+  dev.addEventListener('gattserverdisconnected',()=>{btUI(false);notify('🔵','Bluetooth','Appareil déconnecté.');});
+  btUI(true,dev.name);btRemember(dev);notify('✅','Bluetooth connecté',dev.name||'Appareil connecté');
+}
+// 1) tente de se reconnecter aux appareils déjà utilisés (si le navigateur le permet)
+async function btTryKnown(){
+  if(!navigator.bluetooth.getDevices)return false;
+  let known=[];try{known=await navigator.bluetooth.getDevices();}catch(e){return false;}
+  const ids=btSaved().map(d=>d.id);
+  known=known.filter(d=>ids.includes(d.id)).sort((x,y)=>ids.indexOf(x.id)-ids.indexOf(y.id));
+  for(const d of known){
+    notify('🔎','Recherche',`Appareil connu : ${d.name||'—'}…`);
+    try{
+      const server=await Promise.race([d.gatt.connect(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),6000))]);
+      btAttach(d,server);return true;
+    }catch(e){try{d.gatt.disconnect();}catch(_){}}
+  }
+  return false;
+}
 window.toggleBluetooth=async()=>{
   try{
     const T=window.TP_BT;
@@ -4159,13 +4182,12 @@ window.toggleBluetooth=async()=>{
       notify('ℹ️','Bluetooth indisponible',ios?'Sur iPhone, ouvrez TataPay dans le navigateur gratuit Bluefy. Le scan par caméra reste disponible.':'Ouvrez TataPay avec Chrome. Le scan par caméra reste disponible.');
       return;
     }
-    notify('🔵','Bluetooth','Activez le Bluetooth du téléphone, puis choisissez votre appareil.');
+    if(await btTryKnown())return;
+    // 2) sinon : recherche de tous les appareils Bluetooth proches
+    notify('🔎','Recherche Bluetooth','Activez le Bluetooth du téléphone, puis choisissez votre appareil dans la liste.');
     const dev=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:BT_SERVICES});
-    dev.addEventListener('gattserverdisconnected',()=>{btUI(false);notify('🔵','Bluetooth','Appareil déconnecté.');});
     const server=await dev.gatt.connect();
-    T.device=dev;T.server=server;
-    btUI(true,dev.name);
-    notify('✅','Bluetooth connecté',dev.name||'Appareil connecté');
+    btAttach(dev,server);
   }catch(e){
     btUI(false);
     if(e&&e.name==='NotFoundError')notify('ℹ️','Bluetooth','Aucun appareil choisi.');
