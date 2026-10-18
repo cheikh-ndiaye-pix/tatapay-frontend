@@ -1018,10 +1018,14 @@ select.input-field option{background:#0c1f12;color:#fff;}
       </div>
       <div id="rgStep2" style="display:none;">
         <div style="background:#ffffff08;border-radius:18px;padding:24px;text-align:center;margin-bottom:18px;"><div style="font-size:13px;color:#888;margin-bottom:6px;">Montant à recharger</div><div style="font-weight:900;font-size:32px;color:var(--y);" id="rgAmtBig">— FCFA</div></div>
-        <button class="btn btn-full" onclick="rgPayWithPaytech()" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-weight:900;font-size:15px;padding:16px;">💳 Payer avec PayTech</button>
+        <div style="font-size:12px;color:#888;margin-bottom:10px;text-align:center;">Choisissez votre opérateur</div>
+        <button class="btn btn-full" onclick="rgPayWithPaytech('Wave')" style="background:linear-gradient(135deg,#1dc8ff,#0a7fb8);color:#fff;font-weight:900;font-size:15px;padding:16px;margin-bottom:10px;">🌊 Payer avec Wave</button>
+        <button class="btn btn-full" onclick="rgPayWithPaytech('Orange Money')" style="background:linear-gradient(135deg,#FF6B00,#CC4400);color:#fff;font-weight:900;font-size:15px;padding:16px;margin-bottom:10px;">🟠 Payer avec Orange Money</button>
+        <button class="btn btn-full" onclick="rgPayWithPaytech('Free Money')" style="background:linear-gradient(135deg,#DF0024,#8f0017);color:#fff;font-weight:900;font-size:15px;padding:16px;margin-bottom:10px;">🔴 Payer avec Free Money</button>
+        <button class="btn btn-full" onclick="rgPayWithPaytech('')" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-weight:900;font-size:13px;padding:13px;">💳 Autres moyens (PayTech)</button>
         <button onclick="resetRecharge()" style="width:100%;background:none;border:none;color:#888;margin-top:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">← Retour</button>
       </div>
-      <div id="rgStep3" style="display:none;text-align:center;padding:30px 0;"><div class="spinner" style="margin:0 auto 18px;"></div><div style="font-weight:800;font-size:15px;color:#aaa;margin-bottom:6px;" id="rgWaitTitle">Ouverture du paiement…</div><div style="font-size:12px;color:#666;" id="rgWaitSub">Une fenêtre PayTech s'est ouverte. Choisissez votre opérateur et terminez le paiement là-bas — cette page se mettra à jour automatiquement.</div><button onclick="rgCancelWait()" style="width:100%;background:none;border:none;color:#888;margin-top:16px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">Annuler l'attente</button></div>
+      <div id="rgStep3" style="display:none;text-align:center;padding:30px 0;"><div class="spinner" style="margin:0 auto 18px;"></div><div style="font-weight:800;font-size:15px;color:#aaa;margin-bottom:6px;" id="rgWaitTitle">Ouverture du paiement…</div><div style="font-size:12px;color:#666;" id="rgWaitSub">Terminez le paiement sur la page qui s'est ouverte — cette page se mettra à jour automatiquement.</div><a id="rgOpenLink" href="#" target="_blank" rel="noopener" style="display:none;margin-top:16px;background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-weight:900;font-size:14px;padding:14px;border-radius:14px;text-decoration:none;">👉 Ouvrir la page de paiement</a><button onclick="rgCancelWait()" style="width:100%;background:none;border:none;color:#888;margin-top:16px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">Annuler l'attente</button></div>
       <div id="rgStep4" style="display:none;text-align:center;padding:20px 0 10px;"><div style="font-size:64px;margin-bottom:14px;">✅</div><div style="font-weight:900;font-size:20px;color:var(--g);margin-bottom:6px;">Recharge réussie !</div><div style="color:#888;font-size:13px;margin-bottom:6px;" id="rgSuccessDesc">—</div><button class="btn btn-primary btn-full" onclick="closeModal('modalRecharge')">Fermer</button></div>
     </div>
   </div>
@@ -3427,8 +3431,16 @@ function resetRecharge(){['rgStep1','rgStep2','rgStep3','rgStep4'].forEach((id,i
 window.selQuickAmt=(v,btn)=>{document.getElementById('rechargeAmt').value=v;document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');};
 window.rgGoStep2=()=>{const v=parseInt(document.getElementById('rechargeAmt').value);if(!v||v<100){notify('⚠️','Montant','Min 100 FCFA.');return;}S.rgAmt=v;document.getElementById('rgAmtBig').textContent=fmt(v)+' FCFA';document.getElementById('rgStep1').style.display='none';document.getElementById('rgStep2').style.display='block';};
 window.rgCancelWait=()=>{if(S.rgUnsub){S.rgUnsub();S.rgUnsub=null;}if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';notify('ℹ️','En attente','Si le paiement se termine, votre solde sera mis à jour automatiquement.');};
-window.rgPayWithPaytech=async()=>{
+window.rgPayWithPaytech=async(operator)=>{
   const amt=S.rgAmt;if(!amt)return;
+  S.rgOperator=operator||'';
+  // IMPORTANT : on ouvre la fenêtre IMMÉDIATEMENT, pendant le clic. Si on attend la réponse du serveur,
+  // le navigateur (surtout sur mobile) bloque la fenêtre et PayTech ne s'ouvre jamais.
+  try{
+    S.rgWin=window.open('','_blank');
+    if(S.rgWin&&S.rgWin.document){S.rgWin.document.write('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#06120a;color:#fff;font-family:sans-serif;text-align:center;padding:20px">Ouverture du paiement'+(operator?' '+operator:'')+'…</body>');}
+  }catch(e){S.rgWin=null;}
+  const lk=document.getElementById('rgOpenLink');if(lk)lk.style.display='none';
   document.getElementById('rgStep2').style.display='none';document.getElementById('rgStep3').style.display='block';
   await rgAttemptInit(amt,1);
 };
@@ -3442,12 +3454,12 @@ async function rgAttemptInit(amt,attempt){
     const res=await fetch(BACKEND_URL+'/api/payment/init',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({amount:amt,phone:S.profile?.phone||'',type:'recharge'})
+      body:JSON.stringify({amount:amt,phone:S.profile?.phone||'',type:'recharge',operator:S.rgOperator||'',target_payment:S.rgOperator||''})
     });
     const data=await res.json().catch(()=>({}));
     if(!res.ok||!(data.payment_url||data.redirect_url)){
       document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';
-      console.error('[recharge] init refusé',res.status,data);notify('❌','Échec recharge (HTTP '+res.status+')',String(data?.error||data?.message||"Le serveur de paiement a refusé la demande.").slice(0,160));
+      try{if(S.rgWin&&!S.rgWin.closed)S.rgWin.close();}catch(_){}console.error('[recharge] init refusé',res.status,data);notify('❌','Échec recharge (HTTP '+res.status+')',String(data?.error||data?.message||"Le serveur de paiement a refusé la demande.").slice(0,160));
       return;
     }
     rgProceedAfterInit(data,amt);
@@ -3459,16 +3471,26 @@ async function rgAttemptInit(amt,attempt){
       await new Promise(r=>setTimeout(r,attempt===1?4000:8000));
       return rgAttemptInit(amt,attempt+1);
     }
-    console.error('[recharge] réseau',e);document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';
+    try{if(S.rgWin&&!S.rgWin.closed)S.rgWin.close();}catch(_){}console.error('[recharge] réseau',e);document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';
     notify('❌','Erreur réseau ('+(e&&e.message||'?')+')',"Le serveur ne répond pas. Vérifiez votre connexion et réessayez dans un instant.");
   }
 }
 function rgProceedAfterInit(data,amt){
     document.getElementById('rgWaitTitle').textContent='Ouverture du paiement…';
-    document.getElementById('rgWaitSub').textContent="Une fenêtre PayTech s'est ouverte. Choisissez votre opérateur et terminez le paiement là-bas — cette page se mettra à jour automatiquement.";
+    document.getElementById('rgWaitSub').textContent="Terminez le paiement sur la page qui s'est ouverte — cette page se mettra à jour automatiquement.";
     const payUrl=data.payment_url||data.redirect_url;
-    const win=window.open(payUrl,'_blank');
-    if(!win){notify('⚠️','Popup bloquée',"Autorisez les popups pour ce site, puis réessayez.");}
+    const lk=document.getElementById('rgOpenLink');if(lk){lk.href=payUrl;lk.style.display='block';}
+    let opened=false;
+    try{
+      if(S.rgWin&&!S.rgWin.closed){S.rgWin.location.href=payUrl;opened=true;}
+      else{const w=window.open(payUrl,'_blank');if(w)opened=true;}
+    }catch(e){opened=false;}
+    if(!opened){
+      // Dernier recours (mobile) : même onglet. Le solde se met à jour au retour sur TataPay.
+      document.getElementById('rgWaitTitle').textContent='Appuyez pour ouvrir le paiement';
+      document.getElementById('rgWaitSub').textContent="La fenêtre a été bloquée. Appuyez sur le bouton ci-dessous pour ouvrir "+(S.rgOperator||'PayTech')+".";
+      notify('⚠️','Fenêtre bloquée',"Appuyez sur « Ouvrir la page de paiement ».");
+    }
 
     // Attente : le webhook backend crédite le solde via Firestore -> on écoute en temps réel.
     const startBalance=S.profile?.balance||0;
