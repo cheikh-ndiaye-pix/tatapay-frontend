@@ -1,8 +1,6 @@
 {
   "rewrites": [
+    { "source": "/ping", "destination": "/api/index" },
     { "source": "/api/(.*)", "destination": "/api/index" }
-  ],
-  "functions": {
-    "api/index.js": { "maxDuration": 30 }
-  }
+  ]
 }
