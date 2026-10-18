@@ -510,6 +510,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
             <div id="recvOnlineDot" style="margin-top:6px;font-size:10px;font-weight:800;color:#34d399;display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#34d399;display:inline-block;"></span>En ligne</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
+            <button id="btToggleBtn" onclick="toggleBluetooth()" title="Bluetooth" style="background:#1a56db22;border:1px solid #1a56db55;border-radius:12px;padding:8px 10px;cursor:pointer;color:#7aa7ff;font-size:12px;font-weight:800;font-family:'Space Grotesk',sans-serif;display:flex;align-items:center;gap:4px;"><span style="font-size:16px;">&#x1F535;</span><span id="btToggleLbl">BT</span></button>
             <button onclick="openNotifPanel()" style="background:#FF6B0022;border:1px solid #FF6B0044;border-radius:12px;padding:10px;cursor:pointer;">
               <div class="bell-wrap"><svg id="bellIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B00" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg><span class="bell-badge" id="bellBadge">0</span></div>
             </button>
@@ -4143,5 +4144,33 @@ window.flipCamera=async()=>{S.facing=S.facing==='environment'?'user':'environmen
 function handleQR(raw){stopCamera();raw=(raw||'').trim();
   const ticketM=raw.match(/tatapay:\/\/ticket\/(.+)/i);if(ticketM){if(document.getElementById('modalTicketFlow')?.style.display==='flex')closeModal('modalTicketFlow');importTicketFromQR(ticketM[1]);return;}const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);const balM=raw.match(/[?&]bal=(\d+)/);const tM=raw.match(/[?&]t=(\d+)/);const uidM=raw.match(/[?&]uid=([A-Za-z0-9]+)/);const qrBal=balM?parseInt(balM[1],10):null;const qrTs=tM?parseInt(tM[1],10):null;const qrUid=uidM?uidM[1]:null;if(S.camMode==='ticket'&&!ticketM){notify('❌','QR invalide','Ce n\'est pas un QR de ticket.');return;}if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Contenu: '+raw.slice(0,40));return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId,qrBal,qrTs,qrUid);}else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}}
 
+// ── Bluetooth receveur (optionnel) : n'affecte aucune fonction existante ──
+// Le site ne peut pas allumer le Bluetooth du téléphone : il ouvre la liste des
+// appareils (Web Bluetooth, Chrome Android / Bluefy iPhone) et mémorise la connexion.
+const BT_SERVICES=['generic_access','battery_service','device_information',0x18f0,0xffe0,0xff00,0xfee7,'e7810a71-73ae-499d-8c15-faa9aef0c3f2','49535343-fe7d-4ae5-8fa9-9fafd205e455'];
+window.TP_BT={device:null,server:null};
+function btUI(on,name){const b=document.getElementById('btToggleBtn'),l=document.getElementById('btToggleLbl');if(!b||!l)return;b.style.background=on?'#00A65033':'#1a56db22';b.style.borderColor=on?'#34d399aa':'#1a56db55';b.style.color=on?'#34d399':'#7aa7ff';l.textContent=on?(name||'BT').slice(0,8):'BT';}
+window.toggleBluetooth=async()=>{
+  try{
+    const T=window.TP_BT;
+    if(T.server&&T.server.connected){T.server.disconnect();return;}
+    if(!navigator.bluetooth){
+      const ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
+      notify('ℹ️','Bluetooth indisponible',ios?'Sur iPhone, ouvrez TataPay dans le navigateur gratuit Bluefy. Le scan par caméra reste disponible.':'Ouvrez TataPay avec Chrome. Le scan par caméra reste disponible.');
+      return;
+    }
+    notify('🔵','Bluetooth','Activez le Bluetooth du téléphone, puis choisissez votre appareil.');
+    const dev=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:BT_SERVICES});
+    dev.addEventListener('gattserverdisconnected',()=>{btUI(false);notify('🔵','Bluetooth','Appareil déconnecté.');});
+    const server=await dev.gatt.connect();
+    T.device=dev;T.server=server;
+    btUI(true,dev.name);
+    notify('✅','Bluetooth connecté',dev.name||'Appareil connecté');
+  }catch(e){
+    btUI(false);
+    if(e&&e.name==='NotFoundError')notify('ℹ️','Bluetooth','Aucun appareil choisi.');
+    else notify('⚠️','Bluetooth',(e&&e.message)||'Connexion impossible. Le scan par caméra reste disponible.');
+  }
+};
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
