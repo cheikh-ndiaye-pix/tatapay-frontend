@@ -1018,11 +1018,8 @@ select.input-field option{background:#0c1f12;color:#fff;}
       </div>
       <div id="rgStep2" style="display:none;">
         <div style="background:#ffffff08;border-radius:18px;padding:24px;text-align:center;margin-bottom:18px;"><div style="font-size:13px;color:#888;margin-bottom:6px;">Montant à recharger</div><div style="font-weight:900;font-size:32px;color:var(--y);" id="rgAmtBig">— FCFA</div></div>
-        <div style="font-size:12px;color:#888;margin-bottom:10px;text-align:center;">Choisissez votre opérateur</div>
-        <button class="btn btn-full" onclick="rgPayWithPaytech('Wave')" style="background:linear-gradient(135deg,#1dc8ff,#0a7fb8);color:#fff;font-weight:900;font-size:15px;padding:16px;margin-bottom:10px;">🌊 Payer avec Wave</button>
-        <button class="btn btn-full" onclick="rgPayWithPaytech('Orange Money')" style="background:linear-gradient(135deg,#FF6B00,#CC4400);color:#fff;font-weight:900;font-size:15px;padding:16px;margin-bottom:10px;">🟠 Payer avec Orange Money</button>
-        <button class="btn btn-full" onclick="rgPayWithPaytech('Free Money')" style="background:linear-gradient(135deg,#DF0024,#8f0017);color:#fff;font-weight:900;font-size:15px;padding:16px;margin-bottom:10px;">🔴 Payer avec Free Money</button>
-        <button class="btn btn-full" onclick="rgPayWithPaytech('')" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-weight:900;font-size:13px;padding:13px;">💳 Autres moyens (PayTech)</button>
+        <div style="background:#ffffff08;border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#aaa;line-height:1.6;text-align:center;">Vous allez être redirigé vers la page sécurisée <b style="color:#fff;">PayTech</b> pour choisir votre moyen de paiement : <b style="color:#FF6B00;">Orange Money</b>, <b style="color:#7dd3fc;">Wave</b>, <b style="color:#FDEF42;">Mixx by Yas</b>, Expresso, Wizall…</div>
+        <button class="btn btn-full" onclick="rgPayWithPaytech('')" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-weight:900;font-size:15px;padding:16px;">✅ Confirmer et choisir mon moyen de paiement</button>
         <button onclick="resetRecharge()" style="width:100%;background:none;border:none;color:#888;margin-top:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">← Retour</button>
       </div>
       <div id="rgStep3" style="display:none;text-align:center;padding:30px 0;"><div class="spinner" style="margin:0 auto 18px;"></div><div style="font-weight:800;font-size:15px;color:#aaa;margin-bottom:6px;" id="rgWaitTitle">Ouverture du paiement…</div><div style="font-size:12px;color:#666;" id="rgWaitSub">Terminez le paiement sur la page qui s'est ouverte — cette page se mettra à jour automatiquement.</div><a id="rgOpenLink" href="#" target="_blank" rel="noopener" style="display:none;margin-top:16px;background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-weight:900;font-size:14px;padding:14px;border-radius:14px;text-decoration:none;">👉 Ouvrir la page de paiement</a><button onclick="rgCancelWait()" style="width:100%;background:none;border:none;color:#888;margin-top:16px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">Annuler l'attente</button></div>
@@ -3454,7 +3451,7 @@ async function rgAttemptInit(amt,attempt){
     const res=await fetch(BACKEND_URL+'/api/payment/init',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({amount:amt,phone:S.profile?.phone||'',type:'recharge',operator:S.rgOperator||'',target_payment:S.rgOperator||''})
+      body:JSON.stringify({amount:amt,phone:S.profile?.phone||'',type:'recharge'})
     });
     const data=await res.json().catch(()=>({}));
     if(!res.ok||!(data.payment_url||data.redirect_url)){
