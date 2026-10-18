@@ -285,6 +285,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
   <div style="width:100%;max-width:360px;">
     <div class="ticket-thermal" id="ticketThermalContent"></div>
     <div id="ticketHandoffZone" style="display:none;"></div>
+    <button class="btn btn-orange btn-full" id="btnPrintTicket" style="margin-top:14px;display:none;" onclick="printTicketRawBT()">🖨️ Imprimer le ticket</button>
     <button class="btn btn-primary btn-full" style="margin-top:14px;" onclick="closeTicket()">✓ Fermer</button>
   </div>
 </div>
@@ -510,7 +511,6 @@ select.input-field option{background:#0c1f12;color:#fff;}
             <div id="recvOnlineDot" style="margin-top:6px;font-size:10px;font-weight:800;color:#34d399;display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#34d399;display:inline-block;"></span>En ligne</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <button id="btToggleBtn" onclick="toggleBluetooth()" title="Bluetooth" style="background:#1a56db22;border:1px solid #1a56db55;border-radius:12px;padding:8px 10px;cursor:pointer;color:#7aa7ff;font-size:12px;font-weight:800;font-family:'Space Grotesk',sans-serif;display:flex;align-items:center;gap:4px;"><span style="font-size:16px;">&#x1F535;</span><span id="btToggleLbl">BT</span></button>
             <button onclick="openNotifPanel()" style="background:#FF6B0022;border:1px solid #FF6B0044;border-radius:12px;padding:10px;cursor:pointer;">
               <div class="bell-wrap"><svg id="bellIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B00" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg><span class="bell-badge" id="bellBadge">0</span></div>
             </button>
@@ -4068,6 +4068,8 @@ async function loadPassTickets(){
 }
 window.showTicketData=(t)=>{
   if(typeof t==='string')t=JSON.parse(t);
+  window._lastTicketShown=t;
+  {const pb=document.getElementById('btnPrintTicket');if(pb)pb.style.display=(S.role==='receiver')?'flex':'none';}
   const isOffline=t.offline!==undefined?t.offline:!navigator.onLine;
   document.getElementById('ticketThermalContent').innerHTML=`<div class="t-header">🚌 TATAPAY</div><div style="font-size:13px;line-height:2;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}<br>✅ Validé · ${t.passenger}${isOffline?' · 📴 hors-ligne (sync en attente)':''}</div>`;
   document.getElementById('ticketOverlay').style.display='flex';
@@ -4109,6 +4111,70 @@ window.importTicketFromQR=(raw)=>{
   showTicketData(t);
   notify('✅','Ticket reçu !',fmt(t.price)+' FCFA · '+(t.to||''));
 };
+/* ═══════════ IMPRESSION TICKET (Sunmi V2 via l'app RawBT) ═══════════
+   Le navigateur ne peut pas piloter l'imprimante intégrée directement :
+   on envoie le ticket (ESC/POS, papier 58 mm) à l'app RawBT, qui imprime.
+   Mettre PRINT_QR=false si le QR imprimé sort mal sur la machine. */
+const PRINT_QR=true;
+function _pAscii(x){return String(x==null?'':x).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\x20-\x7E]/g,'?');}
+function _pLine(label,val,w=32){const l=_pAscii(label),v=_pAscii(val);return (l+v).length<=w?l+' '.repeat(w-(l+v).length)+v:(l+v).slice(0,w);}
+function ticketToEscPos(t){
+  const out=[];
+  const push=(...b)=>out.push(...b);
+  const text=(s)=>{for(const c of _pAscii(s))out.push(c.charCodeAt(0));};
+  const ln=(s='')=>{text(s);push(0x0A);};
+  const SEP='--------------------------------';
+  push(0x1B,0x40);                 // init
+  push(0x1B,0x61,0x01);            // centre
+  push(0x1B,0x45,0x01);ln('TATAPAY');push(0x1B,0x45,0x00);
+  ln('AFTU - CAPTRANS');
+  push(0x1B,0x61,0x00);            // gauche
+  ln(SEP);
+  ln(_pLine('GIE:',t.gie));
+  ln(_pLine('Bus:',t.vehicle));
+  ln(_pLine('Ligne:',t.ligne));
+  ln(_pLine('Zone:',t.zone));
+  ln(SEP);
+  ln('Trajet: '+_pAscii(t.from)+' -> '+_pAscii(t.to));
+  ln(_pLine('Section:',t.section));
+  push(0x1B,0x45,0x01);ln(_pLine('PRIX:',(t.price||0)+' FCFA'));push(0x1B,0x45,0x00);
+  ln(SEP);
+  ln(_pLine('Date:',t.date));
+  ln(_pLine('Heure:',t.time));
+  ln(_pLine('Passager:',t.passenger));
+  ln('SN: '+_pAscii(t.sn));
+  ln(SEP);
+  if(PRINT_QR){
+    const F=['gie','vehicle','ligne','zone','from','to','section','price','passenger','passengerId','busId','date','time','sn','offline'];
+    const compact=F.map(k=>{let v=k==='offline'?(t.offline?1:0):(t[k]??'');return String(v).replace(/\|/g,' ');}).join('|');
+    const data=_pAscii('tatapay://ticket/'+encodeURIComponent(compact));
+    const n=data.length+3;
+    push(0x1B,0x61,0x01);                                   // centre
+    push(0x1D,0x28,0x6B,0x04,0x00,0x31,0x41,0x32,0x00);     // modèle 2
+    push(0x1D,0x28,0x6B,0x03,0x00,0x31,0x43,0x05);          // taille module
+    push(0x1D,0x28,0x6B,0x03,0x00,0x31,0x45,0x31);          // correction M
+    push(0x1D,0x28,0x6B,n&0xFF,(n>>8)&0xFF,0x31,0x50,0x30); // données
+    for(const c of data)out.push(c.charCodeAt(0));
+    push(0x1D,0x28,0x6B,0x03,0x00,0x31,0x51,0x30);          // imprimer le QR
+    push(0x0A);
+    ln('Valide - Merci !');
+    push(0x1B,0x61,0x00);
+  }else{
+    push(0x1B,0x61,0x01);ln('Valide - Merci !');push(0x1B,0x61,0x00);
+  }
+  push(0x0A,0x0A,0x0A,0x0A);       // avance du papier
+  return new Uint8Array(out);
+}
+window.printTicketRawBT=()=>{
+  const t=window._lastTicketShown;
+  if(!t){notify('⚠️','Impression','Aucun ticket à imprimer.');return;}
+  try{
+    const bytes=ticketToEscPos(t);
+    let bin='';for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
+    window.location.href='rawbt:base64,'+btoa(bin);
+    notify('🖨️','Impression','Envoi à RawBT… Si rien ne se passe, installez l\'app RawBT et choisissez l\'imprimante Sunmi.');
+  }catch(e){notify('❌','Impression',e.message);}
+};
 window.closeTicket=()=>document.getElementById('ticketOverlay').style.display='none';
 // Rafraîchir affichage quand la connexion revient
 window.addEventListener('online',()=>{if(S.role==='passenger')loadPassTickets();});
@@ -4144,62 +4210,5 @@ window.flipCamera=async()=>{S.facing=S.facing==='environment'?'user':'environmen
 function handleQR(raw){stopCamera();raw=(raw||'').trim();
   const ticketM=raw.match(/tatapay:\/\/ticket\/(.+)/i);if(ticketM){if(document.getElementById('modalTicketFlow')?.style.display==='flex')closeModal('modalTicketFlow');importTicketFromQR(ticketM[1]);return;}const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);const balM=raw.match(/[?&]bal=(\d+)/);const tM=raw.match(/[?&]t=(\d+)/);const uidM=raw.match(/[?&]uid=([A-Za-z0-9]+)/);const qrBal=balM?parseInt(balM[1],10):null;const qrTs=tM?parseInt(tM[1],10):null;const qrUid=uidM?uidM[1]:null;if(S.camMode==='ticket'&&!ticketM){notify('❌','QR invalide','Ce n\'est pas un QR de ticket.');return;}if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Contenu: '+raw.slice(0,40));return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId,qrBal,qrTs,qrUid);}else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}}
 
-// ── Bluetooth receveur (optionnel) : n'affecte aucune fonction existante ──
-// Le site ne peut pas allumer le Bluetooth du téléphone : il ouvre la liste des
-// appareils (Web Bluetooth, Chrome Android / Bluefy iPhone) et mémorise la connexion.
-const BT_SERVICES=['generic_access','battery_service','device_information',0x18f0,0xffe0,0xff00,0xfee7,'e7810a71-73ae-499d-8c15-faa9aef0c3f2','49535343-fe7d-4ae5-8fa9-9fafd205e455'];
-window.TP_BT={device:null,server:null};
-function btUI(on,name){const b=document.getElementById('btToggleBtn'),l=document.getElementById('btToggleLbl');if(!b||!l)return;b.style.background=on?'#00A65033':'#1a56db22';b.style.borderColor=on?'#34d399aa':'#1a56db55';b.style.color=on?'#34d399':'#7aa7ff';l.textContent=on?(name||'BT').slice(0,8):'BT';}
-const BT_KEY='tatapay_bt_devices';
-function btSaved(){try{return JSON.parse(localStorage.getItem(BT_KEY)||'[]');}catch(e){return [];}}
-function btRemember(dev){try{const l=btSaved().filter(d=>d.id!==dev.id);l.unshift({id:dev.id,name:dev.name||'Appareil'});localStorage.setItem(BT_KEY,JSON.stringify(l.slice(0,5)));}catch(e){}}
-function btAttach(dev,server){
-  window.TP_BT.device=dev;window.TP_BT.server=server;
-  dev.addEventListener('gattserverdisconnected',()=>{btUI(false);notify('🔵','Bluetooth','Appareil déconnecté.');});
-  btUI(true,dev.name);btRemember(dev);notify('✅','Bluetooth connecté',dev.name||'Appareil connecté');
-}
-// 1) tente de se reconnecter aux appareils déjà utilisés (si le navigateur le permet)
-async function btTryKnown(){
-  if(!navigator.bluetooth.getDevices)return false;
-  let known=[];try{known=await navigator.bluetooth.getDevices();}catch(e){return false;}
-  const ids=btSaved().map(d=>d.id);
-  known=known.filter(d=>ids.includes(d.id)).sort((x,y)=>ids.indexOf(x.id)-ids.indexOf(y.id));
-  for(const d of known){
-    notify('🔎','Recherche',`Appareil connu : ${d.name||'—'}…`);
-    try{
-      const server=await Promise.race([d.gatt.connect(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),6000))]);
-      btAttach(d,server);return true;
-    }catch(e){try{d.gatt.disconnect();}catch(_){}}
-  }
-  return false;
-}
-window.toggleBluetooth=async()=>{
-  try{
-    const T=window.TP_BT;
-    if(T.server&&T.server.connected){T.server.disconnect();return;}
-    if(!navigator.bluetooth){
-      const ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
-      if(ios){
-        if(confirm('Le Bluetooth sur iPhone nécessite le navigateur gratuit Bluefy.\n\nOuvrir l’App Store pour l’installer ?\n(L’adresse de TataPay sera copiée : collez-la ensuite dans Bluefy.)')){
-          try{navigator.clipboard.writeText('https://tatapay-frontend.vercel.app');}catch(e){}
-          window.location.href='https://apps.apple.com/app/id1492822055';
-        }
-      }else{
-        notify('ℹ️','Bluetooth indisponible','Ouvrez TataPay avec Chrome. Le scan par caméra reste disponible.');
-      }
-      return;
-    }
-    if(await btTryKnown())return;
-    // 2) sinon : recherche de tous les appareils Bluetooth proches
-    notify('🔎','Recherche Bluetooth','Activez le Bluetooth du téléphone, puis choisissez votre appareil dans la liste.');
-    const dev=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:BT_SERVICES});
-    const server=await dev.gatt.connect();
-    btAttach(dev,server);
-  }catch(e){
-    btUI(false);
-    if(e&&e.name==='NotFoundError')notify('ℹ️','Bluetooth','Aucun appareil choisi.');
-    else notify('⚠️','Bluetooth',(e&&e.message)||'Connexion impossible. Le scan par caméra reste disponible.');
-  }
-};
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
