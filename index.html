@@ -1012,9 +1012,11 @@ select.input-field option{background:#0c1f12;color:#fff;}
     <div class="modal-header"><div><div style="font-weight:900;font-size:18px;">💰 Recharger mon compte</div></div><button class="modal-close" onclick="closeModal('modalRecharge')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="modal-body">
       <div id="rgStep1">
-        <div class="quick-grid"><button class="quick-btn" onclick="selQuickAmt(500,this)">500</button><button class="quick-btn" onclick="selQuickAmt(1000,this)">1 000</button><button class="quick-btn" onclick="selQuickAmt(2000,this)">2 000</button><button class="quick-btn" onclick="selQuickAmt(5000,this)">5 000</button></div>
-        <input class="input-field" id="rechargeAmt" type="number" placeholder="Montant en FCFA" style="margin-bottom:16px;"/>
-        <button class="btn btn-primary btn-full" onclick="rgGoStep2()">Continuer →</button>
+        <label class="input-label">Montant à recharger (FCFA) *</label>
+        <input class="input-field" id="rechargeAmt" type="number" inputmode="numeric" min="100" placeholder="Écrivez le montant (minimum 100)" style="margin-bottom:6px;"/>
+        <div style="font-size:11px;color:#777;margin-bottom:16px;">Minimum 100 FCFA.</div>
+        <div style="background:#ffffff08;border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#aaa;line-height:1.6;text-align:center;">Vous serez redirigé vers la page sécurisée <b style="color:#fff;">PayTech</b> pour choisir votre moyen de paiement : <b style="color:#FF6B00;">Orange Money</b>, <b style="color:#7dd3fc;">Wave</b>, <b style="color:#FDEF42;">Mixx by Yas</b>, Expresso, Wizall…</div>
+        <button class="btn btn-full" onclick="rgConfirmPay()" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-weight:900;font-size:15px;padding:16px;">✅ Confirmer et choisir mon moyen de paiement</button>
       </div>
       <div id="rgStep2" style="display:none;">
         <div style="background:#ffffff08;border-radius:18px;padding:24px;text-align:center;margin-bottom:18px;"><div style="font-size:13px;color:#888;margin-bottom:6px;">Montant à recharger</div><div style="font-weight:900;font-size:32px;color:var(--y);" id="rgAmtBig">— FCFA</div></div>
@@ -3427,7 +3429,13 @@ window.openRecharge=()=>{resetRecharge();openModal('modalRecharge');};
 function resetRecharge(){['rgStep1','rgStep2','rgStep3','rgStep4'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});const amt=document.getElementById('rechargeAmt');if(amt)amt.value='';document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));if(S.rgUnsub){S.rgUnsub();S.rgUnsub=null;}if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}}
 window.selQuickAmt=(v,btn)=>{document.getElementById('rechargeAmt').value=v;document.querySelectorAll('#modalRecharge .quick-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');};
 window.rgGoStep2=()=>{const v=parseInt(document.getElementById('rechargeAmt').value);if(!v||v<100){notify('⚠️','Montant','Min 100 FCFA.');return;}S.rgAmt=v;document.getElementById('rgAmtBig').textContent=fmt(v)+' FCFA';document.getElementById('rgStep1').style.display='none';document.getElementById('rgStep2').style.display='block';};
-window.rgCancelWait=()=>{if(S.rgUnsub){S.rgUnsub();S.rgUnsub=null;}if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';notify('ℹ️','En attente','Si le paiement se termine, votre solde sera mis à jour automatiquement.');};
+window.rgCancelWait=()=>{if(S.rgUnsub){S.rgUnsub();S.rgUnsub=null;}if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep1').style.display='block';notify('ℹ️','En attente','Si le paiement se termine, votre solde sera mis à jour automatiquement.');};
+window.rgConfirmPay=()=>{
+  const v=parseInt(document.getElementById('rechargeAmt').value);
+  if(!v||v<100){notify('⚠️','Montant','Minimum 100 FCFA.');return;}
+  S.rgAmt=v;
+  return window.rgPayWithPaytech('');
+};
 window.rgPayWithPaytech=async(operator)=>{
   const amt=S.rgAmt;if(!amt)return;
   S.rgOperator=operator||'';
@@ -3438,7 +3446,7 @@ window.rgPayWithPaytech=async(operator)=>{
     if(S.rgWin&&S.rgWin.document){S.rgWin.document.write('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#06120a;color:#fff;font-family:sans-serif;text-align:center;padding:20px">Ouverture du paiement'+(operator?' '+operator:'')+'…</body>');}
   }catch(e){S.rgWin=null;}
   const lk=document.getElementById('rgOpenLink');if(lk)lk.style.display='none';
-  document.getElementById('rgStep2').style.display='none';document.getElementById('rgStep3').style.display='block';
+  document.getElementById('rgStep1').style.display='none';document.getElementById('rgStep2').style.display='none';document.getElementById('rgStep3').style.display='block';
   await rgAttemptInit(amt,1);
 };
 async function rgAttemptInit(amt,attempt){
@@ -3455,8 +3463,11 @@ async function rgAttemptInit(amt,attempt){
     });
     const data=await res.json().catch(()=>({}));
     if(!res.ok||!(data.payment_url||data.redirect_url)){
-      document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';
-      try{if(S.rgWin&&!S.rgWin.closed)S.rgWin.close();}catch(_){}console.error('[recharge] init refusé',res.status,data);notify('❌','Échec recharge (HTTP '+res.status+')',String(data?.error||data?.message||"Le serveur de paiement a refusé la demande.").slice(0,160));
+      document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep1').style.display='block';
+      try{if(S.rgWin&&!S.rgWin.closed)S.rgWin.close();}catch(_){}console.error('[recharge] init refusé',res.status,data);
+      const rawErr=String(data?.error||data?.message||'');
+      if(/vendeur|cl[eé]\s*api|api\s*key|secret/i.test(rawErr)){notify('❌','Paiement indisponible','Le service de paiement est momentanément indisponible. Réessayez plus tard ou contactez le support TataPay.');}
+      else{notify('❌','Échec recharge (HTTP '+res.status+')',(rawErr||"Le serveur de paiement a refusé la demande.").slice(0,160));}
       return;
     }
     rgProceedAfterInit(data,amt);
@@ -3468,7 +3479,7 @@ async function rgAttemptInit(amt,attempt){
       await new Promise(r=>setTimeout(r,attempt===1?4000:8000));
       return rgAttemptInit(amt,attempt+1);
     }
-    try{if(S.rgWin&&!S.rgWin.closed)S.rgWin.close();}catch(_){}console.error('[recharge] réseau',e);document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep2').style.display='block';
+    try{if(S.rgWin&&!S.rgWin.closed)S.rgWin.close();}catch(_){}console.error('[recharge] réseau',e);document.getElementById('rgStep3').style.display='none';document.getElementById('rgStep1').style.display='block';
     notify('❌','Erreur réseau ('+(e&&e.message||'?')+')',"Le serveur ne répond pas. Vérifiez votre connexion et réessayez dans un instant.");
   }
 }
