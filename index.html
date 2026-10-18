@@ -4179,7 +4179,14 @@ window.toggleBluetooth=async()=>{
     if(T.server&&T.server.connected){T.server.disconnect();return;}
     if(!navigator.bluetooth){
       const ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
-      notify('ℹ️','Bluetooth indisponible',ios?'Sur iPhone, ouvrez TataPay dans le navigateur gratuit Bluefy. Le scan par caméra reste disponible.':'Ouvrez TataPay avec Chrome. Le scan par caméra reste disponible.');
+      if(ios){
+        if(confirm('Le Bluetooth sur iPhone nécessite le navigateur gratuit Bluefy.\n\nOuvrir l’App Store pour l’installer ?\n(L’adresse de TataPay sera copiée : collez-la ensuite dans Bluefy.)')){
+          try{navigator.clipboard.writeText('https://tatapay-frontend.vercel.app');}catch(e){}
+          window.location.href='https://apps.apple.com/app/id1492822055';
+        }
+      }else{
+        notify('ℹ️','Bluetooth indisponible','Ouvrez TataPay avec Chrome. Le scan par caméra reste disponible.');
+      }
       return;
     }
     if(await btTryKnown())return;
