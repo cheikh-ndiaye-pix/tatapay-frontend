@@ -718,7 +718,7 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
       </div>
       <div class="ch-card" id="chRecvCard">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-          <div style="width:52px;height:52px;border-radius:26px;background:#05966922;border:1.5px solid #05966944;display:flex;align-items:center;justify-content:center;font-size:24px;">🎫</div>
+          <div id="chRecvAvatar" style="width:68px;height:68px;border-radius:34px;background:#05966922;border:2px solid #05966966;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;flex-shrink:0;">🎫</div>
           <div style="flex:1;">
             <div style="font-weight:900;font-size:16px;" id="chRecvName">—</div>
             <div style="font-size:11px;color:#888;" id="chRecvEmail">—</div>
@@ -2373,6 +2373,27 @@ async function loadDirOwners(){
 function _dirDetailField(label,value){
   return `<div style="margin-bottom:10px;"><div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:1px;">${label}</div><div style="font-size:14px;color:#e2e8f0;font-weight:700;">${value||'—'}</div></div>`;
 }
+
+// Galerie de documents (photo, CNI, diplôme, CV) : miniatures visibles directement, clic = plein écran
+function _isPdfUrl(u){return /\.pdf(\?|$|%3F)/i.test(String(u||''));}
+window.viewDoc=(url,label)=>{
+  document.getElementById('docViewerEl')?.remove();
+  const ov=document.createElement('div');ov.id='docViewerEl';
+  ov.style.cssText='position:fixed;inset:0;z-index:900;background:#000000f2;display:flex;flex-direction:column;';
+  const body=_isPdfUrl(url)?`<iframe src="${url}" style="flex:1;width:100%;border:none;background:#fff;"></iframe>`:`<div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:10px;"><img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;" onerror="this.outerHTML='<div style=&quot;color:#fff;text-align:center;font-size:13px;&quot;>Aperçu impossible.<br>Utilisez « Ouvrir ».</div>'"/></div>`;
+  ov.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;background:#0c1f12;"><div style="font-weight:900;font-size:15px;color:#fff;">${label||'Document'}</div><div style="display:flex;gap:8px;"><a href="${url}" target="_blank" rel="noopener" style="background:#0ea5e922;border:1px solid #0ea5e966;color:#7dd3fc;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:800;text-decoration:none;">↗ Ouvrir</a><button onclick="document.getElementById('docViewerEl').remove()" style="background:#ffffff18;border:none;border-radius:10px;padding:8px 14px;color:#fff;font-weight:800;cursor:pointer;font-size:13px;">✕ Fermer</button></div></div>${body}`;
+  document.body.appendChild(ov);
+};
+function _docGallery(r){
+  const items=[['photoUrl','🪪','Photo'],['idDocRectoUrl','🆔','CNI recto'],['idDocVersoUrl','🆔','CNI verso'],['diplomaUrl','🎓','Diplôme'],['cvUrl','📄','CV']];
+  return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">`+items.map(([k,ic,lb])=>{
+    const u=r[k];
+    if(!u)return `<div style="background:#ffffff06;border:1px dashed #ffffff22;border-radius:12px;height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#555;font-size:10px;text-align:center;padding:4px;"><div style="font-size:20px;opacity:.5;">${ic}</div>${lb}<br>non fourni</div>`;
+    const safe=String(u).replace(/'/g,'%27');
+    const thumb=_isPdfUrl(u)?`<div style="height:72px;display:flex;align-items:center;justify-content:center;font-size:30px;background:#DF002418;">📕</div>`:`<img src="${safe}" loading="lazy" style="width:100%;height:72px;object-fit:cover;display:block;" onerror="this.outerHTML='<div style=&quot;height:72px;display:flex;align-items:center;justify-content:center;font-size:28px;background:#ffffff0d;&quot;>${ic}</div>'"/>`;
+    return `<div onclick="event.stopPropagation();viewDoc('${safe}','${lb}')" style="cursor:pointer;background:#0f2016;border:1.5px solid #0ea5e955;border-radius:12px;overflow:hidden;">${thumb}<div style="font-size:10px;font-weight:800;color:#7dd3fc;text-align:center;padding:5px 2px;">${ic} ${lb}</div></div>`;
+  }).join('')+`</div>`;
+}
 function _dirDocChip(url,icon,label){
   return url?`<a href="${url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;background:#0ea5e922;border:1px solid #0ea5e955;color:#7dd3fc;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:800;text-decoration:none;">${icon} ${label}</a>`:`<span style="display:inline-flex;align-items:center;gap:4px;background:#ffffff08;border:1px solid #ffffff15;color:#555;border-radius:8px;padding:5px 10px;font-size:11px;">${icon} ${label} non fourni</span>`;
 }
@@ -2622,6 +2643,7 @@ async function loadChReceveur(){
     const snap=await getDoc(doc(db,'users',p.receiverUid));if(!snap.exists())return;
     const r=snap.data();const rs=p.receiverStatus||'actif';
     document.getElementById('chRecvName').textContent=r.name||'—';
+    {const av=document.getElementById('chRecvAvatar');if(av){av.innerHTML=r.photoUrl?`<img src="${r.photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:34px;cursor:pointer;" onclick="viewDoc('${r.photoUrl}','Photo')"/>`:'🎫';}}
     document.getElementById('chRecvEmail').textContent=r.email||'—';
     const badgeMap={actif:['ch-badge-ok','Actif'],absent:['ch-badge-warn','Absent'],remplace:['ch-badge-err','Remplacé']};
     const [cls,lbl]=badgeMap[rs]||badgeMap.actif;
@@ -2633,14 +2655,8 @@ async function loadChReceveur(){
       🚌 ${r.gie||p.gie||'—'} · ${r.vehicle||p.vehicle||'—'} · Ligne ${r.ligne||p.ligne||'—'} · Zone ${r.zone||p.zone||'—'}<br>
       🛣️ Trajet: ${r.trajet||p.trajet||'—'} · Section ${r.section||p.section||'—'}<br>
       📊 Recettes jour: <strong style="color:#34d399;">${fmt(r.today||0)} FCFA</strong> · Tickets: <strong>${r.count||0}</strong> · Solde: <strong style="color:#FDEF42;">${fmt(r.balance||0)} F</strong>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
-        ${_dirDocChip(r.cvUrl,'📄','CV')}
-        ${_dirDocChip(r.diplomaUrl,'🎓','Diplôme')}
-        ${_dirDocChip(r.photoUrl,'🪪','Photo')}
-        ${_dirDocChip(r.idDocRectoUrl,'🆔','CNI recto')}
-        ${_dirDocChip(r.idDocVersoUrl,'🆔','CNI verso')}
-      </div>
-      <div style="margin-top:14px;">
+      <div style="margin-top:12px;">${_docGallery(r)}</div>
+      <div style="margin-top:6px;">
         <button class="admin-action-btn btn-delete" onclick="ownerDeleteReceiver('${p.receiverUid}','${(r.name||'').replace(/'/g,'')}')">🗑️ Supprimer ce receveur</button>
       </div>`;
     const tkSnap=await getDocs(query(collection(db,'tickets'),where('busUid','==',p.receiverUid),orderBy('ts','desc'),limit(7)));
@@ -2736,16 +2752,10 @@ async function renderChCandidatures(rawItems){
   list.innerHTML=items.map(n=>{
     const initials=(n.receiverName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     const docChip=(url,icon,label)=>url?`<a href="${url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:4px;background:#0ea5e922;border:1px solid #0ea5e955;color:#7dd3fc;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:800;text-decoration:none;">${icon} ${label}</a>`:`<span style="display:inline-flex;align-items:center;gap:4px;background:#ffffff08;border:1px solid #ffffff15;color:#555;border-radius:8px;padding:5px 10px;font-size:11px;">${icon} ${label} non fourni</span>`;
-    const docsRow=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
-        ${docChip(n.cvUrl,'📄','CV')}
-        ${docChip(n.diplomaUrl,'🎓','Diplôme')}
-        ${docChip(n.photoUrl,'🪪','Photo')}
-        ${n.idDocRectoUrl?docChip(n.idDocRectoUrl,'🆔','CNI recto'):''}
-        ${n.idDocVersoUrl?docChip(n.idDocVersoUrl,'🆔','CNI verso'):''}
-      </div>`;
+    const docsRow=_docGallery(n);
     return `<div class="ch-card" style="border:1.5px solid #FF6B0033;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-        ${n.photoUrl?`<img src="${n.photoUrl}" style="width:46px;height:46px;border-radius:23px;object-fit:cover;border:1.5px solid #FF6B0055;" onclick="window.open('${n.photoUrl}','_blank')"/>`:`<div style="width:46px;height:46px;border-radius:23px;background:#FF6B0022;border:1.5px solid #FF6B0055;display:flex;align-items:center;justify-content:center;font-weight:900;color:#FF6B00;">${initials}</div>`}
+        ${n.photoUrl?`<img src="${n.photoUrl}" style="width:64px;height:64px;border-radius:32px;object-fit:cover;border:2px solid #FF6B0077;cursor:pointer;" onclick="viewDoc('${n.photoUrl}','Photo')"/>`:`<div style="width:46px;height:46px;border-radius:23px;background:#FF6B0022;border:1.5px solid #FF6B0055;display:flex;align-items:center;justify-content:center;font-weight:900;color:#FF6B00;">${initials}</div>`}
         <div style="flex:1;min-width:0;">
           <div style="font-weight:900;font-size:15px;color:#e2e8f0;">${n.receiverName||'—'}</div>
           <div style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.receiverEmail||'—'}</div>
