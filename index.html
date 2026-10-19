@@ -433,15 +433,16 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
     <div style="height:3px;background:linear-gradient(90deg,#009A44 33%,#FDEF42 33% 66%,#DF0024 66%);border-radius:24px 24px 0 0;"></div>
     <div class="modal-header"><div style="font-weight:900;font-size:18px;">🎫 Choisir les propriétaires</div><button class="modal-close" onclick="closeModal('modalRecvOwners')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="modal-body">
-      <div style="background:#FF6B0010;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FF6B00;line-height:1.6;">Choisissez d'abord votre GIE, puis sélectionnez un ou plusieurs propriétaires de bus de ce GIE. Votre candidature sera envoyée à chacun d'eux.</div>
-      <div class="input-wrap"><label class="input-label">GIE / Directeur *</label>
+      <div style="background:#FF6B0010;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FF6B00;line-height:1.6;">Choisissez un GIE et cochez un ou plusieurs propriétaires. Vous pouvez ensuite changer de GIE pour cocher d'autres propriétaires : votre candidature sera envoyée à tous en même temps.</div>
+      <div class="input-wrap"><label class="input-label">GIE / Directeur * <span style="color:#888;font-weight:600;">(changeable à tout moment)</span></label>
         <select class="input-field" id="modalRecvGIESelect" onchange="onModalRecvGIEChange()"><option value="">— Choisir un GIE / Directeur —</option></select>
       </div>
-      <div class="input-wrap" id="modalOwnerListWrap" style="display:none;"><label class="input-label">Propriétaires sélectionnés <span id="modalOwnerSelCount" style="color:#009A44;font-weight:800;">(0)</span></label>
+      <div class="input-wrap" id="modalOwnerListWrap" style="display:none;"><label class="input-label">Propriétaires de ce GIE — total sélectionné <span id="modalOwnerSelCount" style="color:#009A44;font-weight:800;">(0)</span></label>
         <div id="modalOwnerList" style="max-height:320px;overflow-y:auto;background:#0f1a0a;border:1.5px solid #ffffff15;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;">
           <div style="color:#666;font-size:12px;text-align:center;padding:14px;">Chargement…</div>
         </div>
       </div>
+      <div id="modalSelSummary" style="display:none;background:#009A4410;border:1px solid #009A4440;border-radius:14px;padding:12px;margin-bottom:14px;"></div>
       <input type="hidden" id="modalRecvPendingUid"/>
       <button class="btn btn-primary btn-full" onclick="doSubmitReceiverCandidature()" id="modalRecvSubmitBtn">📤 Envoyer ma candidature</button>
     </div>
@@ -452,6 +453,7 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
   <div style="font-size:64px;margin-bottom:16px;" id="pendingIcon">⏳</div>
   <div style="font-weight:900;font-size:20px;margin-bottom:10px;" id="pendingTitle">En attente</div>
   <div style="color:#888;font-size:14px;line-height:1.7;margin-bottom:28px;" id="pendingBody">Votre demande est en cours de traitement.</div>
+  <button class="btn btn-primary" id="pendingMoreBtn" style="display:none;margin-bottom:12px;" onclick="reopenRecvOwners()">➕ Candidater chez d'autres propriétaires</button>
   <button class="btn btn-secondary" onclick="doLogout()">Se déconnecter</button>
 </div>
 
@@ -579,6 +581,7 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
           <div style="font-weight:900;font-size:14px;" id="recvDirecteurName">—</div>
           <div style="color:#888;font-size:12px;" id="recvDirecteurOrg">—</div>
         </div>
+        <div id="recvAssignCard" style="display:none;background:linear-gradient(135deg,#009A4418,#0ea5e910);border:1.5px solid #009A4455;border-radius:16px;padding:14px 16px;margin-bottom:16px;"><div style="font-size:11px;color:#34d399;font-weight:900;letter-spacing:1.5px;margin-bottom:6px;">✅ ADMIS · MON AFFECTATION</div><div id="recvAssignBody"></div></div>
         <button onclick="openMyDocs()" style="width:100%;background:#0ea5e918;border:1.5px solid #0ea5e966;border-radius:14px;padding:14px;color:#7dd3fc;font-weight:900;font-size:14px;font-family:'Space Grotesk',sans-serif;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:10px;"><span style="font-size:20px;">📎</span> Mes documents (photo, CNI, diplôme, CV)</button>
         <div style="font-weight:800;font-size:15px;margin-bottom:10px;">⏳ Demandes en attente</div>
         <div id="recvPending"><div style="text-align:center;color:#555;padding:16px 0;font-size:13px;">Aucune demande.</div></div>
@@ -1329,13 +1332,55 @@ const withTimeout=(p,ms,label)=>Promise.race([p,new Promise((_,rej)=>setTimeout(
 
 // Documents stockés directement dans Firestore (Firebase Storage ne répond pas) : images réduites, PDF légers
 function _readAsDataURL(f){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>rej(new Error('Lecture du fichier impossible.'));fr.readAsDataURL(f);});}
-async function fileToStoredDoc(file){
+// Les PDF lourds (diplôme, CV…) sont convertis en image JPEG (1re page, 2 pages max pour un CV)
+// afin de rester sous la limite d'un document Firestore et d'être visibles directement par le propriétaire.
+let _pdfjsP=null;
+function _loadPdfJs(){
+  if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);
+  if(_pdfjsP)return _pdfjsP;
+  _pdfjsP=new Promise((res,rej)=>{
+    const sc=document.createElement('script');
+    sc.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    sc.onload=()=>{try{window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';res(window.pdfjsLib);}catch(e){_pdfjsP=null;rej(e);}};
+    sc.onerror=()=>{_pdfjsP=null;rej(new Error('Lecteur PDF indisponible (vérifiez la connexion).'));};
+    document.head.appendChild(sc);
+  });
+  return _pdfjsP;
+}
+async function _pdfToImage(file,maxPages){
+  const lib=await _loadPdfJs();
+  const pdf=await lib.getDocument({data:await file.arrayBuffer()}).promise;
+  const n=Math.max(1,Math.min(pdf.numPages,maxPages||1));
+  const pages=[];
+  for(let i=1;i<=n;i++){
+    const pg=await pdf.getPage(i);
+    const v0=pg.getViewport({scale:1});
+    const vp=pg.getViewport({scale:900/v0.width});
+    const c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);
+    const cx=c.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,c.width,c.height);
+    await pg.render({canvasContext:cx,viewport:vp}).promise;
+    pages.push(c);
+  }
+  const W=pages[0].width,H=pages.reduce((a,c)=>a+c.height,0);
+  const full=document.createElement('canvas');full.width=W;full.height=H;
+  const fx=full.getContext('2d');let y=0;pages.forEach(c=>{fx.drawImage(c,0,y);y+=c.height;});
+  for(const [sc,q] of [[1,.62],[.85,.55],[.7,.5],[.55,.45],[.45,.4],[.35,.35]]){
+    const c=document.createElement('canvas');c.width=Math.round(W*sc);c.height=Math.round(H*sc);
+    c.getContext('2d').drawImage(full,0,0,c.width,c.height);
+    const d=c.toDataURL('image/jpeg',q);
+    if(d.length<=150000)return d;
+  }
+  throw new Error('PDF trop lourd.');
+}
+async function fileToStoredDoc(file,maxPages){
   if(!file)return null;
   if(file.type==='application/pdf'||/\.pdf$/i.test(file.name||'')){
-    if(file.size>150000)throw new Error('PDF trop lourd (max 150 Ko). Envoyez plutôt une photo.');
-    return await _readAsDataURL(file);
+    if(file.size<=110000)return await _readAsDataURL(file); // petit PDF : gardé tel quel
+    try{return await _pdfToImage(file,maxPages||1);}
+    catch(err){console.warn('[pdf->image]',err);throw new Error('PDF trop lourd et conversion impossible. Envoyez plutôt une photo du document.');}
   }
-  const bmp=await createImageBitmap(file);
+  let bmp;
+  try{bmp=await createImageBitmap(file);}catch(e){throw new Error('Format d\'image non pris en charge (utilisez JPG, PNG ou PDF).');}
   for(const [dim,q] of [[900,.6],[800,.5],[640,.45],[520,.4],[420,.35]]){
     const sc=Math.min(1,dim/Math.max(bmp.width,bmp.height));
     const c=document.createElement('canvas');c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);
@@ -1399,15 +1444,33 @@ async function loadDirecteurList(){
   try{const snap=await getDocs(collection(db,'publicDirecteurs'));sels.forEach(sel=>{sel.innerHTML='<option value="">— Choisir un directeur —</option>';if(snap.empty){sel.innerHTML='<option value="">Aucun directeur disponible</option>';return;}snap.docs.forEach(d=>{const u=d.data();const opt=document.createElement('option');opt.value=d.id;opt.textContent=`${u.name} — ${u.org||''}`;sel.appendChild(opt);});});}catch(e){sels.forEach(sel=>sel.innerHTML='<option value="">Erreur — réessayez</option>');}
 }
 window.authSelectedOwners=new Set();
-window.modalSelectedOwners=new Set();
+window.modalSelectedOwners=new Map();   // uid propriétaire -> {directeurUid,label}  (tous GIE confondus)
+window.modalAlreadySent=new Set();      // propriétaires déjà contactés (candidature déjà envoyée)
 window.pendingReceiverData=null;
+function _escH(t){return String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function _modalUpdateSummary(){
+  const sel=window.modalSelectedOwners;
+  const n=sel.size;
+  const el=document.getElementById('modalOwnerSelCount');if(el)el.textContent='('+n+')';
+  const box=document.getElementById('modalSelSummary');if(!box)return;
+  if(!n){box.style.display='none';box.innerHTML='';return;}
+  const gies=new Set();sel.forEach(v=>gies.add(v.directeurUid));
+  let chips='';
+  sel.forEach((v,uid)=>{chips+=`<span style="display:inline-flex;align-items:center;gap:6px;background:#009A4420;border:1px solid #009A4466;color:#6ee7b7;border-radius:20px;padding:5px 6px 5px 11px;font-size:11.5px;font-weight:800;">${_escH(v.label)}<button type="button" onclick="modalRemoveOwner('${uid}')" style="background:#ffffff18;border:none;border-radius:50%;width:18px;height:18px;color:#fff;font-size:10px;cursor:pointer;line-height:18px;padding:0;">✕</button></span>`;});
+  box.style.display='block';
+  box.innerHTML=`<div style="font-size:11px;font-weight:900;color:#34d399;letter-spacing:1px;margin-bottom:8px;">✅ ENVOI À ${n} PROPRIÉTAIRE${n>1?'S':''} · ${gies.size} GIE</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${chips}</div><div style="font-size:11px;color:#888;margin-top:8px;">Changez de GIE ci-dessus pour ajouter d'autres propriétaires.</div>`;
+}
+window.modalRemoveOwner=(uid)=>{
+  window.modalSelectedOwners.delete(uid);
+  const row=document.querySelector('#modalOwnerList .modal-owner-row[data-uid="'+uid+'"]');
+  if(row){row.style.background='#0a1407';row.style.borderColor='#ffffff15';const c=row.querySelector('.modal-owner-check');if(c){c.style.background='transparent';c.style.borderColor='#ffffff33';c.textContent='';}}
+  _modalUpdateSummary();
+};
 
 async function loadModalOwnerList(directeurUid){
   const cont=document.getElementById('modalOwnerList');
   if(!cont)return;
-  window.modalSelectedOwners=new Set();
-  const updateCount=()=>{const el=document.getElementById('modalOwnerSelCount');if(el)el.textContent='('+window.modalSelectedOwners.size+')';};
-  updateCount();
+  _modalUpdateSummary();
   cont.innerHTML='<div style="color:#666;font-size:12px;text-align:center;padding:14px;">Chargement des propriétaires…</div>';
   try{
     let docs=[];
@@ -1415,17 +1478,60 @@ async function loadModalOwnerList(directeurUid){
     catch(e1){const s=await getDocs(collection(db,'users'));docs=s.docs.filter(d=>d.data().role==='owner'&&d.data().directeurUid===directeurUid);}
     const owners=docs.map(d=>({id:d.id,...d.data()})).filter(o=>!o.status||o.status==='approved'||o.status==='pending');
     if(!owners.length){cont.innerHTML='<div style="color:#FF6B00;font-size:12px;text-align:center;padding:14px;">Aucun propriétaire disponible pour ce GIE pour le moment.</div>';return;}
-    cont.innerHTML=owners.map(o=>{const initials=(o.name||o.company||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();return`<div class="modal-owner-row" data-uid="${o.id}" style="display:flex;align-items:center;gap:10px;padding:10px;background:#0a1407;border:1.5px solid #ffffff15;border-radius:12px;cursor:pointer;transition:all .2s;"><div style="width:38px;height:38px;border-radius:19px;background:linear-gradient(135deg,#7c3aed33,#4c1d9533);border:1px solid #7c3aed55;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#c4b5fd;flex-shrink:0;">${initials}</div><div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13px;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.company||o.name||'—'}</div><div style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.name||''}${o.status==='pending'?' · ⏳ en attente':''}</div></div><div class="modal-owner-check" style="width:24px;height:24px;border-radius:12px;border:2px solid #ffffff33;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;color:#fff;font-weight:900;"></div></div>`;}).join('');
-    cont.querySelectorAll('.modal-owner-row').forEach(row=>{row.addEventListener('click',()=>{const uid=row.dataset.uid;const check=row.querySelector('.modal-owner-check');if(window.modalSelectedOwners.has(uid)){window.modalSelectedOwners.delete(uid);row.style.background='#0a1407';row.style.borderColor='#ffffff15';check.style.background='transparent';check.style.borderColor='#ffffff33';check.textContent='';}else{window.modalSelectedOwners.add(uid);row.style.background='#009A4415';row.style.borderColor='#009A44';check.style.background='#009A44';check.style.borderColor='#009A44';check.textContent='✓';}updateCount();});});
+    const byId={};owners.forEach(o=>byId[o.id]=o);
+    cont.innerHTML=owners.map(o=>{
+      const initials=(o.name||o.company||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const sent=window.modalAlreadySent.has(o.id);
+      const on=window.modalSelectedOwners.has(o.id);
+      const bg=sent?'#ffffff06':on?'#009A4415':'#0a1407';
+      const bd=sent?'#ffffff10':on?'#009A44':'#ffffff15';
+      const chk=sent?'✓':on?'✓':'';
+      const chkBg=sent?'#555':on?'#009A44':'transparent';
+      return`<div class="modal-owner-row" data-uid="${o.id}" data-sent="${sent?1:0}" style="display:flex;align-items:center;gap:10px;padding:10px;background:${bg};border:1.5px solid ${bd};border-radius:12px;cursor:${sent?'default':'pointer'};opacity:${sent?.6:1};transition:all .2s;"><div style="width:38px;height:38px;border-radius:19px;background:linear-gradient(135deg,#7c3aed33,#4c1d9533);border:1px solid #7c3aed55;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#c4b5fd;flex-shrink:0;">${_escH(initials)}</div><div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13px;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_escH(o.company||o.name||'—')}</div><div style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_escH(o.name||'')}${sent?' · ✅ candidature déjà envoyée':o.status==='pending'?' · ⏳ en attente':''}</div></div><div class="modal-owner-check" style="width:24px;height:24px;border-radius:12px;border:2px solid ${chkBg==='transparent'?'#ffffff33':chkBg};background:${chkBg};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;color:#fff;font-weight:900;">${chk}</div></div>`;
+    }).join('');
+    cont.querySelectorAll('.modal-owner-row').forEach(row=>{row.addEventListener('click',()=>{
+      if(row.dataset.sent==='1')return;
+      const uid=row.dataset.uid;const check=row.querySelector('.modal-owner-check');
+      if(window.modalSelectedOwners.has(uid)){window.modalRemoveOwner(uid);}
+      else{
+        const o=byId[uid]||{};
+        window.modalSelectedOwners.set(uid,{directeurUid,label:o.company||o.name||'Propriétaire'});
+        row.style.background='#009A4415';row.style.borderColor='#009A44';check.style.background='#009A44';check.style.borderColor='#009A44';check.textContent='✓';
+        _modalUpdateSummary();
+      }
+    });});
   }catch(e){console.error('[loadModalOwnerList]',e);cont.innerHTML='<div style="color:#DF0024;font-size:12px;text-align:center;padding:14px;">Erreur de chargement. <button onclick="loadModalOwnerList(document.getElementById(\'modalRecvGIESelect\')?.value)" style="background:#009A44;border:none;border-radius:8px;padding:6px 12px;color:#fff;font-weight:700;cursor:pointer;margin-left:6px;">🔄 Réessayer</button></div>';}
 }
 window.onModalRecvGIEChange=async()=>{
   const uid=document.getElementById('modalRecvGIESelect')?.value||'';
   const wrap=document.getElementById('modalOwnerListWrap');
-  if(!uid){if(wrap)wrap.style.display='none';window.modalSelectedOwners=new Set();return;}
+  // la sélection est conservée quand on change de GIE : on peut candidater dans plusieurs GIE d'un coup
+  if(!uid){if(wrap)wrap.style.display='none';return;}
   if(wrap)wrap.style.display='block';
   await loadModalOwnerList(uid);
 };
+window.reopenRecvOwners=async()=>{
+  const p=S.profile;if(!p||p.role!=='receiver')return;
+  window.pendingReceiverData={uid:S.uid,name:p.name,email:p.email,phone:p.phone||'',address:p.address||'',fromPending:true};
+  window.modalSelectedOwners=new Map();
+  window.modalAlreadySent=new Set(p.pendingOwnerUids||[]);
+  const g=document.getElementById('modalRecvGIESelect');if(g)g.value='';
+  const w=document.getElementById('modalOwnerListWrap');if(w)w.style.display='none';
+  _modalUpdateSummary();
+  await loadDirecteurList();
+  openModal('modalRecvOwners');
+};
+// Écran d'attente du receveur : dès qu'un propriétaire l'admet, on l'envoie directement sur son tableau de bord
+function watchReceiverApproval(uid){
+  try{if(unsubPending){unsubPending();unsubPending=null;}}catch(e){}
+  if(!uid)return;
+  unsubPending=onSnapshot(doc(db,'users',uid),snap=>{
+    if(!snap.exists())return;
+    const d=snap.data();
+    if(d.role==='receiver'&&d.status==='approved'){S.uid=uid;S.role='receiver';S.profile=d;loginUI();}
+    else if(S.profile&&S.uid===uid){S.profile={...S.profile,...d};}
+  },e=>console.warn('[watchReceiverApproval]',e));
+}
 window.doAuth=async()=>{
   const email=document.getElementById('authEmail').value.trim().toLowerCase();
   const pass=document.getElementById('authPass').value;
@@ -1480,7 +1586,7 @@ window.doAuth=async()=>{
           const specs=[['photoUrl','Photo','authRecvPhoto'],['idDocRectoUrl','CNI recto','authRecvIdDocRecto'],['idDocVersoUrl','CNI verso','authRecvIdDocVerso'],['diplomaUrl','Diplôme','authRecvDiploma'],['cvUrl','CV','authRecvCV']];
           for(const [key,label,inputId] of specs){
             const f=document.getElementById(inputId)?.files[0];if(!f)continue;
-            try{docUrls[key]=await fileToStoredDoc(f);}
+            try{docUrls[key]=await fileToStoredDoc(f,key==='cvUrl'?2:1);}
             catch(err){console.warn('[receiver doc]',label,err);failed.push(label+' ('+(err.message||'erreur')+')');}
           }
           if(failed.length)notify('⚠️','Documents','Compte créé, mais : '+failed.join(', ')+'. Renvoyez-les depuis « Mes documents ».');
@@ -1492,7 +1598,7 @@ window.doAuth=async()=>{
         window.pendingReceiverData={uid,name,email,phone,address};
         const muid=document.getElementById('modalRecvPendingUid');if(muid)muid.value=uid;
         loader('',false);
-        window.modalSelectedOwners=new Set();
+        window.modalSelectedOwners=new Map();window.modalAlreadySent=new Set();_modalUpdateSummary();
         const gieSelModal=document.getElementById('modalRecvGIESelect');if(gieSelModal)gieSelModal.value='';
         const owWrap=document.getElementById('modalOwnerListWrap');if(owWrap)owWrap.style.display='none';
         await loadDirecteurList();
@@ -1563,31 +1669,36 @@ window.doAuth=async()=>{
 window.doSubmitReceiverCandidature=async()=>{
   const data=window.pendingReceiverData;
   if(!data){notify('⚠️','Erreur','Aucune inscription en cours.');return;}
-  const directeurUid=document.getElementById('modalRecvGIESelect')?.value||'';
-  if(!directeurUid){notify('⚠️','GIE','Choisissez d\'abord le GIE auquel vous appartenez.');return;}
-  const ownerUids=Array.from(window.modalSelectedOwners||[]);
-  if(!ownerUids.length){notify('⚠️','Propriétaires','Sélectionnez au moins un propriétaire de bus.');return;}
+  const sel=window.modalSelectedOwners instanceof Map?window.modalSelectedOwners:new Map();
+  if(!sel.size){notify('⚠️','Propriétaires','Sélectionnez au moins un propriétaire de bus (dans un ou plusieurs GIE).');return;}
   const {uid,name,email,phone,address}=data;
+  const ownerUids=Array.from(sel.keys());
+  const dirUids=Array.from(new Set(Array.from(sel.values()).map(v=>v.directeurUid).filter(Boolean)));
   loader('Envoi de votre candidature…');
   try{
     const T=15000;
     const notifBase={type:'receiver_candidature',receiverUid:uid,receiverName:name,receiverEmail:email,phone,address,read:false};
-    const jobs=[withTimeout(updateDoc(doc(db,'users',uid),{pendingOwnerUids:ownerUids,directeurUid}),T,'profil')];
+    const profUpd={pendingOwnerUids:arrayUnion(...ownerUids)};
+    if(!data.fromPending)profUpd.directeurUid=dirUids[0]||'';
+    const jobs=[withTimeout(updateDoc(doc(db,'users',uid),profUpd),T,'profil')];
     for(const ouid of ownerUids)jobs.push(withTimeout(addDoc(collection(db,'notifications'),{...notifBase,toUid:ouid,ts:serverTimestamp()}),T,'notif propriétaire'));
-    jobs.push(withTimeout(addDoc(collection(db,'notifications'),{...notifBase,toUid:directeurUid,ts:serverTimestamp()}),T,'notif directeur'));
+    for(const duid of dirUids)jobs.push(withTimeout(addDoc(collection(db,'notifications'),{...notifBase,toUid:duid,ts:serverTimestamp()}),T,'notif directeur'));
     const results=await Promise.allSettled(jobs);
     results.forEach((r,i)=>{if(r.status==='rejected')console.warn('[candidature]',i,r.reason);});
-    // Refus explicite (droits Firestore, etc.) sur le profil : on affiche l'erreur
     if(results[0].status==='rejected'&&!results[0].reason?.timeout){throw results[0].reason;}
-    // Délai dépassé : l'envoi reste en file d'attente et partira dès que le réseau revient
     if(results.some(r=>r.status==='rejected'&&r.reason?.timeout)){notify('⏳','Connexion lente','Votre candidature sera envoyée dès que la connexion sera meilleure.');}
+    if(S.profile&&(data.fromPending||S.uid===uid)){S.profile.pendingOwnerUids=Array.from(new Set([...(S.profile.pendingOwnerUids||[]),...ownerUids]));}
     window.pendingReceiverData=null;
+    window.modalSelectedOwners=new Map();
     closeModal('modalRecvOwners');
     loader('',false);
+    const nTot=ownerUids.length,nGie=dirUids.length;
     show('screenPending');
-    document.getElementById('pendingIcon').textContent='🎫';
-    document.getElementById('pendingTitle').textContent='Candidature en attente';
-    document.getElementById('pendingBody').textContent='Le(s) propriétaire(s) de bus vont valider votre candidature.';
+    document.getElementById('pendingIcon').textContent='📨';
+    document.getElementById('pendingTitle').textContent='Candidature envoyée';
+    document.getElementById('pendingBody').innerHTML=`Votre candidature a été déposée auprès de <b>${nTot} propriétaire${nTot>1?'s':''}</b> (${nGie} GIE).<br><br>📧 Dès qu'un propriétaire de bus l'aura validée, le service <b>TataPay</b> vous enverra un <b>email</b> à <b>${_escH(email)}</b> pour vous le confirmer.<br><br><span style="font-size:12px;color:#666;">Vous pouvez aussi candidater chez d'autres propriétaires ci-dessous.</span>`;
+    const mb=document.getElementById('pendingMoreBtn');if(mb)mb.style.display='inline-block';
+    watchReceiverApproval(uid);
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 window.forgotPassword=async()=>{const email=document.getElementById('authEmail').value.trim().toLowerCase();if(!email){notify('⚠️','Email requis','Entrez votre email.');return;}try{await sendPasswordResetEmail(auth,email);notify('✅','Email envoyé','Vérifiez votre boîte mail.');}catch(e){notify('❌','Erreur',e.message);}};
@@ -1661,6 +1772,7 @@ function refreshPassWalletQR(){
 }
 function loginUI(){
   const p=S.profile;detachListeners();
+  {const mb=document.getElementById('pendingMoreBtn');if(mb)mb.style.display=(p.role==='receiver'&&p.status==='pending')?'inline-block':'none';}
   if(p.status==='pending'){
     const icons={owner:'🚌',directeur:'🏢',receiver:'🎫',chauffeur:'👨‍✈️'};
     const titles={owner:'Compte Propriétaire en attente',directeur:'Compte Directeur en attente',receiver:'Candidature en attente',chauffeur:'En attente du Directeur de GIE'};
@@ -1668,6 +1780,7 @@ function loginUI(){
     document.getElementById('pendingIcon').textContent=icons[p.role]||'⏳';
     document.getElementById('pendingTitle').textContent=titles[p.role]||'En attente';
     document.getElementById('pendingBody').textContent=bodies[p.role]||'En attente de validation.';
+    if(p.role==='receiver'){document.getElementById('pendingBody').innerHTML=`Votre candidature est en cours d'examen par les propriétaires de bus.<br><br>📧 Dès qu'un propriétaire la valide, TataPay vous envoie un email de confirmation.`;watchReceiverApproval(S.uid);}
     show('screenPending');loader('',false);return;
   }
   if(p.status==='rejected'){document.getElementById('pendingIcon').textContent='❌';document.getElementById('pendingTitle').textContent='Demande refusée';document.getElementById('pendingBody').textContent='Contactez l\'administrateur.';show('screenPending');loader('',false);return;}
@@ -1696,6 +1809,7 @@ function loginUI(){
       verserBtn.innerHTML='<span style="font-size:20px;">📤</span> Verser au chauffeur';
     }
     renderMerchantQR('recvBusQRWrap',p,160);
+    renderRecvAssignment(p);
     getAdminUid();
     refreshRecvStats();loadTrajets();loadRecvTickets();
     attachPendingListener();attachNotifListener();loadRecvDirecteurInfo();
@@ -1727,6 +1841,19 @@ function loginUI(){
   loader('',false);
 }
 
+async function renderRecvAssignment(p){
+  const box=document.getElementById('recvAssignCard'),body=document.getElementById('recvAssignBody');
+  if(!box||!body)return;
+  if(!(p.gie||p.vehicle||p.ligne)){box.style.display='none';return;}
+  const row=(ic,l,v)=>`<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #ffffff0d;font-size:13px;"><span style="color:#888;white-space:nowrap;">${ic} ${l}</span><span style="font-weight:800;color:#e2e8f0;text-align:right;">${_escH(v||'—')}</span></div>`;
+  const draw=(ownerName,ownerPhone)=>{
+    body.innerHTML=row('👤','Propriétaire',ownerName)+(ownerPhone?row('📞','Contact',ownerPhone):'')+row('🏢','GIE',p.gie)+row('🚌','Bus',p.vehicle)+row('🔢','Ligne',p.ligne)+row('🛣️','Trajet',p.trajet)+row('📍','Section',p.section!=null?String(p.section):'')+row('🗺️','Zone',p.zone);
+    box.style.display='block';
+  };
+  draw(p.approvedOwnerName||'',p.approvedOwnerPhone||'');
+  const ouid=p.approvedOwnerUid||(p.approvedOwnerUids||[])[0]||'';
+  if(!p.approvedOwnerName&&ouid){try{const sn=await getDoc(doc(db,'users',ouid));if(sn.exists()){const o=sn.data();draw(o.name||'',o.phone||'');}}catch(e){}}
+}
 async function loadRecvDirecteurInfo(){
   const p=S.profile;if(!p.directeurUid)return;
   try{const snap=await getDoc(doc(db,'users',p.directeurUid));if(snap.exists()){const d=snap.data();document.getElementById('recvDirecteurName').textContent=d.name||'—';document.getElementById('recvDirecteurOrg').textContent=d.org||'—';document.getElementById('recvDirecteurInfo').style.display='block';}}catch(e){}
@@ -2413,7 +2540,7 @@ window.openMyDocs=()=>{
   const rows=[['photoUrl','Photo (selfie)'],['idDocRectoUrl','CNI recto'],['idDocVersoUrl','CNI verso'],['diplomaUrl','Diplôme (optionnel)'],['cvUrl','CV (optionnel)']];
   const div=document.createElement('div');div.id='myDocsEl';
   div.style.cssText='position:fixed;inset:0;z-index:700;background:#000000cc;display:flex;align-items:flex-end;justify-content:center;';
-  div.innerHTML=`<div style="background:#0c1f12;border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:92vh;overflow-y:auto;padding:20px 22px 30px;border:1px solid #009A4422;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div style="font-weight:900;font-size:18px;">📎 Mes documents</div><button onclick="document.getElementById('myDocsEl').remove()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px 12px;color:#aaa;cursor:pointer;">✕</button></div><div style="font-size:12px;color:#aaa;margin-bottom:14px;line-height:1.6;">Choisissez seulement ceux à envoyer ou remplacer. Photos réduites automatiquement ; PDF max 150 Ko.</div>`+rows.map(([k,l])=>`<div class="input-wrap"><label class="input-label">${l} ${S.profile?.[k]?'<span style="color:#34d399;">✅ déjà envoyé</span>':''}</label><input class="input-field" id="md_${k}" type="file" accept="image/*,.pdf"/></div>`).join('')+`<button id="myDocsSave" class="btn btn-primary btn-full" onclick="saveMyDocs()">📤 Envoyer</button></div>`;
+  div.innerHTML=`<div style="background:#0c1f12;border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:92vh;overflow-y:auto;padding:20px 22px 30px;border:1px solid #009A4422;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div style="font-weight:900;font-size:18px;">📎 Mes documents</div><button onclick="document.getElementById('myDocsEl').remove()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px 12px;color:#aaa;cursor:pointer;">✕</button></div><div style="font-size:12px;color:#aaa;margin-bottom:14px;line-height:1.6;">Choisissez seulement ceux à envoyer ou remplacer. Photos réduites automatiquement ; les PDF lourds (diplôme, CV) sont convertis en image automatiquement.</div>`+rows.map(([k,l])=>`<div class="input-wrap"><label class="input-label">${l} ${S.profile?.[k]?'<span style="color:#34d399;">✅ déjà envoyé</span>':''}</label><input class="input-field" id="md_${k}" type="file" accept="image/*,.pdf"/></div>`).join('')+`<button id="myDocsSave" class="btn btn-primary btn-full" onclick="saveMyDocs()">📤 Envoyer</button></div>`;
   document.body.appendChild(div);
 };
 window.saveMyDocs=async()=>{
@@ -2421,7 +2548,7 @@ window.saveMyDocs=async()=>{
   const keys=['photoUrl','idDocRectoUrl','idDocVersoUrl','diplomaUrl','cvUrl'];
   const upd={};const failed=[];
   if(btn)btn.disabled=true;loader('Préparation…');
-  for(const k of keys){const f=document.getElementById('md_'+k)?.files[0];if(!f)continue;try{upd[k]=await fileToStoredDoc(f);}catch(e){failed.push(k+': '+(e.message||'erreur'));}}
+  for(const k of keys){const f=document.getElementById('md_'+k)?.files[0];if(!f)continue;try{upd[k]=await fileToStoredDoc(f,k==='cvUrl'?2:1);}catch(e){failed.push(k+': '+(e.message||'erreur'));}}
   try{
     if(!Object.keys(upd).length){loader('',false);if(btn)btn.disabled=false;notify('⚠️','Documents',failed.length?failed.join(' · '):'Choisissez au moins un fichier.');return;}
     await updateDoc(doc(db,'users',S.uid),upd);
@@ -2870,6 +2997,8 @@ window.doApproveCandidature=async()=>{
   if(!gie||!vehicle||!ligne||!trajet||!zone){notify('⚠️','Champs','Renseignez tous les champs du bus.');return;}
   loader('Validation de la candidature…');
   let step='activation du receveur';
+  let rEmail='';
+  try{rEmail=(await getDoc(doc(db,'users',receiverUid))).data()?.email||'';}catch(e){}
   try{
     await updateDoc(doc(db,'users',receiverUid),{status:'approved',approvedOwnerUid:S.uid,approvedAt:serverTimestamp(),gie,vehicle,ligne,trajet,section,zone,linkedOwnerUids:arrayUnion(S.uid),approvedOwnerUids:arrayUnion(S.uid)});
     // Le receveur est activé : les étapes suivantes sont secondaires, une erreur ici ne doit pas annuler l'approbation
@@ -2877,6 +3006,13 @@ window.doApproveCandidature=async()=>{
     step='mise à jour de votre compte';
     try{await updateDoc(doc(db,'users',S.uid),{receiverUid,receiverStatus:'actif',gie,vehicle,ligne,trajet,section,zone});}catch(e){console.warn('[approve] '+step,e);warns.push(step+' ('+(e.code||e.message)+')');}
     S.profile.gie=gie;S.profile.vehicle=vehicle;S.profile.ligne=ligne;S.profile.trajet=trajet;S.profile.section=section;S.profile.zone=zone;S.profile.receiverUid=receiverUid;
+    // infos du propriétaire (et de son GIE) enregistrées pour que le receveur admis les voie sur son accueil
+    try{await updateDoc(doc(db,'users',receiverUid),{approvedOwnerName:S.profile?.name||'',approvedOwnerPhone:S.profile?.phone||'',...(S.profile?.directeurUid?{directeurUid:S.profile.directeurUid}:{})});}catch(e){console.warn('[approve] infos propriétaire',e);}
+    // email de confirmation « service TataPay » : envoyé par le serveur Vercel (vérifie que vous venez bien d'accepter ce receveur)
+    try{
+      const _tok=await auth.currentUser.getIdToken();
+      fetch(BACKEND_URL+'/api/notify-approved',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+_tok},body:JSON.stringify({receiverUid})}).then(r=>{if(!r.ok)console.warn('[approve] email HTTP',r.status);}).catch(e=>console.warn('[approve] email',e));
+    }catch(e){console.warn('[approve] email',e);}
     step='clôture de la candidature';
     try{await updateDoc(doc(db,'notifications',notifId),{accepted:true,read:true,acceptedAt:serverTimestamp()});}catch(e){console.warn('[approve] '+step,e);warns.push(step+' ('+(e.code||e.message)+')');}
     step='notification au receveur';
