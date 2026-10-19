@@ -231,6 +231,10 @@ select.input-field option{background:#0c1f12;color:#fff;}
 .pass-toast.out{animation:notifOut .3s ease forwards;}
 .track-modal-inner{padding:0;}
 .track-map-wrap{height:280px;border-radius:16px;overflow:hidden;border:1px solid #009A4444;background:#0a1e15;margin-top:12px;}
+@media print{@page{margin:0;size:58mm auto;}
+body *{visibility:hidden!important;}
+#ticketThermalContent,#ticketThermalContent *{visibility:visible!important;}
+#ticketThermalContent{position:absolute!important;left:0;top:0;width:58mm;border:none!important;border-radius:0!important;font-size:11px;}}
 </style>
 </head>
 <body>
@@ -285,8 +289,8 @@ select.input-field option{background:#0c1f12;color:#fff;}
   <div style="width:100%;max-width:360px;">
     <div class="ticket-thermal" id="ticketThermalContent"></div>
     <div id="ticketHandoffZone" style="display:none;"></div>
-    <button class="btn btn-orange btn-full" id="btnPrintTicket" style="margin-top:14px;display:none;" onclick="printTicketRawBT()">🖨️ Imprimer le ticket</button>
-    <button class="btn btn-primary btn-full" style="margin-top:14px;" onclick="closeTicket()">✓ Fermer</button>
+    <button class="btn btn-secondary btn-full" style="margin-top:14px;" onclick="printTicket()">🖨️ Imprimer</button>
+    <button class="btn btn-primary btn-full" style="margin-top:10px;" onclick="closeTicket()">✓ Fermer</button>
   </div>
 </div>
 
@@ -511,6 +515,7 @@ select.input-field option{background:#0c1f12;color:#fff;}
             <div id="recvOnlineDot" style="margin-top:6px;font-size:10px;font-weight:800;color:#34d399;display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#34d399;display:inline-block;"></span>En ligne</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
+            <button id="btToggleBtn" onclick="toggleBluetooth()" title="Bluetooth" style="background:#1a56db22;border:1px solid #1a56db55;border-radius:12px;padding:8px 10px;cursor:pointer;color:#7aa7ff;font-size:12px;font-weight:800;font-family:'Space Grotesk',sans-serif;display:flex;align-items:center;gap:4px;"><span style="font-size:16px;">&#x1F535;</span><span id="btToggleLbl">BT</span></button>
             <button onclick="openNotifPanel()" style="background:#FF6B0022;border:1px solid #FF6B0044;border-radius:12px;padding:10px;cursor:pointer;">
               <div class="bell-wrap"><svg id="bellIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B00" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg><span class="bell-badge" id="bellBadge">0</span></div>
             </button>
@@ -534,6 +539,8 @@ select.input-field option{background:#0c1f12;color:#fff;}
           <button onclick="openCamera('recv')" style="background:linear-gradient(135deg,#009A44,#007832);border:none;border-radius:16px;padding:16px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;color:#fff;font-weight:900;font-size:12px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:28px;">📷</div>Scanner Passager</button>
           <button onclick="openRecvCharge()" style="background:linear-gradient(135deg,#1a56db,#0d3a8c);border:none;border-radius:16px;padding:16px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;color:#fff;font-weight:900;font-size:12px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:28px;">💳</div>Recharger Wallet</button>
         </div>
+        <button onclick="openCashSale()" style="width:100%;background:linear-gradient(135deg,#FDEF42,#E6BC00);border:none;border-radius:16px;padding:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;color:#06120a;font-weight:900;font-size:14px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;"><span style="font-size:24px;">💵</span> Vente espèces</button>
+        <div id="recvCashToday" style="background:#FDEF4210;border:1px solid #FDEF4233;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#FDEF42;font-weight:700;display:none;"></div>
         <div style="background:#ffffff08;border:1px solid #FF6B0022;border-radius:18px;padding:16px;margin-bottom:16px;">
           <div style="font-weight:800;font-size:14px;margin-bottom:12px;">🚌 QR Marchand officiel</div>
           <div id="recvBusQRWrap"></div>
@@ -1651,7 +1658,7 @@ function loginUI(){
     refreshRecvStats();loadTrajets();loadRecvTickets();
     attachPendingListener();attachNotifListener();loadRecvDirecteurInfo();
     recvBusSelection=new Set(p.linkedOwnerUids||[]);
-    unsubRecvBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;const el=document.getElementById('recvBalance');if(el)el.textContent=fmt(S.profile.balance);}});
+    unsubRecvBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;S.profile.cashDue=snap.data().cashDue||0;S.profile.cashPending=snap.data().cashPending||0;const el=document.getElementById('recvBalance');if(el)el.textContent=fmt(S.profile.balance);renderCashBox();}});
     show('screenReceiver');notify('✅','Connecté',p.name);
   }else if(S.role==='directeur'&&p.status==='approved'){
     document.getElementById('dirGreet').textContent=p.name;
@@ -2905,7 +2912,10 @@ function attachBusLocationListener(){
 }
 
 window.openRecvVersement=async()=>{
-  const today=S.profile?.today||0;
+  // Les espèces ne passent pas par le solde TataPay : on propose seulement la part numérique.
+  let cash=S.cashTodayTotal||0;
+  try{cash=(await getCashToday()).tot;}catch(e){}
+  const today=Math.max(0,(S.profile?.today||0)-cash);
   const p=S.profile||{};
   const ownerUid=p.approvedOwnerUid||(p.linkedOwnerUids||[])[0]||'';
   document.getElementById('recvVersToday').textContent=fmt(today);
@@ -3004,30 +3014,34 @@ function renderChPendingVers(items){
     const t=v.ts?.toDate?.()?.toLocaleString('fr-FR')||'—';
     return `<div class="ch-card" style="border:1.5px solid #FF6B0044;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-        <div><div style="font-weight:900;font-size:14px;">${v.receiverName||'Receveur'}</div><div style="font-size:11px;color:#888;">${t} · Ref: ${v.ref||'—'}</div>${v.note?`<div style="font-size:11px;color:#aaa;margin-top:3px;">📝 ${v.note}</div>`:''}</div>
+        <div><div style="font-weight:900;font-size:14px;">${v.receiverName||'Receveur'}</div><div style="font-size:11px;color:#888;">${t} · Ref: ${v.ref||'—'}${v.mode==='especes'?' · <span style=\"color:#FDEF42;font-weight:800;\">💵 ESPÈCES en main propre</span>':''}</div>${v.note?`<div style="font-size:11px;color:#aaa;margin-top:3px;">📝 ${v.note}</div>`:''}</div>
         <div style="font-weight:900;font-size:18px;color:#FF6B00;">${fmt(v.amount)} F</div>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-primary" style="flex:1;font-size:13px;padding:10px;" onclick="confirmChVers('${v.id}','${v.receiverUid}',${v.amount})">✅ Confirmer</button>
-        <button class="btn btn-danger" style="flex:1;font-size:13px;padding:10px;" onclick="disputeChVers('${v.id}','${v.receiverUid}',${v.amount})">❌ Contester</button>
+        <button class="btn btn-primary" style="flex:1;font-size:13px;padding:10px;" onclick="confirmChVers('${v.id}','${v.receiverUid}',${v.amount},'${v.mode||''}')">✅ Confirmer</button>
+        <button class="btn btn-danger" style="flex:1;font-size:13px;padding:10px;" onclick="disputeChVers('${v.id}','${v.receiverUid}',${v.amount},'${v.mode||''}')">❌ Contester</button>
       </div>
     </div>`;
   }).join('');
 }
-window.confirmChVers=async(id,receiverUid,amount)=>{
+window.confirmChVers=async(id,receiverUid,amount,mode)=>{
   if(!confirm(`Confirmer la réception de ${fmt(amount)} FCFA ?`))return;
   loader('Confirmation…');
   try{
     await updateDoc(doc(db,'versements',id),{status:'confirmed',confirmedAt:serverTimestamp()});
+    // Espèces : l'argent a été remis en main propre -> on diminue ce que le receveur doit encore remettre
+    if(mode==='especes')await updateDoc(doc(db,'users',receiverUid),{cashDue:increment(-amount),cashPending:increment(-amount)});
     await addDoc(collection(db,'notifications'),{toUid:receiverUid,type:'versement_confirmed',amount,ownerUid:S.uid,read:false,ts:serverTimestamp()});
     loader('',false);notify('✅','Versement confirmé',`${fmt(amount)} FCFA reçus.`);
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
-window.disputeChVers=async(id,receiverUid,amount)=>{
+window.disputeChVers=async(id,receiverUid,amount,mode)=>{
   const reason=prompt('Raison de la contestation ?');if(!reason)return;
   loader('Contestation…');
   try{
     await updateDoc(doc(db,'versements',id),{status:'disputed',disputeReason:reason,disputedAt:serverTimestamp()});
+    // Contesté : la somme redevient à remettre (plus « en attente »)
+    if(mode==='especes')await updateDoc(doc(db,'users',receiverUid),{cashPending:increment(-amount)});
     await addDoc(collection(db,'notifications'),{toUid:receiverUid,type:'versement_disputed',amount,reason,ownerUid:S.uid,read:false,ts:serverTimestamp()});
     loader('',false);notify('⚠️','Versement contesté','Le receveur a été notifié.');
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
@@ -3927,7 +3941,7 @@ async function commitTicketSale(paxUid,price,ticketBase,{pendingId=null,offline=
   const paxTkRef=doc(collection(db,'users',paxUid,'tickets'));
   const paxHistRef=doc(collection(db,'users',paxUid,'history'));
   const notifRef=doc(collection(db,'notifications'));
-  const ticket={...ticketBase,commission,ts:serverTimestamp()};
+  const ticket={payMode:'wallet',...ticketBase,commission,ts:serverTimestamp()};
   const writeCommission=(X)=>{
     if(!commission)return;
     X.update(doc(db,'users',adminUid),{balance:increment(commission),opCol:'tickets',opId:tkRef.id});
@@ -3965,6 +3979,118 @@ async function commitTicketSale(paxUid,price,ticketBase,{pendingId=null,offline=
   }
   return{...ticket,id:tkRef.id};
 }
+
+// ── Vente en ESPÈCES : le client paie en liquide, aucun compte n'est débité ──
+// Le receveur appuie sur « Encaisser ». On enregistre un ticket (payMode:'especes'),
+// on incrémente seulement les compteurs du jour du receveur (today, count) et PAS son solde
+// TataPay, puisque l'argent est physiquement dans sa poche. Marche aussi hors-ligne.
+// commissionDue = commission de 2 % que le receveur devra (non créditée à l'admin ici).
+async function commitCashSale(ticketBase){
+  const tkRef=doc(collection(db,'tickets'));
+  const ticket={...ticketBase,payMode:'especes',commission:0,commissionDue:calcCommission(ticketBase.price),ts:serverTimestamp()};
+  const batch=writeBatch(db);
+  batch.set(tkRef,ticket);
+  batch.update(doc(db,'users',S.uid),{today:increment(ticketBase.price),count:increment(1),cashDue:increment(ticketBase.price)});
+  if(navigator.onLine){await batch.commit();}
+  else{batch.commit().then(()=>console.log('[sync] vente espèces',ticketBase.sn,'synchronisée ✅')).catch(err=>console.warn('[sync] vente espèces',ticketBase.sn,'erreur',err));}
+  return{...ticket,id:tkRef.id};
+}
+window.openCashSale=()=>{
+  document.getElementById('cashPanelEl')?.remove();
+  const div=document.createElement('div');div.id='cashPanelEl';
+  div.style.cssText='position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:600;padding:20px;background:#0c1f12;border-radius:24px 24px 0 0;border:1px solid #FDEF4244;animation:slideUp .3s ease;max-height:92vh;overflow-y:auto;';
+  div.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div style="font-weight:900;font-size:17px;">💵 Vente en espèces</div><button onclick="document.getElementById('cashPanelEl').remove()" style="background:none;border:none;color:#888;font-size:22px;cursor:pointer;">✕</button></div>
+  <div class="input-wrap"><label class="input-label">Destination</label><input id="cashDest" class="input-field" type="text" placeholder="Ex: Liberté 6…"/></div>
+  <div class="quick-grid">${[100,150,200,250,300,400,500,1000].map(a=>`<button class="quick-btn" onclick="document.getElementById('cashAmt').value=${a}">${a}</button>`).join('')}</div>
+  <div class="input-wrap"><label class="input-label">Montant reçu (FCFA) *</label><input id="cashAmt" class="input-field" type="number" inputmode="numeric" min="50" placeholder="ex: 200"/></div>
+  <button id="cashConfirmBtn" onclick="confirmCashSale()" class="btn btn-yellow btn-full">💵 Encaissé en espèces</button>`;
+  document.body.appendChild(div);
+};
+window.confirmCashSale=async()=>{
+  const btn=document.getElementById('cashConfirmBtn');if(btn?.disabled)return;
+  const amt=parseInt(document.getElementById('cashAmt')?.value||0);
+  const dest=(document.getElementById('cashDest')?.value||'').trim()||'—';
+  if(!amt||amt<50){notify('⚠️','Montant','Entrez un montant valide (min 50 FCFA).');return;}
+  if(btn)btn.disabled=true;
+  loader('Encaissement espèces…');
+  try{
+    const now=new Date();
+    const sn=`${(S.profile.walletId||'').replace('TP-','')}*E${Math.floor(1000+Math.random()*9000)}`;
+    const ticketBase={busId:S.profile.walletId,busUid:S.uid,gie:S.profile.gie,vehicle:S.profile.vehicle,ligne:S.profile.ligne,zone:S.profile.zone,from:'—',to:dest,section:0,price:amt,method:'cash',passengerId:'ESPECES',passengerUid:'',passenger:'Client espèces',date:now.toLocaleDateString('fr-FR'),time:now.toLocaleTimeString('fr-FR'),sn,offline:!navigator.onLine};
+    const ticket=await commitCashSale(ticketBase);
+    loader('',false);
+    document.getElementById('cashPanelEl')?.remove();
+    refreshRecvStats();loadRecvTickets();
+    showTicketData(ticket);
+    notify('💵','Encaissé !',fmt(amt)+' FCFA en espèces');
+  }catch(e){loader('',false);if(btn)btn.disabled=false;notify('❌','Erreur',e.message);}
+};
+async function getCashToday(){
+  const q=query(collection(db,'tickets'),where('busUid','==',S.uid),where('payMode','==','especes'),where('date','==',new Date().toLocaleDateString('fr-FR')));
+  const snap=await getDocs(q);
+  const tot=snap.docs.reduce((a,d)=>a+(d.data().price||0),0);
+  S.cashTodayTotal=tot;
+  return{tot,count:snap.size};
+}
+function renderCashBox(){
+  const el=document.getElementById('recvCashToday');if(!el||S.role!=='receiver')return;
+  const due=Math.max(0,S.profile?.cashDue||0),pend=Math.max(0,S.profile?.cashPending||0),free=Math.max(0,due-pend);
+  const tot=S.cashTodayTotal||0,n=S.cashTodayCount||0;
+  el.style.display=(tot>0||due>0)?'block':'none';
+  el.innerHTML=`<div>💵 Espèces aujourd'hui : <strong>${fmt(tot)} F</strong> · ${n} ticket${n>1?'s':''}</div>
+  <div style="margin-top:6px;">À remettre au propriétaire : <strong style="font-size:16px;">${fmt(due)} F</strong>${pend>0?` <span style="color:#FF6B00;">(dont ${fmt(pend)} F en attente de confirmation)</span>`:''}</div>
+  ${free>0?`<button onclick="openCashHandover()" class="btn btn-yellow btn-full" style="margin-top:10px;padding:10px;font-size:13px;">📤 Remettre les espèces</button>`:''}`;
+}
+async function refreshCashToday(){
+  const el=document.getElementById('recvCashToday');if(!el||S.role!=='receiver')return;
+  try{
+    const {tot,count}=await getCashToday();
+    const snap={size:count};
+    S.cashTodayCount=count;S.cashTodayTotal=tot;
+    renderCashBox();
+  }catch(e){console.warn('[cashToday]',e);}
+}
+window.printTicket=()=>window.print();
+// ── Remise des espèces au propriétaire ──
+// Le receveur déclare le montant remis en main propre ; le propriétaire le confirme
+// (même écran « Versements à confirmer » que les autres). Aucun solde TataPay n'est touché.
+// cashDue = espèces encaissées pas encore remises (confirmées) ; cashPending = déclarées, en attente.
+window.openCashHandover=()=>{
+  const free=Math.max(0,(S.profile?.cashDue||0)-(S.profile?.cashPending||0));
+  if(free<=0){notify('ℹ️','Espèces','Rien à remettre pour le moment.');return;}
+  document.getElementById('handoverPanelEl')?.remove();
+  const div=document.createElement('div');div.id='handoverPanelEl';
+  div.style.cssText='position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:600;padding:20px;background:#0c1f12;border-radius:24px 24px 0 0;border:1px solid #FDEF4244;animation:slideUp .3s ease;max-height:92vh;overflow-y:auto;';
+  div.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div style="font-weight:900;font-size:17px;">📤 Remettre les espèces</div><button onclick="document.getElementById('handoverPanelEl').remove()" style="background:none;border:none;color:#888;font-size:22px;cursor:pointer;">✕</button></div>
+  <div style="font-size:12px;color:#aaa;margin-bottom:12px;">Remettez l'argent en main propre au propriétaire, puis validez. Il devra confirmer la réception.</div>
+  <div class="input-wrap"><label class="input-label">Montant remis (FCFA) — max ${fmt(free)}</label><input id="handoverAmt" class="input-field" type="number" inputmode="numeric" value="${free}" max="${free}"/></div>
+  <div class="input-wrap"><label class="input-label">Note (facultatif)</label><input id="handoverNote" class="input-field" placeholder="ex: recette du matin"/></div>
+  <button id="handoverBtn" onclick="doCashHandover()" class="btn btn-yellow btn-full">📤 J'ai remis cet argent</button>`;
+  document.body.appendChild(div);
+};
+window.doCashHandover=async()=>{
+  const btn=document.getElementById('handoverBtn');if(btn?.disabled)return;
+  const free=Math.max(0,(S.profile?.cashDue||0)-(S.profile?.cashPending||0));
+  const amount=parseInt(document.getElementById('handoverAmt')?.value||'0',10);
+  const note=(document.getElementById('handoverNote')?.value||'').trim();
+  const ownerUid=S.profile?.approvedOwnerUid||(S.profile?.linkedOwnerUids||[])[0]||'';
+  if(!ownerUid){notify('⚠️','Propriétaire','Aucun propriétaire lié à votre compte.');return;}
+  if(!amount||amount<50){notify('⚠️','Montant','Minimum 50 FCFA.');return;}
+  if(amount>free){notify('⚠️','Montant',`Vous ne pouvez remettre que ${fmt(free)} FCFA.`);return;}
+  if(btn)btn.disabled=true;loader('Envoi…');
+  try{
+    const ref='ESP-'+Date.now().toString(36).toUpperCase();
+    const vRef=doc(collection(db,'versements'));
+    const batch=writeBatch(db);
+    batch.set(vRef,{amount,mode:'especes',note,ref,date:new Date().toLocaleDateString('fr-FR'),receiverUid:S.uid,receiverName:S.profile?.name||'',ownerUid,status:'pending',ts:serverTimestamp()});
+    batch.update(doc(db,'users',S.uid),{cashPending:increment(amount)});
+    batch.set(doc(collection(db,'notifications')),{toUid:ownerUid,type:'versement_request',fromUid:S.uid,receiverName:S.profile?.name||'',amount,ref,mode:'especes',read:false,ts:serverTimestamp()});
+    await batch.commit();
+    loader('',false);document.getElementById('handoverPanelEl')?.remove();
+    notify('📤','Remise déclarée',`${fmt(amount)} FCFA — en attente de confirmation du propriétaire.`);
+  }catch(e){loader('',false);if(btn)btn.disabled=false;notify('❌','Erreur',e.message);}
+};
+
 window.confirmManualScan=async(paxUid,walletId,passengerName,paxBalance)=>{
   const amt=parseInt(document.getElementById('manualAmt')?.value||0);const dest=(document.getElementById('manualDest')?.value||'').trim()||'—';
   if(!amt||amt<50){notify('⚠️','Montant','Entrez un montant valide (min 50 FCFA).');return;}
@@ -4032,8 +4158,8 @@ window.recvToggleGeo=()=>{
   btn.textContent='🛑 Arrêter le partage GPS';btn.style.background='linear-gradient(135deg,#DF0024,#B71C1C)';
   notify('📡','GPS','Partage de position démarré. Les passagers pourront suivre votre bus.');
 };
-async function refreshRecvStats(){if(S.role!=='receiver')return;const snap=await getDoc(doc(db,'users',S.uid));if(!snap.exists())return;const u=snap.data();S.profile={...S.profile,...u};document.getElementById('recvTotalToday').textContent=fmt(u.today||0)+' F';document.getElementById('recvTicketCount').textContent=u.count||0;const rb=document.getElementById('recvBalance');if(rb)rb.textContent=fmt(u.balance||0);}
-async function loadRecvTickets(){const q=query(collection(db,'tickets'),where('busUid','==',S.uid),orderBy('ts','desc'),limit(10));const snap=await getDocs(q);const cont=document.getElementById('recvTicketsList');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;color:#555;">Aucun ticket émis.</div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:11px;line-height:1.9;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}</div></div></div>`;}).join('');}
+async function refreshRecvStats(){if(S.role!=='receiver')return;const snap=await getDoc(doc(db,'users',S.uid));if(!snap.exists())return;const u=snap.data();S.profile={...S.profile,...u};document.getElementById('recvTotalToday').textContent=fmt(u.today||0)+' F';document.getElementById('recvTicketCount').textContent=u.count||0;const rb=document.getElementById('recvBalance');if(rb)rb.textContent=fmt(u.balance||0);refreshCashToday();}
+async function loadRecvTickets(){const q=query(collection(db,'tickets'),where('busUid','==',S.uid),orderBy('ts','desc'),limit(10));const snap=await getDocs(q);const cont=document.getElementById('recvTicketsList');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;color:#555;">Aucun ticket émis.</div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:11px;line-height:1.9;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}${t.payMode==='especes'?' · 💵 ESPÈCES':''}</div></div></div>`;}).join('');}
 async function loadPassHomeTx(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'history'),orderBy('ts','desc'),limit(4));const snap=await getDocs(q);const cont=document.getElementById('passHomeTx');if(snap.empty){cont.innerHTML='<div style="color:#555;text-align:center;padding:16px 0;">Aucune transaction.</div>';return;}cont.innerHTML=snap.docs.map(d=>txRow(d.data())).join('');}
 async function loadPassHistory(){if(S.role!=='passenger')return;const q=query(collection(db,'users',S.uid,'history'),orderBy('ts','desc'),limit(50));const snap=await getDocs(q);const cont=document.getElementById('passHistory');if(snap.empty){cont.innerHTML='<div style="color:#555;text-align:center;padding:40px 0;">Aucune transaction.</div>';return;}let tkCount=0;const docs=snap.docs.map(d=>d.data()).filter(h=>{if(h.type==='ticket'){tkCount++;return tkCount<=10;}return true;});cont.innerHTML=docs.map(h=>txRow(h)).join('');}
 function txRow(h){const icons={recharge:'💳',transfer_out:'↗️',transfer_in:'↙️',ticket:'🎫',withdraw:'💸',recharge_given:'💳',withdraw_request:'📤'};const pos=h.amount>0;return`<div class="tx-row"><div style="width:36px;height:36px;border-radius:12px;background:${pos?'#00A65022':'#DF002422'};display:flex;align-items:center;justify-content:center;font-size:16px;">${icons[h.type]||'💼'}</div><div style="flex:1;margin-left:4px;"><div style="font-weight:700;font-size:14px;">${h.label}</div></div><div style="color:${pos?'var(--g)':'var(--r)'};font-weight:800;font-size:14px;">${pos?'+':''}${fmt(h.amount)} F</div></div>`;}
@@ -4068,10 +4194,8 @@ async function loadPassTickets(){
 }
 window.showTicketData=(t)=>{
   if(typeof t==='string')t=JSON.parse(t);
-  window._lastTicketShown=t;
-  {const pb=document.getElementById('btnPrintTicket');if(pb)pb.style.display=(S.role==='receiver')?'flex':'none';}
   const isOffline=t.offline!==undefined?t.offline:!navigator.onLine;
-  document.getElementById('ticketThermalContent').innerHTML=`<div class="t-header">🚌 TATAPAY</div><div style="font-size:13px;line-height:2;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}<br>✅ Validé · ${t.passenger}${isOffline?' · 📴 hors-ligne (sync en attente)':''}</div>`;
+  document.getElementById('ticketThermalContent').innerHTML=`<div class="t-header">🚌 TATAPAY</div><div style="font-size:13px;line-height:2;">GIE:${t.gie} = ${t.vehicle} = Ligne:${t.ligne}<br>Trajet: ${t.from}-->${t.to}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${t.zone}<br>${t.payMode==='especes'?'💵 Payé en espèces':'✅ Validé · '+t.passenger}${isOffline?' · 📴 hors-ligne (sync en attente)':''}</div>`;
   document.getElementById('ticketOverlay').style.display='flex';
   const handoff=document.getElementById('ticketHandoffZone');
   if(S.role==='receiver'&&handoff){
@@ -4111,70 +4235,6 @@ window.importTicketFromQR=(raw)=>{
   showTicketData(t);
   notify('✅','Ticket reçu !',fmt(t.price)+' FCFA · '+(t.to||''));
 };
-/* ═══════════ IMPRESSION TICKET (Sunmi V2 via l'app RawBT) ═══════════
-   Le navigateur ne peut pas piloter l'imprimante intégrée directement :
-   on envoie le ticket (ESC/POS, papier 58 mm) à l'app RawBT, qui imprime.
-   Mettre PRINT_QR=false si le QR imprimé sort mal sur la machine. */
-const PRINT_QR=true;
-function _pAscii(x){return String(x==null?'':x).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\x20-\x7E]/g,'?');}
-function _pLine(label,val,w=32){const l=_pAscii(label),v=_pAscii(val);return (l+v).length<=w?l+' '.repeat(w-(l+v).length)+v:(l+v).slice(0,w);}
-function ticketToEscPos(t){
-  const out=[];
-  const push=(...b)=>out.push(...b);
-  const text=(s)=>{for(const c of _pAscii(s))out.push(c.charCodeAt(0));};
-  const ln=(s='')=>{text(s);push(0x0A);};
-  const SEP='--------------------------------';
-  push(0x1B,0x40);                 // init
-  push(0x1B,0x61,0x01);            // centre
-  push(0x1B,0x45,0x01);ln('TATAPAY');push(0x1B,0x45,0x00);
-  ln('AFTU - CAPTRANS');
-  push(0x1B,0x61,0x00);            // gauche
-  ln(SEP);
-  ln(_pLine('GIE:',t.gie));
-  ln(_pLine('Bus:',t.vehicle));
-  ln(_pLine('Ligne:',t.ligne));
-  ln(_pLine('Zone:',t.zone));
-  ln(SEP);
-  ln('Trajet: '+_pAscii(t.from)+' -> '+_pAscii(t.to));
-  ln(_pLine('Section:',t.section));
-  push(0x1B,0x45,0x01);ln(_pLine('PRIX:',(t.price||0)+' FCFA'));push(0x1B,0x45,0x00);
-  ln(SEP);
-  ln(_pLine('Date:',t.date));
-  ln(_pLine('Heure:',t.time));
-  ln(_pLine('Passager:',t.passenger));
-  ln('SN: '+_pAscii(t.sn));
-  ln(SEP);
-  if(PRINT_QR){
-    const F=['gie','vehicle','ligne','zone','from','to','section','price','passenger','passengerId','busId','date','time','sn','offline'];
-    const compact=F.map(k=>{let v=k==='offline'?(t.offline?1:0):(t[k]??'');return String(v).replace(/\|/g,' ');}).join('|');
-    const data=_pAscii('tatapay://ticket/'+encodeURIComponent(compact));
-    const n=data.length+3;
-    push(0x1B,0x61,0x01);                                   // centre
-    push(0x1D,0x28,0x6B,0x04,0x00,0x31,0x41,0x32,0x00);     // modèle 2
-    push(0x1D,0x28,0x6B,0x03,0x00,0x31,0x43,0x05);          // taille module
-    push(0x1D,0x28,0x6B,0x03,0x00,0x31,0x45,0x31);          // correction M
-    push(0x1D,0x28,0x6B,n&0xFF,(n>>8)&0xFF,0x31,0x50,0x30); // données
-    for(const c of data)out.push(c.charCodeAt(0));
-    push(0x1D,0x28,0x6B,0x03,0x00,0x31,0x51,0x30);          // imprimer le QR
-    push(0x0A);
-    ln('Valide - Merci !');
-    push(0x1B,0x61,0x00);
-  }else{
-    push(0x1B,0x61,0x01);ln('Valide - Merci !');push(0x1B,0x61,0x00);
-  }
-  push(0x0A,0x0A,0x0A,0x0A);       // avance du papier
-  return new Uint8Array(out);
-}
-window.printTicketRawBT=()=>{
-  const t=window._lastTicketShown;
-  if(!t){notify('⚠️','Impression','Aucun ticket à imprimer.');return;}
-  try{
-    const bytes=ticketToEscPos(t);
-    let bin='';for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
-    window.location.href='rawbt:base64,'+btoa(bin);
-    notify('🖨️','Impression','Envoi à RawBT… Si rien ne se passe, installez l\'app RawBT et choisissez l\'imprimante Sunmi.');
-  }catch(e){notify('❌','Impression',e.message);}
-};
 window.closeTicket=()=>document.getElementById('ticketOverlay').style.display='none';
 // Rafraîchir affichage quand la connexion revient
 window.addEventListener('online',()=>{if(S.role==='passenger')loadPassTickets();});
@@ -4210,5 +4270,62 @@ window.flipCamera=async()=>{S.facing=S.facing==='environment'?'user':'environmen
 function handleQR(raw){stopCamera();raw=(raw||'').trim();
   const ticketM=raw.match(/tatapay:\/\/ticket\/(.+)/i);if(ticketM){if(document.getElementById('modalTicketFlow')?.style.display==='flex')closeModal('modalTicketFlow');importTicketFromQR(ticketM[1]);return;}const walletM=raw.match(/tatapay:\/\/wallet\/([A-Za-z0-9-]+)/i);const busM=raw.match(/tatapay:\/\/bus\/([A-Za-z0-9-]+)/i);const walletId=walletM?walletM[1]:(/^TP-/i.test(raw)?raw.toUpperCase():null);const busId=busM?busM[1]:(/^RV-/i.test(raw)?raw.toUpperCase():null);const balM=raw.match(/[?&]bal=(\d+)/);const tM=raw.match(/[?&]t=(\d+)/);const uidM=raw.match(/[?&]uid=([A-Za-z0-9]+)/);const qrBal=balM?parseInt(balM[1],10):null;const qrTs=tM?parseInt(tM[1],10):null;const qrUid=uidM?uidM[1]:null;if(S.camMode==='ticket'&&!ticketM){notify('❌','QR invalide','Ce n\'est pas un QR de ticket.');return;}if(S.camMode==='bus'){if(!busId){notify('❌','QR invalide','Contenu: '+raw.slice(0,40));return;}if(document.getElementById('modalTicketFlow').style.display!=='flex')openTicketFlow();setTimeout(()=>loadBusInFlow(busId),100);}else if(S.camMode==='recv'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet passager.');return;}window.showScanPanel(walletId,qrBal,qrTs,qrUid);}else if(S.camMode==='wallet-scan'){if(!walletId){notify('❌','QR invalide','Wallet introuvable.');return;}document.getElementById('rcWalletId').value=walletId;openModal('modalRecvCharge');notify('📷','Wallet scanné',walletId);}else if(S.camMode==='friend'){if(!walletId){notify('❌','QR invalide','Ce n\'est pas un wallet TataPay.');return;}if(walletId===S.profile?.walletId){notify('⚠️','Erreur','C\'est votre propre wallet !');return;}setFriend(walletId,walletId);openModal('modalSend');notify('📷','Ami scanné',walletId);}}
 
+// ── Bluetooth receveur (optionnel) : n'affecte aucune fonction existante ──
+// Le site ne peut pas allumer le Bluetooth du téléphone : il ouvre la liste des
+// appareils (Web Bluetooth, Chrome Android / Bluefy iPhone) et mémorise la connexion.
+const BT_SERVICES=['generic_access','battery_service','device_information',0x18f0,0xffe0,0xff00,0xfee7,'e7810a71-73ae-499d-8c15-faa9aef0c3f2','49535343-fe7d-4ae5-8fa9-9fafd205e455'];
+window.TP_BT={device:null,server:null};
+function btUI(on,name){const b=document.getElementById('btToggleBtn'),l=document.getElementById('btToggleLbl');if(!b||!l)return;b.style.background=on?'#00A65033':'#1a56db22';b.style.borderColor=on?'#34d399aa':'#1a56db55';b.style.color=on?'#34d399':'#7aa7ff';l.textContent=on?(name||'BT').slice(0,8):'BT';}
+const BT_KEY='tatapay_bt_devices';
+function btSaved(){try{return JSON.parse(localStorage.getItem(BT_KEY)||'[]');}catch(e){return [];}}
+function btRemember(dev){try{const l=btSaved().filter(d=>d.id!==dev.id);l.unshift({id:dev.id,name:dev.name||'Appareil'});localStorage.setItem(BT_KEY,JSON.stringify(l.slice(0,5)));}catch(e){}}
+function btAttach(dev,server){
+  window.TP_BT.device=dev;window.TP_BT.server=server;
+  dev.addEventListener('gattserverdisconnected',()=>{btUI(false);notify('🔵','Bluetooth','Appareil déconnecté.');});
+  btUI(true,dev.name);btRemember(dev);notify('✅','Bluetooth connecté',dev.name||'Appareil connecté');
+}
+// 1) tente de se reconnecter aux appareils déjà utilisés (si le navigateur le permet)
+async function btTryKnown(){
+  if(!navigator.bluetooth.getDevices)return false;
+  let known=[];try{known=await navigator.bluetooth.getDevices();}catch(e){return false;}
+  const ids=btSaved().map(d=>d.id);
+  known=known.filter(d=>ids.includes(d.id)).sort((x,y)=>ids.indexOf(x.id)-ids.indexOf(y.id));
+  for(const d of known){
+    notify('🔎','Recherche',`Appareil connu : ${d.name||'—'}…`);
+    try{
+      const server=await Promise.race([d.gatt.connect(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),6000))]);
+      btAttach(d,server);return true;
+    }catch(e){try{d.gatt.disconnect();}catch(_){}}
+  }
+  return false;
+}
+window.toggleBluetooth=async()=>{
+  try{
+    const T=window.TP_BT;
+    if(T.server&&T.server.connected){T.server.disconnect();return;}
+    if(!navigator.bluetooth){
+      const ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
+      if(ios){
+        if(confirm('Le Bluetooth sur iPhone nécessite le navigateur gratuit Bluefy.\n\nOuvrir l’App Store pour l’installer ?\n(L’adresse de TataPay sera copiée : collez-la ensuite dans Bluefy.)')){
+          try{navigator.clipboard.writeText('https://tatapay-frontend.vercel.app');}catch(e){}
+          window.location.href='https://apps.apple.com/app/id1492822055';
+        }
+      }else{
+        notify('ℹ️','Bluetooth indisponible','Ouvrez TataPay avec Chrome. Le scan par caméra reste disponible.');
+      }
+      return;
+    }
+    if(await btTryKnown())return;
+    // 2) sinon : recherche de tous les appareils Bluetooth proches
+    notify('🔎','Recherche Bluetooth','Activez le Bluetooth du téléphone, puis choisissez votre appareil dans la liste.');
+    const dev=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:BT_SERVICES});
+    const server=await dev.gatt.connect();
+    btAttach(dev,server);
+  }catch(e){
+    btUI(false);
+    if(e&&e.name==='NotFoundError')notify('ℹ️','Bluetooth','Aucun appareil choisi.');
+    else notify('⚠️','Bluetooth',(e&&e.message)||'Connexion impossible. Le scan par caméra reste disponible.');
+  }
+};
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('[sw] registration failed',e));});}
 </script>
