@@ -4315,6 +4315,11 @@ function handleQR(raw){stopCamera();raw=(raw||'').trim();
 // Le site ne peut pas allumer le Bluetooth du téléphone : il ouvre la liste des
 // appareils (Web Bluetooth, Chrome Android / Bluefy iPhone) et mémorise la connexion.
 const BT_SERVICES=['generic_access','battery_service','device_information',0x18f0,0xffe0,0xff00,0xfee7,'e7810a71-73ae-499d-8c15-faa9aef0c3f2','49535343-fe7d-4ae5-8fa9-9fafd205e455'];
+// Filtre : seules les imprimantes thermiques Bluetooth s'affichent (par service ou par début de nom),
+// au lieu de tous les appareils autour (téléphones, montres, enceintes, voitures…).
+const BT_PRINTER_SERVICES=[0x18f0,0xffe0,0xff00,0xfee7,'e7810a71-73ae-499d-8c15-faa9aef0c3f2','49535343-fe7d-4ae5-8fa9-9fafd205e455'];
+const BT_PRINTER_NAMES=['MPT','MTP','RPP','PT-','PP-','Printer','printer','POS','XP-','GP-','GPrinter','Gprinter','HM-','HOIN','SPP','InnerPrinter','TM-','Zjiang','ZJ-','JK-','KPOS','Thermal','Goojprt','Rongta','NETUM','Sunmi','Epson','Bixolon','SRP'];
+const BT_FILTERS=[...BT_PRINTER_SERVICES.map(s=>({services:[s]})),...BT_PRINTER_NAMES.map(n=>({namePrefix:n}))];
 window.TP_BT={device:null,server:null};
 function btUI(on,name){const b=document.getElementById('btToggleBtn'),l=document.getElementById('btToggleLbl');if(!b||!l)return;b.style.background=on?'#00A65033':'#1a56db22';b.style.borderColor=on?'#34d399aa':'#1a56db55';b.style.color=on?'#34d399':'#7aa7ff';l.textContent=on?(name||'BT').slice(0,8):'BT';}
 const BT_KEY='tatapay_bt_devices';
@@ -4357,14 +4362,22 @@ window.toggleBluetooth=async()=>{
       return;
     }
     if(await btTryKnown())return;
-    // 2) sinon : recherche de tous les appareils Bluetooth proches
-    notify('🔎','Recherche Bluetooth','Activez le Bluetooth du téléphone, puis choisissez votre appareil dans la liste.');
-    const dev=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:BT_SERVICES});
+    // 2) sinon : recherche des imprimantes Bluetooth proches uniquement (liste filtrée)
+    notify('🔎','Recherche imprimante','Activez le Bluetooth du téléphone, allumez l\'imprimante, puis choisissez-la dans la liste.');
+    let dev;
+    try{
+      dev=await navigator.bluetooth.requestDevice({filters:BT_FILTERS,optionalServices:BT_SERVICES});
+    }catch(e1){
+      if(!(e1&&e1.name==='NotFoundError'))throw e1;
+      // Rien trouvé (ou fenêtre fermée) : affichage de tous les appareils seulement si le receveur le demande
+      if(!confirm('Aucune imprimante trouvée.\n\nSi votre imprimante a un nom inhabituel, vous pouvez afficher tous les appareils Bluetooth proches.\n\nAfficher tous les appareils ?'))throw e1;
+      dev=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:BT_SERVICES});
+    }
     const server=await dev.gatt.connect();
     btAttach(dev,server);
   }catch(e){
     btUI(false);
-    if(e&&e.name==='NotFoundError')notify('ℹ️','Bluetooth','Aucun appareil choisi.');
+    if(e&&e.name==='NotFoundError')notify('ℹ️','Bluetooth','Aucune imprimante choisie.');
     else notify('⚠️','Bluetooth',(e&&e.message)||'Connexion impossible. Le scan par caméra reste disponible.');
   }
 };
