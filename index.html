@@ -231,10 +231,33 @@ select.input-field option{background:#0c1f12;color:#fff;}
 .pass-toast.out{animation:notifOut .3s ease forwards;}
 .track-modal-inner{padding:0;}
 .track-map-wrap{height:280px;border-radius:16px;overflow:hidden;border:1px solid #009A4444;background:#0a1e15;margin-top:12px;}
-@media print{@page{margin:0;size:58mm auto;}
-body *{visibility:hidden!important;}
-#ticketThermalContent,#ticketThermalContent *{visibility:visible!important;}
-#ticketThermalContent{position:absolute!important;left:0;top:0;width:58mm;border:none!important;border-radius:0!important;font-size:11px;}}
+/* Feuille de QR à imprimer (4 coins du bus) */
+#qrOverlay{position:fixed;inset:0;z-index:700;background:#0c1f12;overflow-y:auto;padding:16px;}
+#qrSheet{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+#qrSheet .qrCell{background:#fff;color:#111;border:2px dashed #999;border-radius:10px;padding:8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;}
+#qrSheet .qrCell .qrT{font-weight:900;font-size:11px;}
+#qrSheet .qrCell .qrS{font-size:9px;color:#444;}
+#qrSheet .qrCell canvas,#qrSheet .qrCell img{width:120px!important;height:120px!important;}
+@media print{
+body:not(.print-qr) *{visibility:hidden!important;}
+body:not(.print-qr) #ticketThermalContent,body:not(.print-qr) #ticketThermalContent *{visibility:visible!important;}
+body:not(.print-qr) #app>*:not(#ticketOverlay){display:none!important;}
+body:not(.print-qr) #ticketOverlay{position:absolute!important;inset:auto!important;left:0;top:0;width:58mm;background:none!important;padding:0!important;display:block!important;}
+body:not(.print-qr) #ticketOverlay>div{max-width:58mm!important;}
+body:not(.print-qr) #ticketOverlay>div>:not(#ticketThermalContent){display:none!important;}
+body:not(.print-qr) #ticketThermalContent{width:58mm;border:none!important;border-radius:0!important;font-size:11px;}
+body.print-qr{background:#fff!important;}
+body.print-qr *{visibility:hidden!important;}
+body.print-qr #app{display:none!important;}
+body.print-qr #qrOverlay,body.print-qr #qrOverlay *{visibility:visible!important;}
+body.print-qr #qrOverlay{position:absolute!important;inset:auto!important;left:0;top:0;width:100%;height:auto!important;overflow:visible!important;background:#fff!important;padding:0!important;display:block!important;}
+body.print-qr #qrOverlay .qr-ui{display:none!important;}
+body.print-qr #qrSheet{display:grid;grid-template-columns:1fr 1fr;gap:6mm;width:100%;}
+body.print-qr #qrSheet .qrCell{height:128mm;border:1.5px dashed #666;border-radius:4mm;padding:5mm;justify-content:center;gap:3mm;}
+body.print-qr #qrSheet .qrCell .qrT{font-size:15pt;}
+body.print-qr #qrSheet .qrCell .qrS{font-size:10pt;}
+body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:80mm!important;height:80mm!important;}
+}
 </style>
 </head>
 <body>
@@ -544,6 +567,7 @@ body *{visibility:hidden!important;}
         <div style="background:#ffffff08;border:1px solid #FF6B0022;border-radius:18px;padding:16px;margin-bottom:16px;">
           <div style="font-weight:800;font-size:14px;margin-bottom:12px;">🚌 QR Marchand officiel</div>
           <div id="recvBusQRWrap"></div>
+          <button onclick="openBusQRSheet()" class="btn btn-secondary btn-full" style="margin-top:12px;font-size:13px;">🖨️ Imprimer les QR (4 coins du bus)</button>
         </div>
         <div style="background:#ffffff08;border:1px solid #0ea5e933;border-radius:18px;padding:16px;margin-bottom:16px;">
           <div style="font-weight:800;font-size:14px;margin-bottom:10px;">📍 Partage de position du bus</div>
@@ -4050,7 +4074,24 @@ async function refreshCashToday(){
     renderCashBox();
   }catch(e){console.warn('[cashToday]',e);}
 }
-window.printTicket=()=>window.print();
+function setPrintPage(css){let st=document.getElementById('printPageStyle');if(!st){st=document.createElement('style');st.id='printPageStyle';document.head.appendChild(st);}st.textContent=css;}
+window.addEventListener('afterprint',()=>{document.body.classList.remove('print-qr');document.getElementById('printPageStyle')?.remove();});
+window.printTicket=()=>{setPrintPage('@page{size:58mm auto;margin:0;}');window.print();};
+// ── QR du bus à coller dans les 4 coins : feuille A4 avec 4 QR identiques à découper ──
+window.openBusQRSheet=()=>{
+  const p=S.profile||{};
+  if(!p.walletId){notify('⚠️','QR','Profil incomplet : QR indisponible.');return;}
+  document.getElementById('qrOverlay')?.remove();
+  const ov=document.createElement('div');ov.id='qrOverlay';
+  ov.innerHTML=`<div class="qr-ui" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><div style="font-weight:900;font-size:17px;">🖨️ QR du bus</div><button onclick="document.getElementById('qrOverlay').remove()" style="background:none;border:none;color:#888;font-size:24px;cursor:pointer;">✕</button></div>
+  <div class="qr-ui" style="font-size:12px;color:#aaa;margin-bottom:12px;">4 QR identiques sur une feuille A4. Imprimez, découpez, plastifiez si possible, puis collez-en un dans chaque coin du bus. Si vous changez de bus ou de ligne, réimprimez.</div>
+  <div id="qrSheet">${[0,1,2,3].map(i=>`<div class="qrCell"><div class="qrT">🚌 Payez avec TataPay</div><div id="busQRSheet${i}"></div><div class="qrS">Scannez ce code avec l'application TataPay</div></div>`).join('')}</div>
+  <button class="qr-ui btn btn-primary btn-full" style="margin-top:14px;" onclick="printBusQR()">🖨️ Imprimer (A4)</button>
+  <button class="qr-ui btn btn-secondary btn-full" style="margin-top:10px;" onclick="document.getElementById('qrOverlay').remove()">Fermer</button>`;
+  document.body.appendChild(ov);
+  [0,1,2,3].forEach(i=>renderMerchantQR('busQRSheet'+i,p,400));
+};
+window.printBusQR=()=>{setPrintPage('@page{size:A4;margin:8mm;}');document.body.classList.add('print-qr');setTimeout(()=>window.print(),150);};
 // ── Remise des espèces au propriétaire ──
 // Le receveur déclare le montant remis en main propre ; le propriétaire le confirme
 // (même écran « Versements à confirmer » que les autres). Aucun solde TataPay n'est touché.
