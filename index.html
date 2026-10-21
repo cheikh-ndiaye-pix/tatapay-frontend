@@ -2041,22 +2041,22 @@ window.submitColis=async()=>{
   try{
     const bus=await _findBusByPlate(plate);
     if(!bus){loader('',false);notify('❌','Bus introuvable','Aucun bus enregistré avec cette immatriculation.');return;}
-    const code=_colisCode();
-    await addDoc(collection(db,'shipments'),{code,senderUid:S.uid,senderName:S.profile?.name||'',senderPhone:S.profile?.phone||'',clientPhone:phone,clientPhoneRaw:phoneRaw,plate:bus.vehicle||plate,busUid:bus.id,ligne:bus.ligne||'',gie:bus.gie||'',description:desc,status:'en_route',createdAt:serverTimestamp()});
+    await addDoc(collection(db,'shipments'),{senderUid:S.uid,senderName:S.profile?.name||'',senderPhone:S.profile?.phone||'',clientPhone:phone,clientPhoneRaw:phoneRaw,plate:bus.vehicle||plate,busUid:bus.id,ligne:bus.ligne||'',gie:bus.gie||'',description:desc,status:'en_route',createdAt:serverTimestamp()});
     loader('',false);
-    const msg=`📦 TataPay : ${S.profile?.name||'Un expéditeur'} a mis une marchandise pour vous dans le bus ${bus.vehicle||plate}${desc?' ('+desc+')':''}. Ouvrez TataPay > Marchandises avec ce numéro (ou le code ${code}) pour suivre le bus en direct : ${location.origin}`;
-    const wa=`https://wa.me/221${phone}?text=${encodeURIComponent(msg)}`;
+    const wa=_colisWaLink({senderName:S.profile?.name||'',plate:bus.vehicle||plate,description:desc,clientPhone:phone});
     document.getElementById('colisSendResult').innerHTML=`<div style="background:#34d39915;border:1.5px solid #34d39966;border-radius:16px;padding:16px;text-align:center;">
       <div style="font-size:28px;">✅</div>
-      <div style="font-weight:900;font-size:15px;margin:4px 0;">Marchandise enregistrée</div>
-      <div style="font-size:11px;color:#888;">Code de retrait / suivi</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-weight:900;font-size:28px;letter-spacing:4px;color:#FDEF42;margin:4px 0 12px;">${_esc(code)}</div>
+      <div style="font-weight:900;font-size:15px;margin:4px 0 12px;">Marchandise enregistrée</div>
       <a href="${wa}" target="_blank" rel="noopener" class="btn btn-full" style="background:#25D366;color:#fff;text-decoration:none;">💬 Prévenir le client sur WhatsApp</a>
     </div>`;
     ['colisPlate','colisPhone','colisDesc'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
     notify('📦','Marchandise enregistrée','Le client peut maintenant suivre le bus.');loadColisList();
   }catch(e){loader('',false);console.error('[submitColis]',e);notify('❌','Erreur',e.message||'Enregistrement impossible.');}
 };
+function _colisWaLink(c){
+  const msg=`📦 TataPay : ${c.senderName||'Un expéditeur'} a mis une marchandise pour vous dans le bus ${c.plate}${c.description?' ('+c.description+')':''}. Ouvrez TataPay > Marchandises pour suivre le bus en direct : ${location.origin}`;
+  return `https://wa.me/221${c.clientPhone}?text=${encodeURIComponent(msg)}`;
+}
 function _colisCard(c,mode){
   window._colisMap[c.id]=c;
   const done=c.status==='recue';
@@ -2068,11 +2068,14 @@ function _colisCard(c,mode){
       <div style="font-weight:900;font-size:14px;">🚌 ${_esc(c.plate)}${c.ligne?' · Ligne '+_esc(c.ligne):''}</div>${badge}
     </div>
     ${c.description?`<div style="font-size:13px;color:#e2e8f0;margin-bottom:4px;">📦 ${_esc(c.description)}</div>`:''}
-    <div style="font-size:11px;color:#888;">${who} · Code <b style="font-family:'JetBrains Mono',monospace;color:#FDEF42;">${_esc(c.code)}</b>${when?' · '+when:''}</div>
-    ${done?'':`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+    <div style="font-size:11px;color:#888;">${who}${when?' · '+when:''}</div>
+    ${done?'':(mode==='sent'?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+      <button class="btn" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;padding:10px;font-size:12px;" onclick="trackColis('${_esc(c.id)}')">📍 Suivre le bus</button>
+      <a href="${_colisWaLink(c)}" target="_blank" rel="noopener" class="btn" style="background:#25D366;color:#fff;padding:10px;font-size:12px;text-decoration:none;">💬 Prévenir le client</a>
+    </div>`:`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
       <button class="btn" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;padding:10px;font-size:12px;" onclick="trackColis('${_esc(c.id)}')">📍 Suivre le bus</button>
       <button class="btn" style="background:linear-gradient(135deg,#059669,#065f46);color:#fff;padding:10px;font-size:12px;" onclick="colisMarkReceived('${_esc(c.id)}')">✅ Reçu</button>
-    </div>`}
+    </div>`)}
   </div>`;
 }
 async function loadColisList(){
