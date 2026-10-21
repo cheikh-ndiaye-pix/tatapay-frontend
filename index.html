@@ -481,25 +481,15 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
             <button onclick="openRecharge()" style="background:linear-gradient(160deg,#1a56db,#0d3a8c);border:2px solid #4d8aff66;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">💳</div>Recharger</button>
             <button onclick="openTicketFlow()" style="background:linear-gradient(160deg,#6d28d9,#3b0764);border:2px solid #a78bfa66;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">🎫</div>Acheter Ticket</button>
-            <button onclick="openSend()" style="background:linear-gradient(160deg,#059669,#065f46);border:2px solid #34d39966;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">📷</div>Scan Ami</button>
-            <button onclick="demandDescendre()" style="grid-column:1/-1;justify-self:center;width:calc((100% - 20px)/3);background:linear-gradient(160deg,#DF0024,#7f1d1d);border:2px solid #ff6b6b66;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">🛑</div>Descendre</button>
+            <button onclick="demandDescendre()" style="background:linear-gradient(160deg,#DF0024,#7f1d1d);border:2px solid #ff6b6b66;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">🛑</div>Descendre</button>
           </div>
         </div>
-        <button onclick="openDestSearch()" style="width:100%;background:linear-gradient(135deg,#7c3aed,#4c1d95);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:12px;">
-          <div style="font-size:24px;">🧭</div>
-          <div style="text-align:left;flex:1;">Où allez-vous ?<div style="font-size:10px;font-weight:600;color:#ddd6fe;margin-top:2px;">Écrivez votre destination : voyez les bus qui y vont, en direct</div></div>
+        <button onclick="openTrackBus()" style="width:100%;background:linear-gradient(135deg,#0ea5e9,#0369a1);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:14px;font-family:'Space Grotesk',sans-serif;margin-bottom:10px;">
+          <div style="font-size:26px;">🚌</div>
+          <div style="text-align:left;flex:1;">Trouver un bus<div style="font-size:10px;font-weight:600;color:#bae6fd;margin-top:2px;">Où allez-vous ? Voyez les bus en direct et leur temps d'arrivée</div></div>
           <div style="font-size:18px;">→</div>
         </button>
-        <button onclick="openTrackBus()" style="width:100%;background:linear-gradient(135deg,#0ea5e9,#0369a1);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
-          <div style="font-size:24px;">📍</div>
-          <div style="text-align:left;flex:1;">Bus en direct près de moi<div style="font-size:10px;font-weight:600;color:#bae6fd;margin-top:2px;">Voir les bus qui partagent leur position (ligne + distance)</div></div>
-          <div style="font-size:18px;">→</div>
-        </button>
-        <button onclick="openColis()" style="width:100%;background:linear-gradient(135deg,#f59e0b,#b45309);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
-          <div style="font-size:24px;">📦</div>
-          <div style="text-align:left;flex:1;">Marchandises (colis en bus)<div style="font-size:10px;font-weight:600;color:#fde68a;margin-top:2px;">Envoyer ou récupérer une marchandise en suivant le bus en direct</div></div>
-          <div style="font-size:18px;">→</div>
-        </button>
+        <button onclick="openModal('modalPlus')" style="width:100%;background:#ffffff0d;border:1px solid #ffffff22;border-radius:14px;padding:12px 16px;cursor:pointer;color:#ddd;font-weight:800;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">➕ Plus : Marchandises, Scan Ami</button>
         <div id="activeTicketBanner" style="display:none;background:#DF002415;border:2px solid #DF002466;border-radius:18px;padding:14px 16px;margin-bottom:16px;cursor:pointer;" onclick="showActiveTicket()">
           <div style="font-size:10px;color:#ff8888;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">🚌 Ticket en cours</div>
           <div style="font-weight:900;font-size:15px;" id="activeTicketLabel">—</div>
@@ -1089,27 +1079,34 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
     </div>
   </div>
 </div>
-<div class="modal-overlay" id="modalDest" style="display:none;" onclick="if(event.target===this)closeModal('modalDest')">
+<div class="modal-overlay" id="modalPlus" style="display:none;" onclick="if(event.target===this)closeModal('modalPlus')">
   <div class="modal-box" onclick="event.stopPropagation()">
-    <div style="height:3px;background:linear-gradient(90deg,#7c3aed,#4c1d95);border-radius:24px 24px 0 0;"></div>
-    <div class="modal-header"><div style="font-weight:900;font-size:18px;">🧭 Où allez-vous ?</div><button class="modal-close" onclick="closeModal('modalDest')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">➕ Plus</div><button class="modal-close" onclick="closeModal('modalPlus')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="modal-body">
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
-        <input class="input-field" id="destSearchInput" placeholder="Ex : Kounoune, Liberté 6, Pikine…" onkeydown="if(event.key==='Enter')doDestSearch()"/>
-        <button class="btn btn-primary" style="padding:0 16px;" onclick="doDestSearch()">🔍</button>
-      </div>
-      <div id="destSearchResults"><div style="text-align:center;color:#555;padding:20px;font-size:12px;background:#ffffff08;border-radius:12px;">Tapez le lieu où vous voulez aller : nous affichons les bus dont le receveur a enregistré ce trajet.</div></div>
+      <button onclick="closeModal('modalPlus');openColis()" style="width:100%;background:linear-gradient(135deg,#f59e0b,#b45309);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:14px;font-family:'Space Grotesk',sans-serif;margin-bottom:12px;">
+        <div style="font-size:24px;">📦</div>
+        <div style="text-align:left;flex:1;">Marchandises<div style="font-size:10px;font-weight:600;color:#fde68a;margin-top:2px;">Envoyer ou récupérer une marchandise en suivant le bus</div></div>
+      </button>
+      <button onclick="closeModal('modalPlus');openSend()" style="width:100%;background:linear-gradient(135deg,#059669,#065f46);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:14px;font-family:'Space Grotesk',sans-serif;">
+        <div style="font-size:24px;">📷</div>
+        <div style="text-align:left;flex:1;">Scan Ami<div style="font-size:10px;font-weight:600;color:#a7f3d0;margin-top:2px;">Envoyer de l'argent en scannant le QR d'un ami</div></div>
+      </button>
     </div>
   </div>
 </div>
 <div class="modal-overlay" id="modalTrackBus" style="display:none;" onclick="if(event.target===this)closeTrackBus()">
   <div class="modal-box track-modal-inner" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#0ea5e9,#0369a1);border-radius:24px 24px 0 0;"></div>
-    <div class="modal-header"><div style="font-weight:900;font-size:18px;">📍 Bus près de moi</div><button class="modal-close" onclick="closeTrackBus()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">🚌 Trouver un bus</div><button class="modal-close" onclick="closeTrackBus()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="modal-body">
       <div id="trackBusStep1">
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <input class="input-field" id="trackDestInput" placeholder="🧭 Où allez-vous ? (ex: Kounoune)" onkeydown="if(event.key==='Enter')doTrackSearch()"/>
+          <button class="btn btn-primary" style="padding:0 16px;" onclick="doTrackSearch()">🔍</button>
+        </div>
+        <div id="trackDestResults" style="display:none;margin-bottom:10px;max-height:34vh;overflow-y:auto;"></div>
         <div id="trackAllSummary" style="background:#0ea5e915;border:1px solid #0ea5e944;border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:13px;font-weight:700;color:#7dd3fc;line-height:1.5;">📡 Recherche des bus…</div>
-        <div class="track-map-wrap" id="trackAllMap" style="height:62vh;min-height:320px;margin-top:0;"></div>
+        <div class="track-map-wrap" id="trackAllMap" style="height:46vh;min-height:280px;margin-top:0;"></div>
         <div style="font-size:11px;color:#888;margin-top:8px;text-align:center;">Touchez un bus pour voir son temps d'arrivée vers vous.</div>
       </div>
       <div id="trackBusStep2" style="display:none;">
@@ -2095,65 +2092,9 @@ window.colisMarkReceived=async(id)=>{
   }catch(e){notify('❌','Erreur',e.message||'Mise à jour impossible.');}
 };
 
-/* ═══════════════════ RECHERCHE DE BUS PAR DESTINATION (PASSAGER) ═══════════════════ */
-window._destRes=[];
-window.openDestSearch=()=>{openModal('modalDest');setTimeout(()=>document.getElementById('destSearchInput')?.focus(),200);};
-async function _busLiveFor(recvUid,chUid){
-  const ids=[...new Set([chUid,recvUid].filter(Boolean))];
-  let best=null;
-  await Promise.all(ids.map(async id=>{
-    try{
-      const sn=await getDoc(doc(db,'bus_locations',id));
-      if(!sn.exists())return;
-      const d=sn.data(),t=d.updatedAt?.toDate?.()?.getTime();
-      if(t&&(Date.now()-t)<10*60*1000&&d.lat!=null&&d.lng!=null&&(!best||t>best.t))best={id,lat:d.lat,lng:d.lng,t};
-    }catch(e){}
-  }));
-  return best;
-}
-window.doDestSearch=async()=>{
-  const want=(document.getElementById('destSearchInput')?.value||'').trim();
-  const cont=document.getElementById('destSearchResults');
-  if(!want){notify('⚠️','Destination','Écrivez où vous voulez aller.');return;}
-  cont.innerHTML='<div style="text-align:center;color:#888;padding:24px;font-size:13px;"><div class="spinner" style="margin:0 auto 12px;width:30px;height:30px;"></div>Recherche des bus…</div>';
-  try{
-    const [routes,myPos]=await Promise.all([aiFindRoutes(want),_getPassengerPos()]);
-    const enriched=await Promise.all(routes.map(async r=>{
-      const live=await _busLiveFor(r.recvUid,r.recv?.receiverChauffeurUid||r.recv?.chauffeurUid);
-      const distKm=(live&&myPos)?_haversineKm(myPos.lat,myPos.lng,live.lat,live.lng):null;
-      return{...r,live,distKm};
-    }));
-    enriched.sort((a,b)=>(a.sim-b.sim)||((b.live?1:0)-(a.live?1:0))||((a.distKm??1e9)-(b.distKm??1e9))||((a.price||0)-(b.price||0)));
-    window._destRes=enriched;
-    if(!enriched.length){cont.innerHTML=`<div style="text-align:center;color:#888;padding:24px;font-size:13px;background:#ffffff08;border-radius:12px;">😕 Aucun bus n'a enregistré de trajet vers « ${_esc(want)} ».<br>Essayez un autre nom (quartier, arrêt connu).</div>`;return;}
-    const head=`<div style="font-size:12px;color:#a78bfa;font-weight:700;margin-bottom:10px;">${enriched.length} bus pour « ${_esc(want)} »${myPos?'':' · 💡 activez la localisation pour voir la distance'}</div>`;
-    cont.innerHTML=head+enriched.map((r,i)=>{
-      const badge=r.live?`<span style="background:#34d39922;color:#34d399;border-radius:8px;padding:3px 8px;font-size:10px;font-weight:800;">🟢 En direct${r.distKm!=null?' · '+_fmtDist(r.distKm):''}</span>`:'<span style="background:#ffffff10;color:#888;border-radius:8px;padding:3px 8px;font-size:10px;font-weight:700;">⚪ Position non partagée</span>';
-      return `<div style="background:#ffffff08;border:1.5px solid ${r.sim?'#FF6B0066':'#7c3aed66'};border-radius:16px;padding:14px;margin-bottom:10px;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-          <div style="min-width:0;">
-            <div style="font-weight:900;font-size:14px;">🚌 Ligne ${_esc(r.recv.ligne||'—')} · ${_esc(r.recv.vehicle||'—')}</div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;margin-top:4px;">${_esc(r.from||'—')} → ${_esc(r.to)}</div>
-            <div style="color:#888;font-size:11px;margin-top:2px;">${_esc(r.recv.gie||'—')} · Zone ${_esc(r.recv.zone||'—')}${r.sim?' · <span style="color:#FF6B00;">destination proche</span>':''}</div>
-          </div>
-          <div style="font-weight:900;font-size:18px;color:var(--y);white-space:nowrap;">${_esc(r.price)} F</div>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;">${badge}
-          ${r.live?`<button class="btn" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;padding:8px 12px;font-size:12px;" onclick="destTrack(${i})">📍 Voir sur la carte</button>`:''}
-        </div>
-      </div>`;}).join('');
-  }catch(e){console.error('[doDestSearch]',e);cont.innerHTML='<div style="text-align:center;color:#DF0024;padding:16px;font-size:12px;">Erreur de recherche. Réessayez.</div>';}
-};
-window.destTrack=(i)=>{
-  const r=window._destRes[i];if(!r||!r.live)return;
-  closeModal('modalDest');
-  openModal('modalTrackBus');
-  resetTrackBus();
-  selectTrackedBus(r.live.id,r.recv.vehicle||'',r.recv.ligne||'');
-  _getPassengerPos().then(p=>{window._trackMyPos=p;});
-};
-
 /* ═══════════════════ CARTE LIVE : TOUS LES BUS + TEMPS D'ARRIVÉE ═══════════════════ */
+let allFilter=null,allRoutes=null,allWant='';
+const _pl=v=>String(v||'').toUpperCase().replace(/[\s-]/g,'');
 let allMap=null,allMeMarker=null,allMarkers={},unsubAllBuses=null,allFitted=false,allMyPos=null,allLastBuses=[],allRenderId=0;
 const _etaCache={};
 function stopAllMap(){if(unsubAllBuses){unsubAllBuses();unsubAllBuses=null;}allRenderId++;}
@@ -2177,13 +2118,14 @@ function _busIcon(plate,eta){
 }
 async function renderAllBuses(){
   if(!allMap)return;
+  const buses=allFilter?allLastBuses.filter(b=>allFilter.has(_pl(b.plate))):allLastBuses;
   const rid=++allRenderId;
   const me=allMyPos;
   const sum=document.getElementById('trackAllSummary');
-  const etas=await Promise.all(allLastBuses.map(b=>me?_busEta(b,me):Promise.resolve(null)));
+  const etas=await Promise.all(buses.map(b=>me?_busEta(b,me):Promise.resolve(null)));
   if(rid!==allRenderId)return;
   const seen=new Set();
-  allLastBuses.forEach((b,i)=>{
+  buses.forEach((b,i)=>{
     const e=etas[i];seen.add(b.plate);
     const label=e?`~${_fmtMin(e.min)}`:'';
     const ll=[b.lat,b.lng];
@@ -2192,19 +2134,70 @@ async function renderAllBuses(){
     else{const m=allMarkers[b.plate];m.setLatLng(ll);m.setIcon(_busIcon(b.plate,label));m.setPopupContent(pop);}
   });
   Object.keys(allMarkers).forEach(k=>{if(!seen.has(k)){allMap.removeLayer(allMarkers[k]);delete allMarkers[k];}});
-  if(!allLastBuses.length){sum.textContent='😕 Aucun bus ne partage sa position pour le moment.';}
+  if(!buses.length){sum.textContent=allFilter?'😕 Aucun bus de cette destination ne partage sa position pour le moment.':'😕 Aucun bus ne partage sa position pour le moment.';}
   else if(me){
     let bi=-1;etas.forEach((e,i)=>{if(e&&(bi<0||e.min<etas[bi].min))bi=i;});
-    sum.innerHTML=bi>=0?`🚌 Le plus proche : <b>${_esc(allLastBuses[bi].plate)}</b> · arrive dans <b>~${_fmtMin(etas[bi].min)}</b> (${_fmtDist(etas[bi].km)})`:'';
-  }else sum.textContent=`🚌 ${allLastBuses.length} bus en direct · activez la localisation pour voir le temps d'arrivée.`;
-  if(!allFitted&&(allLastBuses.length||me)){
-    const pts=allLastBuses.map(b=>[b.lat,b.lng]);if(me)pts.push([me.lat,me.lng]);
+    sum.innerHTML=bi>=0?`🚌 Le plus proche : <b>${_esc(buses[bi].plate)}</b> · arrive dans <b>~${_fmtMin(etas[bi].min)}</b> (${_fmtDist(etas[bi].km)})`:'';
+  }else sum.textContent=`🚌 ${buses.length} bus en direct · activez la localisation pour voir le temps d'arrivée.`;
+  if(!allFitted&&(buses.length||me)){
+    const pts=buses.map(b=>[b.lat,b.lng]);if(me)pts.push([me.lat,me.lng]);
     if(pts.length>1)allMap.fitBounds(pts,{padding:[40,40],maxZoom:15});else allMap.setView(pts[0],14);
     allFitted=true;
   }
+  renderTrackResults();
 }
+
+function renderTrackResults(){
+  const box=document.getElementById('trackDestResults');
+  if(!box||!allRoutes)return;
+  box.style.display='block';
+  const head=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-size:12px;color:#a78bfa;font-weight:700;">${allRoutes.length} trajet${allRoutes.length>1?'s':''} pour « ${_esc(allWant)} »</div><button onclick="clearTrackSearch()" style="background:#ffffff12;border:none;border-radius:8px;padding:4px 10px;cursor:pointer;color:#aaa;font-size:11px;font-weight:700;">✕ Effacer</button></div>`;
+  if(!allRoutes.length){box.innerHTML=head+`<div style="text-align:center;color:#888;padding:16px;font-size:12px;background:#ffffff08;border-radius:12px;">😕 Aucun bus n'a enregistré de trajet vers « ${_esc(allWant)} ».<br>Essayez un autre nom (quartier, arrêt connu).</div>`;return;}
+  box.innerHTML=head+allRoutes.map(r=>{
+    const plate=_pl(r.recv.vehicle);
+    const bus=allLastBuses.find(b=>_pl(b.plate)===plate);
+    const eta=_etaCache[bus?bus.plate:''];
+    const badge=bus?`<span style="background:#34d39922;color:#34d399;border-radius:8px;padding:3px 8px;font-size:10px;font-weight:800;">🟢 ${eta?'~'+_fmtMin(eta.min):'en direct'}</span>`:'<span style="background:#ffffff10;color:#888;border-radius:8px;padding:3px 8px;font-size:10px;font-weight:700;">⚪ position non partagée</span>';
+    return `<div ${bus?`onclick="focusTrackBus('${_esc(plate)}')"`:''} style="background:#ffffff08;border:1.5px solid ${r.sim?'#FF6B0066':'#7c3aed66'};border-radius:14px;padding:10px 12px;margin-bottom:8px;${bus?'cursor:pointer;':'opacity:.7;'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <div style="min-width:0;"><div style="font-weight:900;font-size:13px;">🚌 Ligne ${_esc(r.recv.ligne||'—')} · ${_esc(r.recv.vehicle||'—')}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;margin-top:2px;">${_esc(r.from||'—')} → ${_esc(r.to)}${r.sim?' <span style="color:#FF6B00;">(proche)</span>':''}</div></div>
+        <div style="font-weight:900;font-size:16px;color:var(--y);white-space:nowrap;">${_esc(r.price)} F</div>
+      </div>
+      <div style="margin-top:6px;">${badge}</div>
+    </div>`;}).join('');
+}
+window.doTrackSearch=async()=>{
+  const want=(document.getElementById('trackDestInput')?.value||'').trim();
+  if(!want){clearTrackSearch();return;}
+  const box=document.getElementById('trackDestResults');
+  box.style.display='block';
+  box.innerHTML='<div style="text-align:center;color:#888;padding:16px;font-size:12px;">Recherche des bus…</div>';
+  try{
+    const routes=await aiFindRoutes(want);
+    allWant=want;
+    allRoutes=routes.slice().sort((a,b)=>((a.sim?1:0)-(b.sim?1:0))||((a.price||0)-(b.price||0)));
+    allFilter=new Set(allRoutes.map(r=>_pl(r.recv.vehicle)).filter(Boolean));
+    allFitted=false;
+    await renderAllBuses();
+  }catch(e){console.error('[doTrackSearch]',e);box.innerHTML='<div style="text-align:center;color:#DF0024;padding:16px;font-size:12px;">Erreur de recherche. Réessayez.</div>';}
+};
+window.clearTrackSearch=()=>{
+  allFilter=null;allRoutes=null;allFitted=false;
+  const i=document.getElementById('trackDestInput');if(i)i.value='';
+  const r=document.getElementById('trackDestResults');if(r){r.style.display='none';r.innerHTML='';}
+  renderAllBuses();
+};
+window.focusTrackBus=(plate)=>{
+  const bus=allLastBuses.find(b=>_pl(b.plate)===plate);
+  const m=bus&&allMarkers[bus.plate];
+  if(m&&allMap){allMap.setView(m.getLatLng(),15);m.openPopup();}
+};
+
 window.startAllMap=()=>{
   stopAllMap();
+  allFilter=null;allRoutes=null;
+  {const i=document.getElementById('trackDestInput');if(i)i.value='';const r=document.getElementById('trackDestResults');if(r){r.style.display='none';r.innerHTML='';}}
   const sum=document.getElementById('trackAllSummary');if(sum)sum.textContent='📡 Recherche des bus…';
   setTimeout(()=>{
     const el=document.getElementById('trackAllMap');if(!el||typeof L==='undefined')return;
