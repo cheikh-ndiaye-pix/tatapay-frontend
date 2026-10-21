@@ -1105,7 +1105,7 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
       <button class="btn btn-full" style="background:linear-gradient(135deg,#f59e0b,#b45309);color:#fff;" onclick="submitColis()">📦 Enregistrer la marchandise</button>
       <div id="colisSendResult" style="margin-top:16px;"></div>
       <div id="colisListWrap" style="margin-top:18px;display:none;">
-        <div style="font-size:11px;font-weight:800;color:#f59e0b;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Mes marchandises en route</div>
+        <div style="font-size:11px;font-weight:800;color:#f59e0b;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Mes marchandises</div>
         <div id="colisList"></div>
       </div>
     </div>
@@ -2062,7 +2062,7 @@ function _colisCard(c,mode){
   const done=c.status==='recue';
   const when=c.createdAt?.toDate?.()?.toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})||'';
   const who=mode==='sent'?`Pour : ${_esc(c.clientPhoneRaw||c.clientPhone)}`:`De : ${_esc(c.senderName||'—')}${c.senderPhone?' · '+_esc(c.senderPhone):''}`;
-  const badge=done?'<span style="background:#34d39922;color:#34d399;border-radius:8px;padding:3px 8px;font-size:10px;font-weight:800;">✅ Récupérée</span>':'<span style="background:#f59e0b22;color:#fcd34d;border-radius:8px;padding:3px 8px;font-size:10px;font-weight:800;">🚌 En route</span>';
+  const badge=done?'<span style="background:#34d39922;color:#34d399;border-radius:8px;padding:3px 8px;font-size:10px;font-weight:800;">✅ Reçue par le client</span>':'<span style="background:#f59e0b22;color:#fcd34d;border-radius:8px;padding:3px 8px;font-size:10px;font-weight:800;">🚌 En route</span>';
   return `<div style="background:#ffffff08;border:1.5px solid #f59e0b44;border-radius:16px;padding:14px;margin-bottom:10px;">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
       <div style="font-weight:900;font-size:14px;">🚌 ${_esc(c.plate)}${c.ligne?' · Ligne '+_esc(c.ligne):''}</div>${badge}
@@ -2088,7 +2088,8 @@ async function loadColisList(){
     const res=await Promise.allSettled(jobs);
     const map={};
     res.forEach(r=>{if(r.status==='fulfilled')r.value.docs.forEach(d=>{map[d.id]={id:d.id,...d.data()};});else console.warn('[loadColisList]',r.reason);});
-    const list=Object.values(map).filter(c=>c.status!=='recue').sort((a,b)=>(b.createdAt?.toMillis?.()||0)-(a.createdAt?.toMillis?.()||0));
+    const recent=c=>{const t=c.receivedAt?.toMillis?.()||0;return c.senderUid===S.uid&&(Date.now()-t)<3*24*3600*1000;};
+    const list=Object.values(map).filter(c=>c.status!=='recue'||recent(c)).sort((a,b)=>(b.createdAt?.toMillis?.()||0)-(a.createdAt?.toMillis?.()||0));
     if(!list.length){wrap.style.display='none';return;}
     wrap.style.display='block';
     cont.innerHTML=list.map(c=>_colisCard(c,c.senderUid===S.uid?'sent':'recv')).join('');
@@ -2105,8 +2106,13 @@ window.trackColis=(id)=>{
 window.colisMarkReceived=async(id)=>{
   if(!confirm('Le bus est arrivé et la marchandise est bien reçue ?'))return;
   try{
+    const c=window._colisMap[id]||{};
     await updateDoc(doc(db,'shipments',id),{status:'recue',receivedAt:serverTimestamp()});
-    notify('✅','Marchandise reçue','Le suivi est terminé.');
+    if(c.senderUid){
+      try{await addDoc(collection(db,'notifications'),{toUid:c.senderUid,type:'colis_recu',shipmentId:id,plate:c.plate||'',description:c.description||'',clientName:S.profile?.name||'',clientPhone:c.clientPhone||'',read:false,ts:serverTimestamp()});}
+      catch(e){console.warn('[colis notif]',e);}
+    }
+    notify('✅','Marchandise reçue','L\'expéditeur a été prévenu.');
     loadColisList();
   }catch(e){notify('❌','Erreur',e.message||'Mise à jour impossible.');}
 };
@@ -3616,7 +3622,12 @@ function attachPassNotifListener(){
       if(ch.type!=='added')return;
       const d=ch.doc.data();
       playNotifSound();
-      pushNative('TataPay','Nouvelle notification');
+      if(d.type==='colis_recu'){
+        const txt=`${d.clientName||'Votre client'} a bien reçu la marchandise${d.plate?' (bus '+d.plate+')':''}.`;
+        notify('✅','Marchandise reçue',txt);
+        pushNative('TataPay – Marchandise reçue',txt);
+        if(document.getElementById('modalColis')?.style.display==='flex')loadColisList();
+      }else pushNative('TataPay','Nouvelle notification');
       updateDoc(doc(db,'notifications',ch.doc.id),{read:true}).catch(()=>{});
     });
   });
