@@ -1127,14 +1127,12 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
 <div class="modal-overlay" id="modalTrackBus" style="display:none;" onclick="if(event.target===this)closeTrackBus()">
   <div class="modal-box track-modal-inner" onclick="event.stopPropagation()">
     <div style="height:3px;background:linear-gradient(90deg,#0ea5e9,#0369a1);border-radius:24px 24px 0 0;"></div>
-    <div class="modal-header"><div style="font-weight:900;font-size:18px;">📍 Suivre un bus</div><button class="modal-close" onclick="closeTrackBus()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-header"><div style="font-weight:900;font-size:18px;">📍 Bus près de moi</div><button class="modal-close" onclick="closeTrackBus()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="modal-body">
       <div id="trackBusStep1">
-        <div style="font-size:11px;font-weight:800;color:#0ea5e9;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">🚌 Tous les bus</div>
-        <div id="trackBusActiveList" style="margin-bottom:18px;">
-          <div style="text-align:center;color:#555;padding:16px;font-size:12px;">Chargement…</div>
-        </div>
-        <button class="btn btn-full" style="background:#f59e0b22;border:1px solid #f59e0b66;color:#fcd34d;margin-top:10px;" onclick="closeTrackBus();openColis()">📦 Envoyer une marchandise avec un bus</button>
+        <div id="trackAllSummary" style="background:#0ea5e915;border:1px solid #0ea5e944;border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:13px;font-weight:700;color:#7dd3fc;line-height:1.5;">📡 Recherche des bus…</div>
+        <div class="track-map-wrap" id="trackAllMap" style="height:62vh;min-height:320px;margin-top:0;"></div>
+        <div style="font-size:11px;color:#888;margin-top:8px;text-align:center;">Touchez un bus pour voir son temps d'arrivée vers vous.</div>
       </div>
       <div id="trackBusStep2" style="display:none;">
         <div style="display:flex;align-items:center;gap:10px;background:#0ea5e915;border:1px solid #0ea5e944;border-radius:12px;padding:10px 14px;margin-bottom:12px;">
@@ -1143,7 +1141,7 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
             <div style="font-weight:900;font-size:14px;" id="trackBusVehicle">—</div>
             <div style="font-size:11px;color:#888;" id="trackBusMeta">—</div>
           </div>
-          <button onclick="resetTrackBus()" style="background:#ffffff12;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;color:#888;font-size:12px;">✕</button>
+          <button onclick="resetTrackBus();startAllMap()" style="background:#ffffff12;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;color:#888;font-size:12px;">✕</button>
         </div>
         <div class="track-map-wrap" id="trackBusMap"></div>
         <div style="font-size:11px;color:#888;margin-top:8px;text-align:center;" id="trackBusInfo">En attente de position…</div>
@@ -1901,7 +1899,7 @@ async function loadRecvDirecteurInfo(){
 window.openTrackBus=()=>{
   resetTrackBus();
   openModal('modalTrackBus');
-  loadActiveTrackedBuses();
+  startAllMap();
 };
 function _haversineKm(lat1,lng1,lat2,lng2){const R=6371;const toRad=v=>v*Math.PI/180;const dLat=toRad(lat2-lat1);const dLng=toRad(lng2-lng1);const a=Math.sin(dLat/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(a));}
 function _fmtDist(km){if(km==null||isNaN(km))return '';if(km<1)return `${Math.round(km*1000)} m`;return `${km.toFixed(km<10?1:0)} km`;}
@@ -1929,6 +1927,7 @@ async function loadActiveTrackedBuses(){
   }catch(e){console.error('[loadActiveTrackedBuses]',e);cont.innerHTML='<div style="text-align:center;color:#DF0024;padding:16px;font-size:12px;">Erreur de chargement.</div>';}
 }
 window.selectTrackedBus=(chauffeurUid,vehicle,ligne)=>{
+  stopAllMap();
   document.getElementById('trackBusVehicle').textContent=`${vehicle||'—'} · Ligne ${ligne||'—'}`;
   document.getElementById('trackBusMeta').textContent='Chargement des détails…';
   document.getElementById('trackBusStep1').style.display='none';
@@ -1946,7 +1945,7 @@ window.selectTrackedBus=(chauffeurUid,vehicle,ligne)=>{
 window.closeTrackBus=()=>{closeModal('modalTrackBus');resetTrackBus();};
 window.resetTrackBus=function(){
   if(unsubTrackLoc){unsubTrackLoc();unsubTrackLoc=null;}
-  trackMapMarker=null;window._trackMyPos=null;
+  trackMapMarker=null;window._trackMyPos=null;stopAllMap();
   const s1=document.getElementById('trackBusStep1'),s2=document.getElementById('trackBusStep2');
   if(s1)s1.style.display='block';
   if(s2)s2.style.display='none';
@@ -2165,6 +2164,86 @@ window.destTrack=(i)=>{
   resetTrackBus();
   selectTrackedBus(r.live.id,r.recv.vehicle||'',r.recv.ligne||'');
   _getPassengerPos().then(p=>{window._trackMyPos=p;});
+};
+
+/* ═══════════════════ CARTE LIVE : TOUS LES BUS + TEMPS D'ARRIVÉE ═══════════════════ */
+let allMap=null,allMeMarker=null,allMarkers={},unsubAllBuses=null,allFitted=false,allMyPos=null,allLastBuses=[],allRenderId=0;
+const _etaCache={};
+function stopAllMap(){if(unsubAllBuses){unsubAllBuses();unsubAllBuses=null;}allRenderId++;}
+function _fmtMin(m){if(m==null||isNaN(m))return '';if(m<1)return '< 1 min';if(m<60)return `${Math.round(m)} min`;const h=Math.floor(m/60),r=Math.round(m%60);return `${h} h ${String(r).padStart(2,'0')}`;}
+async function _busEta(b,me){
+  const c=_etaCache[b.plate];
+  if(c&&Date.now()-c.at<45000&&_haversineKm(c.lat,c.lng,b.lat,b.lng)<0.2&&_haversineKm(c.mlat,c.mlng,me.lat,me.lng)<0.2)return c;
+  let min=null,km=null;
+  try{
+    const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),5000);
+    const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${b.lng},${b.lat};${me.lng},${me.lat}?overview=false`,{signal:ctl.signal});
+    clearTimeout(to);
+    const j=await r.json();
+    if(j.routes&&j.routes[0]){km=j.routes[0].distance/1000;min=(j.routes[0].duration/60)*1.4;}
+  }catch(e){}
+  if(min==null){km=_haversineKm(me.lat,me.lng,b.lat,b.lng)*1.4;min=km/18*60;}
+  return _etaCache[b.plate]={at:Date.now(),lat:b.lat,lng:b.lng,mlat:me.lat,mlng:me.lng,min,km};
+}
+function _busIcon(plate,eta){
+  return L.divIcon({className:'',iconSize:[0,0],html:`<div style="transform:translate(-50%,-100%);background:#0369a1;color:#fff;border:2px solid #fff;border-radius:12px;padding:3px 8px;font:800 11px 'JetBrains Mono',monospace;white-space:nowrap;text-align:center;box-shadow:0 2px 8px #0009;">🚌 ${_esc(plate)}${eta?`<br><span style="color:#fde68a;">${_esc(eta)}</span>`:''}</div>`});
+}
+async function renderAllBuses(){
+  if(!allMap)return;
+  const rid=++allRenderId;
+  const me=allMyPos;
+  const sum=document.getElementById('trackAllSummary');
+  const etas=await Promise.all(allLastBuses.map(b=>me?_busEta(b,me):Promise.resolve(null)));
+  if(rid!==allRenderId)return;
+  const seen=new Set();
+  allLastBuses.forEach((b,i)=>{
+    const e=etas[i];seen.add(b.plate);
+    const label=e?`~${_fmtMin(e.min)}`:'';
+    const ll=[b.lat,b.lng];
+    const pop=`<div style="font-family:'Space Grotesk',sans-serif;color:#111;min-width:150px;"><div style="font-weight:900;font-size:14px;">🚌 ${_esc(b.plate)}${b.ligne?' · Ligne '+_esc(b.ligne):''}</div>${e?`<div style="margin:4px 0;font-size:13px;">⏱️ Arrive dans <b>~${_fmtMin(e.min)}</b><br>📏 ${_fmtDist(e.km)} par la route</div>`:'<div style="margin:4px 0;font-size:12px;">Activez votre localisation pour voir le temps d\'arrivée.</div>'}<a href="https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}" target="_blank" rel="noopener" style="display:inline-block;margin-top:4px;font-size:12px;font-weight:800;color:#0369a1;">🗺️ Ouvrir dans Google Maps</a></div>`;
+    if(!allMarkers[b.plate]){allMarkers[b.plate]=L.marker(ll,{icon:_busIcon(b.plate,label)}).addTo(allMap).bindPopup(pop);}
+    else{const m=allMarkers[b.plate];m.setLatLng(ll);m.setIcon(_busIcon(b.plate,label));m.setPopupContent(pop);}
+  });
+  Object.keys(allMarkers).forEach(k=>{if(!seen.has(k)){allMap.removeLayer(allMarkers[k]);delete allMarkers[k];}});
+  if(!allLastBuses.length){sum.textContent='😕 Aucun bus ne partage sa position pour le moment.';}
+  else if(me){
+    let bi=-1;etas.forEach((e,i)=>{if(e&&(bi<0||e.min<etas[bi].min))bi=i;});
+    sum.innerHTML=bi>=0?`🚌 Le plus proche : <b>${_esc(allLastBuses[bi].plate)}</b> · arrive dans <b>~${_fmtMin(etas[bi].min)}</b> (${_fmtDist(etas[bi].km)})`:'';
+  }else sum.textContent=`🚌 ${allLastBuses.length} bus en direct · activez la localisation pour voir le temps d'arrivée.`;
+  if(!allFitted&&(allLastBuses.length||me)){
+    const pts=allLastBuses.map(b=>[b.lat,b.lng]);if(me)pts.push([me.lat,me.lng]);
+    if(pts.length>1)allMap.fitBounds(pts,{padding:[40,40],maxZoom:15});else allMap.setView(pts[0],14);
+    allFitted=true;
+  }
+}
+window.startAllMap=()=>{
+  stopAllMap();
+  const sum=document.getElementById('trackAllSummary');if(sum)sum.textContent='📡 Recherche des bus…';
+  setTimeout(()=>{
+    const el=document.getElementById('trackAllMap');if(!el||typeof L==='undefined')return;
+    if(!allMap){allMap=L.map(el,{zoomControl:true,attributionControl:false}).setView([14.6928,-17.4467],12);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(allMap);}
+    else{allMap.invalidateSize();}
+    Object.values(allMarkers).forEach(m=>allMap.removeLayer(m));allMarkers={};allFitted=false;allLastBuses=[];
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(pos=>{
+        allMyPos={lat:pos.coords.latitude,lng:pos.coords.longitude};
+        if(allMeMarker)allMeMarker.setLatLng([allMyPos.lat,allMyPos.lng]);
+        else allMeMarker=L.circleMarker([allMyPos.lat,allMyPos.lng],{radius:9,color:'#fff',weight:3,fillColor:'#2563eb',fillOpacity:1}).addTo(allMap).bindPopup('📍 Vous êtes ici');
+        renderAllBuses();
+      },()=>{allMyPos=null;renderAllBuses();},{enableHighAccuracy:true,maximumAge:30000,timeout:10000});
+    }
+    unsubAllBuses=onSnapshot(collection(db,'bus_locations'),snap=>{
+      const now=Date.now(),byPlate={};
+      snap.docs.forEach(d=>{
+        const x=d.data(),t=x.updatedAt?.toDate?.()?.getTime()||0;
+        if(!t||(now-t)>=10*60*1000||x.lat==null||x.lng==null||!x.vehicle)return;
+        const plate=String(x.vehicle).toUpperCase();
+        if(!byPlate[plate]||t>byPlate[plate].t)byPlate[plate]={id:d.id,plate,lat:x.lat,lng:x.lng,ligne:x.ligne||'',t};
+      });
+      allLastBuses=Object.values(byPlate);
+      renderAllBuses();
+    },err=>{console.error('[allBuses]',err);const sm=document.getElementById('trackAllSummary');if(sm)sm.textContent='⚠️ Impossible de lire la position des bus.';});
+  },200);
 };
 
 async function loadRecvAvailableBus(){
