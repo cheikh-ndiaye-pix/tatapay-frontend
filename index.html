@@ -902,7 +902,6 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
     <button class="admin-nav-btn" onclick="switchAdminTab('users')">👥 Utilisateurs</button>
     <button class="admin-nav-btn" onclick="switchAdminTab('withdrawals')">💸 Retraits</button>
     <button class="admin-nav-btn" onclick="switchAdminTab('voix')">🎙️ Voix IA</button>
-    <button class="admin-nav-btn" onclick="switchAdminTab('commission');loadAdminCommission()">💰 Commission</button>
   </div>
   <div style="flex:1;overflow-y:auto;padding:16px;">
     <div class="admin-tab active" id="adminTab-dashboard">
@@ -951,27 +950,6 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
       <div style="font-weight:900;font-size:16px;margin-bottom:6px;">🎙️ Voix de l'assistant passager</div>
       <div style="font-size:12px;color:#888;line-height:1.6;margin-bottom:14px;">Enregistrez ici la voix de l'assistant, phrase par phrase, pour chaque langue. Seul l'admin peut modifier ces vocaux. Sans enregistrement, l'assistant utilise la voix du téléphone.</div>
       <div id="adminVoixList"><div style="color:#555;text-align:center;padding:20px;">Chargement…</div></div>
-    </div>
-    <div class="admin-tab" id="adminTab-commission">
-      <div style="font-weight:900;font-size:16px;margin-bottom:6px;">💰 Commission plateforme (2 %)</div>
-      <div style="font-size:12px;color:#888;line-height:1.6;margin-bottom:14px;">2 % de chaque ticket est ajouté au wallet admin. Retirez-le vers Wave / Orange Money / Free Money via PayTech.</div>
-      <div style="background:linear-gradient(135deg,#061a0a,#0d2e10);border:1px solid #009A4433;border-radius:18px;padding:16px;margin-bottom:14px;">
-        <div style="font-size:11px;color:#ffffff66;">Solde commission disponible</div>
-        <div style="color:var(--y);font-weight:900;font-size:32px;"><span id="comBalance">0</span> <span style="font-size:14px;color:#FDEF4288;">FCFA</span></div>
-      </div>
-      <div class="admin-stat-grid">
-        <div class="admin-stat"><div class="val" id="comToday">0</div><div class="lbl">Aujourd'hui (FCFA)</div></div>
-        <div class="admin-stat"><div class="val" id="comMonth">0</div><div class="lbl">Ce mois (FCFA)</div></div>
-        <div class="admin-stat"><div class="val" id="comTotalAll">0</div><div class="lbl">Total gagné (FCFA)</div></div>
-        <div class="admin-stat"><div class="val" id="comCount">0</div><div class="lbl">Tickets commissionnés</div></div>
-      </div>
-      <div class="input-wrap"><label class="input-label">Opérateur *</label><select class="input-field" id="comMethod"><option value="wave">🌊 Wave</option><option value="orange">🟠 Orange Money</option><option value="free">🔴 Free Money</option></select></div>
-      <div class="input-wrap"><label class="input-label">Numéro de réception *</label><input class="input-field" id="comPhone" type="tel" placeholder="77 123 45 67"/></div>
-      <div class="input-wrap"><label class="input-label">Montant à retirer (FCFA, min 100) *</label><input class="input-field" id="comAmt" type="number" placeholder="ex: 5000"/></div>
-      <button class="btn btn-yellow btn-full" onclick="comFillAll()" style="margin-bottom:8px;">Tout retirer</button>
-      <button class="btn btn-primary btn-full" onclick="adminWithdrawCommission()">💸 Retirer via PayTech</button>
-      <div style="font-weight:800;font-size:14px;margin:18px 0 10px;color:#aaa;">🕓 Dernières commissions</div>
-      <div id="comList"><div style="color:#555;text-align:center;padding:16px;font-size:13px;">Chargement…</div></div>
     </div>
     <div class="admin-tab" id="adminTab-withdrawals">
       <div style="display:flex;gap:8px;margin-bottom:12px;">
@@ -4440,7 +4418,9 @@ window.showScanPanel=async(walletId,qrBal,qrTs,qrUid)=>{
 // réseau en plein milieu. Les règles Firestore vérifient en plus, à la
 // création du ticket, que le montant débité au passager == montant crédité
 // au receveur == prix du ticket (cf. firestore.rules).
-const COMMISSION_RATE=0.02;
+// Taux de commission TataPay sur les tickets payés par portefeuille.
+// 0 = désactivée (phase de lancement). Pour la réactiver : 0.02 = 2 %, 0.01 = 1 %…
+const COMMISSION_RATE=0;
 const calcCommission=(price)=>Math.round(price*COMMISSION_RATE);
 let _adminUid=null;
 async function getAdminUid(){
@@ -4464,7 +4444,7 @@ async function commitTicketSale(paxUid,price,ticketBase,{pendingId=null,offline=
   const writeCommission=(X)=>{
     if(!commission)return;
     X.update(doc(db,'users',adminUid),{balance:increment(commission),opCol:'tickets',opId:tkRef.id});
-    X.set(doc(collection(db,'users',adminUid,'history')),{type:'commission',label:`Commission 2% — ${S.profile.gie||'—'}/${S.profile.vehicle||'—'} — ${tkRef.id}`,amount:commission,ref:tkRef.id,ts:serverTimestamp()});
+    X.set(doc(collection(db,'users',adminUid,'history')),{type:'commission',label:`Commission ${Math.round(COMMISSION_RATE*1000)/10}% — ${S.profile.gie||'—'}/${S.profile.vehicle||'—'} — ${tkRef.id}`,amount:commission,ref:tkRef.id,ts:serverTimestamp()});
     X.set(doc(db,'commissions',tkRef.id),{ref:tkRef.id,amount:price,commission,receiverAmt:price-commission,rate:COMMISSION_RATE,receiverUid:S.uid,passengerUid:paxUid,gie:S.profile.gie||'',vehicle:S.profile.vehicle||'',source:'wallet',ts:serverTimestamp()});
   };
   if(offline){
@@ -4503,7 +4483,7 @@ async function commitTicketSale(paxUid,price,ticketBase,{pendingId=null,offline=
 // Le receveur appuie sur « Encaisser ». On enregistre un ticket (payMode:'especes'),
 // on incrémente seulement les compteurs du jour du receveur (today, count) et PAS son solde
 // TataPay, puisque l'argent est physiquement dans sa poche. Marche aussi hors-ligne.
-// commissionDue = commission de 2 % que le receveur devra (non créditée à l'admin ici).
+// commissionDue = commission que le receveur devra (0 tant que COMMISSION_RATE vaut 0) (non créditée à l'admin ici).
 async function commitCashSale(ticketBase){
   const tkRef=doc(collection(db,'tickets'));
   const ticket={...ticketBase,payMode:'especes',commission:0,commissionDue:calcCommission(ticketBase.price),ts:serverTimestamp()};
