@@ -481,15 +481,25 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
             <button onclick="openRecharge()" style="background:linear-gradient(160deg,#1a56db,#0d3a8c);border:2px solid #4d8aff66;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">💳</div>Recharger</button>
             <button onclick="openTicketFlow()" style="background:linear-gradient(160deg,#6d28d9,#3b0764);border:2px solid #a78bfa66;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">🎫</div>Acheter Ticket</button>
-            <button onclick="demandDescendre()" style="background:linear-gradient(160deg,#DF0024,#7f1d1d);border:2px solid #ff6b6b66;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">🛑</div>Descendre</button>
+            <button onclick="openSend()" style="background:linear-gradient(160deg,#059669,#065f46);border:2px solid #34d39966;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">📷</div>Scan Ami</button>
+            <button onclick="demandDescendre()" style="grid-column:1/-1;justify-self:center;width:calc((100% - 20px)/3);background:linear-gradient(160deg,#DF0024,#7f1d1d);border:2px solid #ff6b6b66;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">🛑</div>Descendre</button>
           </div>
         </div>
-        <button onclick="openTrackBus()" style="width:100%;background:linear-gradient(135deg,#0ea5e9,#0369a1);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:14px;font-family:'Space Grotesk',sans-serif;margin-bottom:10px;">
-          <div style="font-size:26px;">🚌</div>
-          <div style="text-align:left;flex:1;">Trouver un bus<div style="font-size:10px;font-weight:600;color:#bae6fd;margin-top:2px;">Où allez-vous ? Voyez les bus en direct et leur temps d'arrivée</div></div>
+        <button onclick="openTrackBus();setTimeout(()=>document.getElementById('trackDestInput')?.focus(),400)" style="width:100%;background:linear-gradient(135deg,#7c3aed,#4c1d95);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:12px;">
+          <div style="font-size:24px;">🧭</div>
+          <div style="text-align:left;flex:1;">Où allez-vous ?<div style="font-size:10px;font-weight:600;color:#ddd6fe;margin-top:2px;">Écrivez votre destination : voyez les bus qui y vont, en direct</div></div>
           <div style="font-size:18px;">→</div>
         </button>
-        <button onclick="openModal('modalPlus')" style="width:100%;background:#ffffff0d;border:1px solid #ffffff22;border-radius:14px;padding:12px 16px;cursor:pointer;color:#ddd;font-weight:800;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">➕ Plus : Marchandises, Scan Ami</button>
+        <button onclick="openTrackBus()" style="width:100%;background:linear-gradient(135deg,#0ea5e9,#0369a1);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
+          <div style="font-size:24px;">📍</div>
+          <div style="text-align:left;flex:1;">Bus en direct près de moi<div style="font-size:10px;font-weight:600;color:#bae6fd;margin-top:2px;">Voir les bus qui partagent leur position (ligne + distance)</div></div>
+          <div style="font-size:18px;">→</div>
+        </button>
+        <button onclick="openColis()" style="width:100%;background:linear-gradient(135deg,#f59e0b,#b45309);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
+          <div style="font-size:24px;">📦</div>
+          <div style="text-align:left;flex:1;">Marchandises (colis en bus)<div style="font-size:10px;font-weight:600;color:#fde68a;margin-top:2px;">Envoyer ou récupérer une marchandise en suivant le bus en direct</div></div>
+          <div style="font-size:18px;">→</div>
+        </button>
         <div id="activeTicketBanner" style="display:none;background:#DF002415;border:2px solid #DF002466;border-radius:18px;padding:14px 16px;margin-bottom:16px;cursor:pointer;" onclick="showActiveTicket()">
           <div style="font-size:10px;color:#ff8888;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">🚌 Ticket en cours</div>
           <div style="font-weight:900;font-size:15px;" id="activeTicketLabel">—</div>
@@ -1076,21 +1086,6 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
         <div style="font-size:11px;font-weight:800;color:#f59e0b;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Mes marchandises</div>
         <div id="colisList"></div>
       </div>
-    </div>
-  </div>
-</div>
-<div class="modal-overlay" id="modalPlus" style="display:none;" onclick="if(event.target===this)closeModal('modalPlus')">
-  <div class="modal-box" onclick="event.stopPropagation()">
-    <div class="modal-header"><div style="font-weight:900;font-size:18px;">➕ Plus</div><button class="modal-close" onclick="closeModal('modalPlus')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-    <div class="modal-body">
-      <button onclick="closeModal('modalPlus');openColis()" style="width:100%;background:linear-gradient(135deg,#f59e0b,#b45309);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:14px;font-family:'Space Grotesk',sans-serif;margin-bottom:12px;">
-        <div style="font-size:24px;">📦</div>
-        <div style="text-align:left;flex:1;">Marchandises<div style="font-size:10px;font-weight:600;color:#fde68a;margin-top:2px;">Envoyer ou récupérer une marchandise en suivant le bus</div></div>
-      </button>
-      <button onclick="closeModal('modalPlus');openSend()" style="width:100%;background:linear-gradient(135deg,#059669,#065f46);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:14px;font-family:'Space Grotesk',sans-serif;">
-        <div style="font-size:24px;">📷</div>
-        <div style="text-align:left;flex:1;">Scan Ami<div style="font-size:10px;font-weight:600;color:#a7f3d0;margin-top:2px;">Envoyer de l'argent en scannant le QR d'un ami</div></div>
-      </button>
     </div>
   </div>
 </div>
