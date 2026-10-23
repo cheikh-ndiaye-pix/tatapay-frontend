@@ -355,9 +355,20 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
     <div style="font-weight:900;font-size:46px;line-height:1;letter-spacing:-2px;margin-bottom:6px;">Tata<span style="color:var(--y)">Pay</span></div>
     <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;background:linear-gradient(90deg,#009A44,#FDEF42,#DF0024);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;margin-bottom:8px;">🇸🇳 AFTU · CAPTRANS · Transport</div>
   </div>
-  <div style="padding:0 24px 44px;display:flex;flex-direction:column;gap:12px;">
-    <button class="btn btn-yellow btn-full" onclick="goAuth('register')">👤 S'inscrire</button>
-    <button class="btn btn-secondary btn-full" onclick="goAuth('login')">Se connecter</button>
+  <div style="padding:0 24px 44px;">
+    <div id="splashMain" style="display:flex;flex-direction:column;gap:12px;">
+      <button class="btn btn-yellow btn-full" onclick="goAuth('register','passenger')">🧍 Passager · S'inscrire</button>
+      <button class="btn btn-secondary btn-full" onclick="goAuth('login','passenger')">🧍 Passager · Se connecter</button>
+      <button class="btn btn-purple btn-full" onclick="splashView('pro')">💼 Espace pro</button>
+    </div>
+    <div id="splashPro" style="display:none;flex-direction:column;gap:10px;">
+      <div style="text-align:center;font-weight:900;font-size:15px;margin-bottom:2px;">💼 Espace pro</div>
+      <div style="text-align:center;font-size:12px;color:#888;margin-bottom:4px;">Vous êtes…</div>
+      <button class="btn btn-orange btn-full" onclick="goAuth('register','receiver')">🎫 Receveur</button>
+      <button class="btn btn-purple btn-full" onclick="goAuth('register','owner')">🚌 Propriétaire / Chauffeur</button>
+      <div style="text-align:center;font-size:11px;color:#666;">Déjà inscrit ? Choisissez votre rôle puis « Se connecter ».</div>
+      <button class="btn btn-secondary btn-full" onclick="splashView('main')">← Retour</button>
+    </div>
   </div>
   <div class="sn-stripe"></div>
 </div>
@@ -369,7 +380,7 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
     <div style="font-weight:900;font-size:22px;" id="authTitle">Connexion</div>
   </div>
   <div style="padding:20px 24px;flex:1;overflow-y:auto;">
-    <div class="sel-tabs" style="margin-bottom:20px;">
+    <div class="sel-tabs" id="authRoleTabs" style="margin-bottom:20px;">
       <button class="sel-tab" id="tabPassenger" onclick="setRole('passenger')" style="background:var(--g);color:var(--w);font-size:11px;">🧍 Passager</button>
       <button class="sel-tab" id="tabReceiver" onclick="setRole('receiver')" style="background:transparent;color:#888;font-size:11px;">🎫 Receveur</button>
       <button class="sel-tab" id="tabOwner" onclick="setRole('owner')" style="background:transparent;color:#888;font-size:11px;">🚌 Proprio</button>
@@ -1418,8 +1429,28 @@ function statusBadge(s){const map={pending:'badge-pending',approved:'badge-appro
 function roleBadge(r){const c={passenger:'#009A44',receiver:'#FF6B00',owner:'#7c3aed',chauffeur:'#059669',directeur:'#0ea5e9'};const ic={passenger:'🧍',receiver:'🎫',owner:'🚌',chauffeur:'👨‍✈️',directeur:'🏢'};return`<span style="font-size:11px;padding:3px 10px;border-radius:8px;background:${c[r]||'#444'}22;color:${c[r]||'#aaa'};border:1px solid ${c[r]||'#444'}44;font-weight:800;">${ic[r]||'👤'} ${r}</span>`;}
 function fmt(n){return Math.round(n||0).toLocaleString('fr-FR');}
 
-window.goSplash=()=>show('screenSplash');
-window.goAuth=(mode)=>{
+const PRO_ROLES=['receiver','owner','directeur'];
+const ROLE_LABEL={passenger:'Passager',receiver:'Receveur',owner:'Propriétaire',directeur:'Directeur'};
+window.splashView=(v)=>{
+  const m=document.getElementById('splashMain'),p=document.getElementById('splashPro');
+  if(m)m.style.display=v==='pro'?'none':'flex';
+  if(p)p.style.display=v==='pro'?'flex':'none';
+};
+window.goSplash=()=>{show('screenSplash');splashView(PRO_ROLES.includes(S.authRole)?'pro':'main');};
+// Liens directs : /?role=receveur  /?role=proprio  /?role=directeur  /?role=passager  (+ &mode=login pour la connexion)
+const DEEP_ROLES={passager:'passenger',passenger:'passenger',receveur:'receiver',receiver:'receiver',proprio:'owner',proprietaire:'owner',owner:'owner',directeur:'directeur'};
+let _deepLink=(()=>{
+  try{
+    const q=new URLSearchParams(location.search);
+    const r=DEEP_ROLES[(q.get('role')||'').toLowerCase()];
+    if(!r)return null;
+    return{role:r,mode:(q.get('mode')||'').toLowerCase()==='login'?'login':'register'};
+  }catch(e){return null;}
+})();
+function applyDeepLink(){if(!_deepLink)return;const d=_deepLink;_deepLink=null;goAuth(d.mode,d.role);}
+window.goAuth=(mode,role)=>{
+  // Un rôle précis (depuis l'accueil ou un lien direct) => on n'affiche que ce rôle.
+  if(role){S.authRole=role;S.authTabs=[role];}
   S.isReg=mode==='register';
   document.getElementById('authTitle').textContent=S.isReg?'Inscription':'Connexion';
   document.getElementById('authSubmitBtn').textContent=S.isReg?'Créer mon compte':'Se connecter';
@@ -1439,7 +1470,10 @@ window.setRole=async(r)=>{
   S.authRole=r;
   const colors={passenger:'var(--g)',receiver:'var(--orange)',owner:'#7c3aed',directeur:'#0ea5e9'};
   const tabIds={passenger:'tabPassenger',receiver:'tabReceiver',owner:'tabOwner',directeur:'tabDirecteur'};
-  Object.entries(tabIds).forEach(([role,id])=>{const btn=document.getElementById(id);if(btn)btn.style.cssText=`background:${role===r?colors[role]:'transparent'};color:${role===r?'var(--w)':'#888'};font-size:11px;`;if(btn)btn.style.display='inline-block';});
+  const tabs=S.authTabs||Object.keys(tabIds);
+  Object.entries(tabIds).forEach(([role,id])=>{const btn=document.getElementById(id);if(btn)btn.style.cssText=`background:${role===r?colors[role]:'transparent'};color:${role===r?'var(--w)':'#888'};font-size:11px;`;if(btn)btn.style.display=tabs.includes(role)?'inline-block':'none';});
+  const bar=document.getElementById('authRoleTabs');if(bar)bar.style.display=tabs.length>1?'flex':'none';
+  const ttl=document.getElementById('authTitle');if(ttl)ttl.textContent=(S.isReg?'Inscription':'Connexion')+(tabs.length===1?' · '+(ROLE_LABEL[r]||''):'');
   ['fieldsReceiver','fieldsOwner','fieldsDirecteur','fieldsChauffeur'].forEach(id=>document.getElementById(id).style.display='none');
   if(S.isReg){if(r==='receiver'){document.getElementById('fieldsReceiver').style.display='block';}else if(r==='owner'){document.getElementById('fieldsOwner').style.display='block';loadDirecteurList();}else if(r==='directeur')document.getElementById('fieldsDirecteur').style.display='block';}
 };
@@ -1761,8 +1795,8 @@ async function attemptSessionRestore(user){
 
 onAuthStateChanged(auth,user=>{
   if(_authFlowInProgress)return; // inscription en cours : doAuth() gère déjà tout, ne pas interférer (évite un signOut prématuré si le doc users/{uid} n'existe pas encore)
-  if(user){attemptSessionRestore(user);}
-  else{show('screenSplash');loader('',false);}
+  if(user){_deepLink=null;attemptSessionRestore(user);}
+  else{show('screenSplash');splashView('main');loader('',false);applyDeepLink();}
 });
 
 function detachListeners(){[unsubPending,unsubNotif,unsubBalance,unsubRecvBalance,unsubAdmin,unsubChProfile,unsubChReceiver,unsubChTickets,unsubChNotif,unsubChVersements,unsubChCandidatures,unsubChPendingVers,unsubBusLoc,unsubChOwnerBalance,unsubDirOwnersA,unsubPassNotif].forEach(u=>{if(u){try{u();}catch(e){}}});unsubPending=unsubNotif=unsubBalance=unsubRecvBalance=unsubAdmin=unsubChProfile=unsubChReceiver=unsubChTickets=unsubChNotif=unsubChVersements=unsubChCandidatures=unsubChPendingVers=unsubBusLoc=unsubChOwnerBalance=unsubDirOwnersA=unsubPassNotif=null;Object.keys(dirOwnersLocUnsubs).forEach(uid=>{try{dirOwnersLocUnsubs[uid]();}catch(e){}delete dirOwnersLocUnsubs[uid];});if(S.rgUnsub){try{S.rgUnsub();}catch(e){}S.rgUnsub=null;}if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}if(chRevChartInst){chRevChartInst.destroy();chRevChartInst=null;}if(chPerfChartInst){chPerfChartInst.destroy();chPerfChartInst=null;}if(chRecvPerfChartInst){chRecvPerfChartInst.destroy();chRecvPerfChartInst=null;}if(chGeoWatchId!=null){try{navigator.geolocation.clearWatch(chGeoWatchId);}catch(e){}chGeoWatchId=null;}if(recvGeoWatchId!=null){try{navigator.geolocation.clearWatch(recvGeoWatchId);}catch(e){}recvGeoWatchId=null;}if(chMap){try{chMap.remove();}catch(e){}chMap=null;chMapMarker=null;}resetTrackBus();}
