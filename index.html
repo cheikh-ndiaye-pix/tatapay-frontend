@@ -1872,7 +1872,7 @@ async function _postCollect(body){
 function _classifyCollect(r){
   if(r.http===200&&(r.data.status==='synced'||r.data.status==='already_synced'))return 'ok';
   if(r.http===200&&r.data.status==='rejected')return 'rejected';
-  if(r.http>=500||r.http===429||r.http===401||r.http===404||r.http===0)return 'retry';
+  if(r.http>=500||r.http===429||r.http===401||r.http===0)return 'retry';
   return 'rejected';
 }
 async function flushSaleQueue(){
