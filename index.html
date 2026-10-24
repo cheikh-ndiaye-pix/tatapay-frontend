@@ -1835,7 +1835,7 @@ function loginUI(){
     updateBalanceUI();clearFriend();
     unsubBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;updateBalanceUI();refreshPassWalletQR();}});
     attachPassNotifListener();
-    loadPassHomeTx();loadPassTickets();show('screenPassenger');loadAiVoices().finally(()=>setTimeout(()=>aiGreet(),300));notify('✅','Bienvenue !',p.name);
+    loadPassHomeTx();loadPassTickets();show('screenPassenger');loadAiVoices();notify('✅','Bienvenue !',p.name);
     // Restaure le dernier ticket actif depuis le cache (utile hors-ligne)
     const _cachedActive=getCachedActiveTicket();if(_cachedActive)showDescendBtn(_cachedActive);
   }else if(S.role==='receiver'&&p.status==='approved'){
