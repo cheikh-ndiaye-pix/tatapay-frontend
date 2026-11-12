@@ -1627,22 +1627,27 @@ window.doAuth=async()=>{
           const specs=[['photoUrl','Photo','authRecvPhoto'],['idDocRectoUrl','CNI recto','authRecvIdDocRecto'],['idDocVersoUrl','CNI verso','authRecvIdDocVerso'],['diplomaUrl','Diplôme','authRecvDiploma'],['cvUrl','CV','authRecvCV']];
           for(const [key,label,inputId] of specs){
             const f=document.getElementById(inputId)?.files[0];if(!f)continue;
-            try{docUrls[key]=await fileToStoredDoc(f,key==='cvUrl'?2:1);}
+            try{docUrls[key]=await withTimeout(fileToStoredDoc(f,key==='cvUrl'?2:1),25000,label);}
             catch(err){console.warn('[receiver doc]',label,err);failed.push(label+' ('+(err.message||'erreur')+')');}
           }
           if(failed.length)notify('⚠️','Documents','Compte créé, mais : '+failed.join(', ')+'. Renvoyez-les depuis « Mes documents ».');
         }catch(e){console.warn('[receiver docs]',e);notify('⚠️','Documents','Certains documents n\'ont pas pu être préparés. Renvoyez-les depuis « Mes documents ».');}
         loader('Finalisation…');
         const walletId='RV-'+uid.slice(0,6).toUpperCase();
-        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'receiver',status:'pending',directeurUid:'',address,...docUrls,gie:'',vehicle:'',ligne:'',zone:'',today:0,count:0,balance:0,linkedOwnerUids:[],pendingOwnerUids:[],approvedOwnerUids:[],createdAt:serverTimestamp()});
-        await setDoc(doc(db,'wallets',walletId),{uid,role:'receiver'});
+        let _step='profil';
+        const _rw=(pr,l)=>withTimeout(pr,20000,l).catch(e=>{if(e&&e.timeout){notify('⏳','Connexion lente','Inscription enregistrée sur le téléphone, elle sera envoyée dès que le réseau sera meilleur.');return;}throw e;});
+        try{
+          await _rw(setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'receiver',status:'pending',directeurUid:'',address,...docUrls,gie:'',vehicle:'',ligne:'',zone:'',balance:0,linkedOwnerUids:[],pendingOwnerUids:[],approvedOwnerUids:[],createdAt:serverTimestamp()}),'profil');
+          _step='wallet';
+          await _rw(setDoc(doc(db,'wallets',walletId),{uid,role:'receiver'}),'wallet');
+        }catch(eW){eW.step=_step;throw eW;}
         window.pendingReceiverData={uid,name,email,phone,address};
         const muid=document.getElementById('modalRecvPendingUid');if(muid)muid.value=uid;
         loader('',false);
         window.modalSelectedOwners=new Map();window.modalAlreadySent=new Set();_modalUpdateSummary();
         const gieSelModal=document.getElementById('modalRecvGIESelect');if(gieSelModal)gieSelModal.value='';
         const owWrap=document.getElementById('modalOwnerListWrap');if(owWrap)owWrap.style.display='none';
-        await loadDirecteurList();
+        try{await withTimeout(loadDirecteurList(),10000,'liste GIE');}catch(eL){console.warn('[loadDirecteurList]',eL);}
         openModal('modalRecvOwners');
         return;
       }else if(S.authRole==='owner'){
@@ -1672,7 +1677,7 @@ window.doAuth=async()=>{
         if(!address){loader('',false);notify('⚠️','Adresse','Entrez votre adresse.');return;}
         if(!directeurUid){loader('',false);notify('⚠️','Directeur','Choisissez un directeur de GIE.');return;}
         const walletId='CH-'+uid.slice(0,6).toUpperCase();
-        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'chauffeur',status:'pending',directeurUid,cni,address,receiverUid:'',gie:'',vehicle:'',ligne:'',zone:'',busStatus:'hors_service',techStatus:'actif',receiverStatus:'absent',today:0,tripCount:0,balance:0,createdAt:serverTimestamp()});
+        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'chauffeur',status:'pending',directeurUid,cni,address,receiverUid:'',gie:'',vehicle:'',ligne:'',zone:'',busStatus:'hors_service',techStatus:'actif',receiverStatus:'absent',tripCount:0,balance:0,createdAt:serverTimestamp()});
         await setDoc(doc(db,'wallets',walletId),{uid,role:'chauffeur'});
         try{await addDoc(collection(db,'notifications'),{toUid:directeurUid,type:'chauffeur_request',chauffeurUid:uid,chauffeurName:name,chauffeurEmail:email,phone,cni,address,read:false,ts:serverTimestamp()});}catch(e){console.warn('[chauffeur notif]',e);}
       }
@@ -1702,8 +1707,10 @@ window.doAuth=async()=>{
       notify('⏳','Trop de tentatives','Patientez quelques minutes puis réessayez.');
     }else if(e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found'){
       notify('❌','Identifiants incorrects','Email ou mot de passe invalide.');
+    }else if(e.code==='permission-denied'||/insufficient permissions/i.test(e.message||'')){
+      console.error('[inscription]',e);notify('❌','Accès refusé','Les règles Firestore refusent l\'écriture'+(e.step?' ('+e.step+')':'')+'. Vérifiez les règles de sécurité.');
     }else{
-      notify('❌','Erreur',e.message);
+      console.error('[inscription]',e);notify('❌','Erreur'+(e.step?' ('+e.step+')':''),e.message);
     }
   }
 };
