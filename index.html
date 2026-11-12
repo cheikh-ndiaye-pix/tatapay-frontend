@@ -281,7 +281,7 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
         <input class="input-field" id="aiDestInput" placeholder="Ex: Liberté 6, Pikine…" style="flex:1;padding:10px 12px;" onkeydown="if(event.key==='Enter')aiSubmit()"/>
         <button id="aiMicBtn" onclick="aiListen()" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);border:none;border-radius:12px;padding:0 14px;cursor:pointer;font-size:20px;">🎤</button>
       </div>
-      <button class="btn btn-purple btn-full" style="margin-top:8px;padding:11px;font-size:13px;" onclick="aiSubmit()">✅ Valider et ouvrir le scanner</button>
+      <button class="btn btn-purple btn-full" style="margin-top:8px;padding:11px;font-size:13px;" onclick="aiSubmit()">✅ Valider et scanner le bus</button>
     </div>
     <button id="aiFab" style="position:absolute;right:0;bottom:0;touch-action:none;user-select:none;-webkit-user-select:none;width:58px;height:58px;border-radius:29px;border:2px solid #a78bfa;background:linear-gradient(135deg,#7c3aed,#4c1d95);font-size:28px;cursor:pointer;box-shadow:0 6px 20px #7c3aed88;animation:aiFloatY 3s ease-in-out infinite;">🤖</button>
   </div>
@@ -4098,9 +4098,9 @@ async function loadTrajets(){if(S.role!=='receiver')return;const snap=await getD
 
 /* ═══════════════ ASSISTANT IA (Wolof / Français / English) ═══════════════ */
 const AI_TXT={
- wo:{ask:'Salaam aleekum ! 👋 Fan nga dem ?',ph:'Ex: Liberté 6, Pikine…',go:'Baax na ! Tey scanil QR bu bus bi.',empty:'Wax ma fan ngay dem.',found:(d,p)=>`Baax na ! ✅ ${d} nekk na ci bus bii : ${p} FCFA. Duggal ko te fey.`,none:d=>`Gisuma "${d}" ci bus bii. ❌ Laajal receveur bi. Gis nga trajet yi nekk ci bus bi ci suuf.`,nolist:'Receveur bi dalul ba tey ay trajet ci bus bii. Laajal ko.',mic:'Mënuma dégg. Bind tur bi.'},
- fr:{ask:'Bonjour ! 👋 Où allez-vous ? Dites-moi le nom de votre destination (ou écrivez-le).',ph:'Ex : Liberté 6, Pikine…',go:'Parfait ! Scannez maintenant le QR du bus.',empty:'Dites-moi où vous allez.',found:(d,p)=>`C'est bon ! ✅ ${d} est desservi par ce bus : ${p} FCFA. Validez et payez.`,none:d=>`« ${d} » n'est pas inscrit dans ce bus. ❌ Demandez au receveur. Voici les trajets disponibles dans ce bus, juste en dessous.`,nolist:'Le receveur n\'a pas encore inscrit de trajets dans ce bus. Demandez-lui.',mic:'Je n\'ai pas compris. Écrivez le nom.'},
- en:{ask:'Hello! 👋 Where are you going? Tell me the name of your destination (or type it).',ph:'e.g. Liberté 6, Pikine…',go:'Great! Now scan the bus QR code.',empty:'Please tell me where you are going.',found:(d,p)=>`Good! ✅ ${d} is served by this bus: ${p} FCFA. Confirm and pay.`,none:d=>`"${d}" is not registered on this bus. ❌ Please ask the conductor. Here are the routes available on this bus, just below.`,nolist:'The conductor has not registered any routes on this bus yet. Please ask them.',mic:'I could not hear you. Please type the name.'}
+ wo:{ask:'Salaam aleekum ! 👋 Fan nga dem ?',ph:'Ex: Liberté 6, Pikine…',go:'Baax na ! Tey scanil QR bu bus bi.',empty:'Wax ma fan ngay dem.',found:(d,p)=>`Baax na ! ✅ ${d} nekk na ci bus bii : ${p} FCFA. Bësal ci Fey.`,none:d=>`Gisuma "${d}" ci bus bii. ❌ Laajal receveur bi.`,nolist:'Receveur bi dalul ba tey ay trajet ci bus bii. Laajal ko.',mic:'Mënuma dégg. Bind tur bi.'},
+ fr:{ask:'Bonjour ! 👋 Où allez-vous ? Dites-moi le nom de votre destination (ou écrivez-le).',ph:'Ex : Liberté 6, Pikine…',go:'Parfait ! Scannez maintenant le QR du bus.',empty:'Dites-moi où vous allez.',found:(d,p)=>`C'est bon ! ✅ ${d} est desservi par ce bus : ${p} FCFA. Appuyez sur Payer.`,none:d=>`« ${d} » n'est pas inscrit dans ce bus. ❌ Demandez au receveur.`,nolist:'Le receveur n\'a pas encore inscrit de trajets dans ce bus. Demandez-lui.',mic:'Je n\'ai pas compris. Écrivez le nom.'},
+ en:{ask:'Hello! 👋 Where are you going? Tell me the name of your destination (or type it).',ph:'e.g. Liberté 6, Pikine…',go:'Great! Now scan the bus QR code.',empty:'Please tell me where you are going.',found:(d,p)=>`Good! ✅ ${d} is served by this bus: ${p} FCFA. Tap Pay.`,none:d=>`"${d}" is not registered on this bus. ❌ Please ask the conductor.`,nolist:'The conductor has not registered any routes on this bus yet. Please ask them.',mic:'I could not hear you. Please type the name.'}
 };
 const AI_LOC={wo:'fr-SN',fr:'fr-FR',en:'en-US'};
 S.aiLang=S.aiLang||'wo';
@@ -4173,9 +4173,9 @@ const VC_KEYS=['ask','go','empty','found','none','nolist','mic','routes','simila
 const VC_FALLBACK={routes:'found',similar:'found',noroute:'none',pick:'go'};
 const VC_LABEL={ask:'👋 Accueil (à l\'entrée dans l\'app)',go:'📷 Après la réponse (ouvre le scanner)',empty:'🤐 Le passager n\'a rien dit',found:'✅ Destination trouvée dans le bus',none:'❌ Destination absente de ce bus',nolist:'⚠️ Aucun trajet inscrit par le receveur',mic:'🎤 Micro : pas compris',routes:'📋 Trajets trouvés : « choisissez le vôtre »',similar:'🔎 Pas exact, voici des destinations similaires',noroute:'🚫 Aucun trajet trouvé (le scanner s\'ouvre ensuite)',pick:'👆 Trajet choisi : « scannez le QR du bus »'};
 const VC_TXT={
-  wo:{routes:'Baax na ! Gis naa trajet yi. Tànnal bi la neex.',similar:'Gisuma ko bu leer, waaye gis naa yu mel ni ko. Tànnal bi la neex.',noroute:'Gisuma trajet ngir destination bi. Scanil bus bi.',pick:'Baax na ! Scanil QR bu bus bi.',found:'Baax na ! Destination bi nekk na ci bus bii. Duggal ko te fey.',none:'Gisuma ko ci bus bii. Laajal receveur bi. Gis nga trajet yi nekk ci bus bi ci suuf.'},
-  fr:{routes:'J\'ai trouvé des trajets pour cette destination. Choisissez le vôtre.',similar:'Je n\'ai pas trouvé exactement, mais voici des destinations similaires. Choisissez la bonne.',noroute:'Aucun trajet trouvé pour cette destination. Scannez directement le bus.',pick:'Parfait ! Scannez maintenant le QR de ce bus.',found:'C\'est bon ! Cette destination est desservie par ce bus. Validez et payez.',none:'Cette destination n\'est pas inscrite dans ce bus. Demandez au receveur. Voici les trajets disponibles dans ce bus, juste en dessous.'},
-  en:{routes:'I found routes for this destination. Please choose yours.',similar:'I did not find an exact match, but here are similar destinations. Please choose the right one.',noroute:'No route found for this destination. Please scan the bus directly.',pick:'Great! Now scan this bus QR code.',found:'Good! This destination is served by this bus. Confirm and pay.',none:'This destination is not registered on this bus. Please ask the conductor. Here are the routes available on this bus, just below.'}
+  wo:{routes:'Baax na ! Gis naa trajet yi. Tànnal bi la neex.',similar:'Gisuma ko bu leer, waaye gis naa yu mel ni ko. Tànnal bi la neex.',noroute:'Gisuma trajet ngir destination bi. Scanil bus bi.',pick:'Baax na ! Scanil QR bu bus bi.',found:'Baax na ! Destination bi nekk na ci bus bii. Bësal ci Fey.',none:'Gisuma ko ci bus bii. Laajal receveur bi.'},
+  fr:{routes:'J\'ai trouvé des trajets pour cette destination. Choisissez le vôtre.',similar:'Je n\'ai pas trouvé exactement, mais voici des destinations similaires. Choisissez la bonne.',noroute:'Aucun trajet trouvé pour cette destination. Scannez directement le bus.',pick:'Parfait ! Scannez maintenant le QR de ce bus.',found:'C\'est bon ! Cette destination est desservie par ce bus. Appuyez sur Payer.',none:'Cette destination n\'est pas inscrite dans ce bus. Demandez au receveur.'},
+  en:{routes:'I found routes for this destination. Please choose yours.',similar:'I did not find an exact match, but here are similar destinations. Please choose the right one.',noroute:'No route found for this destination. Please scan the bus directly.',pick:'Great! Now scan this bus QR code.',found:'Good! This destination is served by this bus. Tap Pay.',none:'This destination is not registered on this bus. Please ask the conductor.'}
 };
 const VC_LANG={wo:'Wolof',fr:'Français',en:'English'};
 let vcSaved={},vcPending={},vcRec=null,vcCur='wo';
@@ -4265,7 +4265,8 @@ window.aiSubmit=()=>{
   if(!v){aiBubble(AI_TXT[S.aiLang].empty);aiSpeak(AI_TXT[S.aiLang].empty,'empty',aiAutoListen);return;}
   aiStopListen();aiOpen(false);
   openTicketFlow();S.wantedDest=v;
-  aiShowRoutes(v);
+  aiGoScanner();
+  aiSpeak(AI_TXT[S.aiLang].go,'go');
 };
 const AI_RT={
  wo:{sim:d=>`Gisuma "${d}" bu leer, waaye gis naa yu mel ni ko. Tànnal bi la neex.`,n:(k,d)=>`Baax na ! Gis naa ${k} trajet ngir ${d}. Tànnal bi la neex.`,none:d=>`Gisuma trajet bu receveur bind ngir "${d}". Jéemal beneen tur walla scanil bus bi.`,pick:'Baax na ! Scanil QR bu bus bi.'},
@@ -4355,14 +4356,15 @@ window.aiCheckDest=(cands)=>{
   const want=S.wantedDest;const box=document.getElementById('aiResult');if(!want||!box)return;
   const T=AI_TXT[S.aiLang];const ok=cands.find(c=>aiMatches(want,c.t.to));
   box.style.display='block';
-  if(ok){box.style.background='#00A65022';box.style.border='1.5px solid #009A44';box.style.color='#6ee7b7';box.textContent='🤖 '+T.found(ok.t.to,ok.t.price);ok.chip.click();ok.chip.scrollIntoView({block:'center'});}
+  if(ok){box.style.background='#00A65022';box.style.border='1.5px solid #009A44';box.style.color='#6ee7b7';box.textContent='🤖 '+T.found(ok.t.to,ok.t.price);const dl0=document.getElementById('destList');if(dl0)dl0.style.display='flex';ok.chip.click();ok.chip.scrollIntoView({block:'center'});}
   else{box.style.background='#DF002418';box.style.border='1.5px solid #DF002466';box.style.color='#ffb3b3';box.textContent='🤖 '+(cands.length?T.none(want):T.nolist);
-    if(cands.length){const dl=document.getElementById('destList');if(dl){dl.style.outline='2px solid #FF6B00';dl.style.outlineOffset='6px';dl.style.borderRadius='14px';dl.scrollIntoView({block:'center',behavior:'smooth'});}}
+    const dl=document.getElementById('destList');if(dl)dl.style.display='none';
+    S.ticketSection=null;const bp=document.getElementById('btnPayTicket');if(bp)bp.disabled=true;
   }
   aiSpeak(box.textContent,ok?'found':(cands.length?'none':'nolist'));
 };
 window.openTicketFlow=()=>{resetFlow();openModal('modalTicketFlow');aiInit();};
-window.resetFlow=()=>{{const _dl=document.getElementById('destList');if(_dl)_dl.style.outline='none';}S.wantedDest=null;S.aiPick=null;S.aiRoutes=null;const _pb=document.getElementById('aiPickBanner');if(_pb)_pb.style.display='none';aiInit();setDots(0);['ticketStepAI','ticketStep0','ticketStep1','ticketStep3'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('ticketStep0').style.display='block';S.ticketBus=null;S.ticketSection=null;document.getElementById('ticketPriceDisplay').textContent='— FCFA';document.getElementById('btnPayTicket').disabled=true;if(unsubTicketWait){unsubTicketWait();unsubTicketWait=null;}};
+window.resetFlow=()=>{{const _dl=document.getElementById('destList');if(_dl){_dl.style.outline='none';_dl.style.display='flex';}}S.wantedDest=null;S.aiPick=null;S.aiRoutes=null;const _pb=document.getElementById('aiPickBanner');if(_pb)_pb.style.display='none';aiInit();setDots(0);['ticketStepAI','ticketStep0','ticketStep1','ticketStep3'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('ticketStep0').style.display='block';S.ticketBus=null;S.ticketSection=null;document.getElementById('ticketPriceDisplay').textContent='— FCFA';document.getElementById('btnPayTicket').disabled=true;if(unsubTicketWait){unsubTicketWait();unsubTicketWait=null;}};
 function setDots(s){for(let i=0;i<3;i++){const d=document.getElementById('tdot'+i);if(d)d.className='step-dot'+(i<s?' done':i===s?' active':'');}}
 async function loadBusInFlow(walletId){
   loader('Chargement bus…');
