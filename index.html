@@ -2601,6 +2601,8 @@ function sentinelDow(buses,dows){
 function sentinelAnalyze(buses,dows,labels){
   const N=dows.length,t=N-1,u=N-2,out=[];
   if(N<SENT.WARM+2)return{alerts:out,enough:false};
+  const ready=buses.filter(b=>b.rev.slice(Math.max(0,t-SENT.WIN),t).filter(x=>x>0).length>=SENT.WARM).length;
+  if(!ready)return{alerts:out,enough:false,ready:0,total:buses.length};
   const f=sentinelDow(buses,dows);
   buses.forEach(b=>{
     const idx=[];for(let i=Math.max(0,t-SENT.WIN);i<t;i++)if(b.rev[i]>0)idx.push(i);
@@ -2619,7 +2621,7 @@ function sentinelAnalyze(buses,dows,labels){
         out.push({bus:b.label,type:'skim',day:labels[u],z:(rk-med)/s,msg:`${Math.round(rk*100)} % des espèces dues sur 2 jours non versées (habituel ~${(med*100).toFixed(1)} %), non rattrapé le lendemain`});
     }
   });
-  return{alerts:out,enough:true};
+  return{alerts:out,enough:true,ready,total:buses.length};
 }
 async function sentinelLoadReal(receivers){
   const DAYS=35,t0=new Date();t0.setHours(0,0,0,0);const start=new Date(t0.getFullYear(),t0.getMonth(),t0.getDate()-DAYS);
@@ -2661,7 +2663,7 @@ function sentinelRender(box,res,simulated){
   const head=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;"><div style="font-size:12px;font-weight:800;color:#c4b5fd;">🛡️ Sentinel · IA ${simulated?'<span style="color:#FF6B00;">(données SIMULÉES)</span>':''}</div>${simulated?'<button class="dir-action-btn" onclick="dirSentinelReload()" style="font-size:11px;padding:6px 10px;">← Données réelles</button>':'<button class="dir-action-btn" onclick="sentinelDemo()" style="font-size:11px;padding:6px 10px;">Voir la démo</button>'}</div>`;
   let body;
   if(!res.enough)body='<div style="color:#888;font-size:12px;padding:6px 0;">Pas assez d’historique : Sentinel apprend l’habitude de chaque bus et a besoin d’environ 2 semaines de ventes. Utilisez la démo pour voir son fonctionnement.</div>';
-  else if(!res.alerts.length)body='<div style="color:#6ee7b7;font-size:12px;padding:6px 0;">✅ Aucun comportement inhabituel détecté sur le dernier jour complet.</div>';
+  else if(!res.alerts.length)body='<div style="color:#6ee7b7;font-size:12px;padding:6px 0;">✅ Aucun comportement inhabituel détecté sur le dernier jour complet ('+res.ready+' bus sur '+res.total+' avec assez d’historique pour être analysés).</div>';
   else body=res.alerts.map(a=>`<div class="dir-alert-row"><div class="dir-alert-dot" style="background:${a.type==='skim'?'#FF6B00':'#a78bfa'};"></div><div style="flex:1;font-size:12px;color:#ccc;"><b>${_escH(a.bus)}</b> · ${_escH(a.day)} · <i>à vérifier</i><br>${_escH(a.type==='skim'?'Versement manquant : ':'Recettes inhabituelles : ')}${_escH(a.msg)}</div></div>`).join('');
   box.innerHTML=head+body+'<div style="font-size:10px;color:#666;margin-top:6px;">Compare chaque bus à sa propre habitude. Indication à vérifier sur le terrain, pas une accusation.</div>';
 }
