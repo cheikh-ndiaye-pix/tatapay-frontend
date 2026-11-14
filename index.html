@@ -2640,7 +2640,9 @@ function sentinelAnalyze(buses,dows,labels){
   all.sort((a,b)=>b.z-a.z);const alerts=[];
   all.forEach(a=>{if(!alerts.some(k=>k.bus===a.bus&&k.type===a.type&&Math.abs(k.ti-a.ti)<=1))alerts.push(a);});
   alerts.sort((a,b)=>b.ti-a.ti||b.z-a.z);
-  return{alerts,enough:(full+prov+ind)>0,ready:full+prov+ind,full,prov,ind,total:buses.length,maxDays,span:N-t1};
+  const p0=Math.max(0,N-14),inP=alerts.filter(a=>a.ti>=p0);
+  const per={from:labels[p0],to:labels[N-1],n:inP.length,drop:inP.filter(a=>a.type==='drop').length,skim:inP.filter(a=>a.type==='skim').length,act:buses.filter(b=>b.rev.slice(p0).some(v=>v>0)).length};
+  return{alerts,enough:(full+prov+ind)>0,ready:full+prov+ind,full,prov,ind,total:buses.length,maxDays,span:N-t1,per};
 }
 async function sentinelLoadReal(receivers){
   const DAYS=35,t0=new Date();t0.setHours(0,0,0,0);const start=new Date(t0.getFullYear(),t0.getMonth(),t0.getDate()-DAYS);
@@ -2685,7 +2687,8 @@ function sentinelRender(box,res,simulated){
   else if(!res.alerts.length)body='<div style="color:#6ee7b7;font-size:12px;padding:6px 0;">✅ Aucun comportement inhabituel détecté ('+res.span+' derniers jours relus).</div>';
   else body=res.alerts.slice(0,8).map(a=>`<div class="dir-alert-row"><div class="dir-alert-dot" style="background:${a.type==='skim'?'#FF6B00':'#a78bfa'};"></div><div style="flex:1;font-size:12px;color:#ccc;"><b>${_escH(a.bus)}</b> · ${_escH(a.day)} · <i>à vérifier</i><br>${_escH(a.type==='skim'?'Versement manquant : ':'Recettes inhabituelles : ')}${_escH(a.msg)}</div></div>`).join('')+(res.alerts.length>8?`<div style="font-size:11px;color:#888;">+ ${res.alerts.length-8} alertes plus anciennes</div>`:'');
   const prog=(!simulated&&res.enough)?`<div style="font-size:11px;color:#a78bfa;margin-top:6px;">Apprentissage : ${Math.min(res.maxDays,14)}/14 jours d’historique · ${res.full} bus analysés en mode complet${res.prov?`, ${res.prov} en mode provisoire (seuils prudents)`:''}${res.ind?`, ${res.ind} en mode indicatif (1 à 2 jours)`:''} sur ${res.total}.</div>`:'';
-  box.innerHTML=head+body+prog+'<div style="font-size:10px;color:#666;margin-top:6px;">Compare chaque bus à sa propre habitude. Indication à vérifier sur le terrain, pas une accusation.</div>';
+  const bil=(!simulated&&res.enough&&res.per)?`<div style=\"font-size:11px;color:#c4b5fd;margin-top:6px;\">📋 Bilan des 14 derniers jours (${res.per.from} → ${res.per.to}) : ${res.per.n} alerte(s) à vérifier${res.per.n?` (${res.per.drop} chute(s) de recettes, ${res.per.skim} versement(s) manquant(s))`:''} · ${res.per.act} bus avec des ventes. Mis à jour à chaque ouverture, en tenant compte de tout l’historique déjà enregistré.</div>`:'';
+  box.innerHTML=head+body+prog+bil+'<div style="font-size:10px;color:#666;margin-top:6px;">Compare chaque bus à sa propre habitude. Indication à vérifier sur le terrain, pas une accusation.</div>';
 }
 function _sentinelBox(){const card=document.getElementById('dir-alerts-card');if(!card)return null;let box=document.getElementById('dir-sentinel-box');if(!box){box=document.createElement('div');box.id='dir-sentinel-box';box.style.cssText='margin-top:12px;padding-top:12px;border-top:1px solid #ffffff14;';card.appendChild(box);}return box;}
 window.sentinelDemo=()=>{const box=_sentinelBox();if(!box)return;const d=sentinelDemoData();sentinelRender(box,sentinelAnalyze(d.buses,d.dows,d.labels),true);};
