@@ -2589,7 +2589,7 @@ window.dirSwitchRankTab=(which)=>{
 // ══ SENTINEL — détection d'anomalies adaptative (tableau de bord du directeur) ══
 // Compare chaque bus à sa propre habitude (médiane/MAD robustes, corrigée du jour de la semaine).
 // Les alertes disent « à vérifier », jamais « fraude ». Évalué sur données simulées (voir rapport).
-const SENT={WARM:10,WIN:28};
+const SENT={WARM:10,WIN:28,BACK:21,MINBASE:5000};
 function _sMed(a){if(!a.length)return NaN;const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;}
 function _sMad(a){const m=_sMed(a);return 1.4826*_sMed(a.map(x=>Math.abs(x-m)));}
 function sentinelDow(buses,dows){
@@ -2599,29 +2599,48 @@ function sentinelDow(buses,dows){
 }
 // buses:[{label,rev[],due[],paid[]}], dows[i]=jour de semaine du jour i, labels[i]=date lisible. Dernier indice = dernier jour COMPLET.
 function sentinelAnalyze(buses,dows,labels){
-  const N=dows.length,t=N-1,u=N-2,out=[];
-  if(N<SENT.WARM+2)return{alerts:out,enough:false};
-  const ready=buses.filter(b=>b.rev.slice(Math.max(0,t-SENT.WIN),t).filter(x=>x>0).length>=SENT.WARM).length;
-  if(!ready)return{alerts:out,enough:false,ready:0,total:buses.length};
-  const f=sentinelDow(buses,dows);
-  buses.forEach(b=>{
-    const idx=[];for(let i=Math.max(0,t-SENT.WIN);i<t;i++)if(b.rev[i]>0)idx.push(i);
-    if(idx.length>=SENT.WARM&&b.rev[t]>0){
-      const h=idx.map(i=>Math.log(b.rev[i])-Math.log(f[dows[i]]));
-      const med=_sMed(h),s=Math.max(_sMad(h),0.08),x=Math.log(b.rev[t])-Math.log(f[dows[t]]),z=(med-x)/s;
-      if(z>3.5){const ex=Math.exp(med)*f[dows[t]];
-        out.push({bus:b.label,type:'drop',day:labels[t],z,msg:`Recettes ${fmt(b.rev[t])} F pour environ ${fmt(ex)} F attendus ce jour-là pour ce bus (écart ${z.toFixed(1)} σ)`});}
-    }
-    const r2=k=>{const d=b.due[k-1]+b.due[k];return d>0?(d-(b.paid[k-1]+b.paid[k]))/d:null;};
-    const hist=[];for(let k=Math.max(1,t-SENT.WIN);k<t;k++){const v=r2(k);if(v!==null)hist.push(v);}
-    const rk=r2(t);
-    if(hist.length>=SENT.WARM&&rk!==null){
-      const med=_sMed(hist),s=Math.max(_sMad(hist),0.01),gu=b.due[u]-b.paid[u],gv=b.due[t]-b.paid[t];
-      if(rk>0.04&&(rk-med)/s>4&&gu>=gv&&gu>1000)
-        out.push({bus:b.label,type:'skim',day:labels[u],z:(rk-med)/s,msg:`${Math.round(rk*100)} % des espèces dues sur 2 jours non versées (habituel ~${(med*100).toFixed(1)} %), non rattrapé le lendemain`});
-    }
-  });
-  return{alerts:out,enough:true,ready,total:buses.length};
+  // Relit TOUT l'historique : chaque jour des BACK derniers jours est jugé avec les seuls jours qui le précèdent.
+  // Niveaux par bus : « complet » (>=10 jours), « provisoire » (3 à 9), « indicatif » (1 à 2 : comparaison aux autres bus, chute seulement).
+  const N=dows.length,f=sentinelDow(buses,dows),all=[],t1=Math.max(1,N-1-SENT.BACK);
+  let full=0,prov=0,ind=0,maxDays=0;
+  for(let t=N-1;t>=t1;t--){
+    const u=t-1,last=t===N-1,idxs=[],modes=[];
+    buses.forEach(b=>{const idx=[];for(let i=Math.max(0,t-SENT.WIN);i<t;i++)if(b.rev[i]>0)idx.push(i);
+      const m=idx.length>=SENT.WARM?'full':idx.length>=3?'prov':idx.length>=1?'ind':null;
+      idxs.push(idx);modes.push(m);
+      if(last){maxDays=Math.max(maxDays,idx.length);if(m==='full')full++;else if(m==='prov')prov++;else if(m)ind++;}});
+    const rt=buses.map((b,i)=>{if(!(b.rev[t]>0))return null;const l=idxs[i].slice(-2);if(!l.length)return null;
+      const base=l.reduce((a,k)=>a+b.rev[k],0)/l.length;return base>=SENT.MINBASE?b.rev[t]/base:null;});
+    buses.forEach((b,i)=>{
+      const mode=modes[i],idx=idxs[i];if(!mode)return;
+      if(mode==='ind'){
+        const o=rt.filter((v,j)=>j!==i&&v!==null);
+        if(rt[i]!==null&&o.length>=3){const m=_sMed(o);
+          if(m>0.5&&rt[i]<0.4*m)all.push({bus:b.label,type:'drop',ti:t,day:labels[t]+' · indicatif',z:m/rt[i],msg:`Recettes ${fmt(b.rev[t])} F, très en dessous de ses derniers jours alors que les autres bus restent stables (très peu d’historique : indication faible)`});}
+        return;
+      }
+      const P=mode==='full'?{sf:0.08,zt:3.5,sk:0.01,zs:4,rm:0.04}:{sf:0.20,zt:4.0,sk:0.02,zs:5,rm:0.06};
+      const tag=mode==='prov'?' · provisoire':'';
+      if(b.rev[t]>0){
+        const h=idx.map(i=>Math.log(b.rev[i])-Math.log(f[dows[i]]));
+        const med=_sMed(h),s=Math.max(_sMad(h),P.sf),x=Math.log(b.rev[t])-Math.log(f[dows[t]]),z=(med-x)/s;
+        if(z>P.zt){const ex=Math.exp(med)*f[dows[t]];
+          all.push({bus:b.label,type:'drop',ti:t,day:labels[t]+tag,z,msg:`Recettes ${fmt(b.rev[t])} F pour environ ${fmt(ex)} F attendus ce jour-là pour ce bus (écart ${z.toFixed(1)} σ)`});}
+      }
+      const r2=k=>{const d=b.due[k-1]+b.due[k];return d>0?(d-(b.paid[k-1]+b.paid[k]))/d:null;};
+      const hist=[];for(let k=Math.max(1,t-SENT.WIN);k<t;k++){const v=r2(k);if(v!==null)hist.push(v);}
+      const rk=r2(t);
+      if(hist.length>=(mode==='full'?SENT.WARM:3)&&rk!==null){
+        const med=_sMed(hist),s=Math.max(_sMad(hist),P.sk),gu=b.due[u]-b.paid[u],gv=b.due[t]-b.paid[t];
+        if(rk>P.rm&&(rk-med)/s>P.zs&&gu>=gv&&gu>1000)
+          all.push({bus:b.label,type:'skim',ti:u,day:labels[u]+tag,z:(rk-med)/s,msg:`${Math.round(rk*100)} % des espèces dues sur 2 jours non versées (habituel ~${(med*100).toFixed(1)} %), non rattrapé le lendemain`});
+      }
+    });
+  }
+  all.sort((a,b)=>b.z-a.z);const alerts=[];
+  all.forEach(a=>{if(!alerts.some(k=>k.bus===a.bus&&k.type===a.type&&Math.abs(k.ti-a.ti)<=1))alerts.push(a);});
+  alerts.sort((a,b)=>b.ti-a.ti||b.z-a.z);
+  return{alerts,enough:(full+prov+ind)>0,ready:full+prov+ind,full,prov,ind,total:buses.length,maxDays,span:N-t1};
 }
 async function sentinelLoadReal(receivers){
   const DAYS=35,t0=new Date();t0.setHours(0,0,0,0);const start=new Date(t0.getFullYear(),t0.getMonth(),t0.getDate()-DAYS);
@@ -2662,10 +2681,11 @@ function sentinelDemoData(){
 function sentinelRender(box,res,simulated){
   const head=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;"><div style="font-size:12px;font-weight:800;color:#c4b5fd;">🛡️ Sentinel · IA ${simulated?'<span style="color:#FF6B00;">(données SIMULÉES)</span>':''}</div>${simulated?'<button class="dir-action-btn" onclick="dirSentinelReload()" style="font-size:11px;padding:6px 10px;">← Données réelles</button>':'<button class="dir-action-btn" onclick="sentinelDemo()" style="font-size:11px;padding:6px 10px;">Voir la démo</button>'}</div>`;
   let body;
-  if(!res.enough)body='<div style="color:#888;font-size:12px;padding:6px 0;">Pas assez d’historique : Sentinel apprend l’habitude de chaque bus et a besoin d’environ 2 semaines de ventes. Utilisez la démo pour voir son fonctionnement.</div>';
-  else if(!res.alerts.length)body='<div style="color:#6ee7b7;font-size:12px;padding:6px 0;">✅ Aucun comportement inhabituel détecté sur le dernier jour complet ('+res.ready+' bus sur '+res.total+' avec assez d’historique pour être analysés).</div>';
-  else body=res.alerts.map(a=>`<div class="dir-alert-row"><div class="dir-alert-dot" style="background:${a.type==='skim'?'#FF6B00':'#a78bfa'};"></div><div style="flex:1;font-size:12px;color:#ccc;"><b>${_escH(a.bus)}</b> · ${_escH(a.day)} · <i>à vérifier</i><br>${_escH(a.type==='skim'?'Versement manquant : ':'Recettes inhabituelles : ')}${_escH(a.msg)}</div></div>`).join('');
-  box.innerHTML=head+body+'<div style="font-size:10px;color:#666;margin-top:6px;">Compare chaque bus à sa propre habitude. Indication à vérifier sur le terrain, pas une accusation.</div>';
+  if(!res.enough)body='<div style="color:#888;font-size:12px;padding:6px 0;">Sentinel relit les ventes déjà enregistrées. Il lui faut au moins 1 jour de ventes d’un bus (idéalement 2 semaines) ; il s’affinera tout seul au fil des jours. Utilisez la démo pour voir son fonctionnement.</div>';
+  else if(!res.alerts.length)body='<div style="color:#6ee7b7;font-size:12px;padding:6px 0;">✅ Aucun comportement inhabituel détecté (${res.span} derniers jours relus).</div>';
+  else body=res.alerts.slice(0,8).map(a=>`<div class="dir-alert-row"><div class="dir-alert-dot" style="background:${a.type==='skim'?'#FF6B00':'#a78bfa'};"></div><div style="flex:1;font-size:12px;color:#ccc;"><b>${_escH(a.bus)}</b> · ${_escH(a.day)} · <i>à vérifier</i><br>${_escH(a.type==='skim'?'Versement manquant : ':'Recettes inhabituelles : ')}${_escH(a.msg)}</div></div>`).join('')+(res.alerts.length>8?`<div style="font-size:11px;color:#888;">+ ${res.alerts.length-8} alertes plus anciennes</div>`:'');
+  const prog=(!simulated&&res.enough)?`<div style="font-size:11px;color:#a78bfa;margin-top:6px;">Apprentissage : ${Math.min(res.maxDays,14)}/14 jours d’historique · ${res.full} bus analysés en mode complet${res.prov?`, ${res.prov} en mode provisoire (seuils prudents)`:''}${res.ind?`, ${res.ind} en mode indicatif (1 à 2 jours)`:''} sur ${res.total}.</div>`:'';
+  box.innerHTML=head+body+prog+'<div style="font-size:10px;color:#666;margin-top:6px;">Compare chaque bus à sa propre habitude. Indication à vérifier sur le terrain, pas une accusation.</div>';
 }
 function _sentinelBox(){const card=document.getElementById('dir-alerts-card');if(!card)return null;let box=document.getElementById('dir-sentinel-box');if(!box){box=document.createElement('div');box.id='dir-sentinel-box';box.style.cssText='margin-top:12px;padding-top:12px;border-top:1px solid #ffffff14;';card.appendChild(box);}return box;}
 window.sentinelDemo=()=>{const box=_sentinelBox();if(!box)return;const d=sentinelDemoData();sentinelRender(box,sentinelAnalyze(d.buses,d.dows,d.labels),true);};
