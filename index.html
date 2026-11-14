@@ -2679,10 +2679,10 @@ function sentinelDemoData(){
   return{buses,dows,labels};
 }
 function sentinelRender(box,res,simulated){
-  const head=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;"><div style="font-size:12px;font-weight:800;color:#c4b5fd;">🛡️ Sentinel · IA ${simulated?'<span style="color:#FF6B00;">(données SIMULÉES)</span>':''}</div>${simulated?'<button class="dir-action-btn" onclick="dirSentinelReload()" style="font-size:11px;padding:6px 10px;">← Données réelles</button>':'<button class="dir-action-btn" onclick="sentinelDemo()" style="font-size:11px;padding:6px 10px;">Voir la démo</button>'}</div>`;
+  const head=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;"><div style="font-size:12px;font-weight:800;color:#c4b5fd;">🛡️ Sentinel · IA ${simulated?'<span style="color:#FF6B00;">(données SIMULÉES)</span>':''}</div>${simulated?'<button class="dir-action-btn" onclick="dirSentinelReload()" style="font-size:11px;padding:6px 10px;">← Données réelles</button>':''}</div>`;
   let body;
-  if(!res.enough)body='<div style="color:#888;font-size:12px;padding:6px 0;">Sentinel relit les ventes déjà enregistrées. Il lui faut au moins 1 jour de ventes d’un bus (idéalement 2 semaines) ; il s’affinera tout seul au fil des jours. Utilisez la démo pour voir son fonctionnement.</div>';
-  else if(!res.alerts.length)body='<div style="color:#6ee7b7;font-size:12px;padding:6px 0;">✅ Aucun comportement inhabituel détecté (${res.span} derniers jours relus).</div>';
+  if(!res.enough)body='<div style="color:#888;font-size:12px;padding:6px 0;">Sentinel relit les ventes déjà enregistrées. Il lui faut au moins 1 jour de ventes d’un bus (idéalement 2 semaines) ; il s’affinera tout seul au fil des jours.</div>';
+  else if(!res.alerts.length)body='<div style="color:#6ee7b7;font-size:12px;padding:6px 0;">✅ Aucun comportement inhabituel détecté ('+res.span+' derniers jours relus).</div>';
   else body=res.alerts.slice(0,8).map(a=>`<div class="dir-alert-row"><div class="dir-alert-dot" style="background:${a.type==='skim'?'#FF6B00':'#a78bfa'};"></div><div style="flex:1;font-size:12px;color:#ccc;"><b>${_escH(a.bus)}</b> · ${_escH(a.day)} · <i>à vérifier</i><br>${_escH(a.type==='skim'?'Versement manquant : ':'Recettes inhabituelles : ')}${_escH(a.msg)}</div></div>`).join('')+(res.alerts.length>8?`<div style="font-size:11px;color:#888;">+ ${res.alerts.length-8} alertes plus anciennes</div>`:'');
   const prog=(!simulated&&res.enough)?`<div style="font-size:11px;color:#a78bfa;margin-top:6px;">Apprentissage : ${Math.min(res.maxDays,14)}/14 jours d’historique · ${res.full} bus analysés en mode complet${res.prov?`, ${res.prov} en mode provisoire (seuils prudents)`:''}${res.ind?`, ${res.ind} en mode indicatif (1 à 2 jours)`:''} sur ${res.total}.</div>`:'';
   box.innerHTML=head+body+prog+'<div style="font-size:10px;color:#666;margin-top:6px;">Compare chaque bus à sa propre habitude. Indication à vérifier sur le terrain, pas une accusation.</div>';
@@ -2698,7 +2698,7 @@ async function dirSentinelRun(approvedRecv){
     if(!approvedRecv.length){sentinelRender(box,{enough:false,alerts:[]},false);return;}
     const d=await sentinelLoadReal(approvedRecv);
     sentinelRender(box,sentinelAnalyze(d.buses,d.dows,d.labels),false);
-  }catch(e){console.warn('[sentinel]',e);box.innerHTML='<div style="color:#888;font-size:12px;">🛡️ Sentinel indisponible pour le moment. <a href="#" onclick="sentinelDemo();return false;" style="color:#c4b5fd;">Voir la démo</a></div>';}
+  }catch(e){console.warn('[sentinel]',e);box.innerHTML='<div style="color:#888;font-size:12px;">🛡️ Sentinel indisponible pour le moment.</div>';}
 }
 
 async function loadDirFullDashboard(){
