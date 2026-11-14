@@ -2586,6 +2586,99 @@ window.dirSwitchRankTab=(which)=>{
     busTab.style.background='transparent';busTab.style.color='#7dd3fc99';
   }
 };
+// ══ SENTINEL — détection d'anomalies adaptative (tableau de bord du directeur) ══
+// Compare chaque bus à sa propre habitude (médiane/MAD robustes, corrigée du jour de la semaine).
+// Les alertes disent « à vérifier », jamais « fraude ». Évalué sur données simulées (voir rapport).
+const SENT={WARM:10,WIN:28};
+function _sMed(a){if(!a.length)return NaN;const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;}
+function _sMad(a){const m=_sMed(a);return 1.4826*_sMed(a.map(x=>Math.abs(x-m)));}
+function sentinelDow(buses,dows){
+  const r=[[],[],[],[],[],[],[]];
+  buses.forEach(b=>{const act=b.rev.filter(x=>x>0);if(act.length<7)return;const m=_sMed(act);b.rev.forEach((x,i)=>{if(x>0)r[dows[i]].push(x/m);});});
+  return r.map(a=>a.length>=4?Math.min(1.6,Math.max(0.4,_sMed(a))):1);
+}
+// buses:[{label,rev[],due[],paid[]}], dows[i]=jour de semaine du jour i, labels[i]=date lisible. Dernier indice = dernier jour COMPLET.
+function sentinelAnalyze(buses,dows,labels){
+  const N=dows.length,t=N-1,u=N-2,out=[];
+  if(N<SENT.WARM+2)return{alerts:out,enough:false};
+  const f=sentinelDow(buses,dows);
+  buses.forEach(b=>{
+    const idx=[];for(let i=Math.max(0,t-SENT.WIN);i<t;i++)if(b.rev[i]>0)idx.push(i);
+    if(idx.length>=SENT.WARM&&b.rev[t]>0){
+      const h=idx.map(i=>Math.log(b.rev[i])-Math.log(f[dows[i]]));
+      const med=_sMed(h),s=Math.max(_sMad(h),0.08),x=Math.log(b.rev[t])-Math.log(f[dows[t]]),z=(med-x)/s;
+      if(z>3.5){const ex=Math.exp(med)*f[dows[t]];
+        out.push({bus:b.label,type:'drop',day:labels[t],z,msg:`Recettes ${fmt(b.rev[t])} F pour environ ${fmt(ex)} F attendus ce jour-là pour ce bus (écart ${z.toFixed(1)} σ)`});}
+    }
+    const r2=k=>{const d=b.due[k-1]+b.due[k];return d>0?(d-(b.paid[k-1]+b.paid[k]))/d:null;};
+    const hist=[];for(let k=Math.max(1,t-SENT.WIN);k<t;k++){const v=r2(k);if(v!==null)hist.push(v);}
+    const rk=r2(t);
+    if(hist.length>=SENT.WARM&&rk!==null){
+      const med=_sMed(hist),s=Math.max(_sMad(hist),0.01),gu=b.due[u]-b.paid[u],gv=b.due[t]-b.paid[t];
+      if(rk>0.04&&(rk-med)/s>4&&gu>=gv&&gu>1000)
+        out.push({bus:b.label,type:'skim',day:labels[u],z:(rk-med)/s,msg:`${Math.round(rk*100)} % des espèces dues sur 2 jours non versées (habituel ~${(med*100).toFixed(1)} %), non rattrapé le lendemain`});
+    }
+  });
+  return{alerts:out,enough:true};
+}
+async function sentinelLoadReal(receivers){
+  const DAYS=35,t0=new Date();t0.setHours(0,0,0,0);const start=new Date(t0.getFullYear(),t0.getMonth(),t0.getDate()-DAYS);
+  const dows=[],labels=[];for(let i=0;i<DAYS;i++){const d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);dows.push(d.getDay());labels.push(d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}));}
+  const idxOf=dt=>Math.round((new Date(dt.getFullYear(),dt.getMonth(),dt.getDate())-start)/864e5);
+  const map={};const buses=receivers.map(r=>{const b={label:r.vehicle||r.name||'Bus',rev:new Array(DAYS).fill(0),due:new Array(DAYS).fill(0),paid:new Array(DAYS).fill(0)};map[r.id]=b;return b;});
+  const chunks=chunkArray(receivers.map(r=>r.id),30);
+  for(const ch of chunks){
+    const tk=await getDocs(query(collection(db,'tickets'),where('busUid','in',ch)));
+    tk.docs.forEach(d=>{const t=d.data(),dt=t.ts?.toDate?.(),b=map[t.busUid];if(!dt||!b)return;const i=idxOf(dt);if(i<0||i>=DAYS)return;b.rev[i]+=t.price||0;if(t.payMode==='especes')b.due[i]+=t.price||0;});
+    const vs=await getDocs(query(collection(db,'versements'),where('receiverUid','in',ch)));
+    vs.docs.forEach(d=>{const v=d.data(),dt=v.ts?.toDate?.(),b=map[v.receiverUid];if(!dt||!b||v.status!=='confirmed'||v.mode!=='especes')return;const i=idxOf(dt);if(i<0||i>=DAYS)return;b.paid[i]+=v.amount||0;});
+  }
+  return{buses,dows,labels};
+}
+function sentinelDemoData(){
+  let s=7;const rnd=()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
+  const gauss=()=>Math.sqrt(-2*Math.log(rnd()+1e-12))*Math.cos(2*Math.PI*rnd());
+  const DOWS=[0.6,1,1.02,1,1.03,1.12,0.85],N=35,t0=new Date();t0.setHours(0,0,0,0);
+  const dows=[],labels=[];for(let i=0;i<N;i++){const d=new Date(t0.getFullYear(),t0.getMonth(),t0.getDate()-N+i);dows.push(d.getDay());labels.push(d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}));}
+  const buses=[];
+  for(let b=0;b<8;b++){
+    const base=[110000,45000,90000,70000,130000,38000,85000,60000][b],share=0.6;let carry=0;
+    const B={label:'Bus démo '+(b+1)+' (simulé)',rev:[],due:[],paid:[]};
+    for(let i=0;i<N;i++){
+      let r=base*DOWS[dows[i]]*Math.exp(0.10*gauss());
+      if(b===1&&i===N-1)r*=0.5;           // anomalie injectée : chute de recettes
+      const dd=r*share,owed=dd+carry;let p;
+      if(b===4&&i===N-2){p=owed*0.78;carry=0;}                 // anomalie injectée : versement incomplet
+      else if(b===2&&i===N-2){p=0;carry=owed;}                // retard LÉGITIME (ne doit pas alerter)
+      else{p=owed*(1-Math.abs(0.01*gauss()));carry=0;}
+      B.rev.push(r);B.due.push(dd);B.paid.push(p);
+    }
+    buses.push(B);
+  }
+  return{buses,dows,labels};
+}
+function sentinelRender(box,res,simulated){
+  const head=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;"><div style="font-size:12px;font-weight:800;color:#c4b5fd;">🛡️ Sentinel · IA ${simulated?'<span style="color:#FF6B00;">(données SIMULÉES)</span>':''}</div>${simulated?'<button class="dir-action-btn" onclick="dirSentinelReload()" style="font-size:11px;padding:6px 10px;">← Données réelles</button>':'<button class="dir-action-btn" onclick="sentinelDemo()" style="font-size:11px;padding:6px 10px;">Voir la démo</button>'}</div>`;
+  let body;
+  if(!res.enough)body='<div style="color:#888;font-size:12px;padding:6px 0;">Pas assez d’historique : Sentinel apprend l’habitude de chaque bus et a besoin d’environ 2 semaines de ventes. Utilisez la démo pour voir son fonctionnement.</div>';
+  else if(!res.alerts.length)body='<div style="color:#6ee7b7;font-size:12px;padding:6px 0;">✅ Aucun comportement inhabituel détecté sur le dernier jour complet.</div>';
+  else body=res.alerts.map(a=>`<div class="dir-alert-row"><div class="dir-alert-dot" style="background:${a.type==='skim'?'#FF6B00':'#a78bfa'};"></div><div style="flex:1;font-size:12px;color:#ccc;"><b>${_escH(a.bus)}</b> · ${_escH(a.day)} · <i>à vérifier</i><br>${_escH(a.type==='skim'?'Versement manquant : ':'Recettes inhabituelles : ')}${_escH(a.msg)}</div></div>`).join('');
+  box.innerHTML=head+body+'<div style="font-size:10px;color:#666;margin-top:6px;">Compare chaque bus à sa propre habitude. Indication à vérifier sur le terrain, pas une accusation.</div>';
+}
+function _sentinelBox(){const card=document.getElementById('dir-alerts-card');if(!card)return null;let box=document.getElementById('dir-sentinel-box');if(!box){box=document.createElement('div');box.id='dir-sentinel-box';box.style.cssText='margin-top:12px;padding-top:12px;border-top:1px solid #ffffff14;';card.appendChild(box);}return box;}
+window.sentinelDemo=()=>{const box=_sentinelBox();if(!box)return;const d=sentinelDemoData();sentinelRender(box,sentinelAnalyze(d.buses,d.dows,d.labels),true);};
+let _sentRecv=[];
+window.dirSentinelReload=()=>dirSentinelRun(_sentRecv);
+async function dirSentinelRun(approvedRecv){
+  _sentRecv=approvedRecv;const box=_sentinelBox();if(!box)return;
+  box.innerHTML='<div style="color:#888;font-size:12px;">🛡️ Sentinel analyse…</div>';
+  try{
+    if(!approvedRecv.length){sentinelRender(box,{enough:false,alerts:[]},false);return;}
+    const d=await sentinelLoadReal(approvedRecv);
+    sentinelRender(box,sentinelAnalyze(d.buses,d.dows,d.labels),false);
+  }catch(e){console.warn('[sentinel]',e);box.innerHTML='<div style="color:#888;font-size:12px;">🛡️ Sentinel indisponible pour le moment. <a href="#" onclick="sentinelDemo();return false;" style="color:#c4b5fd;">Voir la démo</a></div>';}
+}
+
 async function loadDirFullDashboard(){
   loader('Chargement dashboard…');
   try{
@@ -2625,6 +2718,7 @@ async function loadDirFullDashboard(){
     const alertsCont=document.getElementById('dir-alerts-list');
     if(!alerts.length){alertsCont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">✅ Aucune alerte active.</div>';}
     else{alertsCont.innerHTML=alerts.map(a=>`<div class="dir-alert-row"><div class="dir-alert-dot" style="background:${a.color};"></div><div style="flex:1;font-size:12px;color:#ccc;">${_escH(a.msg)}</div></div>`).join('');}
+    dirSentinelRun(approvedRecv);
     const ligneLabels=approvedRecv.map(r=>r.ligne||'—');const ligneData=approvedRecv.map(r=>r.today||0);
     const uniqueLignes=new Set(approvedRecv.map(r=>r.ligne).filter(Boolean));
     const lineCard=document.getElementById('dir-line-chart-card');
