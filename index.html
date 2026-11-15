@@ -312,9 +312,19 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
   <div style="width:100%;max-width:360px;">
     <div class="ticket-thermal" id="ticketThermalContent"></div>
     <div id="ticketHandoffZone" style="display:none;"></div>
+    <button id="ticketTripBtn" class="btn btn-purple btn-full" style="display:none;margin-top:14px;" onclick="openTripRoute()">🗺️ Voir l'itinéraire du bus</button>
     <button class="btn btn-secondary btn-full" style="margin-top:14px;" onclick="printTicket()">🖨️ Imprimer</button>
     <button class="btn btn-primary btn-full" style="margin-top:10px;" onclick="closeTicket()">✓ Fermer</button>
   </div>
+</div>
+
+<div id="modalTripRoute" style="display:none;position:fixed;inset:0;z-index:99999;background:#06120a;flex-direction:column;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;color:#fff;">
+    <div style="font-weight:900;font-size:17px;">🗺️ Itinéraire de mon trajet</div>
+    <button onclick="closeTripRoute()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px 12px;color:#fff;font-weight:800;cursor:pointer;">✕</button>
+  </div>
+  <div id="tripInfo" style="margin:0 16px 10px;padding:10px 14px;border-radius:12px;background:#ffffff0d;color:#ddd;font-size:12px;line-height:1.6;">Chargement…</div>
+  <div id="tripMap" style="flex:1;margin:0 16px 16px;border-radius:16px;overflow:hidden;min-height:300px;"></div>
 </div>
 
 <div class="camera-screen" id="cameraScreen">
@@ -2124,6 +2134,17 @@ let allFilter=null,allRoutes=null,allWant='';
 const _pl=v=>String(v||'').toUpperCase().replace(/[\s-]/g,'');
 let allMap=null,allMeMarker=null,allMarkers={},unsubAllBuses=null,allFitted=false,allMyPos=null,allLastBuses=[],allRenderId=0;
 const _etaCache={};
+let allRouteLayer=null,allSelPlate=null;
+// Trace sur la carte le chemin que le bus va suivre jusqu'au passager (le bus choisi, ou le plus proche par défaut)
+function drawBusRoute(e,b,me){
+  try{
+    if(allRouteLayer&&allMap){allMap.removeLayer(allRouteLayer);allRouteLayer=null;}
+    if(!allMap||!e||!b||!me)return;
+    const real=e.geo&&e.geo.length>1,pts=real?e.geo:[[b.lat,b.lng],[me.lat,me.lng]];
+    allRouteLayer=L.polyline(pts,{color:'#2563eb',weight:real?6:4,opacity:.85,dashArray:real?null:'8 8'}).addTo(allMap);
+    allRouteLayer.bindTooltip(real?`🚌 ${b.plate} → vous · ${_fmtMin(e.min)}`:`🚌 ${b.plate} → vous (trajet approximatif)`,{sticky:true});
+  }catch(err){console.warn('[route]',err);}
+}
 function stopAllMap(){if(unsubAllBuses){unsubAllBuses();unsubAllBuses=null;}allRenderId++;}
 function _fmtMin(m){if(m==null||isNaN(m))return '';if(m<1)return '< 1 min';if(m<60)return `${Math.round(m)} min`;const h=Math.floor(m/60),r=Math.round(m%60);return `${h} h ${String(r).padStart(2,'0')}`;}
 // ══ PREDICTOR — IA qui prévoit l'arrivée du bus à partir des trajets enregistrés (bus_traces) ══
@@ -2182,18 +2203,18 @@ async function predictorAdjust(raw,roadKm,baseMin){
 async function _busEta(b,me){
   const c=_etaCache[b.plate];
   if(c&&Date.now()-c.at<45000&&_haversineKm(c.lat,c.lng,b.lat,b.lng)<0.2&&_haversineKm(c.mlat,c.mlng,me.lat,me.lng)<0.2)return c;
-  let min=null,km=null;
+  let min=null,km=null,geo=null;
   try{
     const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),5000);
-    const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${b.lng},${b.lat};${me.lng},${me.lat}?overview=false`,{signal:ctl.signal});
+    const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${b.lng},${b.lat};${me.lng},${me.lat}?overview=full&geometries=geojson`,{signal:ctl.signal});
     clearTimeout(to);
     const j=await r.json();
-    if(j.routes&&j.routes[0]){km=j.routes[0].distance/1000;min=(j.routes[0].duration/60)*1.4;}
+    if(j.routes&&j.routes[0]){km=j.routes[0].distance/1000;min=(j.routes[0].duration/60)*1.4;const gc=j.routes[0].geometry&&j.routes[0].geometry.coordinates;if(gc&&gc.length>1)geo=gc.map(c=>[c[1],c[0]]);}
   }catch(e){}
   if(min==null){km=_haversineKm(me.lat,me.lng,b.lat,b.lng)*1.4;min=km/18*60;}
   const base=min;let mode='simple',conf=0,days=0;
   try{const p=await predictorAdjust(b.vehicleRaw||b.plate,km,base);if(p){min=p.min;mode='ia';conf=p.conf;days=p.days;}}catch(e){}
-  return _etaCache[b.plate]={at:Date.now(),lat:b.lat,lng:b.lng,mlat:me.lat,mlng:me.lng,min,km,base,mode,conf,days};
+  return _etaCache[b.plate]={at:Date.now(),lat:b.lat,lng:b.lng,mlat:me.lat,mlng:me.lng,min,km,base,mode,conf,days,geo};
 }
 function _busIcon(plate,eta){
   return L.divIcon({className:'',iconSize:[0,0],html:`<div style="transform:translate(-50%,-100%);background:#0369a1;color:#fff;border:2px solid #fff;border-radius:12px;padding:3px 8px;font:800 11px 'JetBrains Mono',monospace;white-space:nowrap;text-align:center;box-shadow:0 2px 8px #0009;">🚌 ${_esc(plate)}${eta?`<br><span style="color:#fde68a;">${_esc(eta)}</span>`:''}</div>`});
@@ -2212,7 +2233,7 @@ async function renderAllBuses(){
     const label=e?`~${_fmtMin(e.min)}${e.mode==='ia'?' 🤖':''}`:'';
     const ll=[b.lat,b.lng];
     const pop=`<div style="font-family:'Space Grotesk',sans-serif;color:#111;min-width:150px;"><div style="font-weight:900;font-size:14px;">🚌 ${_esc(b.plate)}${b.ligne?' · Ligne '+_esc(b.ligne):''}</div>${e?`<div style="margin:4px 0;font-size:13px;">⏱️ Arrive dans <b>~${_fmtMin(e.min)}</b><br>📏 ${_fmtDist(e.km)} par la route<br><span style=\"font-size:11px;color:#6d28d9;\">${e.mode==='ia'?'🤖 Predictor · appris sur '+e.days+' jour'+(e.days>1?'s':'')+' de trajets (fiabilité '+Math.round(e.conf*100)+' %)':'Estimation simple · Predictor apprend encore'}</span></div>`:'<div style="margin:4px 0;font-size:12px;">Activez votre localisation pour voir le temps d\'arrivée.</div>'}<a href="https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}" target="_blank" rel="noopener" style="display:inline-block;margin-top:4px;font-size:12px;font-weight:800;color:#0369a1;">🗺️ Ouvrir dans Google Maps</a></div>`;
-    if(!allMarkers[b.plate]){allMarkers[b.plate]=L.marker(ll,{icon:_busIcon(b.plate,label)}).addTo(allMap).bindPopup(pop);}
+    if(!allMarkers[b.plate]){allMarkers[b.plate]=L.marker(ll,{icon:_busIcon(b.plate,label)}).addTo(allMap).bindPopup(pop).on('click',()=>{allSelPlate=b.plate;const bb=allLastBuses.find(x=>x.plate===b.plate)||b;drawBusRoute(_etaCache[b.plate],bb,allMyPos);});}
     else{const m=allMarkers[b.plate];m.setLatLng(ll);m.setIcon(_busIcon(b.plate,label));m.setPopupContent(pop);}
   });
   Object.keys(allMarkers).forEach(k=>{if(!seen.has(k)){allMap.removeLayer(allMarkers[k]);delete allMarkers[k];}});
@@ -2221,6 +2242,11 @@ async function renderAllBuses(){
     let bi=-1;etas.forEach((e,i)=>{if(e&&(bi<0||e.min<etas[bi].min))bi=i;});
     sum.innerHTML=bi>=0?`🚌 Le plus proche : <b>${_esc(buses[bi].plate)}</b> · arrive dans <b>~${_fmtMin(etas[bi].min)}</b> (${_fmtDist(etas[bi].km)})${etas[bi].mode==='ia'?' · 🤖 Predictor':''}`:'';
   }else sum.textContent=`🚌 ${buses.length} bus en direct · activez la localisation pour voir le temps d'arrivée.`;
+  {
+    let ei=allSelPlate?buses.findIndex(b=>b.plate===allSelPlate):-1;
+    if(ei<0&&me){etas.forEach((e,i)=>{if(e&&(ei<0||e.min<etas[ei].min))ei=i;});}
+    if(ei>=0&&me)drawBusRoute(etas[ei],buses[ei],me);else drawBusRoute(null);
+  }
   if(!allFitted&&(buses.length||me)){
     const pts=buses.map(b=>[b.lat,b.lng]);if(me)pts.push([me.lat,me.lng]);
     if(pts.length>1)allMap.fitBounds(pts,{padding:[40,40],maxZoom:15});else allMap.setView(pts[0],14);
@@ -2273,7 +2299,7 @@ window.clearTrackSearch=()=>{
 window.focusTrackBus=(plate)=>{
   const bus=allLastBuses.find(b=>_pl(b.plate)===plate);
   const m=bus&&allMarkers[bus.plate];
-  if(m&&allMap){allMap.setView(m.getLatLng(),15);m.openPopup();}
+  if(m&&allMap){allSelPlate=bus.plate;drawBusRoute(_etaCache[bus.plate],bus,allMyPos);allMap.setView(m.getLatLng(),15);m.openPopup();}
 };
 
 window.startAllMap=()=>{
@@ -2285,7 +2311,7 @@ window.startAllMap=()=>{
     const el=document.getElementById('trackAllMap');if(!el||typeof L==='undefined')return;
     if(!allMap){allMap=L.map(el,{zoomControl:true,attributionControl:false}).setView([14.6928,-17.4467],12);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(allMap);}
     else{allMap.invalidateSize();}
-    Object.values(allMarkers).forEach(m=>allMap.removeLayer(m));allMarkers={};allFitted=false;allLastBuses=[];
+    Object.values(allMarkers).forEach(m=>allMap.removeLayer(m));allMarkers={};allFitted=false;allLastBuses=[];if(allRouteLayer){allMap.removeLayer(allRouteLayer);allRouteLayer=null;}allSelPlate=null;
     if(navigator.geolocation){
       navigator.geolocation.getCurrentPosition(pos=>{
         allMyPos={lat:pos.coords.latitude,lng:pos.coords.longitude};
@@ -3575,14 +3601,14 @@ window.chSubmitReport=async()=>{
 };
 
 // ── Enregistrement des trajets du bus : matière première de l'IA qui prévoit l'arrivée ──
-// Points regroupés (1 écriture toutes les ~5 min, pas à chaque position) pour ménager le quota Firebase.
+// Points regroupés (1 écriture toutes les ~3 min, pas à chaque position) pour ménager le quota Firebase.
 const _trace={buf:[],last:0,off:false};
 function busTraceAdd(lat,lng,acc){
   try{
     const now=Date.now();
     if(_trace.off||!S.uid||!(acc<=80)||now-_trace.last<30000)return;
     _trace.last=now;_trace.buf.push({a:+lat.toFixed(5),o:+lng.toFixed(5),t:now});
-    if(_trace.buf.length>=10)busTraceFlush();
+    if(_trace.buf.length>=6)busTraceFlush();
   }catch(e){}
 }
 async function busTraceFlush(){
@@ -4954,6 +4980,71 @@ function cacheActiveTicket(t){try{localStorage.setItem(_tkActiveKey(),JSON.strin
 function getCachedActiveTicket(){try{const v=localStorage.getItem(_tkActiveKey());return v?JSON.parse(v):null;}catch(e){return null;}}
 function clearCachedActiveTicket(){try{localStorage.removeItem(_tkActiveKey());}catch(e){}}
 function renderPassTicketsList(tickets,offline){const cont=document.getElementById('passTicketsContainer');if(!tickets.length){cont.innerHTML='<div style="text-align:center;padding:48px 20px;"><div style="font-size:56px;opacity:.4;margin-bottom:16px;">🎫</div><div style="color:#555;font-weight:800;">Aucun ticket</div><button class="btn btn-purple" style="margin-top:16px;" onclick="openTicketFlow()">🎫 Acheter un ticket</button></div>';return;}const banner=offline?'<div style="background:#FF6B0015;border:1px solid #FF6B0044;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FFB97A;">📴 Mode hors-ligne · tickets enregistrés localement</div>':'';cont.innerHTML=banner+tickets.map(t=>`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:12px;line-height:1.9;">GIE:${_escH(t.gie)} = ${_escH(t.vehicle)} = Ligne:${_escH(t.ligne)}<br>Trajet: ${_escH(t.from)}-->${_escH(t.to)}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${_escH(t.zone)}<br>✅ Validé${offline?' · 📴 hors-ligne':''}</div></div></div>`).join('');}
+
+// ══ ITINÉRAIRE DU TRAJET : le chemin réellement suivi par le bus depuis que le passager a payé son ticket ══
+let tripMap=null,tripLayer=null,tripTimer=null;
+function _tkStart(t){
+  try{
+    if(t.ts&&t.ts.seconds)return t.ts.seconds*1000;if(typeof t.ts==='number')return t.ts;
+    const m=String(t.date||'').match(/(\d+)\/(\d+)\/(\d+)/),h=String(t.time||'').match(/(\d+)[:h](\d+)(?::(\d+))?/);
+    if(!m)return null;return new Date(+m[3],+m[2]-1,+m[1],h?+h[1]:0,h?+h[2]:0,h&&h[3]?+h[3]:0).getTime();
+  }catch(e){return null;}
+}
+const _dayKey=d=>d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+// Points du bus à partir de la montée ; on s'arrête quand le bus reste immobile plus de 10 min après avoir roulé (fin de course).
+function tripCut(pts,st){
+  const p=pts.filter(x=>x&&x.t>=st-120000&&x.a!=null&&x.o!=null).sort((x,y)=>x.t-y.t);
+  const out=[];let moved=0,stillSince=null,ended=false;
+  for(let i=0;i<p.length;i++){
+    if(i>0){
+      const d=_haversineKm(p[i-1].a,p[i-1].o,p[i].a,p[i].o);
+      if(d>=0.02){moved+=d;stillSince=null;}else{if(stillSince==null)stillSince=p[i-1].t;if(moved>=1&&p[i].t-stillSince>600000){ended=true;break;}}
+    }
+    out.push(p[i]);
+  }
+  let km=0;for(let i=1;i<out.length;i++)km+=_haversineKm(out[i-1].a,out[i-1].o,out[i].a,out[i].o);
+  return {pts:out,km,ended};
+}
+async function tripLoad(){
+  const t=window._tripTicket,info=document.getElementById('tripInfo');if(!t||!info)return;
+  const st=_tkStart(t);
+  if(!st){info.textContent='Heure du ticket introuvable.';return;}
+  try{
+    const days=[_dayKey(new Date(st))],nx=_dayKey(new Date(st+86400000));if(nx!==days[0]&&Date.now()>st+3600000)days.push(nx);
+    let all=[];
+    for(const dk of days){
+      const snap=await getDocs(query(collection(db,'bus_traces'),where('vehicle','==',t.vehicle),where('day','==',dk)));
+      snap.docs.forEach(d=>{all=all.concat(d.data().points||[]);});
+    }
+    const r=tripCut(all,st);
+    if(r.pts.length<2){info.innerHTML='⏳ Le trajet du bus est en cours d’enregistrement. L’itinéraire apparaîtra ici dans quelques minutes (mise à jour automatique).';return;}
+    const first=r.pts[0],last=r.pts[r.pts.length-1],mins=Math.max(1,Math.round((last.t-st)/60000));
+    info.innerHTML=`🚌 <b>${_escH(t.vehicle)}</b> · ${_escH(t.from)} → ${_escH(t.to)}<br>📏 ${_fmtDist(r.km)} parcourus · ⏱️ ${_fmtMin(mins)} depuis votre ticket${r.ended?' · ✅ trajet terminé':' · 🔄 le bus roule encore, la ligne s’allonge'}`;
+    if(!tripMap){
+      tripMap=L.map(document.getElementById('tripMap'),{zoomControl:true,attributionControl:false});
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(tripMap);
+    }
+    tripMap.invalidateSize();
+    if(tripLayer){tripMap.removeLayer(tripLayer);tripLayer=null;}
+    const ll=r.pts.map(x=>[x.a,x.o]);
+    tripLayer=L.layerGroup([
+      L.polyline(ll,{color:'#7c3aed',weight:6,opacity:.9}),
+      L.circleMarker(ll[0],{radius:9,color:'#fff',weight:3,fillColor:'#16a34a',fillOpacity:1}).bindTooltip('🟢 Montée dans le bus',{permanent:false}),
+      L.circleMarker(ll[ll.length-1],{radius:9,color:'#fff',weight:3,fillColor:r.ended?'#DF0024':'#f59e0b',fillOpacity:1}).bindTooltip(r.ended?'🏁 Fin du trajet':'🚌 Position actuelle du bus',{permanent:false})
+    ]).addTo(tripMap);
+    tripMap.fitBounds(ll,{padding:[30,30],maxZoom:16});
+  }catch(e){
+    console.warn('[trip]',e);
+    info.textContent=(e&&e.code==='permission-denied')?'Itinéraire indisponible (accès aux trajets non autorisé).':'Itinéraire indisponible pour le moment. Réessayez dans un instant.';
+  }
+}
+window.openTripRoute=()=>{
+  const m=document.getElementById('modalTripRoute');if(!m||!window._tripTicket)return;
+  m.style.display='flex';document.getElementById('tripInfo').textContent='Chargement…';
+  setTimeout(()=>{tripLoad();},150);
+  clearInterval(tripTimer);tripTimer=setInterval(tripLoad,60000);
+};
+window.closeTripRoute=()=>{clearInterval(tripTimer);tripTimer=null;const m=document.getElementById('modalTripRoute');if(m)m.style.display='none';};
 async function loadPassTickets(){
   if(S.role!=='passenger')return;
   // Affichage immédiat depuis le cache (fonctionne même hors-ligne)
@@ -4990,6 +5081,7 @@ window.showTicketData=(t)=>{
     renderQR('ticketHandoffQRWrap',payload,240,'M');
   }else if(handoff){handoff.style.display='none';handoff.innerHTML='';}
   if(S.role==='passenger'){cacheTicket(t);cacheActiveTicket(t);showDescendBtn(t);}
+  {const tb=document.getElementById('ticketTripBtn');if(tb){if(S.role==='passenger'&&t.vehicle&&t.payMode!=='especes'){window._tripTicket=t;tb.style.display='block';}else{tb.style.display='none';}}}
 };
 // Réception d'un ticket transmis directement par le QR du receveur (sans réseau)
 window.importTicketFromQR=(raw)=>{
