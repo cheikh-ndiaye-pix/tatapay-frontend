@@ -496,17 +496,12 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
             <button onclick="demandDescendre()" style="grid-column:1/-1;justify-self:center;width:calc((100% - 20px)/3);background:linear-gradient(160deg,#DF0024,#7f1d1d);border:2px solid #ff6b6b66;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">🛑</div>Descendre</button>
           </div>
         </div>
-        <button onclick="openTrackBus();setTimeout(()=>document.getElementById('trackDestInput')?.focus(),400)" style="width:100%;background:linear-gradient(135deg,#7c3aed,#4c1d95);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:12px;">
+        <button onclick="openTrackBus();setTimeout(()=>document.getElementById('trackDestInput')?.focus(),400)" style="width:100%;background:linear-gradient(135deg,#7c3aed,#4c1d95);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
           <div style="font-size:24px;">🧭</div>
-          <div style="text-align:left;flex:1;">Où allez-vous ?<div style="font-size:10px;font-weight:600;color:#ddd6fe;margin-top:2px;">Écrivez votre destination : voyez les bus qui y vont, en direct</div></div>
+          <div style="text-align:left;flex:1;">Trouver un bus<div style="font-size:10px;font-weight:600;color:#ddd6fe;margin-top:2px;">Écrivez votre destination, ou voyez les bus proches de vous en direct</div></div>
           <div style="font-size:18px;">→</div>
         </button>
-        <button onclick="openTrackBus()" style="width:100%;background:linear-gradient(135deg,#0ea5e9,#0369a1);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
-          <div style="font-size:24px;">📍</div>
-          <div style="text-align:left;flex:1;">Bus en direct près de moi<div style="font-size:10px;font-weight:600;color:#bae6fd;margin-top:2px;">Voir les bus qui partagent leur position (ligne + distance)</div></div>
-          <div style="font-size:18px;">→</div>
-        </button>
-        <button onclick="openColis()" style="width:100%;background:linear-gradient(135deg,#f59e0b,#b45309);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
+                <button onclick="openColis()" style="width:100%;background:linear-gradient(135deg,#f59e0b,#b45309);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
           <div style="font-size:24px;">📦</div>
           <div style="text-align:left;flex:1;">Marchandises (colis en bus)<div style="font-size:10px;font-weight:600;color:#fde68a;margin-top:2px;">Envoyer ou récupérer une marchandise en suivant le bus en direct</div></div>
           <div style="font-size:18px;">→</div>
@@ -2131,6 +2126,59 @@ let allMap=null,allMeMarker=null,allMarkers={},unsubAllBuses=null,allFitted=fals
 const _etaCache={};
 function stopAllMap(){if(unsubAllBuses){unsubAllBuses();unsubAllBuses=null;}allRenderId++;}
 function _fmtMin(m){if(m==null||isNaN(m))return '';if(m<1)return '< 1 min';if(m<60)return `${Math.round(m)} min`;const h=Math.floor(m/60),r=Math.round(m%60);return `${h} h ${String(r).padStart(2,'0')}`;}
+// ══ PREDICTOR — IA qui prévoit l'arrivée du bus à partir des trajets enregistrés (bus_traces) ══
+// Apprend la vitesse RÉELLE de chaque bus (arrêts compris) selon l'heure et le type de jour, puis l'applique à la distance restante.
+// Tant qu'il n'a pas assez de trajets, on garde l'estimation simple ; il s'affine à chaque tour enregistré.
+const PRED={MIN_KM:8,FULL_KM:60,VMIN:6,VMAX:40,STILL_KM:0.02,PARK_S:300,TTL:30*60*1000};
+const _predCache={};
+function predKey(d){const h=d.getHours(),b=(h>=6&&h<9)?'matin':(h>=9&&h<16)?'jour':(h>=16&&h<20)?'soir':'nuit',w=(d.getDay()===0||d.getDay()===6)?'we':'sem';return b+'_'+w;}
+// docs : liste de listes de points {a,o,t} (un tableau par jour). Renvoie le modèle appris.
+function predLearn(docs){
+  const M={all:{km:0,h:0},b:{},days:0};
+  docs.forEach(pts=>{
+    const p=pts.filter(x=>x&&x.t&&x.a!=null&&x.o!=null).sort((x,y)=>x.t-y.t);if(p.length<3)return;
+    const seg=[];
+    for(let i=1;i<p.length;i++){
+      const dt=(p[i].t-p[i-1].t)/1000;if(dt<5||dt>180)continue;
+      const d=_haversineKm(p[i-1].a,p[i-1].o,p[i].a,p[i].o),v=d/dt*3600;if(v>80)continue;
+      seg.push({d,dt,t:p[i].t,still:d<PRED.STILL_KM});
+    }
+    // on retire les longues immobilisations (bus garé, terminus) : elles ne disent rien sur la route
+    for(let i=0;i<seg.length;){
+      if(!seg[i].still){i++;continue;}
+      let j=i,dur=0;while(j<seg.length&&seg[j].still){dur+=seg[j].dt;j++;}
+      if(dur>PRED.PARK_S)for(let k=i;k<j;k++)seg[k].skip=true;
+      i=j;
+    }
+    let used=0;
+    seg.forEach(g=>{if(g.skip)return;used++;const k=predKey(new Date(g.t));(M.b[k]=M.b[k]||{km:0,h:0});M.b[k].km+=g.d;M.b[k].h+=g.dt/3600;M.all.km+=g.d;M.all.h+=g.dt/3600;});
+    if(used>5)M.days++;
+  });
+  return M;
+}
+// Combine l'apprentissage et l'estimation simple. Renvoie null si rien n'a encore été appris.
+function predPick(M,roadKm,baseMin,when){
+  if(!M||!(roadKm>0))return null;
+  const k=predKey(when||new Date()),src=(M.b[k]&&M.b[k].km>=PRED.MIN_KM)?M.b[k]:(M.all.km>=PRED.MIN_KM?M.all:null);
+  if(!src||!(src.h>0))return null;
+  const v=Math.min(PRED.VMAX,Math.max(PRED.VMIN,src.km/src.h)),learned=roadKm/v*60;
+  const w=Math.min(1,src.km/PRED.FULL_KM);
+  return {min:w*learned+(1-w)*baseMin,conf:w,v,km:src.km,days:M.days,exact:src===M.b[k]};
+}
+async function predModel(raw){
+  const key=_pl(raw);if(!key)return null;
+  const c=_predCache[key];if(c&&Date.now()-c.at<PRED.TTL)return c.m;
+  let m=null;
+  try{
+    const snap=await getDocs(query(collection(db,'bus_traces'),where('vehicle','==',raw),limit(40)));
+    const docs=snap.docs.map(d=>d.data()).sort((a,b)=>String(b.day).localeCompare(String(a.day))).slice(0,30).map(x=>x.points||[]);
+    m=predLearn(docs);
+  }catch(e){console.warn('[predictor]',e&&e.code||e);}
+  _predCache[key]={at:Date.now(),m};return m;
+}
+async function predictorAdjust(raw,roadKm,baseMin){
+  const m=await predModel(raw);return predPick(m,roadKm,baseMin,new Date());
+}
 async function _busEta(b,me){
   const c=_etaCache[b.plate];
   if(c&&Date.now()-c.at<45000&&_haversineKm(c.lat,c.lng,b.lat,b.lng)<0.2&&_haversineKm(c.mlat,c.mlng,me.lat,me.lng)<0.2)return c;
@@ -2143,7 +2191,9 @@ async function _busEta(b,me){
     if(j.routes&&j.routes[0]){km=j.routes[0].distance/1000;min=(j.routes[0].duration/60)*1.4;}
   }catch(e){}
   if(min==null){km=_haversineKm(me.lat,me.lng,b.lat,b.lng)*1.4;min=km/18*60;}
-  return _etaCache[b.plate]={at:Date.now(),lat:b.lat,lng:b.lng,mlat:me.lat,mlng:me.lng,min,km};
+  const base=min;let mode='simple',conf=0,days=0;
+  try{const p=await predictorAdjust(b.vehicleRaw||b.plate,km,base);if(p){min=p.min;mode='ia';conf=p.conf;days=p.days;}}catch(e){}
+  return _etaCache[b.plate]={at:Date.now(),lat:b.lat,lng:b.lng,mlat:me.lat,mlng:me.lng,min,km,base,mode,conf,days};
 }
 function _busIcon(plate,eta){
   return L.divIcon({className:'',iconSize:[0,0],html:`<div style="transform:translate(-50%,-100%);background:#0369a1;color:#fff;border:2px solid #fff;border-radius:12px;padding:3px 8px;font:800 11px 'JetBrains Mono',monospace;white-space:nowrap;text-align:center;box-shadow:0 2px 8px #0009;">🚌 ${_esc(plate)}${eta?`<br><span style="color:#fde68a;">${_esc(eta)}</span>`:''}</div>`});
@@ -2159,9 +2209,9 @@ async function renderAllBuses(){
   const seen=new Set();
   buses.forEach((b,i)=>{
     const e=etas[i];seen.add(b.plate);
-    const label=e?`~${_fmtMin(e.min)}`:'';
+    const label=e?`~${_fmtMin(e.min)}${e.mode==='ia'?' 🤖':''}`:'';
     const ll=[b.lat,b.lng];
-    const pop=`<div style="font-family:'Space Grotesk',sans-serif;color:#111;min-width:150px;"><div style="font-weight:900;font-size:14px;">🚌 ${_esc(b.plate)}${b.ligne?' · Ligne '+_esc(b.ligne):''}</div>${e?`<div style="margin:4px 0;font-size:13px;">⏱️ Arrive dans <b>~${_fmtMin(e.min)}</b><br>📏 ${_fmtDist(e.km)} par la route</div>`:'<div style="margin:4px 0;font-size:12px;">Activez votre localisation pour voir le temps d\'arrivée.</div>'}<a href="https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}" target="_blank" rel="noopener" style="display:inline-block;margin-top:4px;font-size:12px;font-weight:800;color:#0369a1;">🗺️ Ouvrir dans Google Maps</a></div>`;
+    const pop=`<div style="font-family:'Space Grotesk',sans-serif;color:#111;min-width:150px;"><div style="font-weight:900;font-size:14px;">🚌 ${_esc(b.plate)}${b.ligne?' · Ligne '+_esc(b.ligne):''}</div>${e?`<div style="margin:4px 0;font-size:13px;">⏱️ Arrive dans <b>~${_fmtMin(e.min)}</b><br>📏 ${_fmtDist(e.km)} par la route<br><span style=\"font-size:11px;color:#6d28d9;\">${e.mode==='ia'?'🤖 Predictor · appris sur '+e.days+' jour'+(e.days>1?'s':'')+' de trajets (fiabilité '+Math.round(e.conf*100)+' %)':'Estimation simple · Predictor apprend encore'}</span></div>`:'<div style="margin:4px 0;font-size:12px;">Activez votre localisation pour voir le temps d\'arrivée.</div>'}<a href="https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}" target="_blank" rel="noopener" style="display:inline-block;margin-top:4px;font-size:12px;font-weight:800;color:#0369a1;">🗺️ Ouvrir dans Google Maps</a></div>`;
     if(!allMarkers[b.plate]){allMarkers[b.plate]=L.marker(ll,{icon:_busIcon(b.plate,label)}).addTo(allMap).bindPopup(pop);}
     else{const m=allMarkers[b.plate];m.setLatLng(ll);m.setIcon(_busIcon(b.plate,label));m.setPopupContent(pop);}
   });
@@ -2169,7 +2219,7 @@ async function renderAllBuses(){
   if(!buses.length){sum.textContent=allFilter?'😕 Aucun bus de cette destination ne partage sa position pour le moment.':'😕 Aucun bus ne partage sa position pour le moment.';}
   else if(me){
     let bi=-1;etas.forEach((e,i)=>{if(e&&(bi<0||e.min<etas[bi].min))bi=i;});
-    sum.innerHTML=bi>=0?`🚌 Le plus proche : <b>${_esc(buses[bi].plate)}</b> · arrive dans <b>~${_fmtMin(etas[bi].min)}</b> (${_fmtDist(etas[bi].km)})`:'';
+    sum.innerHTML=bi>=0?`🚌 Le plus proche : <b>${_esc(buses[bi].plate)}</b> · arrive dans <b>~${_fmtMin(etas[bi].min)}</b> (${_fmtDist(etas[bi].km)})${etas[bi].mode==='ia'?' · 🤖 Predictor':''}`:'';
   }else sum.textContent=`🚌 ${buses.length} bus en direct · activez la localisation pour voir le temps d'arrivée.`;
   if(!allFitted&&(buses.length||me)){
     const pts=buses.map(b=>[b.lat,b.lng]);if(me)pts.push([me.lat,me.lng]);
@@ -2250,7 +2300,7 @@ window.startAllMap=()=>{
         const x=d.data(),t=x.updatedAt?.toDate?.()?.getTime()||0;
         if(!t||(now-t)>=10*60*1000||x.lat==null||x.lng==null||!x.vehicle)return;
         const plate=String(x.vehicle).toUpperCase();
-        if(!byPlate[plate]||t>byPlate[plate].t)byPlate[plate]={id:d.id,plate,lat:x.lat,lng:x.lng,ligne:x.ligne||'',t};
+        if(!byPlate[plate]||t>byPlate[plate].t)byPlate[plate]={id:d.id,plate,vehicleRaw:String(x.vehicle),lat:x.lat,lng:x.lng,ligne:x.ligne||'',t};
       });
       allLastBuses=Object.values(byPlate);
       renderAllBuses();
@@ -3538,7 +3588,7 @@ function busTraceAdd(lat,lng,acc){
 async function busTraceFlush(){
   if(_trace.off||!_trace.buf.length||!S.uid)return;
   const pts=_trace.buf.splice(0,_trace.buf.length),d=new Date(),day=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
-  try{await setDoc(doc(db,'bus_traces',S.uid+'_'+day),{busUid:S.uid,day,vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||'',updatedAt:serverTimestamp(),points:arrayUnion(...pts)},{merge:true});}
+  try{await setDoc(doc(db,'bus_traces',S.uid+'_'+day),{busUid:S.uid,day,plate:_pl(S.profile?.vehicle),vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||'',updatedAt:serverTimestamp(),points:arrayUnion(...pts)},{merge:true});}
   catch(e){console.warn('[trace]',e);if(e&&e.code==='permission-denied')_trace.off=true;}
 }
 window.chToggleGeo=()=>{
