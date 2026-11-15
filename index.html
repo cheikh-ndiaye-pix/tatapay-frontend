@@ -777,6 +777,7 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
       </div>
       <button class="btn btn-danger btn-full" style="margin-top:8px;" onclick="openModal('modalChReport')">🔧 Signaler un problème</button>
       <div id="chGeoSection" style="margin-top:16px;">
+        <div id="ch-sentinel-card" style="display:none;margin-bottom:16px;"><div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">🛡️ Sentinel · Alertes de mon bus</div></div>
         <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">📍 Géolocalisation</div>
         <div class="ch-card">
           <div id="chGeoStatus" style="font-size:13px;color:#888;margin-bottom:10px;">GPS désactivé</div>
@@ -1869,6 +1870,7 @@ function loginUI(){
     document.getElementById('chWalletId').textContent=p.walletId||'—';
     show('screenChauffeur');
     initChauffeurDashboard();
+    chSentinelRun();
     const wb=document.getElementById('chOwnerWalletBox');
     if(wb){wb.style.display='block';}
     if(unsubChOwnerBalance){try{unsubChOwnerBalance();}catch(e){}unsubChOwnerBalance=null;}
@@ -2565,7 +2567,7 @@ window.dirSetPeriod=async(k,btn)=>{
     document.getElementById('dir-vers').textContent=fmt(d.vers);
     document.getElementById('dir-ret').textContent=fmt(d.retraits);
     document.getElementById('dir-net').textContent=fmt(d.net);
-    if(dirRevChartInst){dirRevChartInst.data.labels=d.labels;dirRevChartInst.data.datasets[0].data=d.data;dirRevChartInst.update();}
+    if(dirRevChartInst){dirRevChartInst.data.labels=d.labels;dirRevChartInst.data.datasets[0].data=d.data;dirRevChartInst.update();{const rc=document.getElementById('dirRevChart')?.closest('.dir-card');if(rc)rc.style.display=(d.data||[]).some(v=>v>0)?'block':'none';}}
   }catch(e){notify('❌','Erreur',e.message);}
   loader('',false);
 };
@@ -2711,10 +2713,26 @@ window.sentinelExplain=async(i)=>{
     const j=await r.json();out.textContent='🤖 '+j.answer;
   }catch(e){console.warn('[sentinelExplain]',e);out.textContent='Explication indisponible pour le moment. Réessayez dans un instant.';}
 };
-function _sentinelBox(){const card=document.getElementById('dir-alerts-card');if(!card)return null;let box=document.getElementById('dir-sentinel-box');if(!box){box=document.createElement('div');box.id='dir-sentinel-box';box.style.cssText='margin-top:12px;padding-top:12px;border-top:1px solid #ffffff14;';card.appendChild(box);}return box;}
+function _sentinelBox(){const chb=document.getElementById('ch-sentinel-box');if(chb&&chb.offsetParent!==null)return chb;const card=document.getElementById('dir-alerts-card');if(!card)return null;let box=document.getElementById('dir-sentinel-box');if(!box){box=document.createElement('div');box.id='dir-sentinel-box';box.style.cssText='margin-top:12px;padding-top:12px;border-top:1px solid #ffffff14;';card.appendChild(box);}return box;}
 window.sentinelDemo=()=>{const box=_sentinelBox();if(!box)return;const d=sentinelDemoData();sentinelRender(box,sentinelAnalyze(d.buses,d.dows,d.labels),true);};
 let _sentRecv=[];
-window.dirSentinelReload=()=>dirSentinelRun(_sentRecv);
+window.dirSentinelReload=()=>{const chb=document.getElementById('ch-sentinel-box');if(chb&&chb.offsetParent!==null)chSentinelRun();else dirSentinelRun(_sentRecv);};
+// Sentinel côté chauffeur / propriétaire : analyse le(s) receveur(s) qui lui sont reliés (chauffeurUid ou ownerUid)
+async function chSentinelRun(){
+  const card=document.getElementById('ch-sentinel-card');if(!card)return;
+  card.style.display='block';
+  let box=document.getElementById('ch-sentinel-box');
+  if(!box){box=document.createElement('div');box.id='ch-sentinel-box';box.className='ch-card';card.appendChild(box);}
+  box.innerHTML='<div style="color:#888;font-size:12px;">🛡️ Sentinel analyse…</div>';
+  try{
+    const qs=['chauffeurUid','ownerUid'].map(f=>getDocs(query(collection(db,'users'),where('role','==','receiver'),where(f,'==',S.uid))));
+    const rs=await Promise.allSettled(qs),seen={},recv=[];
+    rs.forEach(x=>{if(x.status!=='fulfilled')return;x.value.docs.forEach(d=>{const r={id:d.id,...d.data()};if(!seen[d.id]&&['approved','active'].includes(r.status)){seen[d.id]=1;recv.push(r);}});});
+    if(!recv.length){sentinelRender(box,{enough:false,alerts:[]},false);return;}
+    const d=await sentinelLoadReal(recv);
+    sentinelRender(box,sentinelAnalyze(d.buses,d.dows,d.labels),false);
+  }catch(e){console.warn('[sentinel chauffeur]',e);box.innerHTML='<div style="color:#888;font-size:12px;">Sentinel indisponible pour le moment.</div>';}
+}
 async function dirSentinelRun(approvedRecv){
   _sentRecv=approvedRecv;const box=_sentinelBox();if(!box)return;
   box.innerHTML='<div style="color:#888;font-size:12px;">🛡️ Sentinel analyse…</div>';
@@ -2771,7 +2789,7 @@ async function loadDirFullDashboard(){
     if(lineCard)lineCard.style.display=uniqueLignes.size>1?'block':'none';
     if(dirLineChartInst)dirLineChartInst.destroy();
     const lCtx=document.getElementById('dirLineChart');
-    if(lCtx&&uniqueLignes.size>1&&ligneLabels.length){dirLineChartInst=new Chart(lCtx,{type:'bar',indexAxis:'y',data:{labels:ligneLabels,datasets:[{label:'FCFA',data:ligneData,backgroundColor:ligneData.map(v=>v>100000?'#009A44':v>0?'#FF6B00':'#DF0024'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10},callback:v=>fmt(v/1000)+'k'},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#7dd3fc',font:{size:11}},grid:{display:false},border:{display:false}}}}});}
+    if(lCtx&&uniqueLignes.size>1&&ligneLabels.length){dirLineChartInst=new Chart(lCtx,{type:'bar',indexAxis:'y',data:{labels:ligneLabels,datasets:[{label:'FCFA',data:ligneData,backgroundColor:ligneData.map(v=>v>100000?'#009A44':v>0?'#FF6B00':'#DF0024'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10},callback:v=>(typeof v==='number'?fmt(v/1000)+'k':v)},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#7dd3fc',font:{size:11}},grid:{display:false},border:{display:false}}}}});}
 
     const pd=await computeDirPeriodData('jour');
     document.getElementById('dir-enc').textContent=fmt(pd.enc);
@@ -2781,7 +2799,7 @@ async function loadDirFullDashboard(){
     document.getElementById('dir-net').textContent=fmt(pd.net);
     if(dirRevChartInst)dirRevChartInst.destroy();
     const rCtx=document.getElementById('dirRevChart');
-    if(rCtx){dirRevChartInst=new Chart(rCtx,{type:'bar',data:{labels:pd.labels,datasets:[{label:'Recettes (F)',data:pd.data,backgroundColor:'#0ea5e9',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10}},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#666',font:{size:10},callback:v=>fmt(v/1000)+'k'},grid:{color:'#0ea5e910'},border:{display:false}}}}});}
+    if(rCtx){dirRevChartInst=new Chart(rCtx,{type:'bar',data:{labels:pd.labels,datasets:[{label:'Recettes (F)',data:pd.data,backgroundColor:'#0ea5e9',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10}},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#666',font:{size:10},callback:v=>fmt(v/1000)+'k'},grid:{color:'#0ea5e910'},border:{display:false}}}}});{const rc=rCtx.closest('.dir-card');if(rc)rc.style.display=(pd.data||[]).some(v=>v>0)?'block':'none';}}
     const upd=document.getElementById('dirLastUpdate');
     if(upd)upd.textContent='Dernière mise à jour : '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
     loader('',false);
