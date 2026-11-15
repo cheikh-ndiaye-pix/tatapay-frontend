@@ -3524,10 +3524,27 @@ window.chSubmitReport=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
+// ── Enregistrement des trajets du bus : matière première de l'IA qui prévoit l'arrivée ──
+// Points regroupés (1 écriture toutes les ~5 min, pas à chaque position) pour ménager le quota Firebase.
+const _trace={buf:[],last:0,off:false};
+function busTraceAdd(lat,lng,acc){
+  try{
+    const now=Date.now();
+    if(_trace.off||!S.uid||!(acc<=80)||now-_trace.last<30000)return;
+    _trace.last=now;_trace.buf.push({a:+lat.toFixed(5),o:+lng.toFixed(5),t:now});
+    if(_trace.buf.length>=10)busTraceFlush();
+  }catch(e){}
+}
+async function busTraceFlush(){
+  if(_trace.off||!_trace.buf.length||!S.uid)return;
+  const pts=_trace.buf.splice(0,_trace.buf.length),d=new Date(),day=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  try{await setDoc(doc(db,'bus_traces',S.uid+'_'+day),{busUid:S.uid,day,vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||'',updatedAt:serverTimestamp(),points:arrayUnion(...pts)},{merge:true});}
+  catch(e){console.warn('[trace]',e);if(e&&e.code==='permission-denied')_trace.off=true;}
+}
 window.chToggleGeo=()=>{
   const btn=document.getElementById('chGeoBtn');const st=document.getElementById('chGeoStatus');
   if(chGeoWatchId!=null){
-    navigator.geolocation.clearWatch(chGeoWatchId);chGeoWatchId=null;
+    navigator.geolocation.clearWatch(chGeoWatchId);chGeoWatchId=null;busTraceFlush();
     btn.textContent='📡 Démarrer le partage GPS';btn.style.background='linear-gradient(135deg,#0ea5e9,#0369a1)';
     st.textContent='GPS désactivé';st.style.color='#888';
     chGeoDisabledSince=Date.now();
@@ -3542,7 +3559,7 @@ window.chToggleGeo=()=>{
     const now=Date.now();if(now-chGeoLastWrite<15000)return;chGeoLastWrite=now;
     const {latitude:lat,longitude:lng,accuracy}=pos.coords;
     st.innerHTML=`🟢 Actif · ${lat.toFixed(4)}, ${lng.toFixed(4)} <span style="color:#555;">(±${Math.round(accuracy)}m)</span>`;st.style.color='#34d399';
-    try{await setDoc(doc(db,'bus_locations',S.uid),{lat,lng,accuracy,updatedAt:serverTimestamp(),ownerUid:S.uid,vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||''});}catch(e){console.warn('[geo write]',e);}
+    try{await setDoc(doc(db,'bus_locations',S.uid),{lat,lng,accuracy,updatedAt:serverTimestamp(),ownerUid:S.uid,vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||''});}catch(e){console.warn('[geo write]',e);}busTraceAdd(lat,lng,accuracy);
   },err=>{st.textContent='Erreur GPS: '+err.message;st.style.color='#DF0024';chGeoWatchId=null;btn.textContent='📡 Réessayer';chGeoDisabledSince=Date.now();},{enableHighAccuracy:true,maximumAge:10000,timeout:15000});
   btn.textContent='🛑 Arrêter le partage GPS';btn.style.background='linear-gradient(135deg,#DF0024,#B71C1C)';
   notify('📡','GPS','Partage de position démarré.');
@@ -4853,7 +4870,7 @@ window.recvRejectTicket=async(pendingId)=>{try{await deleteDoc(doc(db,'pending',
 window.recvToggleGeo=()=>{
   const btn=document.getElementById('recvGeoBtn');const st=document.getElementById('recvGeoStatus');
   if(recvGeoWatchId!=null){
-    navigator.geolocation.clearWatch(recvGeoWatchId);recvGeoWatchId=null;
+    navigator.geolocation.clearWatch(recvGeoWatchId);recvGeoWatchId=null;busTraceFlush();
     btn.textContent='📡 Démarrer le partage GPS';btn.style.background='linear-gradient(135deg,#0ea5e9,#0369a1)';
     st.textContent='GPS désactivé';st.style.color='#888';
     deleteDoc(doc(db,'bus_locations',S.uid)).catch(()=>{});
@@ -4866,7 +4883,7 @@ window.recvToggleGeo=()=>{
     const now=Date.now();if(now-recvGeoLastWrite<15000)return;recvGeoLastWrite=now;
     const {latitude:lat,longitude:lng,accuracy}=pos.coords;
     st.innerHTML=`🟢 Actif · ${lat.toFixed(4)}, ${lng.toFixed(4)} <span style="color:#555;">(±${Math.round(accuracy)}m)</span>`;st.style.color='#34d399';
-    try{await setDoc(doc(db,'bus_locations',S.uid),{lat,lng,accuracy,updatedAt:serverTimestamp(),vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||''});}catch(e){console.warn('[recv geo write]',e);}
+    try{await setDoc(doc(db,'bus_locations',S.uid),{lat,lng,accuracy,updatedAt:serverTimestamp(),vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||''});}catch(e){console.warn('[recv geo write]',e);}busTraceAdd(lat,lng,accuracy);
   },err=>{st.textContent='Erreur GPS: '+err.message;st.style.color='#DF0024';recvGeoWatchId=null;btn.textContent='📡 Réessayer';},{enableHighAccuracy:true,maximumAge:10000,timeout:15000});
   btn.textContent='🛑 Arrêter le partage GPS';btn.style.background='linear-gradient(135deg,#DF0024,#B71C1C)';
   notify('📡','GPS','Partage de position démarré. Les passagers pourront suivre votre bus.');
