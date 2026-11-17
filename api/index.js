@@ -1,15 +1,14 @@
-// TataPay — backend converti pour Vercel (une seule fonction Express).
-// Toutes les routes /api/* sont redirigées ici par vercel.json.
 const express   = require('express');
 const cors      = require('cors');
 const admin     = require('firebase-admin');
 const crypto    = require('crypto');
 const rateLimit = require('express-rate-limit');
+const app       = express();
 
-const app = express();
-app.set('trust proxy', 1); // Vercel est derrière un proxy (nécessaire pour le rate limit par IP)
+// ── VERCEL : derrière un proxy (nécessaire pour le rate limiting par IP) ──
+app.set('trust proxy', 1);
 
-// ── CORS ──
+// ── CORS SÉCURISÉ ──
 const ALLOWED_ORIGINS = [
   'https://tatapay-a4972.web.app',
   'https://tatapay-a4972.firebaseapp.com',
@@ -18,6 +17,7 @@ const ALLOWED_ORIGINS = [
   'http://localhost:19006',
   'exp://192.168.1.91:8081'
 ];
+// Autorise aussi tous les déploiements de preview Vercel du même projet
 const VERCEL_PREVIEW_REGEX = /^https:\/\/tatapay-frontend(-[a-z0-9-]+)?\.vercel\.app$/;
 
 app.use(cors({
@@ -34,6 +34,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// URL publique du backend (Vercel)
+const BACKEND_URL = 'https://tatapay-frontend.vercel.app';
+
 // ── VARIABLES D'ENVIRONNEMENT ──
 const clean = (v) => (v || '').toString().trim().replace(/^["']+|["']+$/g, '').trim();
 
@@ -42,13 +45,23 @@ const PAYTECH_API_SECRET = clean(process.env.PAYTECH_API_SECRET);
 const rawEnv      = clean(process.env.PAYTECH_ENV).toLowerCase();
 const PAYTECH_ENV = ['prod', 'production', 'live'].includes(rawEnv) ? 'prod' : 'test';
 
+console.log(
+  '🔑 PayTech — clé:',
+  PAYTECH_API_KEY ? PAYTECH_API_KEY.slice(0, 4) + '… (' + PAYTECH_API_KEY.length + ' car.)' : 'MANQUANTE ⚠️',
+  '| secret:',
+  PAYTECH_API_SECRET ? '(' + PAYTECH_API_SECRET.length + ' car.)' : 'MANQUANT ⚠️',
+  '| env:', PAYTECH_ENV
+);
+
+// ── INTERRUPTEUR RETRAITS : tant que WITHDRAWALS_ENABLED n'est pas 'true', aucun virement réel ──
+const WITHDRAWALS_ENABLED = clean(process.env.WITHDRAWALS_ENABLED).toLowerCase() === 'true';
 const OFFLINE_SECRET     = clean(process.env.OFFLINE_SECRET);
+if (!OFFLINE_SECRET) {
+  console.error('🚨 OFFLINE_SECRET n\'est pas définie — les routes /api/offline/* sont désactivées.');
+}
 const ADMIN_UID          = clean(process.env.ADMIN_UID);
 const COMMISSION_RATE    = 0.02;
 const MAX_OFFLINE_PER_QR = 1000;
-
-// URL publique de CE backend (pour les callbacks PayTech). Surchargeable via BACKEND_URL.
-const BACKEND_URL = clean(process.env.BACKEND_URL) || 'https://tatapay-frontend.vercel.app';
 
 const requireOfflineSecret = (req, res, next) => {
   if (!OFFLINE_SECRET) {
@@ -57,14 +70,14 @@ const requireOfflineSecret = (req, res, next) => {
   next();
 };
 
-// ── FIREBASE (initialisé une seule fois, même si l'instance est réutilisée) ──
+// ── FIREBASE (initialisation unique : Vercel réutilise les instances) ──
 if (!admin.apps.length) {
   const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
   admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
 const db = admin.firestore();
 
-// ── RATE LIMITING (en mémoire : par instance serverless, donc approximatif) ──
+// ── RATE LIMITING ──
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
@@ -76,7 +89,7 @@ const ipnLimiter = rateLimit({
   message: { error: 'Trop de requêtes IPN' }
 });
 
-// ── MIDDLEWARES ──
+// ── MIDDLEWARE : VÉRIFICATION TOKEN FIREBASE ──
 const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -93,14 +106,16 @@ const verifyToken = async (req, res, next) => {
   }
 };
 
+// ── MIDDLEWARE : VÉRIFICATION ADMIN ──
 const verifyAdmin = async (req, res, next) => {
   if (!req.uid) return res.status(401).json({ error: 'Non autorisé' });
-  if (!ADMIN_UID || req.uid !== ADMIN_UID) {
+  if (req.uid !== ADMIN_UID) {
     return res.status(403).json({ error: 'Accès réservé à l\'administrateur' });
   }
   next();
 };
 
+// ── MIDDLEWARE : VÉRIFICATION PROPRIÉTAIRE ──
 const verifyOwner = async (req, res, next) => {
   if (!req.uid) return res.status(401).json({ error: 'Non autorisé' });
   try {
@@ -118,6 +133,7 @@ const verifyOwner = async (req, res, next) => {
   }
 };
 
+// ── VALIDATION MONTANT ──
 const validateAmount = (amount) => {
   const amt = parseInt(amount);
   if (!amt || !Number.isInteger(amt)) return false;
@@ -128,7 +144,7 @@ const validateAmount = (amount) => {
 
 const requirePaytechKeys = (req, res, next) => {
   if (!PAYTECH_API_KEY || !PAYTECH_API_SECRET) {
-    console.error('🚨 Clés PayTech manquantes.');
+    console.error('🚨 Clés PayTech manquantes (PAYTECH_API_KEY / PAYTECH_API_SECRET).');
     return res.status(503).json({ error: 'Clé API PayTech manquante sur le serveur (configuration à vérifier)' });
   }
   next();
@@ -138,17 +154,15 @@ const requirePaytechKeys = (req, res, next) => {
 // ── ROUTES ──
 // ════════════════════════════════════════════════════════════
 
-app.get(['/api', '/api/ping'], (req, res) => {
+app.get('/api', (req, res) => {
   res.json({
-    status: 'alive',
-    message: 'TataPay Backend (Vercel) is running!',
+    message: 'TataPay Backend is running!',
     paytech_env: PAYTECH_ENV,
-    paytech_keys: (PAYTECH_API_KEY && PAYTECH_API_SECRET) ? 'configurées' : 'MANQUANTES',
-    admin_uid: ADMIN_UID ? 'configuré' : 'MANQUANT',
-    offline_secret: OFFLINE_SECRET ? 'configuré' : 'MANQUANT',
-    time: new Date()
+    paytech_keys: (PAYTECH_API_KEY && PAYTECH_API_SECRET) ? 'configurées' : 'MANQUANTES'
   });
 });
+
+app.get('/ping', (req, res) => res.json({ status: 'alive', time: new Date() }));
 
 // ── INIT PAIEMENT PAYTECH ──
 app.post('/api/payment/init', verifyToken, limiter, requirePaytechKeys, async (req, res) => {
@@ -160,47 +174,59 @@ app.post('/api/payment/init', verifyToken, limiter, requirePaytechKeys, async (r
     return res.status(400).json({ error: 'Montant invalide (min 100, max 500 000 FCFA)' });
   }
 
-  const allowedTypes = ['recharge', 'ticket', 'retrait'];
+  const allowedTypes = ['recharge', 'ticket'];
   if (!allowedTypes.includes(type)) {
     return res.status(400).json({ error: 'Type de paiement invalide' });
   }
 
+  if (type === 'ticket') {
+    if (!meta || typeof meta.busUid !== 'string' || !meta.busUid || meta.busUid === uid) {
+      return res.status(400).json({ error: 'Receveur du ticket invalide' });
+    }
+    const busSnap = await db.collection('users').doc(meta.busUid).get();
+    if (!busSnap.exists || busSnap.data().role !== 'receiver') {
+      return res.status(400).json({ error: 'Receveur du ticket introuvable' });
+    }
+  }
+
   const refCommand = 'TTP-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
 
+  await db.collection('paytech_transactions').doc(refCommand).set({
+    uid,
+    amount: amt,
+    type:      type,
+    method:    method || null,
+    meta:      meta || null,
+    status:    'pending',
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  const itemNames = {
+    recharge: 'Recharge TataPay',
+    ticket:   'Ticket TataPay',
+    retrait:  'Retrait TataPay'
+  };
+
+  const payload = {
+    item_name:       itemNames[type] || 'TataPay',
+    item_price:      amt,
+    currency:        'XOF',
+    ref_command:     refCommand,
+    command_name:    'TataPay Paiement',
+    env:             PAYTECH_ENV,
+    ipn_url:         BACKEND_URL + '/api/ipn',
+    success_url:     'https://tatapay-a4972.web.app/success.html',
+    cancel_url:      'https://tatapay-a4972.web.app/cancel.html',
+    sender_phone:    phone || '',
+    sender_country:  'SN',
+    custom_field:    JSON.stringify({ uid, type, ref: refCommand })
+  };
+
+  if (method) {
+    payload.channel = method;
+  }
+
   try {
-    await db.collection('paytech_transactions').doc(refCommand).set({
-      uid,
-      amount: amt,
-      type,
-      method:    method || null,
-      meta:      meta || null,
-      status:    'pending',
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-
-    const itemNames = {
-      recharge: 'Recharge TataPay',
-      ticket:   'Ticket TataPay',
-      retrait:  'Retrait TataPay'
-    };
-
-    const payload = {
-      item_name:       itemNames[type] || 'TataPay',
-      item_price:      amt,
-      currency:        'XOF',
-      ref_command:     refCommand,
-      command_name:    'TataPay Paiement',
-      env:             PAYTECH_ENV,
-      ipn_url:         `${BACKEND_URL}/api/ipn`,
-      success_url:     'https://tatapay-a4972.web.app/success.html',
-      cancel_url:      'https://tatapay-a4972.web.app/cancel.html',
-      sender_phone:    phone || '',
-      sender_country:  'SN',
-      custom_field:    JSON.stringify({ uid, type, ref: refCommand })
-    };
-
-    if (method) payload.channel = method;
-
     const response = await fetch('https://paytech.sn/api/payment/request-payment', {
       method: 'POST',
       headers: {
@@ -239,6 +265,7 @@ app.post('/api/payment/init', verifyToken, limiter, requirePaytechKeys, async (r
   }
 });
 
+// ── MAPPING OPÉRATEUR → SERVICE PAYTECH ──
 const SERVICE_MAP = {
   'wave':   'Wave Senegal',
   'orange': 'Orange Money Senegal',
@@ -246,109 +273,136 @@ const SERVICE_MAP = {
 };
 
 // ── RETRAIT RÉEL VIA PAYTECH TRANSFER API ──
+// Ordre sûr : 1) on RÉSERVE (débite) le montant dans une transaction,
+// 2) on appelle PayTech, 3) si PayTech refuse, on REMBOURSE.
+// Deux retraits simultanés ne peuvent donc jamais dépasser le solde.
 app.post('/api/withdraw', verifyToken, limiter, requirePaytechKeys, async (req, res) => {
+  if (!WITHDRAWALS_ENABLED) {
+    return res.status(503).json({ error: 'Retraits temporairement désactivés' });
+  }
   const { amount, phone, method } = req.body;
   const uid = req.uid;
 
   const amt = validateAmount(amount);
   if (!amt) return res.status(400).json({ error: 'Montant invalide (min 100, max 500 000 FCFA)' });
-  if (!phone) return res.status(400).json({ error: 'Numéro de téléphone requis' });
+  const cleanPhone = String(phone || '').replace(/\s+/g, '');
+  if (!/^\+?\d{8,15}$/.test(cleanPhone)) return res.status(400).json({ error: 'Numéro de téléphone invalide' });
+  if (!SERVICE_MAP[method]) return res.status(400).json({ error: 'Opérateur invalide' });
 
-  const service = SERVICE_MAP[method] || SERVICE_MAP['wave'];
-  const externalId = 'TTW-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  const service    = SERVICE_MAP[method];
+  const externalId = 'TTW-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex');
+  const userRef    = db.collection('users').doc(uid);
+  const wdRef      = db.collection('withdrawals').doc(externalId);
+  const histRef    = userRef.collection('history').doc(externalId);
 
+  // 1) Réservation atomique
   try {
-    const userSnap = await db.collection('users').doc(uid).get();
-    if (!userSnap.exists) return res.status(404).json({ error: 'Utilisateur introuvable' });
+    await db.runTransaction(async (t) => {
+      const snap = await t.get(userRef);
+      if (!snap.exists) throw Object.assign(new Error('Utilisateur introuvable'), { http: 404 });
+      const u = snap.data();
+      if (!['approved', 'active'].includes(u.status)) throw Object.assign(new Error('Compte non validé'), { http: 403 });
+      if ((u.balance || 0) < amt) throw Object.assign(new Error('Solde insuffisant'), { http: 400 });
+      t.update(userRef, { balance: admin.firestore.FieldValue.increment(-amt) });
+      t.set(wdRef, {
+        ownerUid: uid, ownerName: u.name || '', amount: amt, phone: cleanPhone,
+        operator: method, service, ref: externalId, status: 'reserved',
+        ts: admin.firestore.FieldValue.serverTimestamp()
+      });
+      t.set(histRef, {
+        type: 'withdraw', label: `Retrait ${service} — ${cleanPhone}`, amount: -amt,
+        ref: externalId, status: 'pending', ts: admin.firestore.FieldValue.serverTimestamp()
+      });
+    });
+  } catch (e) {
+    return res.status(e.http || 500).json({ error: e.message });
+  }
 
-    const balance = userSnap.data().balance || 0;
-    if (balance < amt) return res.status(400).json({ error: 'Solde insuffisant' });
-
-    const payload = {
-      amount:             amt,
-      destination_number: phone,
-      service,
-      callback_url:       `${BACKEND_URL}/api/transfer-callback`,
-      external_id:        externalId
-    };
-
+  // 2) Virement PayTech
+  let data = null;
+  try {
     const response = await fetch('https://paytech.sn/api/transfer/transferFund', {
       method: 'POST',
-      headers: {
-        'API_KEY':      PAYTECH_API_KEY,
-        'API_SECRET':   PAYTECH_API_SECRET,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
+      headers: { 'API_KEY': PAYTECH_API_KEY, 'API_SECRET': PAYTECH_API_SECRET, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: amt, destination_number: cleanPhone, service,
+        callback_url: BACKEND_URL + '/api/transfer-callback', external_id: externalId
+      })
     });
-
     const rawText = await response.text();
     console.log('💸 Transfer PayTech:', response.status, rawText.slice(0, 400));
-
-    let data;
-    try {
-      data = JSON.parse(rawText);
-    } catch (e) {
-      return res.status(502).json({ error: 'Réponse non-JSON PayTech', raw: rawText.slice(0, 400) });
-    }
-
-    if (data.success === 1) {
-      const histRef = db.collection('users').doc(uid).collection('history').doc();
-      await db.runTransaction(async (t) => {
-        t.update(db.collection('users').doc(uid), {
-          balance: admin.firestore.FieldValue.increment(-amt)
-        });
-        t.set(histRef, {
-          type:       'withdraw',
-          label:      `Retrait ${service} — ${phone} — ${externalId}`,
-          amount:     -amt,
-          ref:        externalId,
-          transferId: data.transfer?.id_transfer || '',
-          status:     'pending',
-          ts:         admin.firestore.FieldValue.serverTimestamp()
-        });
-      });
-
-      console.log(`✅ Retrait initié : ${uid} -${amt} FCFA → ${phone} (${service})`);
-      res.json({
-        message:    'Retrait en cours de traitement',
-        ref:        externalId,
-        transferId: data.transfer?.id_transfer || '',
-        status:     'pending'
-      });
-
-    } else {
-      console.error('❌ Échec transfer PayTech:', data);
-      res.status(400).json({ error: data.message || 'Échec PayTech', details: data });
-    }
-
+    try { data = JSON.parse(rawText); } catch (e) { data = null; }
   } catch (err) {
-    console.error('❌ Erreur retrait:', err);
-    res.status(500).json({ error: err.message });
+    console.error('❌ Erreur réseau PayTech:', err.message);
+    // Statut inconnu : on NE rembourse PAS automatiquement (le virement est peut-être parti).
+    await wdRef.update({ status: 'unknown', error: err.message }).catch(() => {});
+    return res.status(502).json({ error: 'PayTech injoignable — retrait en vérification', ref: externalId });
   }
+
+  if (data && data.success === 1) {
+    await wdRef.update({ status: 'sent', transferId: data.transfer?.id_transfer || '' });
+    return res.json({ message: 'Retrait en cours de traitement', ref: externalId, status: 'pending', success: true });
+  }
+
+  // 3) Refus clair de PayTech → remboursement
+  await refundWithdrawal(externalId, (data && data.message) || 'Refus PayTech');
+  return res.status(400).json({ error: (data && data.message) || 'Échec PayTech' });
 });
+
+// Rembourse un retrait une seule fois (idempotent)
+async function refundWithdrawal(externalId, reason) {
+  const wdRef = db.collection('withdrawals').doc(externalId);
+  await db.runTransaction(async (t) => {
+    const snap = await t.get(wdRef);
+    if (!snap.exists) return;
+    const w = snap.data();
+    if (['refunded', 'success'].includes(w.status)) return;
+    const userRef = db.collection('users').doc(w.ownerUid);
+    t.update(userRef, { balance: admin.firestore.FieldValue.increment(w.amount) });
+    t.set(userRef.collection('history').doc(externalId + '-R'), {
+      type: 'refund', label: 'Remboursement retrait échoué', amount: w.amount,
+      ref: externalId, ts: admin.firestore.FieldValue.serverTimestamp()
+    });
+    t.update(wdRef, { status: 'refunded', reason, refundedAt: admin.firestore.FieldValue.serverTimestamp() });
+  });
+}
+
+const safeEq = (a, b) => {
+  const x = Buffer.from(String(a || '')), y = Buffer.from(String(b || ''));
+  return x.length === y.length && crypto.timingSafeEqual(x, y);
+};
 
 // ── CALLBACK TRANSFER PAYTECH ──
 app.post('/api/transfer-callback', async (req, res) => {
   console.log('📩 Transfer callback reçu:', JSON.stringify(req.body));
+
   try {
     const {
-      type_event, id_transfer, amount, destination_number,
-      api_key_sha256, api_secret_sha256
+      type_event,
+      external_id,
+      id_transfer,
+      amount,
+      service_name,
+      state,
+      destination_number,
+      api_key_sha256,
+      api_secret_sha256
     } = req.body;
 
     const expectedKeyHash    = crypto.createHash('sha256').update(PAYTECH_API_KEY).digest('hex');
     const expectedSecretHash = crypto.createHash('sha256').update(PAYTECH_API_SECRET).digest('hex');
 
-    if (api_key_sha256 !== expectedKeyHash || api_secret_sha256 !== expectedSecretHash) {
+    if (!safeEq(api_key_sha256, expectedKeyHash) || !safeEq(api_secret_sha256, expectedSecretHash)) {
       console.error('❌ Callback non authentifié');
       return res.status(403).send('Forbidden');
     }
 
     if (type_event === 'transfer_success') {
       console.log(`✅ Transfer confirmé : ${id_transfer} — ${amount} FCFA → ${destination_number}`);
+      if (external_id) await db.collection('withdrawals').doc(String(external_id)).update({ status: 'success' }).catch(() => {});
     } else if (type_event === 'transfer_failed') {
       console.error(`❌ Transfer échoué : ${id_transfer}`);
+      if (external_id) await refundWithdrawal(String(external_id), 'transfer_failed');
     }
 
     res.status(200).send('OK');
@@ -358,7 +412,7 @@ app.post('/api/transfer-callback', async (req, res) => {
   }
 });
 
-// ── IPN PAYTECH ──
+// ── IPN PAYTECH (sécurisé) ──
 app.post('/api/ipn', ipnLimiter, async (req, res) => {
   console.log('📩 IPN reçu:', JSON.stringify({
     type_event:  req.body.type_event,
@@ -367,12 +421,18 @@ app.post('/api/ipn', ipnLimiter, async (req, res) => {
   }));
 
   try {
-    const { type_event, ref_command, method, api_key_sha256, api_secret_sha256 } = req.body;
+    const {
+      type_event,
+      ref_command,
+      method,
+      api_key_sha256,
+      api_secret_sha256
+    } = req.body;
 
     const expectedKeyHash    = crypto.createHash('sha256').update(PAYTECH_API_KEY).digest('hex');
     const expectedSecretHash = crypto.createHash('sha256').update(PAYTECH_API_SECRET).digest('hex');
 
-    if (api_key_sha256 !== expectedKeyHash || api_secret_sha256 !== expectedSecretHash) {
+    if (!safeEq(api_key_sha256, expectedKeyHash) || !safeEq(api_secret_sha256, expectedSecretHash)) {
       console.error('❌ IPN non authentifié — signature invalide');
       return res.status(403).send('Forbidden');
     }
@@ -387,13 +447,22 @@ app.post('/api/ipn', ipnLimiter, async (req, res) => {
     await db.runTransaction(async (t) => {
       const txSnap = await t.get(txRef);
 
-      if (!txSnap.exists) { console.error('❌ Transaction inconnue:', ref_command); return; }
-      if (txSnap.data().status === 'credited') { console.log('⚠️ Déjà crédité:', ref_command); return; }
+      if (!txSnap.exists) {
+        console.error('❌ Transaction inconnue:', ref_command);
+        return;
+      }
+      if (txSnap.data().status === 'credited') {
+        console.log('⚠️ Déjà crédité:', ref_command);
+        return;
+      }
 
       const txData = txSnap.data();
       const { uid, amount, type, meta } = txData;
 
-      if (!uid || !amount) { console.error('❌ uid ou amount manquant'); return; }
+      if (!uid || !amount) {
+        console.error('❌ uid ou amount manquant');
+        return;
+      }
 
       const userRef     = db.collection('users').doc(uid);
       const histRef     = db.collection('users').doc(uid).collection('history').doc();
@@ -411,15 +480,15 @@ app.post('/api/ipn', ipnLimiter, async (req, res) => {
       }
 
       else if (type === 'ticket' && meta) {
-        const commission  = Math.round(amount * COMMISSION_RATE);
-        const receiverAmt = amount - commission;
+        const commission    = Math.round(amount * COMMISSION_RATE);
+        const receiverAmt   = amount - commission;
 
-        const pendingRef   = db.collection('pending').doc();
-        const receiverRef  = db.collection('users').doc(meta.busUid);
-        const recvHistRef  = db.collection('users').doc(meta.busUid).collection('history').doc();
-        const adminRef     = db.collection('users').doc(ADMIN_UID || 'none');
-        const adminHistRef = db.collection('users').doc(ADMIN_UID || 'none').collection('history').doc();
-        const commHistRef  = db.collection('commissions').doc();
+        const pendingRef    = db.collection('pending').doc();
+        const receiverRef   = db.collection('users').doc(meta.busUid);
+        const recvHistRef   = db.collection('users').doc(meta.busUid).collection('history').doc();
+        const adminRef      = db.collection('users').doc(ADMIN_UID);
+        const adminHistRef  = db.collection('users').doc(ADMIN_UID).collection('history').doc();
+        const commHistRef   = db.collection('commissions').doc();
 
         t.set(pendingRef, {
           busUid: meta.busUid, busId: meta.busId,
@@ -435,11 +504,11 @@ app.post('/api/ipn', ipnLimiter, async (req, res) => {
           status: 'pending'
         });
 
-        t.update(userRef, { balance: admin.firestore.FieldValue.increment(-amount) });
+        // Payé par Mobile Money : on ne débite PAS le portefeuille du passager.
         t.set(histRef, {
           type: 'ticket',
-          label: `Ticket ${meta.gie}/${meta.vehicle} → ${meta.to}`,
-          amount: -amount, ref: ref_command,
+          label: `Ticket ${meta.gie}/${meta.vehicle} → ${meta.to} (Mobile Money)`,
+          amount: 0, paidExternal: amount, ref: ref_command,
           ts: admin.firestore.FieldValue.serverTimestamp()
         });
 
@@ -471,17 +540,6 @@ app.post('/api/ipn', ipnLimiter, async (req, res) => {
         console.log(`✅ Ticket : ${uid} -${amount} FCFA | receveur +${receiverAmt} | TataPay +${commission}`);
       }
 
-      else if (type === 'retrait') {
-        t.update(userRef, { balance: admin.firestore.FieldValue.increment(-amount) });
-        t.set(histRef, {
-          type: 'withdraw',
-          label: `Retrait via ${finalMethod} — ${ref_command}`,
-          amount: -amount, ref: ref_command,
-          ts: admin.firestore.FieldValue.serverTimestamp()
-        });
-        console.log(`✅ Retrait : ${uid} -${amount} FCFA`);
-      }
-
       t.update(txRef, {
         status: 'credited', method: finalMethod,
         creditedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -496,7 +554,7 @@ app.post('/api/ipn', ipnLimiter, async (req, res) => {
   }
 });
 
-// ── QR HORS-LIGNE ──
+// ── GÉNÉRER QR SIGNÉ HORS-LIGNE ──
 app.post('/api/offline/qr', verifyToken, requireOfflineSecret, limiter, async (req, res) => {
   const uid = req.uid;
   try {
@@ -527,6 +585,7 @@ app.post('/api/offline/qr', verifyToken, requireOfflineSecret, limiter, async (r
   }
 });
 
+// ── VÉRIFIER QR HORS-LIGNE ──
 app.post('/api/offline/verify', requireOfflineSecret, async (req, res) => {
   const { payload, signature } = req.body;
   if (!payload || !signature) return res.status(400).json({ error: 'Données manquantes' });
@@ -537,8 +596,8 @@ app.post('/api/offline/verify', requireOfflineSecret, async (req, res) => {
       .update(JSON.stringify(payload))
       .digest('hex');
 
-    const valid   = expectedSig === signature;
-    const expired = Date.now() > payload.expiresAt;
+    const valid      = expectedSig === signature;
+    const expired    = Date.now() > payload.expiresAt;
 
     res.json({ valid, expired, maxOffline: MAX_OFFLINE_PER_QR });
   } catch (err) {
@@ -546,7 +605,8 @@ app.post('/api/offline/verify', requireOfflineSecret, async (req, res) => {
   }
 });
 
-// ── SYNC HORS-LIGNE (plafond cumulé par QR) ──
+// ── SYNC TRANSACTIONS HORS-LIGNE ──
+// Plafond cumulé par QR émis (uid+issuedAt), suivi dans offline_qr_sessions/{sessionKey}.
 app.post('/api/offline/sync', verifyToken, requireOfflineSecret, limiter, async (req, res) => {
   const { transactions } = req.body;
   if (!transactions || !Array.isArray(transactions)) {
@@ -556,7 +616,8 @@ app.post('/api/offline/sync', verifyToken, requireOfflineSecret, limiter, async 
   const results = [];
 
   for (const tx of transactions) {
-    const { payload, signature, price, receiverUid, syncRef } = tx;
+    const { payload, signature, price, syncRef } = tx;
+    const receiverUid = req.uid; // jamais pris du client
 
     try {
       const expectedSig = crypto
@@ -574,7 +635,7 @@ app.post('/api/offline/sync', verifyToken, requireOfflineSecret, limiter, async 
         continue;
       }
 
-      if (!price || price > 1000) {
+      if (!syncRef || typeof syncRef !== 'string' || !Number.isInteger(price) || price <= 0 || price > 1000) {
         results.push({ syncRef, status: 'rejected', reason: 'Dépasse limite 1000 FCFA par transaction' });
         continue;
       }
@@ -588,19 +649,24 @@ app.post('/api/offline/sync', verifyToken, requireOfflineSecret, limiter, async 
       const sessionKey = `${payload.uid}_${payload.issuedAt}`;
       const sessionRef = db.collection('offline_qr_sessions').doc(sessionKey);
 
-      const passengerRef = db.collection('users').doc(payload.uid);
-      const receiverRef  = db.collection('users').doc(receiverUid);
-      const passHistRef  = db.collection('users').doc(payload.uid).collection('history').doc();
-      const recvHistRef  = db.collection('users').doc(receiverUid).collection('history').doc();
-      const offlineTxRef = db.collection('offline_transactions').doc(syncRef);
+      const passengerRef  = db.collection('users').doc(payload.uid);
+      const receiverRef   = db.collection('users').doc(receiverUid);
+      const passHistRef   = db.collection('users').doc(payload.uid).collection('history').doc();
+      const recvHistRef   = db.collection('users').doc(receiverUid).collection('history').doc();
+      const offlineTxRef  = db.collection('offline_transactions').doc(syncRef);
 
       let rejection = null;
 
       await db.runTransaction(async (t) => {
-        const [passengerSnap, sessionSnap] = await Promise.all([
+        const [passengerSnap, sessionSnap, receiverSnap] = await Promise.all([
           t.get(passengerRef),
-          t.get(sessionRef)
+          t.get(sessionRef),
+          t.get(receiverRef)
         ]);
+        if (!receiverSnap.exists || receiverSnap.data().role !== 'receiver' || payload.uid === receiverUid) {
+          rejection = 'Seul un receveur peut encaisser';
+          return;
+        }
 
         if (!passengerSnap.exists || (passengerSnap.data().balance || 0) < price) {
           rejection = 'Solde insuffisant';
@@ -661,6 +727,7 @@ app.post('/api/offline/sync', verifyToken, requireOfflineSecret, limiter, async 
 // ════════════════════════════════════════════════════════════
 
 // ── PROPRIÉTAIRES ──
+
 app.post('/api/owners/request', verifyToken, limiter, async (req, res) => {
   const uid = req.uid;
   const { name, phone, email, companyName, busCount } = req.body;
@@ -810,6 +877,7 @@ app.get('/api/owners/revenues', verifyToken, verifyOwner, async (req, res) => {
 });
 
 // ── RECEVEURS ──
+
 app.get('/api/receivers/owners', verifyToken, async (req, res) => {
   try {
     const snap = await db.collection('users')
@@ -875,6 +943,7 @@ app.get('/api/receivers/status', verifyToken, async (req, res) => {
 });
 
 // ── ADMINISTRATEUR ──
+
 app.get('/api/admin/owners', verifyToken, verifyAdmin, async (req, res) => {
   const { status } = req.query;
   try {
@@ -979,7 +1048,8 @@ app.delete('/api/admin/owners/:ownerUid', verifyToken, verifyAdmin, async (req, 
   }
 });
 
-// ── PROFIL ──
+// ── PROFIL UTILISATEUR ──
+
 app.get('/api/profile', verifyToken, async (req, res) => {
   try {
     const snap = await db.collection('users').doc(req.uid).get();
@@ -991,7 +1061,7 @@ app.get('/api/profile', verifyToken, async (req, res) => {
 });
 
 app.get('/api/profile/history', verifyToken, async (req, res) => {
-  const limit = Math.min(parseInt(req.query.limit) || 20, 200);
+  const limit = parseInt(req.query.limit) || 20;
   try {
     const snap = await db.collection('users').doc(req.uid)
       .collection('history')
@@ -1005,16 +1075,18 @@ app.get('/api/profile/history', verifyToken, async (req, res) => {
   }
 });
 
-// ── ASSISTANT IA (Google Gemini) — nécessite GEMINI_API_KEY ──
+// ════════════════════════════════════════════════════════════
+// ── ASSISTANT IA GRATUIT (Google Gemini) ──
+// Nécessite la variable d'environnement GEMINI_API_KEY sur Vercel.
+// ════════════════════════════════════════════════════════════
+const { GoogleGenAI } = require('@google/genai');
+
 const GEMINI_API_KEY = clean(process.env.GEMINI_API_KEY);
 let genAI = null;
-if (GEMINI_API_KEY) {
-  try {
-    const { GoogleGenAI } = require('@google/genai');
-    genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-  } catch (e) {
-    console.error('🚨 @google/genai introuvable — /api/assistant désactivée:', e.message);
-  }
+if (!GEMINI_API_KEY) {
+  console.error('🚨 GEMINI_API_KEY n\'est pas définie — la route /api/assistant est désactivée.');
+} else {
+  genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 }
 
 const assistantLimiter = rateLimit({
@@ -1053,17 +1125,57 @@ app.post('/api/assistant', assistantLimiter, requireGeminiKey, async (req, res) 
       contents: question.trim(),
       config: { systemInstruction: systemPrompt }
     });
+
     const answer = (response.text || '…').trim();
+    console.log(`🎙️ Assistant (${langLabel}) : "${question.slice(0,60)}" → ${answer.slice(0,80)}`);
     res.json({ answer, lang: lang === 'wo' ? 'wo' : 'fr' });
+
   } catch (err) {
     console.error('❌ Erreur assistant Gemini:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ── SENTINEL : explication d'une alerte en langage simple (Gemini) ──
+// ════════════════════════════════════════════════════════════
+// ── GROQ (IA gratuite, modèle Llama 3.3) ──
+// Nécessite la variable d'environnement GROQ_API_KEY sur Vercel.
+// ════════════════════════════════════════════════════════════
+const GROQ_API_KEY = clean(process.env.GROQ_API_KEY);
+
+const requireGroqKey = (req, res, next) => {
+  if (!GROQ_API_KEY) {
+    return res.status(503).json({ error: 'IA indisponible (GROQ_API_KEY manquante)' });
+  }
+  next();
+};
+
+async function askGroq(system, user) {
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + GROQ_API_KEY,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user }
+      ],
+      temperature: 0.4,
+      max_tokens: 300
+    })
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error((data.error && data.error.message) || ('Groq HTTP ' + r.status));
+  return ((data.choices && data.choices[0] && data.choices[0].message.content) || '').trim();
+}
+
+// ════════════════════════════════════════════════════════════
+// ── SENTINEL : explication d'une alerte en langage simple (Groq) ──
 // Les chiffres viennent de Sentinel (envoyés par l'application) ; le modèle ne fait que les expliquer.
-app.post('/api/ai-explain', verifyToken, assistantLimiter, requireGeminiKey, async (req, res) => {
+// ════════════════════════════════════════════════════════════
+app.post('/api/ai-explain', verifyToken, assistantLimiter, requireGroqKey, async (req, res) => {
   const { type, bus, day, msg, lang } = req.body || {};
   const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
   const alertMsg = str(msg, 400);
@@ -1093,25 +1205,14 @@ app.post('/api/ai-explain', verifyToken, assistantLimiter, requireGeminiKey, asy
     `Détail : ${alertMsg}`;
 
   try {
-    const response = await genAI.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: { systemInstruction: systemPrompt }
-    });
-    const answer = (response.text || '').trim();
+    const answer = await askGroq(systemPrompt, prompt);
     if (!answer) return res.status(502).json({ error: 'Réponse vide' });
     res.json({ answer, lang: lang === 'wo' ? 'wo' : 'fr' });
   } catch (err) {
-    console.error('❌ Erreur ai-explain Gemini:', err);
+    console.error('❌ Erreur ai-explain Groq:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ── 404 + erreurs (CORS refusé, JSON invalide…) ──
-app.use('/api', (req, res) => res.status(404).json({ error: 'Route introuvable' }));
-app.use((err, req, res, next) => {
-  console.error('❌ Erreur:', err.message);
-  res.status(err.status || 500).json({ error: err.message });
-});
-
+// ── VERCEL : on exporte l'app (pas de app.listen, pas de keep-alive) ──
 module.exports = app;
