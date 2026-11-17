@@ -5155,7 +5155,8 @@ function _tripFind(p,org,dest){
 }
 // Parcours habituel du bus entre sa position à la montée et la destination du ticket, d'après les trajets déjà enregistrés.
 async function tripHistory(t,st,todayPts){
-  const dest=await stopLL(t.busUid,t.to);if(!dest)return null;
+  const dbg=window._tripDbg={veh:t.vehicle||'?',dest:false,org:false,docs:0};
+  const dest=await stopLL(t.busUid,t.to);dbg.dest=!!dest;if(!dest)return null;
   let cur=null;
   try{if(t.busUid){const ls=await getDoc(doc(db,'bus_locations',t.busUid));if(ls.exists()){const d=ls.data();if(isFinite(d.lat)&&isFinite(d.lng))cur={lat:d.lat,lng:d.lng};}}}catch(e){}
   const tp=(todayPts||[]).filter(x=>x&&x.t&&x.a!=null&&x.o!=null).sort((x,y)=>x.t-y.t);
@@ -5167,9 +5168,9 @@ async function tripHistory(t,st,todayPts){
   if(!org&&navigator.geolocation){
     org=await new Promise(res=>{try{navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lng:p.coords.longitude}),()=>res(null),{timeout:6000,maximumAge:120000});}catch(e){res(null);}});
   }
-  if(!org)return null;
+  dbg.org=!!org;if(!org)return null;
   const snap=await getDocs(query(collection(db,'bus_traces'),where('vehicle','==',t.vehicle),limit(40)));
-  const docs=snap.docs.map(d=>d.data()).sort((x,y)=>String(y.day).localeCompare(String(x.day))).slice(0,14),todayKey=_dayKey(new Date());
+  const docs=snap.docs.map(d=>d.data()).sort((x,y)=>String(y.day).localeCompare(String(x.day))).slice(0,14),todayKey=_dayKey(new Date());dbg.docs=docs.length;
   for(const dd of docs){
     let p=(dd.points||[]).filter(x=>x&&x.t&&x.a!=null&&x.o!=null).sort((x,y)=>x.t-y.t);
     if(dd.day===todayKey)p=p.filter(x=>x.t<st-120000);
@@ -5192,7 +5193,7 @@ async function tripLoad(){
     const r=tripCut(all,st);
     let H=null;try{H=await tripHistory(t,st,all);}catch(e){console.warn('[trip hist]',e);}
     const live=r.pts.length>=2;
-    if(!live&&!H){info.innerHTML='⏳ Le trajet du bus est en cours d’enregistrement. L’itinéraire apparaîtra ici dans quelques minutes (mise à jour automatique).';return;}
+    if(!live&&!H){info.innerHTML='⏳ Le trajet du bus est en cours d’enregistrement. L’itinéraire apparaîtra ici dans quelques minutes (mise à jour automatique).'+(()=>{const g=window._tripDbg||{};return '<br><span style="color:#888;font-size:11px;">Détail : véhicule '+_escH(String(g.veh||t.vehicle||'?'))+' · positions du jour : '+all.length+' (après le ticket : '+r.pts.length+') · destination trouvée : '+(g.dest?'oui':'non')+' · point de montée : '+(g.org?'oui':'non')+' · trajets enregistrés : '+(g.docs||0)+'</span>';})();return;}
     const last=live?r.pts[r.pts.length-1]:null;
     let cur=null;if(live)cur={lat:last.a,lng:last.o};else if(H&&H.cur)cur=H.cur;
     let etaHtml='';
