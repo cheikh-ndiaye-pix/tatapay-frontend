@@ -1242,7 +1242,8 @@ app.post('/api/ai-explain', verifyToken, assistantLimiter, requireAiKey, async (
     trend: 'une baisse progressive des recettes'
   };
   const kind = kinds[type] || 'une anomalie';
-  const langLabel = lang === 'wo' ? 'wolof' : 'français';
+  // Sentinel répond toujours en français, quelle que soit la langue envoyée par l'application
+  const langLabel = 'français';
 
   const systemPrompt =
     `Tu es Sentinel, le conseiller de TataPay (paiement de tickets de bus au Sénégal). ` +
@@ -1262,7 +1263,7 @@ app.post('/api/ai-explain', verifyToken, assistantLimiter, requireAiKey, async (
   try {
     const answer = await askAI(systemPrompt, prompt);
     if (!answer) return res.status(502).json({ error: 'Réponse vide' });
-    res.json({ answer, lang: lang === 'wo' ? 'wo' : 'fr' });
+    res.json({ answer, lang: 'fr' });
   } catch (err) {
     console.error('❌ Erreur ai-explain:', err.message);
     res.status(500).json({ error: err.message });
