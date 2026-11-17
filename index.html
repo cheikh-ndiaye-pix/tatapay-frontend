@@ -5070,6 +5070,52 @@ function tripCut(pts,st){
   let km=0;for(let i=1;i<out.length;i++)km+=_haversineKm(out[i-1].a,out[i-1].o,out[i].a,out[i].o);
   return {pts:out,km,ended};
 }
+// Cherche, dans une liste de points d'un jour, le passage du bus de l'origine vers la destination (même sens). Renvoie le plus proche de l'heure actuelle.
+function _tripFind(p,org,dest){
+  const R=1.0,H3=3*3600000;
+  const dO=i=>_haversineKm(p[i].a,p[i].o,org.lat,org.lng),dD=i=>_haversineKm(p[i].a,p[i].o,dest.lat,dest.lng);
+  const out=[];let i=0;
+  while(i<p.length){
+    if(dO(i)>R){i++;continue;}
+    let ie=i,ib=i;while(ie+1<p.length&&dO(ie+1)<=R){ie++;if(dO(ie)<dO(ib))ib=ie;}
+    let j=ie+1;while(j<p.length&&p[j].t-p[ib].t<=H3&&dD(j)>R)j++;
+    if(j<p.length&&p[j].t-p[ib].t<=H3){
+      let je=j,jb=j;while(je+1<p.length&&dD(je+1)<=R){je++;if(dD(je)<dD(jb))jb=je;}
+      const seg=p.slice(ib,jb+1);let km=0;for(let k=1;k<seg.length;k++)km+=_haversineKm(seg[k-1].a,seg[k-1].o,seg[k].a,seg[k].o);
+      if(km>=0.2)out.push({pts:seg,km,mins:(p[jb].t-p[ib].t)/60000,t0:p[ib].t});
+      i=je+1;
+    }else i=ie+1;
+  }
+  if(!out.length)return null;
+  const now=new Date(),nm=now.getHours()*60+now.getMinutes();
+  const tod=c=>{const d=new Date(c.t0);return Math.abs(d.getHours()*60+d.getMinutes()-nm);};
+  out.sort((x,y)=>tod(x)-tod(y));return out[0];
+}
+// Parcours habituel du bus entre sa position à la montée et la destination du ticket, d'après les trajets déjà enregistrés.
+async function tripHistory(t,st,todayPts){
+  const dest=await arriveGeocode(t.to);if(!dest)return null;
+  let cur=null;
+  try{if(t.busUid){const ls=await getDoc(doc(db,'bus_locations',t.busUid));if(ls.exists()){const d=ls.data();if(isFinite(d.lat)&&isFinite(d.lng))cur={lat:d.lat,lng:d.lng};}}}catch(e){}
+  const tp=(todayPts||[]).filter(x=>x&&x.t&&x.a!=null&&x.o!=null).sort((x,y)=>x.t-y.t);
+  if(!cur&&tp.length){const l=tp[tp.length-1];cur={lat:l.a,lng:l.o};}
+  let org=null;
+  const near=tp.filter(x=>Math.abs(x.t-st)<10*60000).sort((x,y)=>Math.abs(x.t-st)-Math.abs(y.t-st))[0];
+  if(near)org={lat:near.a,lng:near.o};else if(cur)org=cur;else org=await arriveGeocode(t.from);
+  // dernier recours (bus sans GPS et arrêt de départ introuvable) : la position du téléphone du passager
+  if(!org&&navigator.geolocation){
+    org=await new Promise(res=>{try{navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lng:p.coords.longitude}),()=>res(null),{timeout:6000,maximumAge:120000});}catch(e){res(null);}});
+  }
+  if(!org)return null;
+  const snap=await getDocs(query(collection(db,'bus_traces'),where('vehicle','==',t.vehicle),limit(40)));
+  const docs=snap.docs.map(d=>d.data()).sort((x,y)=>String(y.day).localeCompare(String(x.day))).slice(0,14),todayKey=_dayKey(new Date());
+  for(const dd of docs){
+    let p=(dd.points||[]).filter(x=>x&&x.t&&x.a!=null&&x.o!=null).sort((x,y)=>x.t-y.t);
+    if(dd.day===todayKey)p=p.filter(x=>x.t<st-120000);
+    const f=_tripFind(p,org,dest);
+    if(f)return {pts:f.pts,km:f.km,mins:f.mins,day:dd.day,cur,org,dest};
+  }
+  return null;
+}
 async function tripLoad(){
   const t=window._tripTicket,info=document.getElementById('tripInfo');if(!t||!info)return;
   const st=_tkStart(t);
@@ -5082,38 +5128,65 @@ async function tripLoad(){
       snap.docs.forEach(d=>{all=all.concat(d.data().points||[]);});
     }
     const r=tripCut(all,st);
-    if(r.pts.length<2){info.innerHTML='⏳ Le trajet du bus est en cours d’enregistrement. L’itinéraire apparaîtra ici dans quelques minutes (mise à jour automatique).';return;}
-    const first=r.pts[0],last=r.pts[r.pts.length-1],mins=Math.max(1,Math.round((last.t-st)/60000));
+    let H=null;try{H=await tripHistory(t,st,all);}catch(e){console.warn('[trip hist]',e);}
+    const live=r.pts.length>=2;
+    if(!live&&!H){info.innerHTML='⏳ Le trajet du bus est en cours d’enregistrement. L’itinéraire apparaîtra ici dans quelques minutes (mise à jour automatique).';return;}
+    const last=live?r.pts[r.pts.length-1]:null;
+    let cur=null;if(live)cur={lat:last.a,lng:last.o};else if(H&&H.cur)cur=H.cur;
     let etaHtml='';
-    if(!r.ended){
+    if(!(live&&r.ended)){
       try{
-        const dest=await arriveGeocode(t.to);
+        const dest=H?H.dest:await arriveGeocode(t.to);
         if(dest){
-          const rem=_haversineKm(last.a,last.o,dest.lat,dest.lng)*1.4;
-          if(rem<0.15){etaHtml='<br>📍 <b>Le bus arrive à '+_escH(t.to)+'</b>';}
-          else{
-            const base=rem/18*60;let min=base,ia=false,conf=0;
-            const pr=await predictorAdjust(t.vehicle,rem,base);
-            if(pr){min=pr.min;ia=true;conf=pr.conf;}
-            etaHtml='<br>⏳ Arrive à <b>'+_escH(t.to)+'</b> dans <b>~'+_fmtMin(min)+'</b> ('+_fmtDist(rem)+' restants)'+(ia?'<br><span style="color:#c4b5fd;font-size:11px;">🤖 Predictor · appris sur les trajets des jours précédents (fiabilité '+Math.round(conf*100)+' %)</span>':'<br><span style="color:#aaa;font-size:11px;">Estimation simple · Predictor apprend encore</span>');
+          let rem=null;
+          if(H){
+            if(cur){
+              let k=0,bd=1e9;H.pts.forEach((x,ix)=>{const d=_haversineKm(x.a,x.o,cur.lat,cur.lng);if(d<bd){bd=d;k=ix;}});
+              if(bd<=1.5){rem=0;for(let ix=k+1;ix<H.pts.length;ix++)rem+=_haversineKm(H.pts[ix-1].a,H.pts[ix-1].o,H.pts[ix].a,H.pts[ix].o);}
+              else rem=_haversineKm(cur.lat,cur.lng,dest.lat,dest.lng)*1.4;
+            }else rem=H.km;
+          }else if(cur)rem=_haversineKm(cur.lat,cur.lng,dest.lat,dest.lng)*1.4;
+          if(rem!=null){
+            if(rem<0.15)etaHtml='<br>📍 <b>Le bus arrive à '+_escH(t.to)+'</b>';
+            else{
+              const base=(H&&H.km>0.2&&H.mins>0)?rem/H.km*H.mins:rem/18*60;let min=base,ia=false,conf=0;
+              const pr=await predictorAdjust(t.vehicle,rem,base);if(pr){min=pr.min;ia=true;conf=pr.conf;}
+              etaHtml='<br>⏳ Arrive à <b>'+_escH(t.to)+'</b> dans <b>~'+_fmtMin(min)+'</b> ('+_fmtDist(rem)+' restants)'+(ia?'<br><span style="color:#c4b5fd;font-size:11px;">🤖 Predictor · appris sur les trajets des jours précédents (fiabilité '+Math.round(conf*100)+' %)</span>':'<br><span style="color:#aaa;font-size:11px;">Estimation simple · Predictor apprend encore</span>');
+            }
           }
         }
       }catch(e){console.warn('[trip eta]',e);}
     }
-    info.innerHTML=`🚌 <b>${_escH(t.vehicle)}</b> · ${_escH(t.from)} → ${_escH(t.to)}<br>📏 ${_fmtDist(r.km)} parcourus · ⏱️ ${_fmtMin(mins)} depuis votre ticket${r.ended?' · ✅ trajet terminé':' · 🔄 le bus roule encore, la ligne s’allonge'}${etaHtml}`;
+    if(live){
+      const mins=Math.max(1,Math.round((last.t-st)/60000));
+      info.innerHTML=`🚌 <b>${_escH(t.vehicle)}</b> · ${_escH(t.from)} → ${_escH(t.to)}<br>📏 ${_fmtDist(r.km)} parcourus · ⏱️ ${_fmtMin(mins)} depuis votre ticket${r.ended?' · ✅ trajet terminé':' · 🔄 le bus roule encore, la ligne s’allonge'}${etaHtml}`;
+    }else{
+      info.innerHTML=`🚌 <b>${_escH(t.vehicle)}</b> · ${_escH(t.from)} → ${_escH(t.to)}<br>🗺️ Parcours habituel du bus : ${_fmtDist(H.km)}${etaHtml}`;
+    }
     if(!tripMap){
       tripMap=L.map(document.getElementById('tripMap'),{zoomControl:true,attributionControl:false});
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(tripMap);
     }
     tripMap.invalidateSize();
     if(tripLayer){tripMap.removeLayer(tripLayer);tripLayer=null;}
-    const ll=r.pts.map(x=>[x.a,x.o]);
-    tripLayer=L.layerGroup([
-      L.polyline(ll,{color:'#7c3aed',weight:6,opacity:.9}),
-      L.circleMarker(ll[0],{radius:9,color:'#fff',weight:3,fillColor:'#16a34a',fillOpacity:1}).bindTooltip('🟢 Montée dans le bus',{permanent:false}),
-      L.circleMarker(ll[ll.length-1],{radius:9,color:'#fff',weight:3,fillColor:r.ended?'#DF0024':'#f59e0b',fillOpacity:1}).bindTooltip(r.ended?'🏁 Fin du trajet':'🚌 Position actuelle du bus',{permanent:false})
-    ]).addTo(tripMap);
-    tripMap.fitBounds(ll,{padding:[30,30],maxZoom:16});
+    const layers=[],bounds=[];
+    if(H){
+      const hl=H.pts.map(x=>[x.a,x.o]);bounds.push(...hl);
+      layers.push(L.polyline(hl,{color:'#0ea5e9',weight:6,opacity:.8,dashArray:'10 8'}));
+      layers.push(L.circleMarker(hl[hl.length-1],{radius:9,color:'#fff',weight:3,fillColor:'#DF0024',fillOpacity:1}).bindTooltip('🏁 '+t.to,{permanent:false}));
+      if(!live)layers.push(L.circleMarker(hl[0],{radius:9,color:'#fff',weight:3,fillColor:'#16a34a',fillOpacity:1}).bindTooltip('🟢 Montée dans le bus',{permanent:false}));
+    }
+    if(live){
+      const ll=r.pts.map(x=>[x.a,x.o]);bounds.push(...ll);
+      layers.push(L.polyline(ll,{color:'#7c3aed',weight:6,opacity:.9}));
+      layers.push(L.circleMarker(ll[0],{radius:9,color:'#fff',weight:3,fillColor:'#16a34a',fillOpacity:1}).bindTooltip('🟢 Montée dans le bus',{permanent:false}));
+      layers.push(L.circleMarker(ll[ll.length-1],{radius:9,color:'#fff',weight:3,fillColor:r.ended?'#DF0024':'#f59e0b',fillOpacity:1}).bindTooltip(r.ended?'🏁 Fin du trajet':'🚌 Position actuelle du bus',{permanent:false}));
+    }else if(cur){
+      bounds.push([cur.lat,cur.lng]);
+      layers.push(L.circleMarker([cur.lat,cur.lng],{radius:9,color:'#fff',weight:3,fillColor:'#f59e0b',fillOpacity:1}).bindTooltip('🚌 Position actuelle du bus',{permanent:false}));
+    }
+    tripLayer=L.layerGroup(layers).addTo(tripMap);
+    if(bounds.length)tripMap.fitBounds(bounds,{padding:[30,30],maxZoom:16});
   }catch(e){
     console.warn('[trip]',e);
     info.textContent=(e&&e.code==='permission-denied')?'Itinéraire indisponible (accès aux trajets non autorisé).':'Itinéraire indisponible pour le moment. Réessayez dans un instant.';
