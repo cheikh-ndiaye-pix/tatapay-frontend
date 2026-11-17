@@ -3298,7 +3298,7 @@ function attachChVersementsListener(){
   const q=query(collection(db,'users',S.uid,'versements'),orderBy('ts','desc'),limit(30));
   unsubChVersements=onSnapshot(q,snap=>renderChVersements(snap.docs.map(d=>({id:d.id,...d.data()}))));
 }
-const _chSeenNotif=new Set();
+const _chSeenNotif=new Set(),_chSeenKey=new Set();
 function attachChNotifListener(){
   if(unsubChNotif)unsubChNotif();
   const q=query(collection(db,'notifications'),where('toUid','==',S.uid),where('read','==',false));
@@ -3315,7 +3315,7 @@ function attachChNotifListener(){
       const fresh=!first&&t&&(now-t)<FRESH;
       // Les candidatures restent visibles dans l'onglet Receveur : on ne les marque jamais comme lues.
       const isCand=d.type==='receiver_candidature';
-      if(fresh&&shown<3){shown++;showChToast(d.type,d);playNotifSound();pushNative('TataPay — '+(d.type||'Notification'),d.message||d.receiverName||'');}
+      const dupKey=d.type+'|'+(d.receiverUid||d.passenger||'');if(isCand||_chSeenKey.has(dupKey)){old+=0;}else if(fresh&&shown<3){_chSeenKey.add(dupKey);setTimeout(()=>_chSeenKey.delete(dupKey),30000);shown++;showChToast(d.type,d);playNotifSound();pushNative('TataPay — '+(d.type||'Notification'),d.message||d.receiverName||'');}
       else old++;
       if(!isCand)updateDoc(doc(db,'notifications',id),{read:true}).catch(()=>{});
     });
