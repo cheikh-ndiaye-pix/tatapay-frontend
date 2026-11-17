@@ -1078,10 +1078,12 @@ app.get('/api/profile/history', verifyToken, async (req, res) => {
 // ════════════════════════════════════════════════════════════
 // ── ASSISTANT IA GRATUIT (Google Gemini) ──
 // Nécessite la variable d'environnement GEMINI_API_KEY sur Vercel.
+// Modèle modifiable sans commit via GEMINI_MODEL (défaut : gemini-2.5-flash).
 // ════════════════════════════════════════════════════════════
 const { GoogleGenAI } = require('@google/genai');
 
 const GEMINI_API_KEY = clean(process.env.GEMINI_API_KEY);
+const GEMINI_MODEL   = clean(process.env.GEMINI_MODEL) || 'gemini-2.5-flash';
 let genAI = null;
 if (!GEMINI_API_KEY) {
   console.error('🚨 GEMINI_API_KEY n\'est pas définie — la route /api/assistant est désactivée.');
@@ -1121,7 +1123,7 @@ app.post('/api/assistant', assistantLimiter, requireGeminiKey, async (req, res) 
 
   try {
     const response = await genAI.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: GEMINI_MODEL,
       contents: question.trim(),
       config: { systemInstruction: systemPrompt }
     });
@@ -1137,45 +1139,98 @@ app.post('/api/assistant', assistantLimiter, requireGeminiKey, async (req, res) 
 });
 
 // ════════════════════════════════════════════════════════════
-// ── GROQ (IA gratuite, modèle Llama 3.3) ──
+// ── GROQ (IA gratuite) ──
 // Nécessite la variable d'environnement GROQ_API_KEY sur Vercel.
+// llama-3.3-70b-versatile a été arrêté par Groq le 16/08/2026.
+// Modèle modifiable sans commit via GROQ_MODEL.
+// Défaut : openai/gpt-oss-120b ; repli automatique sur qwen/qwen3.6-27b.
 // ════════════════════════════════════════════════════════════
 const GROQ_API_KEY = clean(process.env.GROQ_API_KEY);
+const GROQ_MODELS  = [
+  clean(process.env.GROQ_MODEL) || 'openai/gpt-oss-120b',
+  'qwen/qwen3.6-27b'
+].filter((m, i, a) => m && a.indexOf(m) === i);
 
-const requireGroqKey = (req, res, next) => {
-  if (!GROQ_API_KEY) {
-    return res.status(503).json({ error: 'IA indisponible (GROQ_API_KEY manquante)' });
+// Au moins une des deux IA doit être configurée pour /api/ai-explain
+const requireAiKey = (req, res, next) => {
+  if (!GROQ_API_KEY && !genAI) {
+    return res.status(503).json({ error: 'IA indisponible (GROQ_API_KEY et GEMINI_API_KEY manquantes)' });
   }
   next();
 };
 
-async function askGroq(system, user) {
+async function askGroqModel(model, system, user) {
+  const body = {
+    model,
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: user }
+    ],
+    temperature: 0.4,
+    // Les modèles à raisonnement consomment des jetons en réflexion : marge large
+    max_completion_tokens: 1500
+  };
+  if (model.includes('gpt-oss')) body.reasoning_effort = 'low';
+
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': 'Bearer ' + GROQ_API_KEY,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user }
-      ],
-      temperature: 0.4,
-      max_tokens: 300
-    })
+    body: JSON.stringify(body)
   });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error((data.error && data.error.message) || ('Groq HTTP ' + r.status));
-  return ((data.choices && data.choices[0] && data.choices[0].message.content) || '').trim();
+  const raw = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+  // Certains modèles (Qwen) renvoient leur réflexion entre <think>…</think>
+  return raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+}
+
+async function askGroq(system, user) {
+  let lastErr = null;
+  for (const model of GROQ_MODELS) {
+    try {
+      const out = await askGroqModel(model, system, user);
+      if (out) return out;
+      lastErr = new Error('Réponse vide (' + model + ')');
+    } catch (err) {
+      console.error('❌ Groq ' + model + ':', err.message);
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error('Groq indisponible');
+}
+
+async function askGemini(system, user) {
+  if (!genAI) throw new Error('Gemini non configuré');
+  const response = await genAI.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: user,
+    config: { systemInstruction: system }
+  });
+  return (response.text || '').trim();
+}
+
+// Groq d'abord, puis Gemini si Groq échoue
+async function askAI(system, user) {
+  if (GROQ_API_KEY) {
+    try {
+      const out = await askGroq(system, user);
+      if (out) return out;
+    } catch (err) {
+      console.error('⚠️ Groq a échoué, repli sur Gemini :', err.message);
+      if (!genAI) throw err;
+    }
+  }
+  return askGemini(system, user);
 }
 
 // ════════════════════════════════════════════════════════════
-// ── SENTINEL : explication d'une alerte en langage simple (Groq) ──
+// ── SENTINEL : explication d'une alerte en langage simple (Groq, repli Gemini) ──
 // Les chiffres viennent de Sentinel (envoyés par l'application) ; le modèle ne fait que les expliquer.
 // ════════════════════════════════════════════════════════════
-app.post('/api/ai-explain', verifyToken, assistantLimiter, requireGroqKey, async (req, res) => {
+app.post('/api/ai-explain', verifyToken, assistantLimiter, requireAiKey, async (req, res) => {
   const { type, bus, day, msg, lang } = req.body || {};
   const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
   const alertMsg = str(msg, 400);
@@ -1205,11 +1260,11 @@ app.post('/api/ai-explain', verifyToken, assistantLimiter, requireGroqKey, async
     `Détail : ${alertMsg}`;
 
   try {
-    const answer = await askGroq(systemPrompt, prompt);
+    const answer = await askAI(systemPrompt, prompt);
     if (!answer) return res.status(502).json({ error: 'Réponse vide' });
     res.json({ answer, lang: lang === 'wo' ? 'wo' : 'fr' });
   } catch (err) {
-    console.error('❌ Erreur ai-explain Groq:', err.message);
+    console.error('❌ Erreur ai-explain:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
