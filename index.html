@@ -5084,7 +5084,23 @@ async function tripLoad(){
     const r=tripCut(all,st);
     if(r.pts.length<2){info.innerHTML='⏳ Le trajet du bus est en cours d’enregistrement. L’itinéraire apparaîtra ici dans quelques minutes (mise à jour automatique).';return;}
     const first=r.pts[0],last=r.pts[r.pts.length-1],mins=Math.max(1,Math.round((last.t-st)/60000));
-    info.innerHTML=`🚌 <b>${_escH(t.vehicle)}</b> · ${_escH(t.from)} → ${_escH(t.to)}<br>📏 ${_fmtDist(r.km)} parcourus · ⏱️ ${_fmtMin(mins)} depuis votre ticket${r.ended?' · ✅ trajet terminé':' · 🔄 le bus roule encore, la ligne s’allonge'}`;
+    let etaHtml='';
+    if(!r.ended){
+      try{
+        const dest=await arriveGeocode(t.to);
+        if(dest){
+          const rem=_haversineKm(last.a,last.o,dest.lat,dest.lng)*1.4;
+          if(rem<0.15){etaHtml='<br>📍 <b>Le bus arrive à '+_escH(t.to)+'</b>';}
+          else{
+            const base=rem/18*60;let min=base,ia=false,conf=0;
+            const pr=await predictorAdjust(t.vehicle,rem,base);
+            if(pr){min=pr.min;ia=true;conf=pr.conf;}
+            etaHtml='<br>⏳ Arrive à <b>'+_escH(t.to)+'</b> dans <b>~'+_fmtMin(min)+'</b> ('+_fmtDist(rem)+' restants)'+(ia?'<br><span style="color:#c4b5fd;font-size:11px;">🤖 Predictor · appris sur les trajets des jours précédents (fiabilité '+Math.round(conf*100)+' %)</span>':'<br><span style="color:#aaa;font-size:11px;">Estimation simple · Predictor apprend encore</span>');
+          }
+        }
+      }catch(e){console.warn('[trip eta]',e);}
+    }
+    info.innerHTML=`🚌 <b>${_escH(t.vehicle)}</b> · ${_escH(t.from)} → ${_escH(t.to)}<br>📏 ${_fmtDist(r.km)} parcourus · ⏱️ ${_fmtMin(mins)} depuis votre ticket${r.ended?' · ✅ trajet terminé':' · 🔄 le bus roule encore, la ligne s’allonge'}${etaHtml}`;
     if(!tripMap){
       tripMap=L.map(document.getElementById('tripMap'),{zoomControl:true,attributionControl:false});
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(tripMap);
@@ -5107,7 +5123,7 @@ window.openTripRoute=()=>{
   const m=document.getElementById('modalTripRoute');if(!m||!window._tripTicket)return;
   m.style.display='flex';document.getElementById('tripInfo').textContent='Chargement…';
   setTimeout(()=>{tripLoad();},150);
-  clearInterval(tripTimer);tripTimer=setInterval(tripLoad,60000);
+  clearInterval(tripTimer);tripTimer=setInterval(tripLoad,20000);
 };
 window.closeTripRoute=()=>{clearInterval(tripTimer);tripTimer=null;const m=document.getElementById('modalTripRoute');if(m)m.style.display='none';};
 async function loadPassTickets(){
