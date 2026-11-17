@@ -1061,6 +1061,52 @@ app.post('/api/assistant', assistantLimiter, requireGeminiKey, async (req, res) 
   }
 });
 
+// ── SENTINEL : explication d'une alerte en langage simple (Gemini) ──
+// Les chiffres viennent de Sentinel (envoyés par l'application) ; le modèle ne fait que les expliquer.
+app.post('/api/ai-explain', verifyToken, assistantLimiter, requireGeminiKey, async (req, res) => {
+  const { type, bus, day, msg, lang } = req.body || {};
+  const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+  const alertMsg = str(msg, 400);
+  if (!alertMsg) return res.status(400).json({ error: 'Alerte manquante' });
+
+  const kinds = {
+    drop: 'une chute de recettes inhabituelle',
+    skim: 'des espèces dues non versées au propriétaire',
+    trend: 'une baisse progressive des recettes'
+  };
+  const kind = kinds[type] || 'une anomalie';
+  const langLabel = lang === 'wo' ? 'wolof' : 'français';
+
+  const systemPrompt =
+    `Tu es Sentinel, le conseiller de TataPay (paiement de tickets de bus au Sénégal). ` +
+    `Tu expliques une alerte à un propriétaire ou un chauffeur. Réponds UNIQUEMENT en ${langLabel}, ` +
+    `en 3 à 4 phrases courtes et simples. Reprends les chiffres de l'alerte tels quels, sans en inventer. ` +
+    `Ne dis jamais qu'il y a fraude ou vol : c'est une indication à vérifier sur le terrain. ` +
+    `Donne 2 ou 3 causes possibles et innocentes (panne, jour férié, bus à l'arrêt, versement en retard, ` +
+    `erreur de saisie) puis une action concrète pour vérifier (appeler le receveur, contrôler le bus, ` +
+    `comparer avec le carnet).`;
+
+  const prompt =
+    `Alerte Sentinel : ${kind}.\n` +
+    `Bus : ${str(bus, 40) || 'inconnu'}\n` +
+    `Jour : ${str(day, 60) || 'inconnu'}\n` +
+    `Détail : ${alertMsg}`;
+
+  try {
+    const response = await genAI.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { systemInstruction: systemPrompt }
+    });
+    const answer = (response.text || '').trim();
+    if (!answer) return res.status(502).json({ error: 'Réponse vide' });
+    res.json({ answer, lang: lang === 'wo' ? 'wo' : 'fr' });
+  } catch (err) {
+    console.error('❌ Erreur ai-explain Gemini:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── 404 + erreurs (CORS refusé, JSON invalide…) ──
 app.use('/api', (req, res) => res.status(404).json({ error: 'Route introuvable' }));
 app.use((err, req, res, next) => {
