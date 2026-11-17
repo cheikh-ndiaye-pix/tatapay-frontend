@@ -2801,7 +2801,7 @@ async function chSentinelRun(){
   if(!box){box=document.createElement('div');box.id='ch-sentinel-box';box.className='ch-card';card.appendChild(box);}
   box.innerHTML='<div style="color:#888;font-size:12px;">🛡️ Sentinel analyse…</div>';
   try{
-    const qs=['chauffeurUid','ownerUid'].map(f=>getDocs(query(collection(db,'users'),where('role','==','receiver'),where(f,'==',S.uid))));
+    const qs=['chauffeurUid','ownerUid'].map(f=>getDocs(query(collection(db,'users'),where('role','==','receiver'),where(f,'==',S.uid)))).concat(['approvedOwnerUids','linkedOwnerUids'].map(f=>getDocs(query(collection(db,'users'),where('role','==','receiver'),where(f,'array-contains',S.uid)))));
     const rs=await Promise.allSettled(qs),seen={},recv=[];
     rs.forEach(x=>{if(x.status!=='fulfilled')return;x.value.docs.forEach(d=>{const r={id:d.id,...d.data()};if(!seen[d.id]&&['approved','active'].includes(r.status)){seen[d.id]=1;recv.push(r);}});});
     if(!recv.length){sentinelRender(box,{enough:false,alerts:[]},false);return;}
