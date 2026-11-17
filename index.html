@@ -2787,7 +2787,7 @@ window.sentinelExplain=async(i)=>{
     const r=await fetch(BACKEND_URL+'/api/ai-explain',{method:'POST',signal:ctl.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({type:a.type,bus:a.bus,day:a.day,msg:a.msg,lang:(typeof S!=='undefined'&&S.aiLang==='wo')?'wo':'fr'})});
     clearTimeout(to);if(!r.ok)throw new Error('HTTP '+r.status);
     const j=await r.json();out.textContent='🤖 '+j.answer;
-  }catch(e){console.warn('[sentinelExplain]',e);out.textContent='Explication indisponible pour le moment. Réessayez dans un instant.';}
+  }catch(e){console.warn('[sentinelExplain]',e);out.textContent='Explication indisponible pour le moment. Réessayez dans un instant. (Détail technique : '+(e&&e.name==='AbortError'?'délai dépassé':(e&&e.message)||'inconnu')+')';}
 };
 function _sentinelBox(){const chb=document.getElementById('ch-sentinel-box');if(chb&&chb.offsetParent!==null)return chb;const card=document.getElementById('dir-alerts-card');if(!card)return null;let box=document.getElementById('dir-sentinel-box');if(!box){box=document.createElement('div');box.id='dir-sentinel-box';box.style.cssText='margin-top:12px;padding-top:12px;border-top:1px solid #ffffff14;';card.appendChild(box);}return box;}
 window.sentinelDemo=()=>{const box=_sentinelBox();if(!box)return;const d=sentinelDemoData();sentinelRender(box,sentinelAnalyze(d.buses,d.dows,d.labels),true);};
