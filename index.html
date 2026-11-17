@@ -601,6 +601,7 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
           <div style="font-weight:800;font-size:14px;margin-bottom:10px;">📍 Partage de position du bus</div>
           <div id="recvGeoStatus" style="font-size:12px;color:#888;margin-bottom:12px;">GPS désactivé</div>
           <button id="recvGeoBtn" class="btn btn-full" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;" onclick="recvToggleGeo()">📡 Démarrer le partage GPS</button>
+          <button class="btn btn-secondary btn-full" style="margin-top:10px;font-size:13px;" onclick="recvMarkStop()">📍 Marquer cet arrêt (je suis ici)</button>
         </div>
         <div id="recvDirecteurInfo" style="display:none;background:#0ea5e910;border:1px solid #0ea5e933;border-radius:14px;padding:12px 16px;margin-bottom:16px;">
           <div style="font-size:11px;color:#7dd3fc;font-weight:800;margin-bottom:4px;">🏢 Votre Directeur de GIE</div>
@@ -3633,10 +3634,15 @@ async function busTraceFlush(){
   try{await setDoc(doc(db,'bus_traces',S.uid+'_'+day),{busUid:S.uid,day,plate:_pl(S.profile?.vehicle),vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||'',updatedAt:serverTimestamp(),points:arrayUnion(...pts)},{merge:true});}
   catch(e){console.warn('[trace]',e);if(e&&e.code==='permission-denied')_trace.off=true;}
 }
+// Garde l'écran allumé pendant le partage GPS (le navigateur coupe sinon le GPS à la mise en veille)
+let _wl=null,_wlWant=false;
+async function _wlOn(){_wlWant=true;try{if('wakeLock' in navigator&&!_wl){_wl=await navigator.wakeLock.request('screen');_wl.addEventListener('release',()=>{_wl=null;});}}catch(e){_wl=null;}}
+function _wlOff(){_wlWant=false;try{if(_wl)_wl.release();}catch(e){}_wl=null;}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&_wlWant)_wlOn();});
 window.chToggleGeo=()=>{
   const btn=document.getElementById('chGeoBtn');const st=document.getElementById('chGeoStatus');
   if(chGeoWatchId!=null){
-    navigator.geolocation.clearWatch(chGeoWatchId);chGeoWatchId=null;busTraceFlush();
+    navigator.geolocation.clearWatch(chGeoWatchId);chGeoWatchId=null;busTraceFlush();_wlOff();
     btn.textContent='📡 Démarrer le partage GPS';btn.style.background='linear-gradient(135deg,#0ea5e9,#0369a1)';
     st.textContent='GPS désactivé';st.style.color='#888';
     chGeoDisabledSince=Date.now();
@@ -3645,7 +3651,7 @@ window.chToggleGeo=()=>{
   }
   if(!navigator.geolocation){notify('⚠️','GPS','Géolocalisation non supportée.');return;}
   st.textContent='Activation…';st.style.color='#FF6B00';
-  chGeoDisabledSince=null;
+  chGeoDisabledSince=null;_wlOn();
   const reminder=document.getElementById('chGeoReminder');if(reminder)reminder.style.display='none';
   chGeoWatchId=navigator.geolocation.watchPosition(async pos=>{
     const now=Date.now();if(now-chGeoLastWrite<15000)return;chGeoLastWrite=now;
@@ -4182,6 +4188,62 @@ function updateBalanceUI(){document.getElementById('passBalance').textContent=fm
 const ARR={NEAR_KM:0.7,MAXAGE:4*3600*1000,CENTER:[14.69,-17.45],MAXDIST:90};
 let _arr={sn:null,id:null,dest:null};
 function arriveNear(lat,lng,dest){return !!dest&&_haversineKm(lat,lng,dest.lat,dest.lng)<=ARR.NEAR_KM;}
+// ── Arrêts marqués par le receveur (coordonnées exactes), utilisés avant OpenStreetMap ──
+async function recvStopLL(busUid,name){
+  try{
+    if(!busUid||!name)return null;
+    const k=_pl(name);
+    const sn=await getDocs(collection(db,'users',busUid,'destinations'));
+    for(const d of sn.docs){
+      const x=d.data();
+      if(_pl(x.to)===k&&Number.isFinite(x.toLat)&&Number.isFinite(x.toLng))return{lat:x.toLat,lng:x.toLng};
+      if(_pl(x.from)===k&&Number.isFinite(x.fromLat)&&Number.isFinite(x.fromLng))return{lat:x.fromLat,lng:x.fromLng};
+    }
+  }catch(e){console.warn('[arret] lecture',e);}
+  return null;
+}
+async function stopLL(busUid,name){return (await recvStopLL(busUid,name))||await arriveGeocode(name);}
+// Fenêtre de choix de l'arrêt : un gros bouton par nom (le receveur touche le bon)
+function recvPickStop(names){
+  return new Promise(res=>{
+    const o=document.createElement('div');
+    o.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:20px;';
+    const box=document.createElement('div');
+    box.style.cssText='background:#1a1a2e;border:1px solid #ffffff22;border-radius:18px;padding:18px;width:100%;max-width:380px;max-height:80vh;overflow:auto;color:#fff;';
+    const h=document.createElement('div');h.textContent='📍 Quel est cet arrêt ?';h.style.cssText='font-weight:800;font-size:15px;margin-bottom:12px;';
+    box.appendChild(h);
+    const done=v=>{o.remove();res(v);};
+    names.forEach(n=>{const b=document.createElement('button');b.textContent=n;b.className='btn btn-secondary btn-full';b.style.cssText='margin-bottom:8px;font-size:14px;';b.onclick=()=>done(n);box.appendChild(b);});
+    const c=document.createElement('button');c.textContent='Annuler';c.className='btn btn-full';c.style.cssText='margin-top:4px;font-size:13px;background:#ffffff14;color:#fff;';c.onclick=()=>done(null);box.appendChild(c);
+    o.appendChild(box);document.body.appendChild(o);
+  });
+}
+window.recvMarkStop=async()=>{
+  try{
+    if(S.role!=='receiver'||!S.uid)return;
+    if(!navigator.geolocation){notify('⚠️','Arrêt','Géolocalisation non supportée.');return;}
+    loader('Recherche de votre position…',true);
+    const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:15000,maximumAge:0}));
+    loader('',false);
+    const {latitude:lat,longitude:lng,accuracy}=pos.coords;
+    if(accuracy>60&&!confirm('Position peu précise (±'+Math.round(accuracy)+' m). Marquer quand même ?'))return;
+    const sn=await getDocs(collection(db,'users',S.uid,'destinations'));
+    const names=[],seen={};
+    sn.docs.forEach(d=>{const x=d.data();[x.from,x.to].forEach(n=>{const k=_pl(n);if(n&&!seen[k]){seen[k]=1;names.push(String(n).trim());}});});
+    if(!names.length){notify('ℹ️','Arrêt','Ajoutez d\'abord vos trajets (onglet Trajets).');return;}
+    const name=await recvPickStop(names);
+    if(!name)return;
+    const k=_pl(name),la=+lat.toFixed(6),lo=+lng.toFixed(6),batch=writeBatch(db);let n=0;
+    sn.docs.forEach(d=>{
+      const x=d.data(),up={};
+      if(_pl(x.to)===k){up.toLat=la;up.toLng=lo;}
+      if(_pl(x.from)===k){up.fromLat=la;up.fromLng=lo;}
+      if(Object.keys(up).length){batch.update(d.ref,up);n++;}
+    });
+    await batch.commit();
+    notify('📍','Arrêt enregistré',name+' marqué ici ('+n+' trajet'+(n>1?'s':'')+').');
+  }catch(e){loader('',false);notify('❌','Erreur',(e&&e.message)||'Impossible de marquer l\'arrêt');}
+};
 async function arriveGeocode(name){
   const key='tatapay_geo_'+_pl(name);
   try{const c=JSON.parse(localStorage.getItem(key)||'null');if(c&&c.lat)return c;}catch(e){}
@@ -4214,7 +4276,7 @@ async function arriveWatchStart(t){
     try{if(localStorage.getItem('tatapay_arrived_'+t.sn))return;}catch(e){}
     const st=(typeof _tkStart==='function')?_tkStart(t):null;if(st&&Date.now()-st>ARR.MAXAGE)return;
     arriveWatchStop();_arr.sn=t.sn;
-    const dest=await arriveGeocode(t.to);
+    const dest=await stopLL(t.busUid,t.to);
     if(_arr.sn!==t.sn)return;
     if(!dest){console.warn('[arrivee] destination introuvable :',t.to);return;}
     _arr.dest=dest;
@@ -5011,7 +5073,7 @@ window.recvRejectTicket=async(pendingId)=>{try{await deleteDoc(doc(db,'pending',
 window.recvToggleGeo=()=>{
   const btn=document.getElementById('recvGeoBtn');const st=document.getElementById('recvGeoStatus');
   if(recvGeoWatchId!=null){
-    navigator.geolocation.clearWatch(recvGeoWatchId);recvGeoWatchId=null;busTraceFlush();
+    navigator.geolocation.clearWatch(recvGeoWatchId);recvGeoWatchId=null;busTraceFlush();_wlOff();
     btn.textContent='📡 Démarrer le partage GPS';btn.style.background='linear-gradient(135deg,#0ea5e9,#0369a1)';
     st.textContent='GPS désactivé';st.style.color='#888';
     deleteDoc(doc(db,'bus_locations',S.uid)).catch(()=>{});
@@ -5019,7 +5081,7 @@ window.recvToggleGeo=()=>{
     return;
   }
   if(!navigator.geolocation){notify('⚠️','GPS','Géolocalisation non supportée sur cet appareil.');return;}
-  st.textContent='Activation…';st.style.color='#FF6B00';
+  st.textContent='Activation…';st.style.color='#FF6B00';_wlOn();
   recvGeoWatchId=navigator.geolocation.watchPosition(async pos=>{
     const now=Date.now();if(now-recvGeoLastWrite<15000)return;recvGeoLastWrite=now;
     const {latitude:lat,longitude:lng,accuracy}=pos.coords;
@@ -5093,14 +5155,14 @@ function _tripFind(p,org,dest){
 }
 // Parcours habituel du bus entre sa position à la montée et la destination du ticket, d'après les trajets déjà enregistrés.
 async function tripHistory(t,st,todayPts){
-  const dest=await arriveGeocode(t.to);if(!dest)return null;
+  const dest=await stopLL(t.busUid,t.to);if(!dest)return null;
   let cur=null;
   try{if(t.busUid){const ls=await getDoc(doc(db,'bus_locations',t.busUid));if(ls.exists()){const d=ls.data();if(isFinite(d.lat)&&isFinite(d.lng))cur={lat:d.lat,lng:d.lng};}}}catch(e){}
   const tp=(todayPts||[]).filter(x=>x&&x.t&&x.a!=null&&x.o!=null).sort((x,y)=>x.t-y.t);
   if(!cur&&tp.length){const l=tp[tp.length-1];cur={lat:l.a,lng:l.o};}
   let org=null;
   const near=tp.filter(x=>Math.abs(x.t-st)<10*60000).sort((x,y)=>Math.abs(x.t-st)-Math.abs(y.t-st))[0];
-  if(near)org={lat:near.a,lng:near.o};else if(cur)org=cur;else org=await arriveGeocode(t.from);
+  if(near)org={lat:near.a,lng:near.o};else if(cur)org=cur;else org=await stopLL(t.busUid,t.from);
   // dernier recours (bus sans GPS et arrêt de départ introuvable) : la position du téléphone du passager
   if(!org&&navigator.geolocation){
     org=await new Promise(res=>{try{navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lng:p.coords.longitude}),()=>res(null),{timeout:6000,maximumAge:120000});}catch(e){res(null);}});
@@ -5136,7 +5198,7 @@ async function tripLoad(){
     let etaHtml='';
     if(!(live&&r.ended)){
       try{
-        const dest=H?H.dest:await arriveGeocode(t.to);
+        const dest=H?H.dest:await stopLL(t.busUid,t.to);
         if(dest){
           let rem=null;
           if(H){
