@@ -3298,27 +3298,29 @@ function attachChVersementsListener(){
   const q=query(collection(db,'users',S.uid,'versements'),orderBy('ts','desc'),limit(30));
   unsubChVersements=onSnapshot(q,snap=>renderChVersements(snap.docs.map(d=>({id:d.id,...d.data()}))));
 }
+const _chSeenNotif=new Set();
 function attachChNotifListener(){
   if(unsubChNotif)unsubChNotif();
-  const seenCh=new Set();
   const q=query(collection(db,'notifications'),where('toUid','==',S.uid),where('read','==',false));
+  let first=true;
   unsubChNotif=onSnapshot(q,snap=>{
     const badge=document.getElementById('chBellBadge');
     if(badge){badge.textContent=snap.size;badge.className='bell-badge'+(snap.size>0?' show':'');}
-    // À l'ouverture, toutes les notifications non lues arrivent d'un coup : on n'affiche (toast, son, alarme) que les récentes,
-    // 3 au maximum. Les anciennes sont marquées lues sans bruit ; les « arrêt demandé » périmés ne sonnent jamais.
-    let shown=0,stale=0;
+    const now=Date.now(),FRESH=2*60*1000;let shown=0,old=0;
     snap.docChanges().forEach(ch=>{
       if(ch.type!=='added')return;
-      const id=ch.doc.id;if(seenCh.has(id))return;seenCh.add(id);
+      const id=ch.doc.id;if(_chSeenNotif.has(id))return;_chSeenNotif.add(id);
       const d=ch.doc.data();
-      const t=(d.ts&&d.ts.toDate)?d.ts.toDate().getTime():Date.now();
-      const fresh=(Date.now()-t)<120000;
+      const t=d.ts?.toMillis?.();
+      const fresh=!first&&t&&(now-t)<FRESH;
+      // Les candidatures restent visibles dans l'onglet Receveur : on ne les marque jamais comme lues.
+      const isCand=d.type==='receiver_candidature';
       if(fresh&&shown<3){shown++;showChToast(d.type,d);playNotifSound();pushNative('TataPay — '+(d.type||'Notification'),d.message||d.receiverName||'');}
-      else if(d.type!=='descendre')stale++;
-      updateDoc(doc(db,'notifications',id),{read:true}).catch(()=>{});
+      else old++;
+      if(!isCand)updateDoc(doc(db,'notifications',id),{read:true}).catch(()=>{});
     });
-    if(stale>0)notify('🔔','Notifications',stale+' notification'+(stale>1?'s':'')+' reçue'+(stale>1?'s':'')+' pendant votre absence');
+    if(first&&old>0){const c=old;setTimeout(()=>{try{notify('🔔','Notifications',c+' ancienne'+(c>1?'s':'')+' notification'+(c>1?'s':'')+' (voir la cloche).');}catch(e){}},800);}
+    first=false;
   });
 }
 function renderChPayments(tickets,contId){
