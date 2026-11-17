@@ -3620,19 +3620,24 @@ window.chSubmitReport=async()=>{
 // ── Enregistrement des trajets du bus : matière première de l'IA qui prévoit l'arrivée ──
 // Points regroupés (1 écriture toutes les ~3 min, pas à chaque position) pour ménager le quota Firebase.
 const _trace={buf:[],last:0,off:false};
+function _traceDbg(msg){try{let e=document.getElementById('traceDbg');if(!e){const st=document.getElementById(S.role==='receiver'?'recvGeoStatus':'chGeoStatus');if(!st)return;e=document.createElement('div');e.id='traceDbg';e.style.cssText='font-size:11px;color:#888;margin:-6px 0 10px;';st.parentNode.insertBefore(e,st.nextSibling);}e.textContent=msg;}catch(x){}}
 function busTraceAdd(lat,lng,acc){
   try{
     const now=Date.now();
-    if(_trace.off||!S.uid||!(acc<=80)||now-_trace.last<30000)return;
+    if(!S.uid)return;
+    if(_trace.off){_traceDbg('❌ Enregistrement du trajet désactivé (accès refusé par Firebase)');return;}
+    if(!(acc<=80)){_traceDbg('⚠️ Précision GPS trop faible (±'+Math.round(acc)+' m) : position ignorée');return;}
+    if(now-_trace.last<30000)return;
     _trace.last=now;_trace.buf.push({a:+lat.toFixed(5),o:+lng.toFixed(5),t:now});
+    _traceDbg('Trajet : '+_trace.buf.length+'/6 positions en attente · '+(_trace.sent||0)+' envoyées');
     if(_trace.buf.length>=6)busTraceFlush();
   }catch(e){}
 }
 async function busTraceFlush(){
   if(_trace.off||!_trace.buf.length||!S.uid)return;
   const pts=_trace.buf.splice(0,_trace.buf.length),d=new Date(),day=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
-  try{await setDoc(doc(db,'bus_traces',S.uid+'_'+day),{busUid:S.uid,day,plate:_pl(S.profile?.vehicle),vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||'',updatedAt:serverTimestamp(),points:arrayUnion(...pts)},{merge:true});}
-  catch(e){console.warn('[trace]',e);if(e&&e.code==='permission-denied')_trace.off=true;}
+  try{await setDoc(doc(db,'bus_traces',S.uid+'_'+day),{busUid:S.uid,day,plate:_pl(S.profile?.vehicle),vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||'',updatedAt:serverTimestamp(),points:arrayUnion(...pts)},{merge:true});_trace.sent=(_trace.sent||0)+pts.length;_traceDbg('✅ '+_trace.sent+' positions envoyées à Firebase');}
+  catch(e){console.warn('[trace]',e);_traceDbg('❌ Envoi refusé : '+((e&&(e.code||e.message))||'erreur'));if(e&&e.code==='permission-denied')_trace.off=true;}
 }
 // Garde l'écran allumé pendant le partage GPS (le navigateur coupe sinon le GPS à la mise en veille)
 let _wl=null,_wlWant=false;
