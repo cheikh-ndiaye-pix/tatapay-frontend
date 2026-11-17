@@ -312,19 +312,9 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
   <div style="width:100%;max-width:360px;">
     <div class="ticket-thermal" id="ticketThermalContent"></div>
     <div id="ticketHandoffZone" style="display:none;"></div>
-    <button id="ticketTripBtn" class="btn btn-purple btn-full" style="display:none;margin-top:14px;" onclick="openTripRoute()">🗺️ Voir l'itinéraire du bus</button>
     <button class="btn btn-secondary btn-full" style="margin-top:14px;" onclick="printTicket()">🖨️ Imprimer</button>
     <button class="btn btn-primary btn-full" style="margin-top:10px;" onclick="closeTicket()">✓ Fermer</button>
   </div>
-</div>
-
-<div id="modalTripRoute" style="display:none;position:fixed;inset:0;z-index:99999;background:#06120a;flex-direction:column;">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;color:#fff;">
-    <div style="font-weight:900;font-size:17px;">🗺️ Itinéraire de mon trajet</div>
-    <button onclick="closeTripRoute()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px 12px;color:#fff;font-weight:800;cursor:pointer;">✕</button>
-  </div>
-  <div id="tripInfo" style="margin:0 16px 10px;padding:10px 14px;border-radius:12px;background:#ffffff0d;color:#ddd;font-size:12px;line-height:1.6;">Chargement…</div>
-  <div id="tripMap" style="flex:1;margin:0 16px 16px;border-radius:16px;overflow:hidden;min-height:300px;"></div>
 </div>
 
 <div class="camera-screen" id="cameraScreen">
@@ -506,12 +496,17 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
             <button onclick="demandDescendre()" style="grid-column:1/-1;justify-self:center;width:calc((100% - 20px)/3);background:linear-gradient(160deg,#DF0024,#7f1d1d);border:2px solid #ff6b6b66;border-radius:16px;padding:14px 6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-weight:900;font-size:11px;font-family:'Space Grotesk',sans-serif;"><div style="font-size:22px;">🛑</div>Descendre</button>
           </div>
         </div>
-        <button onclick="openTrackBus();setTimeout(()=>document.getElementById('trackDestInput')?.focus(),400)" style="width:100%;background:linear-gradient(135deg,#7c3aed,#4c1d95);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
+        <button onclick="openTrackBus();setTimeout(()=>document.getElementById('trackDestInput')?.focus(),400)" style="width:100%;background:linear-gradient(135deg,#7c3aed,#4c1d95);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:12px;">
           <div style="font-size:24px;">🧭</div>
-          <div style="text-align:left;flex:1;">Trouver un bus<div style="font-size:10px;font-weight:600;color:#ddd6fe;margin-top:2px;">Écrivez votre destination, ou voyez les bus proches de vous en direct</div></div>
+          <div style="text-align:left;flex:1;">Où allez-vous ?<div style="font-size:10px;font-weight:600;color:#ddd6fe;margin-top:2px;">Écrivez votre destination : voyez les bus qui y vont, en direct</div></div>
           <div style="font-size:18px;">→</div>
         </button>
-                <button onclick="openColis()" style="width:100%;background:linear-gradient(135deg,#f59e0b,#b45309);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
+        <button onclick="openTrackBus()" style="width:100%;background:linear-gradient(135deg,#0ea5e9,#0369a1);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
+          <div style="font-size:24px;">📍</div>
+          <div style="text-align:left;flex:1;">Bus en direct près de moi<div style="font-size:10px;font-weight:600;color:#bae6fd;margin-top:2px;">Voir les bus qui partagent leur position (ligne + distance)</div></div>
+          <div style="font-size:18px;">→</div>
+        </button>
+        <button onclick="openColis()" style="width:100%;background:linear-gradient(135deg,#f59e0b,#b45309);border:none;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;color:#fff;font-weight:900;font-size:13px;font-family:'Space Grotesk',sans-serif;margin-bottom:16px;">
           <div style="font-size:24px;">📦</div>
           <div style="text-align:left;flex:1;">Marchandises (colis en bus)<div style="font-size:10px;font-weight:600;color:#fde68a;margin-top:2px;">Envoyer ou récupérer une marchandise en suivant le bus en direct</div></div>
           <div style="font-size:18px;">→</div>
@@ -782,7 +777,6 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
       </div>
       <button class="btn btn-danger btn-full" style="margin-top:8px;" onclick="openModal('modalChReport')">🔧 Signaler un problème</button>
       <div id="chGeoSection" style="margin-top:16px;">
-        <div id="ch-sentinel-card" style="display:none;margin-bottom:16px;"><div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">🛡️ Sentinel · Alertes de mon bus</div></div>
         <div style="font-size:11px;font-weight:800;color:#059669;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">📍 Géolocalisation</div>
         <div class="ch-card">
           <div id="chGeoStatus" style="font-size:13px;color:#888;margin-bottom:10px;">GPS désactivé</div>
@@ -1875,7 +1869,6 @@ function loginUI(){
     document.getElementById('chWalletId').textContent=p.walletId||'—';
     show('screenChauffeur');
     initChauffeurDashboard();
-    chSentinelRun();
     const wb=document.getElementById('chOwnerWalletBox');
     if(wb){wb.style.display='block';}
     if(unsubChOwnerBalance){try{unsubChOwnerBalance();}catch(e){}unsubChOwnerBalance=null;}
@@ -2134,87 +2127,21 @@ let allFilter=null,allRoutes=null,allWant='';
 const _pl=v=>String(v||'').toUpperCase().replace(/[\s-]/g,'');
 let allMap=null,allMeMarker=null,allMarkers={},unsubAllBuses=null,allFitted=false,allMyPos=null,allLastBuses=[],allRenderId=0;
 const _etaCache={};
-let allRouteLayer=null,allSelPlate=null;
-// Trace sur la carte le chemin que le bus va suivre jusqu'au passager (le bus choisi, ou le plus proche par défaut)
-function drawBusRoute(e,b,me){
-  try{
-    if(allRouteLayer&&allMap){allMap.removeLayer(allRouteLayer);allRouteLayer=null;}
-    if(!allMap||!e||!b||!me)return;
-    const real=e.geo&&e.geo.length>1,pts=real?e.geo:[[b.lat,b.lng],[me.lat,me.lng]];
-    allRouteLayer=L.polyline(pts,{color:'#2563eb',weight:real?6:4,opacity:.85,dashArray:real?null:'8 8'}).addTo(allMap);
-    allRouteLayer.bindTooltip(real?`🚌 ${b.plate} → vous · ${_fmtMin(e.min)}`:`🚌 ${b.plate} → vous (trajet approximatif)`,{sticky:true});
-  }catch(err){console.warn('[route]',err);}
-}
 function stopAllMap(){if(unsubAllBuses){unsubAllBuses();unsubAllBuses=null;}allRenderId++;}
 function _fmtMin(m){if(m==null||isNaN(m))return '';if(m<1)return '< 1 min';if(m<60)return `${Math.round(m)} min`;const h=Math.floor(m/60),r=Math.round(m%60);return `${h} h ${String(r).padStart(2,'0')}`;}
-// ══ PREDICTOR — IA qui prévoit l'arrivée du bus à partir des trajets enregistrés (bus_traces) ══
-// Apprend la vitesse RÉELLE de chaque bus (arrêts compris) selon l'heure et le type de jour, puis l'applique à la distance restante.
-// Tant qu'il n'a pas assez de trajets, on garde l'estimation simple ; il s'affine à chaque tour enregistré.
-const PRED={MIN_KM:8,FULL_KM:60,VMIN:6,VMAX:40,STILL_KM:0.02,PARK_S:300,TTL:30*60*1000};
-const _predCache={};
-function predKey(d){const h=d.getHours(),b=(h>=6&&h<9)?'matin':(h>=9&&h<16)?'jour':(h>=16&&h<20)?'soir':'nuit',w=(d.getDay()===0||d.getDay()===6)?'we':'sem';return b+'_'+w;}
-// docs : liste de listes de points {a,o,t} (un tableau par jour). Renvoie le modèle appris.
-function predLearn(docs){
-  const M={all:{km:0,h:0},b:{},days:0};
-  docs.forEach(pts=>{
-    const p=pts.filter(x=>x&&x.t&&x.a!=null&&x.o!=null).sort((x,y)=>x.t-y.t);if(p.length<3)return;
-    const seg=[];
-    for(let i=1;i<p.length;i++){
-      const dt=(p[i].t-p[i-1].t)/1000;if(dt<5||dt>180)continue;
-      const d=_haversineKm(p[i-1].a,p[i-1].o,p[i].a,p[i].o),v=d/dt*3600;if(v>80)continue;
-      seg.push({d,dt,t:p[i].t,still:d<PRED.STILL_KM});
-    }
-    // on retire les longues immobilisations (bus garé, terminus) : elles ne disent rien sur la route
-    for(let i=0;i<seg.length;){
-      if(!seg[i].still){i++;continue;}
-      let j=i,dur=0;while(j<seg.length&&seg[j].still){dur+=seg[j].dt;j++;}
-      if(dur>PRED.PARK_S)for(let k=i;k<j;k++)seg[k].skip=true;
-      i=j;
-    }
-    let used=0;
-    seg.forEach(g=>{if(g.skip)return;used++;const k=predKey(new Date(g.t));(M.b[k]=M.b[k]||{km:0,h:0});M.b[k].km+=g.d;M.b[k].h+=g.dt/3600;M.all.km+=g.d;M.all.h+=g.dt/3600;});
-    if(used>5)M.days++;
-  });
-  return M;
-}
-// Combine l'apprentissage et l'estimation simple. Renvoie null si rien n'a encore été appris.
-function predPick(M,roadKm,baseMin,when){
-  if(!M||!(roadKm>0))return null;
-  const k=predKey(when||new Date()),src=(M.b[k]&&M.b[k].km>=PRED.MIN_KM)?M.b[k]:(M.all.km>=PRED.MIN_KM?M.all:null);
-  if(!src||!(src.h>0))return null;
-  const v=Math.min(PRED.VMAX,Math.max(PRED.VMIN,src.km/src.h)),learned=roadKm/v*60;
-  const w=Math.min(1,src.km/PRED.FULL_KM);
-  return {min:w*learned+(1-w)*baseMin,conf:w,v,km:src.km,days:M.days,exact:src===M.b[k]};
-}
-async function predModel(raw){
-  const key=_pl(raw);if(!key)return null;
-  const c=_predCache[key];if(c&&Date.now()-c.at<PRED.TTL)return c.m;
-  let m=null;
-  try{
-    const snap=await getDocs(query(collection(db,'bus_traces'),where('vehicle','==',raw),limit(40)));
-    const docs=snap.docs.map(d=>d.data()).sort((a,b)=>String(b.day).localeCompare(String(a.day))).slice(0,30).map(x=>x.points||[]);
-    m=predLearn(docs);
-  }catch(e){console.warn('[predictor]',e&&e.code||e);}
-  _predCache[key]={at:Date.now(),m};return m;
-}
-async function predictorAdjust(raw,roadKm,baseMin){
-  const m=await predModel(raw);return predPick(m,roadKm,baseMin,new Date());
-}
 async function _busEta(b,me){
   const c=_etaCache[b.plate];
   if(c&&Date.now()-c.at<45000&&_haversineKm(c.lat,c.lng,b.lat,b.lng)<0.2&&_haversineKm(c.mlat,c.mlng,me.lat,me.lng)<0.2)return c;
-  let min=null,km=null,geo=null;
+  let min=null,km=null;
   try{
     const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),5000);
-    const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${b.lng},${b.lat};${me.lng},${me.lat}?overview=full&geometries=geojson`,{signal:ctl.signal});
+    const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${b.lng},${b.lat};${me.lng},${me.lat}?overview=false`,{signal:ctl.signal});
     clearTimeout(to);
     const j=await r.json();
-    if(j.routes&&j.routes[0]){km=j.routes[0].distance/1000;min=(j.routes[0].duration/60)*1.4;const gc=j.routes[0].geometry&&j.routes[0].geometry.coordinates;if(gc&&gc.length>1)geo=gc.map(c=>[c[1],c[0]]);}
+    if(j.routes&&j.routes[0]){km=j.routes[0].distance/1000;min=(j.routes[0].duration/60)*1.4;}
   }catch(e){}
   if(min==null){km=_haversineKm(me.lat,me.lng,b.lat,b.lng)*1.4;min=km/18*60;}
-  const base=min;let mode='simple',conf=0,days=0;
-  try{const p=await predictorAdjust(b.vehicleRaw||b.plate,km,base);if(p){min=p.min;mode='ia';conf=p.conf;days=p.days;}}catch(e){}
-  return _etaCache[b.plate]={at:Date.now(),lat:b.lat,lng:b.lng,mlat:me.lat,mlng:me.lng,min,km,base,mode,conf,days,geo};
+  return _etaCache[b.plate]={at:Date.now(),lat:b.lat,lng:b.lng,mlat:me.lat,mlng:me.lng,min,km};
 }
 function _busIcon(plate,eta){
   return L.divIcon({className:'',iconSize:[0,0],html:`<div style="transform:translate(-50%,-100%);background:#0369a1;color:#fff;border:2px solid #fff;border-radius:12px;padding:3px 8px;font:800 11px 'JetBrains Mono',monospace;white-space:nowrap;text-align:center;box-shadow:0 2px 8px #0009;">🚌 ${_esc(plate)}${eta?`<br><span style="color:#fde68a;">${_esc(eta)}</span>`:''}</div>`});
@@ -2230,23 +2157,18 @@ async function renderAllBuses(){
   const seen=new Set();
   buses.forEach((b,i)=>{
     const e=etas[i];seen.add(b.plate);
-    const label=e?`~${_fmtMin(e.min)}${e.mode==='ia'?' 🤖':''}`:'';
+    const label=e?`~${_fmtMin(e.min)}`:'';
     const ll=[b.lat,b.lng];
-    const pop=`<div style="font-family:'Space Grotesk',sans-serif;color:#111;min-width:150px;"><div style="font-weight:900;font-size:14px;">🚌 ${_esc(b.plate)}${b.ligne?' · Ligne '+_esc(b.ligne):''}</div>${e?`<div style="margin:4px 0;font-size:13px;">⏱️ Arrive dans <b>~${_fmtMin(e.min)}</b><br>📏 ${_fmtDist(e.km)} par la route<br><span style=\"font-size:11px;color:#6d28d9;\">${e.mode==='ia'?'🤖 Predictor · appris sur '+e.days+' jour'+(e.days>1?'s':'')+' de trajets (fiabilité '+Math.round(e.conf*100)+' %)':'Estimation simple · Predictor apprend encore'}</span></div>`:'<div style="margin:4px 0;font-size:12px;">Activez votre localisation pour voir le temps d\'arrivée.</div>'}<a href="https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}" target="_blank" rel="noopener" style="display:inline-block;margin-top:4px;font-size:12px;font-weight:800;color:#0369a1;">🗺️ Ouvrir dans Google Maps</a></div>`;
-    if(!allMarkers[b.plate]){allMarkers[b.plate]=L.marker(ll,{icon:_busIcon(b.plate,label)}).addTo(allMap).bindPopup(pop).on('click',()=>{allSelPlate=b.plate;const bb=allLastBuses.find(x=>x.plate===b.plate)||b;drawBusRoute(_etaCache[b.plate],bb,allMyPos);});}
+    const pop=`<div style="font-family:'Space Grotesk',sans-serif;color:#111;min-width:150px;"><div style="font-weight:900;font-size:14px;">🚌 ${_esc(b.plate)}${b.ligne?' · Ligne '+_esc(b.ligne):''}</div>${e?`<div style="margin:4px 0;font-size:13px;">⏱️ Arrive dans <b>~${_fmtMin(e.min)}</b><br>📏 ${_fmtDist(e.km)} par la route</div>`:'<div style="margin:4px 0;font-size:12px;">Activez votre localisation pour voir le temps d\'arrivée.</div>'}<a href="https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}" target="_blank" rel="noopener" style="display:inline-block;margin-top:4px;font-size:12px;font-weight:800;color:#0369a1;">🗺️ Ouvrir dans Google Maps</a></div>`;
+    if(!allMarkers[b.plate]){allMarkers[b.plate]=L.marker(ll,{icon:_busIcon(b.plate,label)}).addTo(allMap).bindPopup(pop);}
     else{const m=allMarkers[b.plate];m.setLatLng(ll);m.setIcon(_busIcon(b.plate,label));m.setPopupContent(pop);}
   });
   Object.keys(allMarkers).forEach(k=>{if(!seen.has(k)){allMap.removeLayer(allMarkers[k]);delete allMarkers[k];}});
   if(!buses.length){sum.textContent=allFilter?'😕 Aucun bus de cette destination ne partage sa position pour le moment.':'😕 Aucun bus ne partage sa position pour le moment.';}
   else if(me){
     let bi=-1;etas.forEach((e,i)=>{if(e&&(bi<0||e.min<etas[bi].min))bi=i;});
-    sum.innerHTML=bi>=0?`🚌 Le plus proche : <b>${_esc(buses[bi].plate)}</b> · arrive dans <b>~${_fmtMin(etas[bi].min)}</b> (${_fmtDist(etas[bi].km)})${etas[bi].mode==='ia'?' · 🤖 Predictor':''}`:'';
+    sum.innerHTML=bi>=0?`🚌 Le plus proche : <b>${_esc(buses[bi].plate)}</b> · arrive dans <b>~${_fmtMin(etas[bi].min)}</b> (${_fmtDist(etas[bi].km)})`:'';
   }else sum.textContent=`🚌 ${buses.length} bus en direct · activez la localisation pour voir le temps d'arrivée.`;
-  {
-    let ei=allSelPlate?buses.findIndex(b=>b.plate===allSelPlate):-1;
-    if(ei<0&&me){etas.forEach((e,i)=>{if(e&&(ei<0||e.min<etas[ei].min))ei=i;});}
-    if(ei>=0&&me)drawBusRoute(etas[ei],buses[ei],me);else drawBusRoute(null);
-  }
   if(!allFitted&&(buses.length||me)){
     const pts=buses.map(b=>[b.lat,b.lng]);if(me)pts.push([me.lat,me.lng]);
     if(pts.length>1)allMap.fitBounds(pts,{padding:[40,40],maxZoom:15});else allMap.setView(pts[0],14);
@@ -2299,7 +2221,7 @@ window.clearTrackSearch=()=>{
 window.focusTrackBus=(plate)=>{
   const bus=allLastBuses.find(b=>_pl(b.plate)===plate);
   const m=bus&&allMarkers[bus.plate];
-  if(m&&allMap){allSelPlate=bus.plate;drawBusRoute(_etaCache[bus.plate],bus,allMyPos);allMap.setView(m.getLatLng(),15);m.openPopup();}
+  if(m&&allMap){allMap.setView(m.getLatLng(),15);m.openPopup();}
 };
 
 window.startAllMap=()=>{
@@ -2311,7 +2233,7 @@ window.startAllMap=()=>{
     const el=document.getElementById('trackAllMap');if(!el||typeof L==='undefined')return;
     if(!allMap){allMap=L.map(el,{zoomControl:true,attributionControl:false}).setView([14.6928,-17.4467],12);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(allMap);}
     else{allMap.invalidateSize();}
-    Object.values(allMarkers).forEach(m=>allMap.removeLayer(m));allMarkers={};allFitted=false;allLastBuses=[];if(allRouteLayer){allMap.removeLayer(allRouteLayer);allRouteLayer=null;}allSelPlate=null;
+    Object.values(allMarkers).forEach(m=>allMap.removeLayer(m));allMarkers={};allFitted=false;allLastBuses=[];
     if(navigator.geolocation){
       navigator.geolocation.getCurrentPosition(pos=>{
         allMyPos={lat:pos.coords.latitude,lng:pos.coords.longitude};
@@ -2326,7 +2248,7 @@ window.startAllMap=()=>{
         const x=d.data(),t=x.updatedAt?.toDate?.()?.getTime()||0;
         if(!t||(now-t)>=10*60*1000||x.lat==null||x.lng==null||!x.vehicle)return;
         const plate=String(x.vehicle).toUpperCase();
-        if(!byPlate[plate]||t>byPlate[plate].t)byPlate[plate]={id:d.id,plate,vehicleRaw:String(x.vehicle),lat:x.lat,lng:x.lng,ligne:x.ligne||'',t};
+        if(!byPlate[plate]||t>byPlate[plate].t)byPlate[plate]={id:d.id,plate,lat:x.lat,lng:x.lng,ligne:x.ligne||'',t};
       });
       allLastBuses=Object.values(byPlate);
       renderAllBuses();
@@ -2643,7 +2565,7 @@ window.dirSetPeriod=async(k,btn)=>{
     document.getElementById('dir-vers').textContent=fmt(d.vers);
     document.getElementById('dir-ret').textContent=fmt(d.retraits);
     document.getElementById('dir-net').textContent=fmt(d.net);
-    if(dirRevChartInst){dirRevChartInst.data.labels=d.labels;dirRevChartInst.data.datasets[0].data=d.data;dirRevChartInst.update();{const rc=document.getElementById('dirRevChart')?.closest('.dir-card');if(rc)rc.style.display=(d.data||[]).some(v=>v>0)?'block':'none';}}
+    if(dirRevChartInst){dirRevChartInst.data.labels=d.labels;dirRevChartInst.data.datasets[0].data=d.data;dirRevChartInst.update();}
   }catch(e){notify('❌','Erreur',e.message);}
   loader('',false);
 };
@@ -2664,161 +2586,6 @@ window.dirSwitchRankTab=(which)=>{
     busTab.style.background='transparent';busTab.style.color='#7dd3fc99';
   }
 };
-// ══ SENTINEL — détection d'anomalies adaptative (tableau de bord du directeur) ══
-// Compare chaque bus à sa propre habitude (médiane/MAD robustes, corrigée du jour de la semaine).
-// Les alertes disent « à vérifier », jamais « fraude ». Évalué sur données simulées (voir rapport).
-const SENT={WARM:10,WIN:28,BACK:21,MINBASE:5000};
-function _sMed(a){if(!a.length)return NaN;const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;}
-function _sMad(a){const m=_sMed(a);return 1.4826*_sMed(a.map(x=>Math.abs(x-m)));}
-function sentinelDow(buses,dows){
-  const r=[[],[],[],[],[],[],[]];
-  buses.forEach(b=>{const act=b.rev.filter(x=>x>0);if(act.length<7)return;const m=_sMed(act);b.rev.forEach((x,i)=>{if(x>0)r[dows[i]].push(x/m);});});
-  return r.map(a=>a.length>=4?Math.min(1.6,Math.max(0.4,_sMed(a))):1);
-}
-// buses:[{label,rev[],due[],paid[]}], dows[i]=jour de semaine du jour i, labels[i]=date lisible. Dernier indice = dernier jour COMPLET.
-function sentinelAnalyze(buses,dows,labels){
-  // Relit TOUT l'historique : chaque jour des BACK derniers jours est jugé avec les seuls jours qui le précèdent.
-  // Niveaux par bus : « complet » (>=10 jours), « provisoire » (3 à 9), « indicatif » (1 à 2 : comparaison aux autres bus, chute seulement).
-  const N=dows.length,f=sentinelDow(buses,dows),all=[],t1=Math.max(1,N-1-SENT.BACK);
-  let full=0,prov=0,ind=0,maxDays=0;
-  for(let t=N-1;t>=t1;t--){
-    const u=t-1,last=t===N-1,idxs=[],modes=[];
-    buses.forEach(b=>{const idx=[];for(let i=Math.max(0,t-SENT.WIN);i<t;i++)if(b.rev[i]>0)idx.push(i);
-      const m=idx.length>=SENT.WARM?'full':idx.length>=3?'prov':idx.length>=1?'ind':null;
-      idxs.push(idx);modes.push(m);
-      if(last){maxDays=Math.max(maxDays,idx.length);if(m==='full')full++;else if(m==='prov')prov++;else if(m)ind++;}});
-    const rt=buses.map((b,i)=>{if(!(b.rev[t]>0))return null;const l=idxs[i].slice(-2);if(!l.length)return null;
-      const base=l.reduce((a,k)=>a+b.rev[k],0)/l.length;return base>=SENT.MINBASE?b.rev[t]/base:null;});
-    buses.forEach((b,i)=>{
-      const mode=modes[i],idx=idxs[i];if(!mode)return;
-      if(mode==='ind'){
-        const o=rt.filter((v,j)=>j!==i&&v!==null);
-        if(rt[i]!==null&&o.length>=3){const m=_sMed(o);
-          if(m>0.5&&rt[i]<0.4*m)all.push({bus:b.label,type:'drop',ti:t,day:labels[t]+' · indicatif',z:m/rt[i],msg:`Recettes ${fmt(b.rev[t])} F, très en dessous de ses derniers jours alors que les autres bus restent stables (très peu d’historique : indication faible)`});}
-        return;
-      }
-      const P=mode==='full'?{sf:0.08,zt:3.5,sk:0.01,zs:4,rm:0.04}:{sf:0.20,zt:4.0,sk:0.02,zs:5,rm:0.06};
-      const tag=mode==='prov'?' · provisoire':'';
-      if(b.rev[t]>0){
-        const h=idx.map(i=>Math.log(b.rev[i])-Math.log(f[dows[i]]));
-        const med=_sMed(h),s=Math.max(_sMad(h),P.sf),x=Math.log(b.rev[t])-Math.log(f[dows[t]]),z=(med-x)/s;
-        if(z>P.zt){const ex=Math.exp(med)*f[dows[t]];
-          all.push({bus:b.label,type:'drop',ti:t,day:labels[t]+tag,z,msg:`Recettes ${fmt(b.rev[t])} F pour environ ${fmt(ex)} F attendus ce jour-là pour ce bus (écart ${z.toFixed(1)} σ)`});}
-      }
-      const r2=k=>{const d=b.due[k-1]+b.due[k];return d>0?(d-(b.paid[k-1]+b.paid[k]))/d:null;};
-      const hist=[];for(let k=Math.max(1,t-SENT.WIN);k<t;k++){const v=r2(k);if(v!==null)hist.push(v);}
-      const rk=r2(t);
-      if(hist.length>=(mode==='full'?SENT.WARM:3)&&rk!==null){
-        const med=_sMed(hist),s=Math.max(_sMad(hist),P.sk),gu=b.due[u]-b.paid[u],gv=b.due[t]-b.paid[t];
-        if(rk>P.rm&&(rk-med)/s>P.zs&&gu>=gv&&gu>1000)
-          all.push({bus:b.label,type:'skim',ti:u,day:labels[u]+tag,z:(rk-med)/s,msg:`${Math.round(rk*100)} % des espèces dues sur 2 jours non versées (habituel ~${(med*100).toFixed(1)} %), non rattrapé le lendemain`});
-      }
-    });
-  }
-  // Baisse PROGRESSIVE (mode complet) : moyenne des 7 derniers jours vs habitude plus ancienne, corrigée du jour de la semaine.
-  // Attrape ce qu'une chute brutale ne montre pas : un bus qui rapporte un peu moins chaque jour.
-  buses.forEach(b=>{const act=[];for(let i=Math.max(0,N-1-SENT.WIN);i<N;i++)if(b.rev[i]>0)act.push(i);
-    if(act.length<14)return;
-    const lg=act.map(i=>Math.log(b.rev[i])-Math.log(f[dows[i]])),rec=lg.slice(-7),base=lg.slice(0,-7);
-    const mb=_sMed(base),sd=Math.max(_sMad(base),0.08),mr=rec.reduce((a,v)=>a+v,0)/7,z=(mb-mr)/(sd/Math.sqrt(7)),pct=1-Math.exp(mr-mb);
-    if(pct>=0.2&&z>4&&!all.some(a=>a.bus===b.label&&a.type==='drop'&&a.ti>=N-3))
-      all.push({bus:b.label,type:'trend',ti:N-1,day:labels[N-1],z,msg:`Recettes environ ${Math.round(pct*100)} % sous son habitude en moyenne sur les 7 derniers jours (baisse persistante)`});});
-  all.sort((a,b)=>b.z-a.z);const alerts=[];
-  all.forEach(a=>{if(!alerts.some(k=>k.bus===a.bus&&k.type===a.type&&Math.abs(k.ti-a.ti)<=1))alerts.push(a);});
-  alerts.sort((a,b)=>b.ti-a.ti||b.z-a.z);
-  const p0=Math.max(0,N-14),inP=alerts.filter(a=>a.ti>=p0);
-  const per={from:labels[p0],to:labels[N-1],n:inP.length,drop:inP.filter(a=>a.type==='drop').length,skim:inP.filter(a=>a.type==='skim').length,trend:inP.filter(a=>a.type==='trend').length,act:buses.filter(b=>b.rev.slice(p0).some(v=>v>0)).length};
-  return{alerts,enough:(full+prov+ind)>0,ready:full+prov+ind,full,prov,ind,total:buses.length,maxDays,span:N-t1,per};
-}
-async function sentinelLoadReal(receivers){
-  const DAYS=35,t0=new Date();t0.setHours(0,0,0,0);const start=new Date(t0.getFullYear(),t0.getMonth(),t0.getDate()-DAYS);
-  const dows=[],labels=[];for(let i=0;i<DAYS;i++){const d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);dows.push(d.getDay());labels.push(d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}));}
-  const idxOf=dt=>Math.round((new Date(dt.getFullYear(),dt.getMonth(),dt.getDate())-start)/864e5);
-  const map={};const buses=receivers.map(r=>{const b={label:r.vehicle||r.name||'Bus',rev:new Array(DAYS).fill(0),due:new Array(DAYS).fill(0),paid:new Array(DAYS).fill(0)};map[r.id]=b;return b;});
-  const chunks=chunkArray(receivers.map(r=>r.id),30);
-  for(const ch of chunks){
-    const tk=await getDocs(query(collection(db,'tickets'),where('busUid','in',ch)));
-    tk.docs.forEach(d=>{const t=d.data(),dt=t.ts?.toDate?.(),b=map[t.busUid];if(!dt||!b)return;const i=idxOf(dt);if(i<0||i>=DAYS)return;b.rev[i]+=t.price||0;if(t.payMode==='especes')b.due[i]+=t.price||0;});
-    const vs=await getDocs(query(collection(db,'versements'),where('receiverUid','in',ch)));
-    vs.docs.forEach(d=>{const v=d.data(),dt=v.ts?.toDate?.(),b=map[v.receiverUid];if(!dt||!b||v.status!=='confirmed'||v.mode!=='especes')return;const i=idxOf(dt);if(i<0||i>=DAYS)return;b.paid[i]+=v.amount||0;});
-  }
-  return{buses,dows,labels};
-}
-function sentinelDemoData(){
-  let s=7;const rnd=()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
-  const gauss=()=>Math.sqrt(-2*Math.log(rnd()+1e-12))*Math.cos(2*Math.PI*rnd());
-  const DOWS=[0.6,1,1.02,1,1.03,1.12,0.85],N=35,t0=new Date();t0.setHours(0,0,0,0);
-  const dows=[],labels=[];for(let i=0;i<N;i++){const d=new Date(t0.getFullYear(),t0.getMonth(),t0.getDate()-N+i);dows.push(d.getDay());labels.push(d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}));}
-  const buses=[];
-  for(let b=0;b<8;b++){
-    const base=[110000,45000,90000,70000,130000,38000,85000,60000][b],share=0.6;let carry=0;
-    const B={label:'Bus démo '+(b+1)+' (simulé)',rev:[],due:[],paid:[]};
-    for(let i=0;i<N;i++){
-      let r=base*DOWS[dows[i]]*Math.exp(0.10*gauss());
-      if(b===1&&i===N-1)r*=0.5;           // anomalie injectée : chute de recettes
-      const dd=r*share,owed=dd+carry;let p;
-      if(b===4&&i===N-2){p=owed*0.78;carry=0;}                 // anomalie injectée : versement incomplet
-      else if(b===2&&i===N-2){p=0;carry=owed;}                // retard LÉGITIME (ne doit pas alerter)
-      else{p=owed*(1-Math.abs(0.01*gauss()));carry=0;}
-      B.rev.push(r);B.due.push(dd);B.paid.push(p);
-    }
-    buses.push(B);
-  }
-  return{buses,dows,labels};
-}
-function sentinelRender(box,res,simulated){
-  const head=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;"><div style="font-size:12px;font-weight:800;color:#c4b5fd;">🛡️ Sentinel · IA ${simulated?'<span style="color:#FF6B00;">(données SIMULÉES)</span>':''}</div>${simulated?'<button class="dir-action-btn" onclick="dirSentinelReload()" style="font-size:11px;padding:6px 10px;">← Données réelles</button>':((typeof location!=='undefined'&&/[?&]demo=1/.test(location.search))?'<button class=\"dir-action-btn\" onclick=\"sentinelDemo()\" style=\"font-size:11px;padding:6px 10px;\">Voir la démo</button>':'')}</div>`;
-  window._sentAlerts=res.alerts;
-  let body;
-  if(!res.enough)body='<div style="color:#888;font-size:12px;padding:6px 0;">Sentinel relit les ventes déjà enregistrées. Il lui faut au moins 1 jour de ventes d’un bus (idéalement 2 semaines) ; il s’affinera tout seul au fil des jours.</div>';
-  else if(!res.alerts.length)body='<div style="color:#6ee7b7;font-size:12px;padding:6px 0;">✅ Aucun comportement inhabituel détecté ('+res.span+' derniers jours relus).</div>';
-  else body=res.alerts.slice(0,8).map((a,i)=>`<div class="dir-alert-row"><div class="dir-alert-dot" style="background:${a.type==='skim'?'#FF6B00':a.type==='trend'?'#f59e0b':'#a78bfa'};"></div><div style="flex:1;font-size:12px;color:#ccc;"><b>${_escH(a.bus)}</b> · ${_escH(a.day)} · <i>à vérifier</i><br>${_escH(a.type==='skim'?'Versement manquant : ':a.type==='trend'?'Baisse progressive : ':'Recettes inhabituelles : ')}${_escH(a.msg)}${`<br><button class=\"dir-action-btn\" onclick=\"sentinelExplain(${i})\" style=\"font-size:11px;padding:4px 10px;margin-top:6px;\">🤖 Expliquer</button><div id=\"sent-exp-${i}\" style=\"display:none;margin-top:6px;padding:8px 10px;border-radius:10px;background:#7c3aed22;border:1px solid #a78bfa55;color:#ddd6fe;font-size:12px;line-height:1.5;\"></div>`}</div></div>`).join('')+(res.alerts.length>8?`<div style="font-size:11px;color:#888;">+ ${res.alerts.length-8} alertes plus anciennes</div>`:'');
-  const prog=(!simulated&&res.enough)?`<div style="font-size:11px;color:#a78bfa;margin-top:6px;">Apprentissage : ${Math.min(res.maxDays,14)}/14 jours d’historique · ${res.full} bus analysés en mode complet${res.prov?`, ${res.prov} en mode provisoire (seuils prudents)`:''}${res.ind?`, ${res.ind} en mode indicatif (1 à 2 jours)`:''} sur ${res.total}.</div>`:'';
-  const bil=(!simulated&&res.enough&&res.per)?`<div style=\"font-size:11px;color:#c4b5fd;margin-top:6px;\">📋 Bilan des 14 derniers jours (${res.per.from} → ${res.per.to}) : ${res.per.n} alerte(s) à vérifier${res.per.n?` (${res.per.drop} chute(s) de recettes, ${res.per.skim} versement(s) manquant(s), ${res.per.trend} baisse(s) progressive(s))`:''} · ${res.per.act} bus avec des ventes. Mis à jour à chaque ouverture, en tenant compte de tout l’historique déjà enregistré.</div>`:'';
-  box.innerHTML=head+body+prog+bil+'<div style="font-size:10px;color:#666;margin-top:6px;">Compare chaque bus à sa propre habitude. Indication à vérifier sur le terrain, pas une accusation.</div>';
-}
-// IA : explique une alerte en langage simple (wolof/français) via le serveur ; les chiffres viennent de Sentinel, pas du modèle.
-window.sentinelExplain=async(i)=>{
-  const a=(window._sentAlerts||[])[i],out=document.getElementById('sent-exp-'+i);if(!a||!out)return;
-  out.style.display='block';out.textContent='🤖 …';
-  try{
-    const token=await auth.currentUser.getIdToken();
-    const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),15000);
-    const r=await fetch(BACKEND_URL+'/api/ai-explain',{method:'POST',signal:ctl.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({type:a.type,bus:a.bus,day:a.day,msg:a.msg,lang:(typeof S!=='undefined'&&S.aiLang==='wo')?'wo':'fr'})});
-    clearTimeout(to);if(!r.ok)throw new Error('HTTP '+r.status);
-    const j=await r.json();out.textContent='🤖 '+j.answer;
-  }catch(e){console.warn('[sentinelExplain]',e);out.textContent='Explication indisponible pour le moment. Réessayez dans un instant.';}
-};
-function _sentinelBox(){const chb=document.getElementById('ch-sentinel-box');if(chb&&chb.offsetParent!==null)return chb;const card=document.getElementById('dir-alerts-card');if(!card)return null;let box=document.getElementById('dir-sentinel-box');if(!box){box=document.createElement('div');box.id='dir-sentinel-box';box.style.cssText='margin-top:12px;padding-top:12px;border-top:1px solid #ffffff14;';card.appendChild(box);}return box;}
-window.sentinelDemo=()=>{const box=_sentinelBox();if(!box)return;const d=sentinelDemoData();sentinelRender(box,sentinelAnalyze(d.buses,d.dows,d.labels),true);};
-let _sentRecv=[];
-window.dirSentinelReload=()=>{const chb=document.getElementById('ch-sentinel-box');if(chb&&chb.offsetParent!==null)chSentinelRun();else dirSentinelRun(_sentRecv);};
-// Sentinel côté chauffeur / propriétaire : analyse le(s) receveur(s) qui lui sont reliés (chauffeurUid ou ownerUid)
-async function chSentinelRun(){
-  const card=document.getElementById('ch-sentinel-card');if(!card)return;
-  card.style.display='block';
-  let box=document.getElementById('ch-sentinel-box');
-  if(!box){box=document.createElement('div');box.id='ch-sentinel-box';box.className='ch-card';card.appendChild(box);}
-  box.innerHTML='<div style="color:#888;font-size:12px;">🛡️ Sentinel analyse…</div>';
-  try{
-    const qs=['chauffeurUid','ownerUid'].map(f=>getDocs(query(collection(db,'users'),where('role','==','receiver'),where(f,'==',S.uid))));
-    const rs=await Promise.allSettled(qs),seen={},recv=[];
-    rs.forEach(x=>{if(x.status!=='fulfilled')return;x.value.docs.forEach(d=>{const r={id:d.id,...d.data()};if(!seen[d.id]&&['approved','active'].includes(r.status)){seen[d.id]=1;recv.push(r);}});});
-    if(!recv.length){sentinelRender(box,{enough:false,alerts:[]},false);return;}
-    const d=await sentinelLoadReal(recv);
-    sentinelRender(box,sentinelAnalyze(d.buses,d.dows,d.labels),false);
-  }catch(e){console.warn('[sentinel chauffeur]',e);box.innerHTML='<div style="color:#888;font-size:12px;">Sentinel indisponible pour le moment.</div>';}
-}
-async function dirSentinelRun(approvedRecv){
-  _sentRecv=approvedRecv;const box=_sentinelBox();if(!box)return;
-  box.innerHTML='<div style="color:#888;font-size:12px;">🛡️ Sentinel analyse…</div>';
-  try{
-    if(!approvedRecv.length){sentinelRender(box,{enough:false,alerts:[]},false);return;}
-    const d=await sentinelLoadReal(approvedRecv);
-    sentinelRender(box,sentinelAnalyze(d.buses,d.dows,d.labels),false);
-  }catch(e){console.warn('[sentinel]',e);box.innerHTML='<div style="color:#888;font-size:12px;">🛡️ Sentinel indisponible pour le moment.</div>';}
-}
-
 async function loadDirFullDashboard(){
   loader('Chargement dashboard…');
   try{
@@ -2858,14 +2625,13 @@ async function loadDirFullDashboard(){
     const alertsCont=document.getElementById('dir-alerts-list');
     if(!alerts.length){alertsCont.innerHTML='<div style="color:#555;font-size:13px;text-align:center;padding:12px;">✅ Aucune alerte active.</div>';}
     else{alertsCont.innerHTML=alerts.map(a=>`<div class="dir-alert-row"><div class="dir-alert-dot" style="background:${a.color};"></div><div style="flex:1;font-size:12px;color:#ccc;">${_escH(a.msg)}</div></div>`).join('');}
-    dirSentinelRun(approvedRecv);
     const ligneLabels=approvedRecv.map(r=>r.ligne||'—');const ligneData=approvedRecv.map(r=>r.today||0);
     const uniqueLignes=new Set(approvedRecv.map(r=>r.ligne).filter(Boolean));
     const lineCard=document.getElementById('dir-line-chart-card');
     if(lineCard)lineCard.style.display=uniqueLignes.size>1?'block':'none';
     if(dirLineChartInst)dirLineChartInst.destroy();
     const lCtx=document.getElementById('dirLineChart');
-    if(lCtx&&uniqueLignes.size>1&&ligneLabels.length){dirLineChartInst=new Chart(lCtx,{type:'bar',indexAxis:'y',data:{labels:ligneLabels,datasets:[{label:'FCFA',data:ligneData,backgroundColor:ligneData.map(v=>v>100000?'#009A44':v>0?'#FF6B00':'#DF0024'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10},callback:v=>(typeof v==='number'?fmt(v/1000)+'k':v)},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#7dd3fc',font:{size:11}},grid:{display:false},border:{display:false}}}}});}
+    if(lCtx&&uniqueLignes.size>1&&ligneLabels.length){dirLineChartInst=new Chart(lCtx,{type:'bar',indexAxis:'y',data:{labels:ligneLabels,datasets:[{label:'FCFA',data:ligneData,backgroundColor:ligneData.map(v=>v>100000?'#009A44':v>0?'#FF6B00':'#DF0024'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10},callback:v=>fmt(v/1000)+'k'},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#7dd3fc',font:{size:11}},grid:{display:false},border:{display:false}}}}});}
 
     const pd=await computeDirPeriodData('jour');
     document.getElementById('dir-enc').textContent=fmt(pd.enc);
@@ -2875,7 +2641,7 @@ async function loadDirFullDashboard(){
     document.getElementById('dir-net').textContent=fmt(pd.net);
     if(dirRevChartInst)dirRevChartInst.destroy();
     const rCtx=document.getElementById('dirRevChart');
-    if(rCtx){dirRevChartInst=new Chart(rCtx,{type:'bar',data:{labels:pd.labels,datasets:[{label:'Recettes (F)',data:pd.data,backgroundColor:'#0ea5e9',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10}},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#666',font:{size:10},callback:v=>fmt(v/1000)+'k'},grid:{color:'#0ea5e910'},border:{display:false}}}}});{const rc=rCtx.closest('.dir-card');if(rc)rc.style.display=(pd.data||[]).some(v=>v>0)?'block':'none';}}
+    if(rCtx){dirRevChartInst=new Chart(rCtx,{type:'bar',data:{labels:pd.labels,datasets:[{label:'Recettes (F)',data:pd.data,backgroundColor:'#0ea5e9',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10}},grid:{color:'#0ea5e910'},border:{display:false}},y:{ticks:{color:'#666',font:{size:10},callback:v=>fmt(v/1000)+'k'},grid:{color:'#0ea5e910'},border:{display:false}}}}});}
     const upd=document.getElementById('dirLastUpdate');
     if(upd)upd.textContent='Dernière mise à jour : '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
     loader('',false);
@@ -3616,27 +3382,10 @@ window.chSubmitReport=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 
-// ── Enregistrement des trajets du bus : matière première de l'IA qui prévoit l'arrivée ──
-// Points regroupés (1 écriture toutes les ~3 min, pas à chaque position) pour ménager le quota Firebase.
-const _trace={buf:[],last:0,off:false};
-function busTraceAdd(lat,lng,acc){
-  try{
-    const now=Date.now();
-    if(_trace.off||!S.uid||!(acc<=80)||now-_trace.last<30000)return;
-    _trace.last=now;_trace.buf.push({a:+lat.toFixed(5),o:+lng.toFixed(5),t:now});
-    if(_trace.buf.length>=6)busTraceFlush();
-  }catch(e){}
-}
-async function busTraceFlush(){
-  if(_trace.off||!_trace.buf.length||!S.uid)return;
-  const pts=_trace.buf.splice(0,_trace.buf.length),d=new Date(),day=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
-  try{await setDoc(doc(db,'bus_traces',S.uid+'_'+day),{busUid:S.uid,day,plate:_pl(S.profile?.vehicle),vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||'',updatedAt:serverTimestamp(),points:arrayUnion(...pts)},{merge:true});}
-  catch(e){console.warn('[trace]',e);if(e&&e.code==='permission-denied')_trace.off=true;}
-}
 window.chToggleGeo=()=>{
   const btn=document.getElementById('chGeoBtn');const st=document.getElementById('chGeoStatus');
   if(chGeoWatchId!=null){
-    navigator.geolocation.clearWatch(chGeoWatchId);chGeoWatchId=null;busTraceFlush();
+    navigator.geolocation.clearWatch(chGeoWatchId);chGeoWatchId=null;
     btn.textContent='📡 Démarrer le partage GPS';btn.style.background='linear-gradient(135deg,#0ea5e9,#0369a1)';
     st.textContent='GPS désactivé';st.style.color='#888';
     chGeoDisabledSince=Date.now();
@@ -3651,7 +3400,7 @@ window.chToggleGeo=()=>{
     const now=Date.now();if(now-chGeoLastWrite<15000)return;chGeoLastWrite=now;
     const {latitude:lat,longitude:lng,accuracy}=pos.coords;
     st.innerHTML=`🟢 Actif · ${lat.toFixed(4)}, ${lng.toFixed(4)} <span style="color:#555;">(±${Math.round(accuracy)}m)</span>`;st.style.color='#34d399';
-    try{await setDoc(doc(db,'bus_locations',S.uid),{lat,lng,accuracy,updatedAt:serverTimestamp(),ownerUid:S.uid,vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||''});}catch(e){console.warn('[geo write]',e);}busTraceAdd(lat,lng,accuracy);
+    try{await setDoc(doc(db,'bus_locations',S.uid),{lat,lng,accuracy,updatedAt:serverTimestamp(),ownerUid:S.uid,vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||''});}catch(e){console.warn('[geo write]',e);}
   },err=>{st.textContent='Erreur GPS: '+err.message;st.style.color='#DF0024';chGeoWatchId=null;btn.textContent='📡 Réessayer';chGeoDisabledSince=Date.now();},{enableHighAccuracy:true,maximumAge:10000,timeout:15000});
   btn.textContent='🛑 Arrêter le partage GPS';btn.style.background='linear-gradient(135deg,#DF0024,#B71C1C)';
   notify('📡','GPS','Partage de position démarré.');
@@ -4176,57 +3925,8 @@ function renderRecvHistorique(){
 window.openModal=(id)=>document.getElementById(id).style.display='flex';
 window.closeModal=(id)=>{document.getElementById(id).style.display='none';if(id==='modalTicketFlow')resetFlow();if(id==='modalWithdraw')resetWithdraw();if(id==='modalRecharge')resetRecharge();};
 function updateBalanceUI(){document.getElementById('passBalance').textContent=fmt(S.profile?.balance||0);}
-
-// ══ ALERTE « PRESQUE ARRIVÉ » : une voix prévient le passager quand il approche de sa destination ══
-// La destination du ticket est un nom (ex : Kounoune) : on la convertit en coordonnées (OpenStreetMap), puis on suit le GPS du passager.
-const ARR={NEAR_KM:0.7,MAXAGE:4*3600*1000,CENTER:[14.69,-17.45],MAXDIST:90};
-let _arr={sn:null,id:null,dest:null};
-function arriveNear(lat,lng,dest){return !!dest&&_haversineKm(lat,lng,dest.lat,dest.lng)<=ARR.NEAR_KM;}
-async function arriveGeocode(name){
-  const key='tatapay_geo_'+_pl(name);
-  try{const c=JSON.parse(localStorage.getItem(key)||'null');if(c&&c.lat)return c;}catch(e){}
-  try{
-    const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),8000);
-    const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=3&countrycodes=sn&q='+encodeURIComponent(name+', Dakar, Sénégal'),{signal:ctl.signal,headers:{'Accept-Language':'fr'}});
-    clearTimeout(to);const j=await r.json();
-    // on garde le premier résultat plausible (dans la région de Dakar) pour éviter une fausse alerte
-    const ok=(j||[]).map(x=>({lat:+x.lat,lng:+x.lon})).find(p=>isFinite(p.lat)&&isFinite(p.lng)&&_haversineKm(p.lat,p.lng,ARR.CENTER[0],ARR.CENTER[1])<=ARR.MAXDIST);
-    if(ok){try{localStorage.setItem(key,JSON.stringify(ok));}catch(e){}return ok;}
-  }catch(e){console.warn('[arrivee] géocodage',e);}
-  return null;
-}
-function arriveFire(t){
-  try{localStorage.setItem('tatapay_arrived_'+t.sn,'1');}catch(e){}
-  const lang=S.aiLang||'wo',txt=(VC_TXT[lang]&&VC_TXT[lang].near)||VC_TXT.fr.near;
-  try{if(navigator.vibrate)navigator.vibrate([300,150,300,150,600]);}catch(e){}
-  try{playDescendreSound();}catch(e){}
-  try{notify('📍',lang==='wo'?'Jege nanu !':(lang==='en'?'Almost there':'Presque arrivé'),txt);}catch(e){}
-  setTimeout(()=>{try{aiSpeak(txt,'near');}catch(e){}},900);
-}
-function arriveWatchStop(){
-  try{if(_arr.id!=null&&navigator.geolocation)navigator.geolocation.clearWatch(_arr.id);}catch(e){}
-  _arr={sn:null,id:null,dest:null};
-}
-async function arriveWatchStart(t){
-  try{
-    if(S.role!=='passenger'||!t||!t.to||!t.sn||!navigator.geolocation)return;
-    if(_arr.sn===t.sn)return;
-    try{if(localStorage.getItem('tatapay_arrived_'+t.sn))return;}catch(e){}
-    const st=(typeof _tkStart==='function')?_tkStart(t):null;if(st&&Date.now()-st>ARR.MAXAGE)return;
-    arriveWatchStop();_arr.sn=t.sn;
-    const dest=await arriveGeocode(t.to);
-    if(_arr.sn!==t.sn)return;
-    if(!dest){console.warn('[arrivee] destination introuvable :',t.to);return;}
-    _arr.dest=dest;
-    _arr.id=navigator.geolocation.watchPosition(pos=>{
-      if(_arr.sn!==t.sn)return;
-      if(pos.coords.accuracy>200)return;
-      if(arriveNear(pos.coords.latitude,pos.coords.longitude,_arr.dest)){arriveWatchStop();arriveFire(t);}
-    },()=>{},{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
-  }catch(e){console.warn('[arrivee]',e);}
-}
-function showDescendBtn(t){activeTicketData=t;arriveWatchStart(t);document.getElementById('descendInfo').textContent=`${t.from}→${t.to} · ${t.price} FCFA`;document.getElementById('activeTicketBanner').style.display='block';document.getElementById('activeTicketLabel').textContent=`🚌 ${t.gie}/${t.vehicle} — ${t.from}→${t.to}`;}
-function hideDescendBtn(){arriveWatchStop();document.getElementById('descendBtn').style.display='none';document.getElementById('activeTicketBanner').style.display='none';activeTicketData=null;}
+function showDescendBtn(t){activeTicketData=t;document.getElementById('descendInfo').textContent=`${t.from}→${t.to} · ${t.price} FCFA`;document.getElementById('activeTicketBanner').style.display='block';document.getElementById('activeTicketLabel').textContent=`🚌 ${t.gie}/${t.vehicle} — ${t.from}→${t.to}`;}
+function hideDescendBtn(){document.getElementById('descendBtn').style.display='none';document.getElementById('activeTicketBanner').style.display='none';activeTicketData=null;}
 window.demandDescendre=async()=>{
   if(!activeTicketData){const c=getCachedActiveTicket();if(c)activeTicketData=c;}
   if(!activeTicketData){notify('🎫','Aucun ticket actif','Achetez d\'abord un ticket pour prévenir le receveur.');return;}
@@ -4484,14 +4184,14 @@ document.addEventListener('pointerdown',()=>{if(S.aiPendingSpeak&&document.getEl
 })();
 
 /* ═══════════════ ADMIN : VOCAUX DE L'ASSISTANT ═══════════════ */
-const VC_KEYS=['ask','go','empty','found','none','nolist','mic','routes','similar','noroute','pick','near'];
+const VC_KEYS=['ask','go','empty','found','none','nolist','mic','routes','similar','noroute','pick'];
 // Tant qu'un vocal n'est pas enregistré pour une nouvelle phrase, on rejoue celui de la phrase la plus proche
 const VC_FALLBACK={routes:'found',similar:'found',noroute:'none',pick:'go'};
-const VC_LABEL={near:'📍 Presque arrivé (à ~700 m de la destination)',ask:'👋 Accueil (à l\'entrée dans l\'app)',go:'📷 Après la réponse (ouvre le scanner)',empty:'🤐 Le passager n\'a rien dit',found:'✅ Destination trouvée dans le bus',none:'❌ Destination absente de ce bus',nolist:'⚠️ Aucun trajet inscrit par le receveur',mic:'🎤 Micro : pas compris',routes:'📋 Trajets trouvés : « choisissez le vôtre »',similar:'🔎 Pas exact, voici des destinations similaires',noroute:'🚫 Aucun trajet trouvé (le scanner s\'ouvre ensuite)',pick:'👆 Trajet choisi : « scannez le QR du bus »'};
+const VC_LABEL={ask:'👋 Accueil (à l\'entrée dans l\'app)',go:'📷 Après la réponse (ouvre le scanner)',empty:'🤐 Le passager n\'a rien dit',found:'✅ Destination trouvée dans le bus',none:'❌ Destination absente de ce bus',nolist:'⚠️ Aucun trajet inscrit par le receveur',mic:'🎤 Micro : pas compris',routes:'📋 Trajets trouvés : « choisissez le vôtre »',similar:'🔎 Pas exact, voici des destinations similaires',noroute:'🚫 Aucun trajet trouvé (le scanner s\'ouvre ensuite)',pick:'👆 Trajet choisi : « scannez le QR du bus »'};
 const VC_TXT={
-  wo:{near:'Jege nanu ! Waajal ngir wàcc.',routes:'Baax na ! Gis naa trajet yi. Tànnal bi la neex.',similar:'Gisuma ko bu leer, waaye gis naa yu mel ni ko. Tànnal bi la neex.',noroute:'Gisuma trajet ngir destination bi. Scanil bus bi.',pick:'Baax na ! Scanil QR bu bus bi.',found:'Baax na ! Destination bi nekk na ci bus bii. Duggal ko te fey.',none:'Gisuma ko ci bus bii. Laajal receveur bi. Gis nga trajet yi nekk ci bus bi ci suuf.'},
-  fr:{near:'Vous êtes presque arrivé ! Préparez-vous à descendre.',routes:'J\'ai trouvé des trajets pour cette destination. Choisissez le vôtre.',similar:'Je n\'ai pas trouvé exactement, mais voici des destinations similaires. Choisissez la bonne.',noroute:'Aucun trajet trouvé pour cette destination. Scannez directement le bus.',pick:'Parfait ! Scannez maintenant le QR de ce bus.',found:'C\'est bon ! Cette destination est desservie par ce bus. Validez et payez.',none:'Cette destination n\'est pas inscrite dans ce bus. Demandez au receveur. Voici les trajets disponibles dans ce bus, juste en dessous.'},
-  en:{near:'You are almost there! Get ready to get off.',routes:'I found routes for this destination. Please choose yours.',similar:'I did not find an exact match, but here are similar destinations. Please choose the right one.',noroute:'No route found for this destination. Please scan the bus directly.',pick:'Great! Now scan this bus QR code.',found:'Good! This destination is served by this bus. Confirm and pay.',none:'This destination is not registered on this bus. Please ask the conductor. Here are the routes available on this bus, just below.'}
+  wo:{routes:'Baax na ! Gis naa trajet yi. Tànnal bi la neex.',similar:'Gisuma ko bu leer, waaye gis naa yu mel ni ko. Tànnal bi la neex.',noroute:'Gisuma trajet ngir destination bi. Scanil bus bi.',pick:'Baax na ! Scanil QR bu bus bi.',found:'Baax na ! Destination bi nekk na ci bus bii. Duggal ko te fey.',none:'Gisuma ko ci bus bii. Laajal receveur bi. Gis nga trajet yi nekk ci bus bi ci suuf.'},
+  fr:{routes:'J\'ai trouvé des trajets pour cette destination. Choisissez le vôtre.',similar:'Je n\'ai pas trouvé exactement, mais voici des destinations similaires. Choisissez la bonne.',noroute:'Aucun trajet trouvé pour cette destination. Scannez directement le bus.',pick:'Parfait ! Scannez maintenant le QR de ce bus.',found:'C\'est bon ! Cette destination est desservie par ce bus. Validez et payez.',none:'Cette destination n\'est pas inscrite dans ce bus. Demandez au receveur. Voici les trajets disponibles dans ce bus, juste en dessous.'},
+  en:{routes:'I found routes for this destination. Please choose yours.',similar:'I did not find an exact match, but here are similar destinations. Please choose the right one.',noroute:'No route found for this destination. Please scan the bus directly.',pick:'Great! Now scan this bus QR code.',found:'Good! This destination is served by this bus. Confirm and pay.',none:'This destination is not registered on this bus. Please ask the conductor. Here are the routes available on this bus, just below.'}
 };
 const VC_LANG={wo:'Wolof',fr:'Français',en:'English'};
 let vcSaved={},vcPending={},vcRec=null,vcCur='wo';
@@ -5011,7 +4711,7 @@ window.recvRejectTicket=async(pendingId)=>{try{await deleteDoc(doc(db,'pending',
 window.recvToggleGeo=()=>{
   const btn=document.getElementById('recvGeoBtn');const st=document.getElementById('recvGeoStatus');
   if(recvGeoWatchId!=null){
-    navigator.geolocation.clearWatch(recvGeoWatchId);recvGeoWatchId=null;busTraceFlush();
+    navigator.geolocation.clearWatch(recvGeoWatchId);recvGeoWatchId=null;
     btn.textContent='📡 Démarrer le partage GPS';btn.style.background='linear-gradient(135deg,#0ea5e9,#0369a1)';
     st.textContent='GPS désactivé';st.style.color='#888';
     deleteDoc(doc(db,'bus_locations',S.uid)).catch(()=>{});
@@ -5024,7 +4724,7 @@ window.recvToggleGeo=()=>{
     const now=Date.now();if(now-recvGeoLastWrite<15000)return;recvGeoLastWrite=now;
     const {latitude:lat,longitude:lng,accuracy}=pos.coords;
     st.innerHTML=`🟢 Actif · ${lat.toFixed(4)}, ${lng.toFixed(4)} <span style="color:#555;">(±${Math.round(accuracy)}m)</span>`;st.style.color='#34d399';
-    try{await setDoc(doc(db,'bus_locations',S.uid),{lat,lng,accuracy,updatedAt:serverTimestamp(),vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||''});}catch(e){console.warn('[recv geo write]',e);}busTraceAdd(lat,lng,accuracy);
+    try{await setDoc(doc(db,'bus_locations',S.uid),{lat,lng,accuracy,updatedAt:serverTimestamp(),vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||''});}catch(e){console.warn('[recv geo write]',e);}
   },err=>{st.textContent='Erreur GPS: '+err.message;st.style.color='#DF0024';recvGeoWatchId=null;btn.textContent='📡 Réessayer';},{enableHighAccuracy:true,maximumAge:10000,timeout:15000});
   btn.textContent='🛑 Arrêter le partage GPS';btn.style.background='linear-gradient(135deg,#DF0024,#B71C1C)';
   notify('📡','GPS','Partage de position démarré. Les passagers pourront suivre votre bus.');
@@ -5045,71 +4745,6 @@ function cacheActiveTicket(t){try{localStorage.setItem(_tkActiveKey(),JSON.strin
 function getCachedActiveTicket(){try{const v=localStorage.getItem(_tkActiveKey());return v?JSON.parse(v):null;}catch(e){return null;}}
 function clearCachedActiveTicket(){try{localStorage.removeItem(_tkActiveKey());}catch(e){}}
 function renderPassTicketsList(tickets,offline){const cont=document.getElementById('passTicketsContainer');if(!tickets.length){cont.innerHTML='<div style="text-align:center;padding:48px 20px;"><div style="font-size:56px;opacity:.4;margin-bottom:16px;">🎫</div><div style="color:#555;font-weight:800;">Aucun ticket</div><button class="btn btn-purple" style="margin-top:16px;" onclick="openTicketFlow()">🎫 Acheter un ticket</button></div>';return;}const banner=offline?'<div style="background:#FF6B0015;border:1px solid #FF6B0044;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FFB97A;">📴 Mode hors-ligne · tickets enregistrés localement</div>':'';cont.innerHTML=banner+tickets.map(t=>`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:12px;line-height:1.9;">GIE:${_escH(t.gie)} = ${_escH(t.vehicle)} = Ligne:${_escH(t.ligne)}<br>Trajet: ${_escH(t.from)}-->${_escH(t.to)}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${_escH(t.zone)}<br>✅ Validé${offline?' · 📴 hors-ligne':''}</div></div></div>`).join('');}
-
-// ══ ITINÉRAIRE DU TRAJET : le chemin réellement suivi par le bus depuis que le passager a payé son ticket ══
-let tripMap=null,tripLayer=null,tripTimer=null;
-function _tkStart(t){
-  try{
-    if(t.ts&&t.ts.seconds)return t.ts.seconds*1000;if(typeof t.ts==='number')return t.ts;
-    const m=String(t.date||'').match(/(\d+)\/(\d+)\/(\d+)/),h=String(t.time||'').match(/(\d+)[:h](\d+)(?::(\d+))?/);
-    if(!m)return null;return new Date(+m[3],+m[2]-1,+m[1],h?+h[1]:0,h?+h[2]:0,h&&h[3]?+h[3]:0).getTime();
-  }catch(e){return null;}
-}
-const _dayKey=d=>d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
-// Points du bus à partir de la montée ; on s'arrête quand le bus reste immobile plus de 10 min après avoir roulé (fin de course).
-function tripCut(pts,st){
-  const p=pts.filter(x=>x&&x.t>=st-120000&&x.a!=null&&x.o!=null).sort((x,y)=>x.t-y.t);
-  const out=[];let moved=0,stillSince=null,ended=false;
-  for(let i=0;i<p.length;i++){
-    if(i>0){
-      const d=_haversineKm(p[i-1].a,p[i-1].o,p[i].a,p[i].o);
-      if(d>=0.02){moved+=d;stillSince=null;}else{if(stillSince==null)stillSince=p[i-1].t;if(moved>=1&&p[i].t-stillSince>600000){ended=true;break;}}
-    }
-    out.push(p[i]);
-  }
-  let km=0;for(let i=1;i<out.length;i++)km+=_haversineKm(out[i-1].a,out[i-1].o,out[i].a,out[i].o);
-  return {pts:out,km,ended};
-}
-async function tripLoad(){
-  const t=window._tripTicket,info=document.getElementById('tripInfo');if(!t||!info)return;
-  const st=_tkStart(t);
-  if(!st){info.textContent='Heure du ticket introuvable.';return;}
-  try{
-    const days=[_dayKey(new Date(st))],nx=_dayKey(new Date(st+86400000));if(nx!==days[0]&&Date.now()>st+3600000)days.push(nx);
-    let all=[];
-    for(const dk of days){
-      const snap=await getDocs(query(collection(db,'bus_traces'),where('vehicle','==',t.vehicle),where('day','==',dk)));
-      snap.docs.forEach(d=>{all=all.concat(d.data().points||[]);});
-    }
-    const r=tripCut(all,st);
-    if(r.pts.length<2){info.innerHTML='⏳ Le trajet du bus est en cours d’enregistrement. L’itinéraire apparaîtra ici dans quelques minutes (mise à jour automatique).';return;}
-    const first=r.pts[0],last=r.pts[r.pts.length-1],mins=Math.max(1,Math.round((last.t-st)/60000));
-    info.innerHTML=`🚌 <b>${_escH(t.vehicle)}</b> · ${_escH(t.from)} → ${_escH(t.to)}<br>📏 ${_fmtDist(r.km)} parcourus · ⏱️ ${_fmtMin(mins)} depuis votre ticket${r.ended?' · ✅ trajet terminé':' · 🔄 le bus roule encore, la ligne s’allonge'}`;
-    if(!tripMap){
-      tripMap=L.map(document.getElementById('tripMap'),{zoomControl:true,attributionControl:false});
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(tripMap);
-    }
-    tripMap.invalidateSize();
-    if(tripLayer){tripMap.removeLayer(tripLayer);tripLayer=null;}
-    const ll=r.pts.map(x=>[x.a,x.o]);
-    tripLayer=L.layerGroup([
-      L.polyline(ll,{color:'#7c3aed',weight:6,opacity:.9}),
-      L.circleMarker(ll[0],{radius:9,color:'#fff',weight:3,fillColor:'#16a34a',fillOpacity:1}).bindTooltip('🟢 Montée dans le bus',{permanent:false}),
-      L.circleMarker(ll[ll.length-1],{radius:9,color:'#fff',weight:3,fillColor:r.ended?'#DF0024':'#f59e0b',fillOpacity:1}).bindTooltip(r.ended?'🏁 Fin du trajet':'🚌 Position actuelle du bus',{permanent:false})
-    ]).addTo(tripMap);
-    tripMap.fitBounds(ll,{padding:[30,30],maxZoom:16});
-  }catch(e){
-    console.warn('[trip]',e);
-    info.textContent=(e&&e.code==='permission-denied')?'Itinéraire indisponible (accès aux trajets non autorisé).':'Itinéraire indisponible pour le moment. Réessayez dans un instant.';
-  }
-}
-window.openTripRoute=()=>{
-  const m=document.getElementById('modalTripRoute');if(!m||!window._tripTicket)return;
-  m.style.display='flex';document.getElementById('tripInfo').textContent='Chargement…';
-  setTimeout(()=>{tripLoad();},150);
-  clearInterval(tripTimer);tripTimer=setInterval(tripLoad,60000);
-};
-window.closeTripRoute=()=>{clearInterval(tripTimer);tripTimer=null;const m=document.getElementById('modalTripRoute');if(m)m.style.display='none';};
 async function loadPassTickets(){
   if(S.role!=='passenger')return;
   // Affichage immédiat depuis le cache (fonctionne même hors-ligne)
@@ -5146,7 +4781,6 @@ window.showTicketData=(t)=>{
     renderQR('ticketHandoffQRWrap',payload,240,'M');
   }else if(handoff){handoff.style.display='none';handoff.innerHTML='';}
   if(S.role==='passenger'){cacheTicket(t);cacheActiveTicket(t);showDescendBtn(t);}
-  {const tb=document.getElementById('ticketTripBtn');if(tb){if(S.role==='passenger'&&t.vehicle&&t.payMode!=='especes'){window._tripTicket=t;tb.style.display='block';}else{tb.style.display='none';}}}
 };
 // Réception d'un ticket transmis directement par le QR du receveur (sans réseau)
 window.importTicketFromQR=(raw)=>{
