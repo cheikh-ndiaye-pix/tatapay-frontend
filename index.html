@@ -4412,7 +4412,7 @@ function arriveFire(t){
   try{if(navigator.vibrate)navigator.vibrate([300,150,300,150,600]);}catch(e){}
   try{playDescendreSound();}catch(e){}
   try{notify('📍',lang==='wo'?'Jege nanu !':(lang==='en'?'Almost there':'Presque arrivé'),txt);}catch(e){}
-  setTimeout(()=>{try{aiSpeak(txt,'near');}catch(e){}},900);
+  setTimeout(()=>{try{aiSpeak(txt,'near');}catch(e){}},1500);
 }
 // Arrivée à destination : annonce vocale en wolof (vocal enregistré par l'admin), français ou anglais
 function arriveFinal(t){
@@ -4421,7 +4421,7 @@ function arriveFinal(t){
   try{if(navigator.vibrate)navigator.vibrate([600,200,600,200,900]);}catch(e){}
   try{playDescendreSound();}catch(e){}
   try{notify('🏁',lang==='wo'?'Agsi nga !':(lang==='en'?'You have arrived':'Vous êtes arrivé'),txt);}catch(e){}
-  setTimeout(()=>{try{aiSpeak(txt,'arrived');}catch(e){}},900);
+  setTimeout(()=>{try{aiSpeak(txt,'arrived');}catch(e){}},1500);
 }
 function arriveWatchStop(){
   try{if(_arr.id!=null&&navigator.geolocation)navigator.geolocation.clearWatch(_arr.id);}catch(e){}
@@ -4660,13 +4660,14 @@ window.aiOpen=(force)=>{const p=document.getElementById('aiPanel');if(!p)return;
 function aiTTS(text,onEnd,key){
   try{
     if(!('speechSynthesis' in window)){if(onEnd)onEnd();return;}
-    speechSynthesis.cancel();
+    speechSynthesis.cancel();try{speechSynthesis.resume();}catch(_){}
     const u=new SpeechSynthesisUtterance(String(text).replace(/[\u{1F300}-\u{1FAFF}✅❌]/gu,''));
-    u.lang=AI_LOC[S.aiLang]||'fr-FR';u.rate=0.95;
+    u.lang=AI_LOC[S.aiLang]||'fr-FR';u.rate=0.95;u.volume=1;
+    try{const vs=speechSynthesis.getVoices()||[];const want=S.aiLang==='en'?'en':'fr';const v=vs.find(x=>x.lang&&x.lang.replace('_','-').toLowerCase()===u.lang.toLowerCase())||vs.find(x=>x.lang&&x.lang.toLowerCase().startsWith(want));if(v){u.voice=v;u.lang=v.lang;}}catch(_){}
     u.onerror=(ev)=>{if(ev&&(ev.error==='canceled'||ev.error==='interrupted'))return;S.aiPendingSpeak={text,key:key||null,onEnd};};
     u.onstart=()=>{S.aiPendingSpeak=null;};
     u.onend=()=>{if(onEnd)onEnd();};
-    speechSynthesis.speak(u);
+    setTimeout(()=>{try{speechSynthesis.speak(u);}catch(_){}},120);
     setTimeout(()=>{if(!speechSynthesis.speaking&&!S.aiPendingSpeak)S.aiPendingSpeak={text,key:key||null,onEnd};},700);
   }catch(e){if(onEnd)onEnd();}
 }
@@ -4696,7 +4697,20 @@ async function loadAiVoices(){
     S.aiVoices=v;try{localStorage.setItem('tatapay_aiVoices',JSON.stringify(v));}catch(e){}
   }catch(e){try{S.aiVoices=JSON.parse(localStorage.getItem('tatapay_aiVoices')||'{}');}catch(_){S.aiVoices={};}}
 }
-document.addEventListener('pointerdown',()=>{if(S.aiPendingSpeak&&document.getElementById('aiPanel')?.style.display==='block'){const t=S.aiPendingSpeak;S.aiPendingSpeak=null;aiSpeak(t.text,t.key,t.onEnd);}},{passive:true});
+// Débloque le son au premier toucher (sinon le téléphone bloque la voix « presque arrivé » qui part toute seule)
+let _audioUnlocked=false;
+function _unlockAudio(){
+  if(_audioUnlocked)return;_audioUnlocked=true;
+  try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u);}catch(e){}
+  try{const a=new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');a.volume=0;a.play().catch(()=>{});}catch(e){}
+  try{speechSynthesis.getVoices();}catch(e){}
+}
+try{speechSynthesis.onvoiceschanged=()=>{try{speechSynthesis.getVoices();}catch(e){}};}catch(e){}
+// Si la voix a été bloquée, on la rejoue au prochain toucher n'importe où (même assistant fermé) ou au retour dans l'app
+function _replayPending(){if(S.aiPendingSpeak){const t=S.aiPendingSpeak;S.aiPendingSpeak=null;aiSpeak(t.text,t.key,t.onEnd);}}
+document.addEventListener('pointerdown',()=>{_unlockAudio();_replayPending();},{passive:true});
+document.addEventListener('touchstart',_unlockAudio,{passive:true});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(_replayPending,400);});
 
 (function(){
   const fab=document.getElementById('aiFab'),box=document.getElementById('aiFloat');if(!fab||!box)return;
