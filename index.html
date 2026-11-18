@@ -4333,7 +4333,7 @@ function updateBalanceUI(){document.getElementById('passBalance').textContent=fm
 
 // ══ ALERTE « PRESQUE ARRIVÉ » : une voix prévient le passager quand il approche de sa destination ══
 // La destination du ticket est un nom (ex : Kounoune) : on la convertit en coordonnées (OpenStreetMap), puis on suit le GPS du passager.
-const ARR={NEAR_KM:0.05,AT_KM:0.01,MAXAGE:4*3600*1000,CENTER:[14.69,-17.45],MAXDIST:90};
+const ARR={NEAR_KM:0.02,AT_KM:0.01,MAXAGE:4*3600*1000,CENTER:[14.69,-17.45],MAXDIST:90};
 let _arr={sn:null,id:null,dest:null,stage:0};
 function arriveNear(lat,lng,dest){return !!dest&&_haversineKm(lat,lng,dest.lat,dest.lng)<=ARR.NEAR_KM;}
 // ── Arrêts marqués par le receveur (coordonnées exactes), utilisés avant OpenStreetMap ──
