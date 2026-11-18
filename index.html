@@ -398,6 +398,15 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
     </div>
     <div id="fieldName" style="display:none"><div class="input-wrap"><label class="input-label">Nom complet *</label><input class="input-field" id="authName" placeholder="Moussa Diallo"/></div></div>
     <div class="input-wrap"><label class="input-label">E-mail *</label><input class="input-field" id="authEmail" type="email" placeholder="exemple@email.com"/></div>
+    <div id="fieldLang" data-notr style="display:none;margin-bottom:14px;">
+      <label class="input-label">Langue · Language · Làkk</label>
+      <div style="display:flex;gap:6px;">
+        <button type="button" class="app-lang" data-l="fr" onclick="setRegLang('fr')" style="flex:1;padding:10px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">🇫🇷 Français</button>
+        <button type="button" class="app-lang" data-l="en" onclick="setRegLang('en')" style="flex:1;padding:10px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">🇬🇧 English</button>
+        <button type="button" class="app-lang" data-l="wo" onclick="setRegLang('wo')" style="flex:1;padding:10px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">🇸🇳 Wolof</button>
+      </div>
+      <div class="app-lang-hint" style="font-size:11px;color:#888;margin-top:6px;line-height:1.5;"></div>
+    </div>
     <div id="fieldPhone" style="display:none"><div class="input-wrap"><label class="input-label">Téléphone *</label><input class="input-field" id="authPhone" type="tel" placeholder="77 123 45 67"/></div></div>
     <div id="fieldsReceiver" style="display:none;">
       <div style="background:#FF6B0010;border:1px solid #FF6B0033;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FF6B00;line-height:1.6;">🎫 Après validation de votre email, vous choisirez un ou plusieurs propriétaires de bus pour envoyer votre candidature.</div>
@@ -540,6 +549,15 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
         <div style="color:#666;font-size:13px;margin-bottom:20px;" id="profileEmail">—</div>
         <div id="profileQRWrap" style="margin-bottom:8px;"></div>
         <div style="color:#666;font-size:12px;margin-bottom:24px;">QR Wallet — montrez à un ami</div>
+        <div data-notr style="width:100%;margin-bottom:18px;text-align:left;">
+          <div style="color:#666;font-size:12px;margin-bottom:6px;">Langue · Language · Làkk</div>
+          <div style="display:flex;gap:6px;">
+            <button type="button" class="app-lang" data-l="fr" onclick="setProfileLang('fr')" style="flex:1;padding:9px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">🇫🇷 Français</button>
+            <button type="button" class="app-lang" data-l="en" onclick="setProfileLang('en')" style="flex:1;padding:9px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">🇬🇧 English</button>
+            <button type="button" class="app-lang" data-l="wo" onclick="setProfileLang('wo')" style="flex:1;padding:9px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">🇸🇳 Wolof</button>
+          </div>
+          <div class="app-lang-hint" style="font-size:11px;color:#888;margin-top:6px;line-height:1.5;"></div>
+        </div>
         <button class="btn btn-danger btn-full" onclick="doLogout()">Se déconnecter</button>
       </div>
     </div>
@@ -1473,6 +1491,127 @@ window.goAuth=(mode,role)=>{
   setRole(S.authRole||'passenger');
 };
 window.toggleAuthMode=()=>window.goAuth(S.isReg?'login':'register');
+// ══ LANGUE DE L'APPLICATION (choisie à l'inscription, enregistrée dans users/{uid}.lang) ══
+// fr = tout en français + voix française · en = tout en anglais + voix anglaise
+// wo = textes en français, mais voix de l'assistant en wolof
+const _EN={
+'Accueil':'Home','Tickets':'Tickets','Historique':'History','Profil':'Profile','Acheter Ticket':'Buy Ticket','Scan Ami':'Scan Friend','Descendre':'Get off',
+'Recharger':'Top up','Solde TataPay':'TataPay balance','Bonjour':'Hello','Bonjour 👋':'Hello 👋','Dernières transactions':'Latest transactions','Mes Tickets':'My Tickets','Ticket en cours':'Current ticket',
+'Appuyez pour voir votre ticket':'Tap to see your ticket','Trouver un bus':'Find a bus','Écrivez votre destination, ou voyez les bus proches de vous en direct':'Type your destination, or see nearby buses live',
+'Marchandises (colis en bus)':'Goods (parcels by bus)','Envoyer ou récupérer une marchandise en suivant le bus en direct':'Send or collect goods while tracking the bus live',
+'QR Wallet — montrez à un ami':'Wallet QR — show it to a friend','Se déconnecter':'Log out','Se connecter':'Log in',"S'inscrire":'Sign up','Connexion':'Log in','Inscription':'Sign up',
+'Créer mon compte':'Create my account','Déjà inscrit ?':'Already registered?','Pas de compte ?':'No account?','Mot de passe oublié ?':'Forgot password?','Mot de passe *':'Password *','Confirmer *':'Confirm *',
+'Nom complet *':'Full name *','Téléphone *':'Phone *','E-mail *':'Email *','Adresse / Quartier *':'Address / Neighbourhood *','Retour':'Back','← Retour':'← Back','Chargement…':'Loading…','Connexion…':'Signing in…',
+'Passager':'Passenger','Receveur':'Conductor','Propriétaire':'Owner','Propriétaire / Chauffeur':'Owner / Driver','Directeur':'Director','Chauffeur':'Driver','Espace pro':'Pro area',
+"Passager · S'inscrire":'Passenger · Sign up','Passager · Se connecter':'Passenger · Log in',"Déjà inscrit ? Choisissez votre rôle puis « Se connecter ».":'Already registered? Choose your role, then “Log in”.',
+'Vous êtes…':'You are…','(changeable à tout moment)':'(can be changed at any time)','En attente':'Pending','Votre demande est en cours de traitement.':'Your request is being processed.',
+'Scanner QR':'Scan QR','Pointez vers le QR Code':'Point at the QR code','Itinéraire de mon trajet':'My trip route',
+'Recharger mon compte':'Top up my account','Continuer →':'Continue →','Montant à recharger':'Amount to top up','Payer avec PayTech':'Pay with PayTech','Ouverture du paiement…':'Opening payment…',
+"Une fenêtre PayTech s'est ouverte. Choisissez votre opérateur et terminez le paiement là-bas — cette page se mettra à jour automatiquement.":'A PayTech window has opened. Choose your operator and finish the payment there — this page will update automatically.',
+"Annuler l'attente":'Cancel waiting','Recharge réussie !':'Top-up successful!','Recharge réussie':'Top-up successful','Fermer':'Close','Transfert':'Transfer','Montant (FCFA)':'Amount (FCFA)','Envoyer →':'Send →','Montant en FCFA':'Amount in FCFA',
+'Marchandises':'Goods',"Vous avez remis une marchandise au bus ? Indiquez l'immatriculation du bus et le numéro du client : il pourra suivre le bus en direct pour récupérer sa marchandise.":"Did you hand goods to the bus? Enter the bus plate number and the customer's number: they can follow the bus live to collect their goods.",
+'Immatriculation du bus *':'Bus plate number *','Numéro du client (destinataire) *':"Customer's number (recipient) *",'Description (facultatif)':'Description (optional)','Enregistrer la marchandise':'Save the goods','Mes marchandises':'My goods',
+'ex: 2 sacs de riz, carton fragile':'e.g. 2 bags of rice, fragile box','Recherche des bus…':'Searching for buses…',"Touchez un bus pour voir son temps d'arrivée vers vous.":'Tap a bus to see its arrival time.','En attente de position…':'Waiting for location…',
+'Acheter un Ticket':'Buy a Ticket','Trajets trouvés':'Routes found','Autre destination':'Another destination','Scanner un bus':'Scan a bus','Étape 1 · Scanner':'Step 1 · Scan','Étape 2 · Destination':'Step 2 · Destination','Étape 3 · En attente…':'Step 3 · Waiting…',
+"Scannez le QR du bus pour acheter votre ticket, ou votre ticket déjà montré par le receveur pour le recevoir, même sans connexion.":"Scan the bus QR code to buy your ticket, or the ticket shown by the conductor to receive it, even offline.",
+'Scanner':'Scan','À payer':'To pay','Payer →':'Pay →','En attente du receveur…':'Waiting for the conductor…','Ligne:':'Line:','Trajet:':'Trip:','Section:':'Section:','Prix:':'Price:','Zone:':'Zone:',
+'Où allez-vous ? (ex: Kounoune)':'Where are you going? (e.g. Kounoune)','Conditions Générales':'Terms & Conditions','Politique de confidentialité':'Privacy Policy',"J'accepte les":'I accept the','et la':'and the',
+'Pièce d\'identité (CNI) — Recto *':'ID card (CNI) — Front *','Pièce d\'identité (CNI) — Verso *':'ID card (CNI) — Back *','Photo (selfie) *':'Photo (selfie) *','Diplôme (optionnel)':'Diploma (optional)','CV (optionnel)':'CV (optional)','Numéro CNI *':'CNI number *',
+'Directeur de GIE *':'GIE Director *','GIE (Groupement) *':'GIE (Group) *','Prérequis':'Requirements',"Aucun frais d'inscription n'est demandé.":'No registration fee is required.','Choisir les propriétaires':'Choose the owners',
+"Candidater chez d'autres propriétaires":'Apply to other owners','Envoyer ma candidature':'Send my application',
+// notifications / chargements
+'Erreur':'Error','Champs':'Fields','Email + mot de passe ≥ 6 caractères.':'Email + password of at least 6 characters.','Entrez votre nom.':'Enter your name.','Mots de passe différents.':'Passwords do not match.',
+'Entrez votre adresse.':'Enter your address.','Adresse':'Address','Pas de réseau':'No network','Une première connexion nécessite internet. Si vous vous êtes déjà connecté sur cet appareil, votre session sera restaurée automatiquement.':'A first login needs internet. If you have already logged in on this device, your session will be restored automatically.',
+'Email déjà utilisé':'Email already used','Ce compte existe déjà. Cliquez sur « Se connecter », ou « Mot de passe oublié » si besoin.':'This account already exists. Tap “Log in”, or “Forgot password” if needed.',
+'Mot de passe faible':'Weak password','Utilisez au moins 6 caractères.':'Use at least 6 characters.','Email invalide':'Invalid email',"Vérifiez l'adresse email saisie.":'Check the email address you entered.','Trop de tentatives':'Too many attempts','Patientez quelques minutes puis réessayez.':'Wait a few minutes and try again.',
+'Identifiants incorrects':'Wrong credentials','Email ou mot de passe invalide.':'Invalid email or password.','Email requis':'Email required','Entrez votre email.':'Enter your email.','Email envoyé':'Email sent','Vérifiez votre boîte mail.':'Check your inbox.',
+'Compte incorrect':'Wrong account','Inscription incomplète':'Incomplete registration','Hors-ligne':'Offline','Reconnexion automatique dès que le réseau revient. Vos données en cache restent accessibles.':'Automatic reconnection as soon as the network is back. Your cached data remains available.',
+'Bienvenue !':'Welcome!','Compte suspendu':'Account suspended',"Contactez l'administrateur.":'Contact the administrator.','Demande refusée':'Request refused','Demande refusée.':'Request refused.',
+'Montant':'Amount','Minimum 100 FCFA.':'Minimum 100 FCFA.','Min 100 FCFA.':'Min 100 FCFA.','Minimum 50 FCFA.':'Minimum 50 FCFA.','Entrez un montant valide (min 50 FCFA).':'Enter a valid amount (min 50 FCFA).','Remplissez les champs (min 100 FCFA).':'Fill in the fields (min 100 FCFA).',
+'Solde insuffisant':'Insufficient balance','Solde insuffisant.':'Insufficient balance.','Solde':'Balance','Numéro invalide.':'Invalid number.','Numéro Wave':'Wave number',
+'En attente':'Pending','Si le paiement se termine, votre solde sera mis à jour automatiquement.':'If the payment completes, your balance will update automatically.',
+'Impossible de vous envoyer à vous-même.':'You cannot send money to yourself.','Introuvable':'Not found','Wallet destinataire inconnu.':'Unknown recipient wallet.','Wallet':'Wallet',"Entrez ou scannez l'ID wallet.":'Enter or scan the wallet ID.','Tous les champs requis.':'All fields are required.',
+'Non supporté sur cet appareil : écrivez la destination.':'Not supported on this device: please type the destination.','Bus inconnu':'Unknown bus','QR non reconnu.':'QR not recognised.','Receveur introuvable.':'Conductor not found.',
+'Autre bus':'Other bus',"Ce n'est pas le bus que vous avez choisi.":'This is not the bus you chose.','Section':'Section','Choisissez une destination.':'Choose a destination.','Demande envoyée':'Request sent','En attente du receveur.':'Waiting for the conductor.',
+'Ticket validé !':'Ticket validated!','Votre trajet est confirmé.':'Your trip is confirmed.','Le receveur a annulé votre demande.':'The conductor cancelled your request.','QR trop ancien':'QR too old',
+"Ce QR ne contient pas de solde à jour. Demandez au passager de rouvrir son appli avec le réseau une fois.":"This QR has no up-to-date balance. Ask the passenger to reopen their app with network once.",
+'Signal envoyé !':'Signal sent!','Le receveur et le chauffeur ont été prévenus.':'The conductor and the driver have been notified.','Aucun ticket actif':'No active ticket','Achetez d\'abord un ticket pour prévenir le receveur.':'Buy a ticket first to notify the conductor.',
+'Numéro':"Number","Entrez le numéro d'immatriculation du bus.":"Enter the bus plate number.",'Bus introuvable':'Bus not found','Aucun bus avec cette immatriculation.':'No bus with this plate number.','Aucun bus enregistré avec cette immatriculation.':'No bus registered with this plate number.',
+'Immatriculation':'Plate number',"Entrez l'immatriculation du bus.":'Enter the bus plate number.','Numéro client':'Customer number','Entrez un numéro valide (9 chiffres).':'Enter a valid number (9 digits).',
+'Marchandise enregistrée':'Goods saved','Le client peut maintenant suivre le bus.':'The customer can now follow the bus.','Marchandise reçue':'Goods received',"L'expéditeur a été prévenu.":'The sender has been notified.',
+'Position':'Location','Géolocalisation non supportée.':'Geolocation not supported.','Erreur GPS':'GPS error','Synchronisation des données…':'Syncing data…',
+// carte et suivi
+'Vous êtes ici':'You are here','Vous êtes ici (dans le bus)':'You are here (on the bus)','Fin du trajet':'End of trip','Arrive à':'Arriving at','dans':'in','Presque arrivé':'Almost there','Vous êtes arrivé':'You have arrived',
+'Descendez maintenant.':'Get off now.','Jege nanu !':'Almost there','Agsi nga !':'You have arrived'
+};
+const _ENP={'Passager':'Passenger','Receveur':'Conductor','Propriétaire':'Owner','Directeur':'Director','Chauffeur':'Driver'};
+const _EN_RE=[
+ [/^(Inscription|Connexion) · (.+)$/,(m,a,b)=>(a==='Inscription'?'Sign up':'Log in')+' · '+(_ENP[b]||b)],
+ [/^Arrivée : (.+)$/,(m,a)=>'Arrival: '+a],[/^Départ : (.+)$/,(m,a)=>'Departure: '+a],
+ [/^(.+) restants\)$/,(m,a)=>a+' left)'],[/^(.+) parcourus$/,(m,a)=>a+' travelled'],
+ [/^(\d[\d\s.,]*) FCFA débités.*$/,(m,a)=>a+' FCFA debited'],
+ [/^Votre solde est de (.+) FCFA\.$/,(m,a)=>'Your balance is '+a+' FCFA.'],
+ [/^Solde: (.+) FCFA\.$/,(m,a)=>'Balance: '+a+' FCFA.'],
+ [/^(.+) min$/,(m,a)=>a+' min']
+];
+const _SKIP='#screenAdmin,#screenDirecteur,#screenReceiver,#screenChauffeur,[data-notr],script,style,textarea,input';
+const _trNodes=new Map(),_trAttrs=new Map();
+function _trLook(t){
+  let r=_EN[t];if(r!==undefined)return r;
+  for(const [re,f] of _EN_RE){const m=t.match(re);if(m)return f(...m);}
+  return undefined;
+}
+function _trEn(s){
+  if(!s)return s;const t=s.trim();if(!t)return s;
+  let r=_trLook(t);
+  if(r===undefined){const m=t.match(/^([^\p{L}\p{N}]*)([\p{L}\p{N}].*)$/u);if(m&&m[1]){const rr=_trLook(m[2]);if(rr!==undefined)r=m[1]+rr;}}
+  if(r===undefined)return s;
+  return s.replace(t,r);
+}
+function _trNode(n){
+  if(S.lang!=='en')return;
+  if(n.nodeType===3){
+    const p=n.parentElement;if(!p||p.closest(_SKIP))return;
+    const cur=n.nodeValue,out=_trEn(cur);
+    if(out!==cur){if(!_trNodes.has(n))_trNodes.set(n,cur);n.nodeValue=out;}
+  }else if(n.nodeType===1){
+    if(n.closest&&n.closest(_SKIP))return;
+    for(const a of ['placeholder','title']){
+      if(n.hasAttribute&&n.hasAttribute(a)){const cur=n.getAttribute(a),out=_trEn(cur);if(out!==cur){if(!_trAttrs.has(n))_trAttrs.set(n,{});const o=_trAttrs.get(n);if(o[a]===undefined)o[a]=cur;n.setAttribute(a,out);}}
+    }
+    const w=document.createTreeWalker(n,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT);let c;
+    while((c=w.nextNode())){if(c.nodeType===3)_trNode(c);else{for(const a of ['placeholder','title']){if(c.hasAttribute(a)&&!c.closest(_SKIP)){const cur=c.getAttribute(a),out=_trEn(cur);if(out!==cur){if(!_trAttrs.has(c))_trAttrs.set(c,{});const o=_trAttrs.get(c);if(o[a]===undefined)o[a]=cur;c.setAttribute(a,out);}}}}}
+  }
+}
+let _trObs=null;
+function _trStart(){
+  if(_trObs)return;
+  _trNode(document.body);
+  _trObs=new MutationObserver(ms=>{for(const m of ms){if(m.type==='characterData')_trNode(m.target);else m.addedNodes.forEach(_trNode);}});
+  _trObs.observe(document.body,{childList:true,subtree:true,characterData:true});
+}
+function _trStop(){
+  if(_trObs){_trObs.disconnect();_trObs=null;}
+  _trNodes.forEach((orig,n)=>{if(n.isConnected)n.nodeValue=orig;});_trNodes.clear();
+  _trAttrs.forEach((o,el)=>{if(el.isConnected)for(const a in o)el.setAttribute(a,o[a]);});_trAttrs.clear();
+}
+const LANG_HINT={fr:'Tout est en français, la voix aussi.',en:'Everything is in English, the voice too.',wo:'Les textes restent en français, la voix de l\'assistant parle wolof.'};
+window.setAppLang=(l,persist)=>{
+  if(!['fr','en','wo'].includes(l))l='fr';
+  S.lang=l;S.aiLang=l;
+  try{localStorage.setItem('tp_lang',l);}catch(e){}
+  document.documentElement.lang=l==='en'?'en':'fr';
+  _trStop();
+  if(l==='en')_trStart();
+  document.querySelectorAll('.app-lang').forEach(b=>{const on=b.dataset.l===l;b.style.background=on?'var(--g)':'#ffffff0d';b.style.color=on?'#fff':'#ccc';b.style.borderColor=on?'var(--g)':'#ffffff22';});
+  document.querySelectorAll('.app-lang-hint').forEach(h=>h.textContent=LANG_HINT[l]);
+  try{if(typeof aiInit==='function'&&document.getElementById('aiBubble')&&document.getElementById('aiBubble').textContent)aiInit();}catch(e){}
+  if(persist&&S.uid&&S.role==='passenger'){try{updateDoc(doc(db,'users',S.uid),{lang:l});if(S.profile)S.profile.lang=l;}catch(e){}}
+};
+window.setRegLang=(l)=>{S.regLang=l;setAppLang(l,false);};
+window.setProfileLang=(l)=>setAppLang(l,true);
+try{const _sl=localStorage.getItem('tp_lang');if(_sl&&['fr','en','wo'].includes(_sl))setAppLang(_sl,false);}catch(e){}
+
 window.setRole=async(r)=>{
   S.authRole=r;
   const colors={passenger:'var(--g)',receiver:'var(--orange)',owner:'#7c3aed',directeur:'#0ea5e9'};
@@ -1482,6 +1621,7 @@ window.setRole=async(r)=>{
   const bar=document.getElementById('authRoleTabs');if(bar)bar.style.display=tabs.length>1?'flex':'none';
   const ttl=document.getElementById('authTitle');if(ttl)ttl.textContent=(S.isReg?'Inscription':'Connexion')+(tabs.length===1?' · '+(ROLE_LABEL[r]||''):'');
   ['fieldsReceiver','fieldsOwner','fieldsDirecteur','fieldsChauffeur'].forEach(id=>document.getElementById(id).style.display='none');
+  {const fl=document.getElementById('fieldLang');if(fl){fl.style.display=(S.isReg&&r==='passenger')?'block':'none';if(S.isReg&&r==='passenger'){if(!S.regLang)S.regLang=S.lang||'fr';setAppLang(S.regLang,false);}}}
   if(S.isReg){if(r==='receiver'){document.getElementById('fieldsReceiver').style.display='block';}else if(r==='owner'){document.getElementById('fieldsOwner').style.display='block';loadDirecteurList();}else if(r==='directeur')document.getElementById('fieldsDirecteur').style.display='block';}
 };
 async function loadDirecteurList(){
@@ -1622,7 +1762,7 @@ window.doAuth=async()=>{
       try{
       if(S.authRole==='passenger'){
         const walletId='TP-'+uid.slice(0,6).toUpperCase();
-        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'passenger',status:'approved',balance:0,createdAt:serverTimestamp()});
+        await setDoc(doc(db,'users',uid),{walletId,name,email,phone,role:'passenger',status:'approved',balance:0,lang:S.regLang||S.lang||'fr',createdAt:serverTimestamp()});
         await setDoc(doc(db,'wallets',walletId),{uid,role:'passenger'});
       }else if(S.authRole==='receiver'){
         const address=document.getElementById('authAddress')?.value.trim()||'';
@@ -1820,6 +1960,7 @@ function refreshPassWalletQR(){
 }
 function loginUI(){
   const p=S.profile;detachListeners();
+  if(p&&p.role==='passenger'&&p.lang)setAppLang(p.lang,false);
   {const mb=document.getElementById('pendingMoreBtn');if(mb)mb.style.display=(p.role==='receiver'&&p.status==='pending')?'inline-block':'none';}
   if(p.status==='pending'){
     const icons={owner:'🚌',directeur:'🏢',receiver:'🎫',chauffeur:'👨‍✈️'};
@@ -4190,8 +4331,8 @@ function updateBalanceUI(){document.getElementById('passBalance').textContent=fm
 
 // ══ ALERTE « PRESQUE ARRIVÉ » : une voix prévient le passager quand il approche de sa destination ══
 // La destination du ticket est un nom (ex : Kounoune) : on la convertit en coordonnées (OpenStreetMap), puis on suit le GPS du passager.
-const ARR={NEAR_KM:0.7,MAXAGE:4*3600*1000,CENTER:[14.69,-17.45],MAXDIST:90};
-let _arr={sn:null,id:null,dest:null};
+const ARR={NEAR_KM:0.7,AT_KM:0.15,MAXAGE:4*3600*1000,CENTER:[14.69,-17.45],MAXDIST:90};
+let _arr={sn:null,id:null,dest:null,stage:0};
 function arriveNear(lat,lng,dest){return !!dest&&_haversineKm(lat,lng,dest.lat,dest.lng)<=ARR.NEAR_KM;}
 // ── Arrêts marqués par le receveur (coordonnées exactes), utilisés avant OpenStreetMap ──
 async function recvStopLL(busUid,name){
@@ -4264,16 +4405,25 @@ async function arriveGeocode(name){
   return null;
 }
 function arriveFire(t){
-  try{localStorage.setItem('tatapay_arrived_'+t.sn,'1');}catch(e){}
+  try{localStorage.setItem('tatapay_near_'+t.sn,'1');}catch(e){}
   const lang=S.aiLang||'wo',txt=(VC_TXT[lang]&&VC_TXT[lang].near)||VC_TXT.fr.near;
   try{if(navigator.vibrate)navigator.vibrate([300,150,300,150,600]);}catch(e){}
   try{playDescendreSound();}catch(e){}
   try{notify('📍',lang==='wo'?'Jege nanu !':(lang==='en'?'Almost there':'Presque arrivé'),txt);}catch(e){}
   setTimeout(()=>{try{aiSpeak(txt,'near');}catch(e){}},900);
 }
+// Arrivée à destination : annonce vocale en wolof (vocal enregistré par l'admin), français ou anglais
+function arriveFinal(t){
+  try{localStorage.setItem('tatapay_arrived_'+t.sn,'1');}catch(e){}
+  const lang=S.aiLang||'wo',txt=(VC_TXT[lang]&&VC_TXT[lang].arrived)||VC_TXT.fr.arrived;
+  try{if(navigator.vibrate)navigator.vibrate([600,200,600,200,900]);}catch(e){}
+  try{playDescendreSound();}catch(e){}
+  try{notify('🏁',lang==='wo'?'Agsi nga !':(lang==='en'?'You have arrived':'Vous êtes arrivé'),txt);}catch(e){}
+  setTimeout(()=>{try{aiSpeak(txt,'arrived');}catch(e){}},900);
+}
 function arriveWatchStop(){
   try{if(_arr.id!=null&&navigator.geolocation)navigator.geolocation.clearWatch(_arr.id);}catch(e){}
-  _arr={sn:null,id:null,dest:null};
+  _arr={sn:null,id:null,dest:null,stage:0};
 }
 async function arriveWatchStart(t){
   try{
@@ -4286,10 +4436,13 @@ async function arriveWatchStart(t){
     if(_arr.sn!==t.sn)return;
     if(!dest){console.warn('[arrivee] destination introuvable :',t.to);return;}
     _arr.dest=dest;
+    try{if(localStorage.getItem('tatapay_near_'+t.sn))_arr.stage=1;}catch(e){}
     _arr.id=navigator.geolocation.watchPosition(pos=>{
       if(_arr.sn!==t.sn)return;
       if(pos.coords.accuracy>200)return;
-      if(arriveNear(pos.coords.latitude,pos.coords.longitude,_arr.dest)){arriveWatchStop();arriveFire(t);}
+      const dk=_haversineKm(pos.coords.latitude,pos.coords.longitude,_arr.dest.lat,_arr.dest.lng);
+      if(dk<=ARR.AT_KM){arriveWatchStop();arriveFinal(t);return;}
+      if(_arr.stage<1&&dk<=ARR.NEAR_KM){_arr.stage=1;arriveFire(t);}
     },()=>{},{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
   }catch(e){console.warn('[arrivee]',e);}
 }
@@ -4554,14 +4707,14 @@ document.addEventListener('pointerdown',()=>{if(S.aiPendingSpeak&&document.getEl
 })();
 
 /* ═══════════════ ADMIN : VOCAUX DE L'ASSISTANT ═══════════════ */
-const VC_KEYS=['ask','go','empty','found','none','nolist','mic','routes','similar','noroute','pick','near'];
+const VC_KEYS=['ask','go','empty','found','none','nolist','mic','routes','similar','noroute','pick','near','arrived'];
 // Tant qu'un vocal n'est pas enregistré pour une nouvelle phrase, on rejoue celui de la phrase la plus proche
 const VC_FALLBACK={routes:'found',similar:'found',noroute:'none',pick:'go'};
-const VC_LABEL={near:'📍 Presque arrivé (à ~700 m de la destination)',ask:'👋 Accueil (à l\'entrée dans l\'app)',go:'📷 Après la réponse (ouvre le scanner)',empty:'🤐 Le passager n\'a rien dit',found:'✅ Destination trouvée dans le bus',none:'❌ Destination absente de ce bus',nolist:'⚠️ Aucun trajet inscrit par le receveur',mic:'🎤 Micro : pas compris',routes:'📋 Trajets trouvés : « choisissez le vôtre »',similar:'🔎 Pas exact, voici des destinations similaires',noroute:'🚫 Aucun trajet trouvé (le scanner s\'ouvre ensuite)',pick:'👆 Trajet choisi : « scannez le QR du bus »'};
+const VC_LABEL={arrived:'🏁 Arrivé à destination (à ~150 m de l\'arrêt)',near:'📍 Presque arrivé (à ~700 m de la destination)',ask:'👋 Accueil (à l\'entrée dans l\'app)',go:'📷 Après la réponse (ouvre le scanner)',empty:'🤐 Le passager n\'a rien dit',found:'✅ Destination trouvée dans le bus',none:'❌ Destination absente de ce bus',nolist:'⚠️ Aucun trajet inscrit par le receveur',mic:'🎤 Micro : pas compris',routes:'📋 Trajets trouvés : « choisissez le vôtre »',similar:'🔎 Pas exact, voici des destinations similaires',noroute:'🚫 Aucun trajet trouvé (le scanner s\'ouvre ensuite)',pick:'👆 Trajet choisi : « scannez le QR du bus »'};
 const VC_TXT={
-  wo:{near:'Jege nanu ! Waajal ngir wàcc.',routes:'Baax na ! Gis naa trajet yi. Tànnal bi la neex.',similar:'Gisuma ko bu leer, waaye gis naa yu mel ni ko. Tànnal bi la neex.',noroute:'Gisuma trajet ngir destination bi. Scanil bus bi.',pick:'Baax na ! Scanil QR bu bus bi.',found:'Baax na ! Destination bi nekk na ci bus bii. Duggal ko te fey.',none:'Gisuma ko ci bus bii. Laajal receveur bi. Gis nga trajet yi nekk ci bus bi ci suuf.'},
-  fr:{near:'Vous êtes presque arrivé ! Préparez-vous à descendre.',routes:'J\'ai trouvé des trajets pour cette destination. Choisissez le vôtre.',similar:'Je n\'ai pas trouvé exactement, mais voici des destinations similaires. Choisissez la bonne.',noroute:'Aucun trajet trouvé pour cette destination. Scannez directement le bus.',pick:'Parfait ! Scannez maintenant le QR de ce bus.',found:'C\'est bon ! Cette destination est desservie par ce bus. Validez et payez.',none:'Cette destination n\'est pas inscrite dans ce bus. Demandez au receveur. Voici les trajets disponibles dans ce bus, juste en dessous.'},
-  en:{near:'You are almost there! Get ready to get off.',routes:'I found routes for this destination. Please choose yours.',similar:'I did not find an exact match, but here are similar destinations. Please choose the right one.',noroute:'No route found for this destination. Please scan the bus directly.',pick:'Great! Now scan this bus QR code.',found:'Good! This destination is served by this bus. Confirm and pay.',none:'This destination is not registered on this bus. Please ask the conductor. Here are the routes available on this bus, just below.'}
+  wo:{arrived:'Agsi nga ! Wàccal léegi.',near:'Jege nanu ! Waajal ngir wàcc.',routes:'Baax na ! Gis naa trajet yi. Tànnal bi la neex.',similar:'Gisuma ko bu leer, waaye gis naa yu mel ni ko. Tànnal bi la neex.',noroute:'Gisuma trajet ngir destination bi. Scanil bus bi.',pick:'Baax na ! Scanil QR bu bus bi.',found:'Baax na ! Destination bi nekk na ci bus bii. Duggal ko te fey.',none:'Gisuma ko ci bus bii. Laajal receveur bi. Gis nga trajet yi nekk ci bus bi ci suuf.'},
+  fr:{arrived:'Vous êtes arrivé ! Descendez maintenant.',near:'Vous êtes presque arrivé ! Préparez-vous à descendre.',routes:'J\'ai trouvé des trajets pour cette destination. Choisissez le vôtre.',similar:'Je n\'ai pas trouvé exactement, mais voici des destinations similaires. Choisissez la bonne.',noroute:'Aucun trajet trouvé pour cette destination. Scannez directement le bus.',pick:'Parfait ! Scannez maintenant le QR de ce bus.',found:'C\'est bon ! Cette destination est desservie par ce bus. Validez et payez.',none:'Cette destination n\'est pas inscrite dans ce bus. Demandez au receveur. Voici les trajets disponibles dans ce bus, juste en dessous.'},
+  en:{arrived:'You have arrived! Please get off now.',near:'You are almost there! Get ready to get off.',routes:'I found routes for this destination. Please choose yours.',similar:'I did not find an exact match, but here are similar destinations. Please choose the right one.',noroute:'No route found for this destination. Please scan the bus directly.',pick:'Great! Now scan this bus QR code.',found:'Good! This destination is served by this bus. Confirm and pay.',none:'This destination is not registered on this bus. Please ask the conductor. Here are the routes available on this bus, just below.'}
 };
 const VC_LANG={wo:'Wolof',fr:'Français',en:'English'};
 let vcSaved={},vcPending={},vcRec=null,vcCur='wo';
@@ -5117,7 +5270,21 @@ function clearCachedActiveTicket(){try{localStorage.removeItem(_tkActiveKey());}
 function renderPassTicketsList(tickets,offline){const cont=document.getElementById('passTicketsContainer');if(!tickets.length){cont.innerHTML='<div style="text-align:center;padding:48px 20px;"><div style="font-size:56px;opacity:.4;margin-bottom:16px;">🎫</div><div style="color:#555;font-weight:800;">Aucun ticket</div><button class="btn btn-purple" style="margin-top:16px;" onclick="openTicketFlow()">🎫 Acheter un ticket</button></div>';return;}const banner=offline?'<div style="background:#FF6B0015;border:1px solid #FF6B0044;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FFB97A;">📴 Mode hors-ligne · tickets enregistrés localement</div>':'';cont.innerHTML=banner+tickets.map(t=>`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:12px;line-height:1.9;">GIE:${_escH(t.gie)} = ${_escH(t.vehicle)} = Ligne:${_escH(t.ligne)}<br>Trajet: ${_escH(t.from)}-->${_escH(t.to)}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${_escH(t.zone)}<br>✅ Validé${offline?' · 📴 hors-ligne':''}</div></div></div>`).join('');}
 
 // ══ ITINÉRAIRE DU TRAJET : le chemin réellement suivi par le bus depuis que le passager a payé son ticket ══
-let tripMap=null,tripLayer=null,tripTimer=null;
+let tripMap=null,tripLayer=null,tripTimer=null,tripMe=null,tripWatch=null,tripFitted=false;
+// Position en direct du téléphone (le passager est dans le bus) : le point orange avance avec lui, sans attendre la mise à jour
+function _tripGpFresh(){const g=window._tripPos;return !!(g&&Date.now()-g.t<60000);}
+function _tripMoveMe(follow){
+  if(!tripMap||!_tripGpFresh())return;
+  const g=window._tripPos,ll=[g.lat,g.lng];
+  if(!tripMe){tripMe=L.circleMarker(ll,{radius:9,color:'#fff',weight:3,fillColor:'#f59e0b',fillOpacity:1}).bindTooltip('🚌 Vous êtes ici (dans le bus)',{permanent:true,direction:'top'}).addTo(tripMap);}
+  else tripMe.setLatLng(ll);
+  if(follow&&tripFitted&&!tripMap.getBounds().pad(-0.15).contains(ll))tripMap.panTo(ll);
+}
+function _tripStartWatch(){
+  if(tripWatch!=null||!navigator.geolocation)return;
+  tripWatch=navigator.geolocation.watchPosition(pos=>{window._tripPos={lat:pos.coords.latitude,lng:pos.coords.longitude,t:Date.now()};_tripMoveMe(true);},()=>{},{enableHighAccuracy:true,maximumAge:2000,timeout:20000});
+}
+function _tripStopWatch(){if(tripWatch!=null){try{navigator.geolocation.clearWatch(tripWatch);}catch(e){}tripWatch=null;}if(tripMe&&tripMap){try{tripMap.removeLayer(tripMe);}catch(e){}}tripMe=null;tripFitted=false;window._tripPos=null;}
 function _tkStart(t){
   try{
     if(t.ts&&t.ts.seconds)return t.ts.seconds*1000;if(typeof t.ts==='number')return t.ts;
@@ -5204,6 +5371,7 @@ async function tripLoad(){
     if(!live&&!H){info.innerHTML='⏳ Le trajet du bus est en cours d’enregistrement. L’itinéraire apparaîtra ici dans quelques minutes (mise à jour automatique).'+(()=>{const g=window._tripDbg||{};return '<br><span style="color:#888;font-size:11px;">Détail : véhicule '+_escH(String(g.veh||t.vehicle||'?'))+' · positions du jour : '+all.length+' (après le ticket : '+r.pts.length+') · destination trouvée : '+(g.dest?'oui':'non')+' · point de montée : '+(g.org?'oui':'non')+' · trajets enregistrés : '+(g.docs||0)+'</span>';})();return;}
     const last=live?r.pts[r.pts.length-1]:null;
     let cur=null;if(live)cur={lat:last.a,lng:last.o};else if(H&&H.cur)cur=H.cur;
+    const gpOk=_tripGpFresh();if(gpOk)cur={lat:window._tripPos.lat,lng:window._tripPos.lng};
     let etaHtml='',destLL=null;
     if(!(live&&r.ended)){
       try{
@@ -5246,21 +5414,24 @@ async function tripLoad(){
     if(H){
       const hl=H.pts.map(x=>[x.a,x.o]);bounds.push(...hl);
       layers.push(L.polyline(hl,{color:'#0ea5e9',weight:6,opacity:.8,dashArray:'10 8'}));
-      layers.push(L.circleMarker(hl[hl.length-1],{radius:9,color:'#fff',weight:3,fillColor:'#DF0024',fillOpacity:1}).bindTooltip('🏁 Arrivée : '+t.to,{permanent:true,direction:'top'}));
+      const _ap=(H.dest&&Number.isFinite(H.dest.lat)&&Number.isFinite(H.dest.lng))?[H.dest.lat,H.dest.lng]:hl[hl.length-1];bounds.push(_ap);
+      layers.push(L.circleMarker(_ap,{radius:9,color:'#fff',weight:3,fillColor:'#DF0024',fillOpacity:1}).bindTooltip('🏁 Arrivée : '+t.to,{permanent:true,direction:'top'}));
       if(!live)layers.push(L.circleMarker(hl[0],{radius:9,color:'#fff',weight:3,fillColor:'#16a34a',fillOpacity:1}).bindTooltip('🟢 Votre montée : '+t.from,{permanent:true,direction:'right'}));
     }
     if(live){
       const ll=r.pts.map(x=>[x.a,x.o]);bounds.push(...ll);
       layers.push(L.polyline(ll,{color:'#7c3aed',weight:6,opacity:.9}));
       layers.push(L.circleMarker(ll[0],{radius:9,color:'#fff',weight:3,fillColor:'#16a34a',fillOpacity:1}).bindTooltip('🟢 Votre montée : '+t.from,{permanent:true,direction:'right'}));
-      layers.push(L.circleMarker(ll[ll.length-1],{radius:9,color:'#fff',weight:3,fillColor:r.ended?'#DF0024':'#f59e0b',fillOpacity:1}).bindTooltip(r.ended?'🏁 Fin du trajet':'🚌 Vous êtes ici (dans le bus)',{permanent:true,direction:'top'}));
-    }else if(cur){
+      if(r.ended||!gpOk)layers.push(L.circleMarker(ll[ll.length-1],{radius:9,color:'#fff',weight:3,fillColor:r.ended?'#DF0024':'#f59e0b',fillOpacity:1}).bindTooltip(r.ended?'🏁 Fin du trajet':'🚌 Vous êtes ici (dans le bus)',{permanent:true,direction:'top'}));
+    }else if(cur&&!gpOk){
       bounds.push([cur.lat,cur.lng]);
       layers.push(L.circleMarker([cur.lat,cur.lng],{radius:9,color:'#fff',weight:3,fillColor:'#f59e0b',fillOpacity:1}).bindTooltip('🚌 Vous êtes ici (dans le bus)',{permanent:false}));
     }
     if(live&&!H&&destLL){bounds.push([destLL.lat,destLL.lng]);layers.push(L.circleMarker([destLL.lat,destLL.lng],{radius:9,color:'#fff',weight:3,fillColor:'#DF0024',fillOpacity:1}).bindTooltip('🏁 Arrivée : '+t.to,{permanent:true,direction:'top'}));}
     tripLayer=L.layerGroup(layers).addTo(tripMap);
-    if(bounds.length)tripMap.fitBounds(bounds,{padding:[30,30],maxZoom:16});
+    if(gpOk&&!(live&&r.ended)){bounds.push([window._tripPos.lat,window._tripPos.lng]);_tripMoveMe(false);}
+    if(bounds.length&&!tripFitted){tripMap.fitBounds(bounds,{padding:[30,30],maxZoom:16});tripFitted=true;}
+    _tripMoveMe(true);
   }catch(e){
     console.warn('[trip]',e);
     info.textContent=(e&&e.code==='permission-denied')?'Itinéraire indisponible (accès aux trajets non autorisé).':'Itinéraire indisponible pour le moment. Réessayez dans un instant.';
@@ -5269,10 +5440,11 @@ async function tripLoad(){
 window.openTripRoute=()=>{
   const m=document.getElementById('modalTripRoute');if(!m||!window._tripTicket)return;
   m.style.display='flex';document.getElementById('tripInfo').textContent='Chargement…';
+  tripFitted=false;_tripStartWatch();
   setTimeout(()=>{tripLoad();},150);
-  clearInterval(tripTimer);tripTimer=setInterval(tripLoad,20000);
+  clearInterval(tripTimer);tripTimer=setInterval(tripLoad,10000);
 };
-window.closeTripRoute=()=>{clearInterval(tripTimer);tripTimer=null;const m=document.getElementById('modalTripRoute');if(m)m.style.display='none';};
+window.closeTripRoute=()=>{clearInterval(tripTimer);tripTimer=null;_tripStopWatch();const m=document.getElementById('modalTripRoute');if(m)m.style.display='none';};
 async function loadPassTickets(){
   if(S.role!=='passenger')return;
   // Affichage immédiat depuis le cache (fonctionne même hors-ligne)
