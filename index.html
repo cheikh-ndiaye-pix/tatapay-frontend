@@ -529,10 +529,6 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
           <div style="font-size:10px;color:#ff8888;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">🚌 Ticket en cours</div>
           <div style="font-weight:900;font-size:15px;" id="activeTicketLabel">—</div>
           <div style="color:#ff8888;font-size:12px;margin-top:2px;">Appuyez pour voir votre ticket</div>
-          <div style="display:flex;gap:8px;margin-top:10px;">
-            <button type="button" class="btn btn-secondary" style="flex:1;font-size:12px;padding:8px;" onclick="event.stopPropagation();voiceTest('near')">🔊 Test : presque arrivé</button>
-            <button type="button" class="btn btn-secondary" style="flex:1;font-size:12px;padding:8px;" onclick="event.stopPropagation();voiceTest('arrived')">🔊 Test : arrivé</button>
-          </div>
         </div>
         <div style="font-weight:800;font-size:15px;margin-bottom:12px;">Dernières transactions</div>
         <div id="passHomeTx"></div>
@@ -4005,7 +4001,7 @@ setOnlineIndicator(navigator.onLine);
 window.addEventListener('online',()=>{setOnlineIndicator(true);notify('🟢','En ligne','Synchronisation des données…');if(_pendingAuthUser){const u=_pendingAuthUser;attemptSessionRestore(u);}});
 window.addEventListener('offline',()=>{setOnlineIndicator(false);notify('🔴','Hors-ligne','Les paiements seront synchronisés au retour du réseau.');});
 
-function playChauffeurAlarm(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const seq=[[0,1200,.22],[.28,900,.22],[.56,1200,.22],[.84,900,.22],[1.12,1500,.35]];seq.forEach(([s,f,d])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;o.type='square';g.gain.setValueAtTime(0,ctx.currentTime+s);g.gain.linearRampToValueAtTime(.6,ctx.currentTime+s+.02);g.gain.linearRampToValueAtTime(0,ctx.currentTime+s+d);o.start(ctx.currentTime+s);o.stop(ctx.currentTime+s+d+.05);});if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);}catch(e){}}
+function playChauffeurAlarm(){try{const ctx=_getCtx();const seq=[[0,1200,.22],[.28,900,.22],[.56,1200,.22],[.84,900,.22],[1.12,1500,.35]];seq.forEach(([s,f,d])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;o.type='square';g.gain.setValueAtTime(0,ctx.currentTime+s);g.gain.linearRampToValueAtTime(.6,ctx.currentTime+s+.02);g.gain.linearRampToValueAtTime(0,ctx.currentTime+s+d);o.start(ctx.currentTime+s);o.stop(ctx.currentTime+s+d+.05);});if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);}catch(e){}}
 function showChToast(type,data){
   const stack=document.getElementById('chToastStack');if(!stack)return;
   const div=document.createElement('div');div.className='ch-toast';
@@ -4337,7 +4333,7 @@ function updateBalanceUI(){document.getElementById('passBalance').textContent=fm
 
 // ══ ALERTE « PRESQUE ARRIVÉ » : une voix prévient le passager quand il approche de sa destination ══
 // La destination du ticket est un nom (ex : Kounoune) : on la convertit en coordonnées (OpenStreetMap), puis on suit le GPS du passager.
-const ARR={NEAR_KM:0.03,AT_KM:0.01,MAXAGE:4*3600*1000,CENTER:[14.69,-17.45],MAXDIST:90};
+const ARR={NEAR_KM:0.05,AT_KM:0.01,MAXAGE:4*3600*1000,CENTER:[14.69,-17.45],MAXDIST:90};
 let _arr={sn:null,id:null,dest:null,stage:0};
 function arriveNear(lat,lng,dest){return !!dest&&_haversineKm(lat,lng,dest.lat,dest.lng)<=ARR.NEAR_KM;}
 // ── Arrêts marqués par le receveur (coordonnées exactes), utilisés avant OpenStreetMap ──
@@ -4410,17 +4406,6 @@ async function arriveGeocode(name){
   }catch(e){console.warn('[arrivee] géocodage',e);}
   return null;
 }
-// Test de la voix : joue exactement la même annonce que « presque arrivé » / « arrivé », sans rien enregistrer (le vrai déclenchement reste intact)
-window.voiceTest=(kind)=>{
-  try{
-    const k=kind==='arrived'?'arrived':'near',lang=S.aiLang||'wo';
-    const txt=(VC_TXT[lang]&&VC_TXT[lang][k])||VC_TXT.fr[k];
-    try{if(navigator.vibrate)navigator.vibrate(k==='arrived'?[600,200,600]:[300,150,300]);}catch(e){}
-    try{playDescendreSound();}catch(e){}
-    try{notify('🔊','Test voix ('+lang+')',txt);}catch(e){}
-    setTimeout(()=>{try{aiSpeak(txt,k);}catch(e){}},700);
-  }catch(e){console.warn('[voiceTest]',e);}
-};
 function arriveFire(t){
   try{localStorage.setItem('tatapay_near_'+t.sn,'1');}catch(e){}
   const lang=S.aiLang||'wo',txt=(VC_TXT[lang]&&VC_TXT[lang].near)||VC_TXT.fr.near;
@@ -4701,7 +4686,7 @@ function aiSpeak(text,key,onEnd){
     try{speechSynthesis.cancel();}catch(e){}
     const url=key&&S.aiVoices&&(S.aiVoices[S.aiLang+'_'+key]||(VC_FALLBACK[key]&&S.aiVoices[S.aiLang+'_'+VC_FALLBACK[key]]));
     if(url){
-      const a=new Audio(url);S.aiAudio=a;
+      const a=_getPlayer();try{a.pause();}catch(_){}a.src=url;a.volume=1;S.aiAudio=a;
       a.onended=()=>{if(S.aiAudio===a&&onEnd)onEnd();};
       a.onerror=()=>aiTTS(text,onEnd,key);
       a.play().then(()=>{S.aiPendingSpeak=null;}).catch(()=>{S.aiPendingSpeak={text,key,onEnd,at:Date.now()};});
@@ -4719,10 +4704,14 @@ async function loadAiVoices(){
 }
 // Débloque le son au premier toucher (sinon le téléphone bloque la voix « presque arrivé » qui part toute seule)
 let _audioUnlocked=false;
+let _sharedCtx=null,_sharedPlayer=null;
+function _getCtx(){if(!_sharedCtx)_sharedCtx=new(window.AudioContext||window.webkitAudioContext)();try{if(_sharedCtx.state!=='running')_sharedCtx.resume();}catch(e){}return _sharedCtx;}
+function _getPlayer(){if(!_sharedPlayer){_sharedPlayer=new Audio();_sharedPlayer.setAttribute('playsinline','');}return _sharedPlayer;}
 function _unlockAudio(){
   if(_audioUnlocked)return;_audioUnlocked=true;
   try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u);}catch(e){}
-  try{const a=new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');a.volume=0;a.play().catch(()=>{});}catch(e){}
+  try{const a=_getPlayer();a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';a.volume=0;a.play().catch(()=>{});}catch(e){}
+  try{const c=_getCtx();const o=c.createOscillator(),g=c.createGain();g.gain.value=0;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.05);}catch(e){}
   try{speechSynthesis.getVoices();}catch(e){}
 }
 try{speechSynthesis.onvoiceschanged=()=>{try{speechSynthesis.getVoices();}catch(e){}};}catch(e){}
@@ -4752,7 +4741,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 const VC_KEYS=['bonroute','ask','go','empty','found','none','nolist','mic','routes','similar','noroute','pick','near','arrived'];
 // Tant qu'un vocal n'est pas enregistré pour une nouvelle phrase, on rejoue celui de la phrase la plus proche
 const VC_FALLBACK={routes:'found',similar:'found',noroute:'none',pick:'go'};
-const VC_LABEL={bonroute:'🚌 Bonne route (au début du trajet)',arrived:'🏁 Arrivé à destination (à ~10 m de l\'arrêt)',near:'📍 Presque arrivé (à ~30 m de la destination)',ask:'👋 Accueil (à l\'entrée dans l\'app)',go:'📷 Après la réponse (ouvre le scanner)',empty:'🤐 Le passager n\'a rien dit',found:'✅ Destination trouvée dans le bus',none:'❌ Destination absente de ce bus',nolist:'⚠️ Aucun trajet inscrit par le receveur',mic:'🎤 Micro : pas compris',routes:'📋 Trajets trouvés : « choisissez le vôtre »',similar:'🔎 Pas exact, voici des destinations similaires',noroute:'🚫 Aucun trajet trouvé (le scanner s\'ouvre ensuite)',pick:'👆 Trajet choisi : « scannez le QR du bus »'};
+const VC_LABEL={bonroute:'🚌 Bonne route (au début du trajet)',arrived:'🏁 Arrivé à destination (à ~10 m de l\'arrêt)',near:'📍 Presque arrivé (à ~50 m de la destination)',ask:'👋 Accueil (à l\'entrée dans l\'app)',go:'📷 Après la réponse (ouvre le scanner)',empty:'🤐 Le passager n\'a rien dit',found:'✅ Destination trouvée dans le bus',none:'❌ Destination absente de ce bus',nolist:'⚠️ Aucun trajet inscrit par le receveur',mic:'🎤 Micro : pas compris',routes:'📋 Trajets trouvés : « choisissez le vôtre »',similar:'🔎 Pas exact, voici des destinations similaires',noroute:'🚫 Aucun trajet trouvé (le scanner s\'ouvre ensuite)',pick:'👆 Trajet choisi : « scannez le QR du bus »'};
 const VC_TXT={
   wo:{bonroute:'Yàlla na nga am yoon wu baax ! Jërëjëf ci TataPay.',arrived:'Agsi nga ! Wàccal léegi.',near:'Jege nanu ! Waajal ngir wàcc.',routes:'Baax na ! Gis naa trajet yi. Tànnal bi la neex.',similar:'Gisuma ko bu leer, waaye gis naa yu mel ni ko. Tànnal bi la neex.',noroute:'Gisuma trajet ngir destination bi. Scanil bus bi.',pick:'Baax na ! Scanil QR bu bus bi.',found:'Baax na ! Destination bi nekk na ci bus bii. Duggal ko te fey.',none:'Gisuma ko ci bus bii. Laajal receveur bi. Gis nga trajet yi nekk ci bus bi ci suuf.'},
   fr:{bonroute:'Bonne route ! Merci de voyager avec nous.',arrived:'Vous êtes arrivé ! Descendez maintenant.',near:'Vous êtes presque arrivé ! Préparez-vous à descendre.',routes:'J\'ai trouvé des trajets pour cette destination. Choisissez le vôtre.',similar:'Je n\'ai pas trouvé exactement, mais voici des destinations similaires. Choisissez la bonne.',noroute:'Aucun trajet trouvé pour cette destination. Scannez directement le bus.',pick:'Parfait ! Scannez maintenant le QR de ce bus.',found:'C\'est bon ! Cette destination est desservie par ce bus. Validez et payez.',none:'Cette destination n\'est pas inscrite dans ce bus. Demandez au receveur. Voici les trajets disponibles dans ce bus, juste en dessous.'},
@@ -5259,7 +5248,7 @@ window.confirmScan=async()=>{
 window.rejectScan=async()=>{if(!currentScanReq)return;await deleteDoc(doc(db,'pending',currentScanReq.id));document.getElementById('scanPanelEl')?.remove();currentScanReq=null;notify('❌','Rejeté','Demande annulée.');};
 function attachPendingListener(){const q=query(collection(db,'pending'),where('busUid','==',S.uid));unsubPending=onSnapshot(q,snap=>{renderPendingList(snap.docs.map(d=>({id:d.id,...d.data()})));});}
 function attachNotifListener(){const q=query(collection(db,'notifications'),where('toUid','==',S.uid),where('read','==',false));unsubNotif=onSnapshot(q,snap=>{const n=snap.docs.length;const badge=document.getElementById('bellBadge');if(badge){badge.textContent=n;badge.className='bell-badge'+(n>0?' show':'');}snap.docs.forEach(d=>{const data=d.data();showRecvToast(data.type,data);updateDoc(doc(db,'notifications',d.id),{read:true});});});}
-function playDescendreSound(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();[[0,880,.18],[.2,1100,.18],[.4,1320,.28]].forEach(([s,f,d])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(0,ctx.currentTime+s);g.gain.linearRampToValueAtTime(.5,ctx.currentTime+s+.02);g.gain.linearRampToValueAtTime(0,ctx.currentTime+s+d);o.start(ctx.currentTime+s);o.stop(ctx.currentTime+s+d+.05);});}catch(e){}}
+function playDescendreSound(){try{const ctx=_getCtx();[[0,880,.18],[.2,1100,.18],[.4,1320,.28]].forEach(([s,f,d])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(0,ctx.currentTime+s);g.gain.linearRampToValueAtTime(.5,ctx.currentTime+s+.02);g.gain.linearRampToValueAtTime(0,ctx.currentTime+s+d);o.start(ctx.currentTime+s);o.stop(ctx.currentTime+s+d+.05);});}catch(e){}}
 function showRecvToast(type,data){const stack=document.getElementById('recvToastStack');const div=document.createElement('div');div.className='recv-toast';let icon='🔔',title='Notification',body='',color='var(--orange)';if(type==='descendre'){icon='🛑';title='Passager veut descendre !';body=`${data.passenger||'—'} · ${data.from||''}→${data.to||''}`;color='#DF0024';playDescendreSound();}else if(type==='ticket_request'){icon='🎫';title='Nouvelle demande ticket';body=`${data.passenger||'—'} · ${data.price||0} FCFA`;}div.innerHTML=`<button onclick="this.closest('.recv-toast').remove()" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:#888;font-size:14px;">✕</button><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="font-size:18px;">${icon}</span><div style="font-weight:900;font-size:13px;color:${color};">${title}</div></div><div style="font-size:12px;color:#ccc;line-height:1.5;font-family:'JetBrains Mono',monospace;">${body}</div>`;stack.appendChild(div);const bell=document.getElementById('bellIcon');if(bell){bell.classList.remove('bell-anim');void bell.offsetWidth;bell.classList.add('bell-anim');}setTimeout(()=>{div.classList.add('out');setTimeout(()=>div.remove(),300);},type==='descendre'?8000:5000);}
 function renderPendingList(items){const cont=document.getElementById('recvPending');if(!items.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:16px 0;font-size:13px;">Aucune demande en attente.</div>';return;}cont.innerHTML=items.map(req=>`<div style="background:#FFD10010;border:1px solid #FFD10044;border-radius:18px;padding:14px 16px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><div style="font-size:28px;">⏳</div><div style="flex:1;"><div style="font-weight:900;font-size:14px;">${_escH(req.passengerName||'Passager')}</div><div style="color:#888;font-size:11px;font-family:'JetBrains Mono',monospace;">${_escH(req.from)}→${_escH(req.to)} · S${req.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${req.price} F</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><button onclick="recvRejectTicket('${req.id}')" style="background:linear-gradient(135deg,#DF0024,#B71C1C);border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✗ Annuler</button><button onclick="recvConfirmTicket('${req.id}','${req.passengerUid}','${req.passengerId}','${_escH(req.passengerName)}','${_escH(req.from)}','${_escH(req.to)}','${req.section}',${req.price},'${req.busUid||S.uid}')" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✅ Confirmer</button></div></div>`).join('');}
 window.recvConfirmTicket=async(pendingId,paxUid,passengerId,passengerName,from,to,section,price,busUid)=>{
