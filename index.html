@@ -4238,6 +4238,7 @@ window.recvMarkStop=async()=>{
     if(!names.length){notify('ℹ️','Arrêt','Ajoutez d\'abord vos trajets (onglet Trajets).');return;}
     const name=await recvPickStop(names);
     if(!name)return;
+    if(!confirm('Marquer « '+name+' » à cet endroit ?\n(Position actuelle ±'+Math.round(accuracy)+' m)'))return;
     const k=_pl(name),la=+lat.toFixed(6),lo=+lng.toFixed(6),batch=writeBatch(db);let n=0;
     sn.docs.forEach(d=>{
       const x=d.data(),up={};
