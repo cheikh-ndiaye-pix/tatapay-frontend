@@ -271,11 +271,6 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
   <div>
     <div id="aiPanel" style="position:absolute;bottom:66px;right:0;display:none;width:min(330px,calc(100vw - 24px));background:#0c1f12;border:1.5px solid #7c3aed88;border-radius:18px;padding:12px;box-shadow:0 8px 28px #000a;animation:fadeIn .3s ease;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-weight:900;font-size:13px;color:#c4b5fd;">🤖 Assistant TataPay</div><button onclick="aiOpen(false)" style="background:#ffffff15;border:none;border-radius:8px;padding:4px 9px;color:#aaa;cursor:pointer;font-size:12px;">✕</button></div>
-      <div style="display:flex;gap:6px;margin-bottom:8px;">
-        <button class="ai-lang" data-l="wo" onclick="aiSetLang('wo')" style="flex:1;padding:7px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">Wolof</button>
-        <button class="ai-lang" data-l="fr" onclick="aiSetLang('fr')" style="flex:1;padding:7px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">Français</button>
-        <button class="ai-lang" data-l="en" onclick="aiSetLang('en')" style="flex:1;padding:7px 4px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0d;color:#ccc;font-weight:800;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">English</button>
-      </div>
       <div id="aiBubble" style="background:#7c3aed22;border:1px solid #7c3aed55;border-radius:14px;padding:10px 12px;font-size:13.5px;line-height:1.5;color:#e2e8f0;margin-bottom:8px;"></div>
       <div style="display:flex;gap:8px;">
         <input class="input-field" id="aiDestInput" placeholder="Ex: Liberté 6, Pikine…" style="flex:1;padding:10px 12px;" onkeydown="if(event.key==='Enter')aiSubmit()"/>
@@ -324,6 +319,10 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
     <button onclick="closeTripRoute()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px 12px;color:#fff;font-weight:800;cursor:pointer;">✕</button>
   </div>
   <div id="tripInfo" style="margin:0 16px 10px;padding:10px 14px;border-radius:12px;background:#ffffff0d;color:#ddd;font-size:12px;line-height:1.6;">Chargement…</div>
+  <div style="margin:0 16px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+    <div id="tripGpsStatus" style="font-size:12px;font-weight:700;color:#fbbf24;flex:1;">🔎 Recherche du signal GPS…</div>
+    <button id="tripFollowBtn" onclick="tripToggleFollow()" style="background:#7c3aed;border:none;border-radius:10px;padding:8px 12px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;">🗺️ Vue d'ensemble</button>
+  </div>
   <div id="tripMap" style="flex:1;margin:0 16px 16px;border-radius:16px;overflow:hidden;min-height:300px;"></div>
 </div>
 
@@ -4646,6 +4645,7 @@ S.aiLang=S.aiLang||'wo';
 function aiBubble(txt){const b=document.getElementById('aiBubble');if(b)b.textContent=txt;}
 function aiInit(){
   try{
+    if(['fr','en','wo'].includes(S.lang))S.aiLang=S.lang; // langue choisie au départ, plus de choix dans l'assistant
     document.querySelectorAll('.ai-lang').forEach(b=>{const on=b.dataset.l===S.aiLang;b.style.background=on?'#7c3aed':'#ffffff0d';b.style.color=on?'#fff':'#ccc';b.style.borderColor=on?'#a78bfa':'#ffffff22';});
     aiBubble(AI_TXT[S.aiLang].ask);
     const i=document.getElementById('aiDestInput');if(i){i.placeholder=AI_TXT[S.aiLang].ph;i.value='';}
@@ -5270,21 +5270,50 @@ function clearCachedActiveTicket(){try{localStorage.removeItem(_tkActiveKey());}
 function renderPassTicketsList(tickets,offline){const cont=document.getElementById('passTicketsContainer');if(!tickets.length){cont.innerHTML='<div style="text-align:center;padding:48px 20px;"><div style="font-size:56px;opacity:.4;margin-bottom:16px;">🎫</div><div style="color:#555;font-weight:800;">Aucun ticket</div><button class="btn btn-purple" style="margin-top:16px;" onclick="openTicketFlow()">🎫 Acheter un ticket</button></div>';return;}const banner=offline?'<div style="background:#FF6B0015;border:1px solid #FF6B0044;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FFB97A;">📴 Mode hors-ligne · tickets enregistrés localement</div>':'';cont.innerHTML=banner+tickets.map(t=>`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:12px;line-height:1.9;">GIE:${_escH(t.gie)} = ${_escH(t.vehicle)} = Ligne:${_escH(t.ligne)}<br>Trajet: ${_escH(t.from)}-->${_escH(t.to)}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${_escH(t.zone)}<br>✅ Validé${offline?' · 📴 hors-ligne':''}</div></div></div>`).join('');}
 
 // ══ ITINÉRAIRE DU TRAJET : le chemin réellement suivi par le bus depuis que le passager a payé son ticket ══
-let tripMap=null,tripLayer=null,tripTimer=null,tripMe=null,tripWatch=null,tripFitted=false;
+let tripMap=null,tripLayer=null,tripTimer=null,tripMe=null,tripWatch=null,tripFitted=false,tripPoll=null,tripFollow=true,tripBounds=[];
 // Position en direct du téléphone (le passager est dans le bus) : le point orange avance avec lui, sans attendre la mise à jour
-function _tripGpFresh(){const g=window._tripPos;return !!(g&&Date.now()-g.t<60000);}
+function _tripGpFresh(){const g=window._tripPos;return !!(g&&Date.now()-g.t<180000);}
+function _tripFollowBtn(){const b=document.getElementById('tripFollowBtn');if(b)b.textContent=tripFollow?'🗺️ Vue d\'ensemble':'📍 Me suivre';}
+function _tripGpsSet(msg,ok){const e=document.getElementById('tripGpsStatus');if(e){e.textContent=msg;e.style.color=ok?'#4ade80':'#fbbf24';}}
+function _tripEnsureMap(){
+  if(tripMap)return;
+  tripMap=L.map(document.getElementById('tripMap'),{zoomControl:true,attributionControl:false});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(tripMap);
+  tripMap.setView([14.6937,-17.4441],13);
+  tripMap.on('dragstart',()=>{tripFollow=false;_tripFollowBtn();});
+}
 function _tripMoveMe(follow){
   if(!tripMap||!_tripGpFresh())return;
   const g=window._tripPos,ll=[g.lat,g.lng];
   if(!tripMe){tripMe=L.circleMarker(ll,{radius:9,color:'#fff',weight:3,fillColor:'#f59e0b',fillOpacity:1}).bindTooltip('🚌 Vous êtes ici (dans le bus)',{permanent:true,direction:'top'}).addTo(tripMap);}
   else tripMe.setLatLng(ll);
-  if(follow&&tripFitted&&!tripMap.getBounds().pad(-0.15).contains(ll))tripMap.panTo(ll);
+  if(follow&&tripFollow){const z=tripMap.getZoom();tripMap.setView(ll,(Number.isFinite(z)&&z>=14)?z:16,{animate:true});}
+}
+window.tripToggleFollow=()=>{
+  tripFollow=!tripFollow;_tripFollowBtn();
+  if(tripFollow)_tripMoveMe(true);
+  else if(tripMap&&tripBounds.length)tripMap.fitBounds(tripBounds,{padding:[30,30],maxZoom:16});
+};
+function _tripGotPos(pos){
+  window._tripPos={lat:pos.coords.latitude,lng:pos.coords.longitude,t:Date.now()};
+  const acc=Math.round(pos.coords.accuracy||0);
+  _tripGpsSet('📡 GPS actif'+(acc?' · précision ~'+acc+' m':''),true);
+  _tripMoveMe(true);
+}
+function _tripGpsErr(e){
+  const c=e&&e.code;
+  _tripGpsSet(c===1?'⚠️ Localisation refusée : autorisez la position pour ce site dans les réglages du navigateur.':c===2?'⚠️ Position indisponible : activez le GPS du téléphone.':'🔎 Recherche du signal GPS…',false);
 }
 function _tripStartWatch(){
-  if(tripWatch!=null||!navigator.geolocation)return;
-  tripWatch=navigator.geolocation.watchPosition(pos=>{window._tripPos={lat:pos.coords.latitude,lng:pos.coords.longitude,t:Date.now()};_tripMoveMe(true);},()=>{},{enableHighAccuracy:true,maximumAge:2000,timeout:20000});
+  if(!navigator.geolocation){_tripGpsSet('⚠️ GPS non disponible sur cet appareil.',false);return;}
+  if(tripWatch!=null)return;
+  _tripGpsSet('🔎 Recherche du signal GPS…',false);
+  tripWatch=navigator.geolocation.watchPosition(_tripGotPos,_tripGpsErr,{enableHighAccuracy:true,maximumAge:0,timeout:30000});
+  // Filet de sécurité : certains téléphones n'envoient rien quand la position change peu, on la redemande toutes les 5 s
+  clearInterval(tripPoll);
+  tripPoll=setInterval(()=>{try{navigator.geolocation.getCurrentPosition(_tripGotPos,()=>{},{enableHighAccuracy:true,maximumAge:0,timeout:8000});}catch(e){}},5000);
 }
-function _tripStopWatch(){if(tripWatch!=null){try{navigator.geolocation.clearWatch(tripWatch);}catch(e){}tripWatch=null;}if(tripMe&&tripMap){try{tripMap.removeLayer(tripMe);}catch(e){}}tripMe=null;tripFitted=false;window._tripPos=null;}
+function _tripStopWatch(){clearInterval(tripPoll);tripPoll=null;if(tripWatch!=null){try{navigator.geolocation.clearWatch(tripWatch);}catch(e){}tripWatch=null;}if(tripMe&&tripMap){try{tripMap.removeLayer(tripMe);}catch(e){}}tripMe=null;tripFitted=false;window._tripPos=null;}
 function _tkStart(t){
   try{
     if(t.ts&&t.ts.seconds)return t.ts.seconds*1000;if(typeof t.ts==='number')return t.ts;
@@ -5359,6 +5388,7 @@ async function tripLoad(){
   const st=_tkStart(t);
   if(!st){info.textContent='Heure du ticket introuvable.';return;}
   try{
+    _tripEnsureMap();tripMap.invalidateSize();_tripMoveMe(true);
     const days=[_dayKey(new Date(st))],nx=_dayKey(new Date(st+86400000));if(nx!==days[0]&&Date.now()>st+3600000)days.push(nx);
     let all=[];
     for(const dk of days){
@@ -5368,7 +5398,7 @@ async function tripLoad(){
     const r=tripCut(all,st);
     let H=null;try{H=await tripHistory(t,st,all);}catch(e){console.warn('[trip hist]',e);}
     const live=r.pts.length>=2;
-    if(!live&&!H){info.innerHTML='⏳ Le trajet du bus est en cours d’enregistrement. L’itinéraire apparaîtra ici dans quelques minutes (mise à jour automatique).'+(()=>{const g=window._tripDbg||{};return '<br><span style="color:#888;font-size:11px;">Détail : véhicule '+_escH(String(g.veh||t.vehicle||'?'))+' · positions du jour : '+all.length+' (après le ticket : '+r.pts.length+') · destination trouvée : '+(g.dest?'oui':'non')+' · point de montée : '+(g.org?'oui':'non')+' · trajets enregistrés : '+(g.docs||0)+'</span>';})();return;}
+    if(!live&&!H){info.innerHTML='⏳ Le trajet du bus est en cours d’enregistrement. L’itinéraire apparaîtra ici dans quelques minutes (mise à jour automatique).'+(()=>{const g=window._tripDbg||{};return '<br><span style="color:#888;font-size:11px;">Détail : véhicule '+_escH(String(g.veh||t.vehicle||'?'))+' · positions du jour : '+all.length+' (après le ticket : '+r.pts.length+') · destination trouvée : '+(g.dest?'oui':'non')+' · point de montée : '+(g.org?'oui':'non')+' · trajets enregistrés : '+(g.docs||0)+'</span>';})();_tripMoveMe(true);return;}
     const last=live?r.pts[r.pts.length-1]:null;
     let cur=null;if(live)cur={lat:last.a,lng:last.o};else if(H&&H.cur)cur=H.cur;
     const gpOk=_tripGpFresh();if(gpOk)cur={lat:window._tripPos.lat,lng:window._tripPos.lng};
@@ -5430,7 +5460,7 @@ async function tripLoad(){
     if(live&&!H&&destLL){bounds.push([destLL.lat,destLL.lng]);layers.push(L.circleMarker([destLL.lat,destLL.lng],{radius:9,color:'#fff',weight:3,fillColor:'#DF0024',fillOpacity:1}).bindTooltip('🏁 Arrivée : '+t.to,{permanent:true,direction:'top'}));}
     tripLayer=L.layerGroup(layers).addTo(tripMap);
     if(gpOk&&!(live&&r.ended)){bounds.push([window._tripPos.lat,window._tripPos.lng]);_tripMoveMe(false);}
-    if(bounds.length&&!tripFitted){tripMap.fitBounds(bounds,{padding:[30,30],maxZoom:16});tripFitted=true;}
+    tripBounds=bounds.slice();if(bounds.length&&!tripFitted&&!(tripFollow&&gpOk)){tripMap.fitBounds(bounds,{padding:[30,30],maxZoom:16});tripFitted=true;}
     _tripMoveMe(true);
   }catch(e){
     console.warn('[trip]',e);
@@ -5440,7 +5470,7 @@ async function tripLoad(){
 window.openTripRoute=()=>{
   const m=document.getElementById('modalTripRoute');if(!m||!window._tripTicket)return;
   m.style.display='flex';document.getElementById('tripInfo').textContent='Chargement…';
-  tripFitted=false;_tripStartWatch();
+  tripFitted=false;tripFollow=true;_tripFollowBtn();_tripStartWatch();
   setTimeout(()=>{tripLoad();},150);
   clearInterval(tripTimer);tripTimer=setInterval(tripLoad,10000);
 };
