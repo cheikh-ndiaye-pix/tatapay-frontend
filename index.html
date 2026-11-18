@@ -313,7 +313,7 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
     <div class="ticket-thermal" id="ticketThermalContent"></div>
     <div id="ticketHandoffZone" style="display:none;"></div>
     <button id="ticketTripBtn" class="btn btn-purple btn-full" style="display:none;margin-top:14px;" onclick="openTripRoute()">🗺️ Voir l'itinéraire du bus</button>
-    <button class="btn btn-secondary btn-full" style="margin-top:14px;" onclick="printTicket()">🖨️ Imprimer</button>
+    <button id="ticketPrintBtn" class="btn btn-secondary btn-full" style="margin-top:14px;" onclick="printTicket()">🖨️ Imprimer</button>
     <button class="btn btn-primary btn-full" style="margin-top:10px;" onclick="closeTicket()">✓ Fermer</button>
   </div>
 </div>
@@ -5468,6 +5468,7 @@ window.showTicketData=(t)=>{
   const isOffline=t.offline!==undefined?t.offline:!navigator.onLine;
   document.getElementById('ticketThermalContent').innerHTML=`<div class="t-header">🚌 TATAPAY</div><div style="font-size:13px;line-height:2;">GIE:${_escH(t.gie)} = ${_escH(t.vehicle)} = Ligne:${_escH(t.ligne)}<br>Trajet: ${_escH(t.from)}-->${_escH(t.to)}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${_escH(t.zone)}<br>${t.payMode==='especes'?'💵 Payé en espèces':'✅ Validé · '+t.passenger}${isOffline?' · 📴 hors-ligne (sync en attente)':''}</div>`;
   document.getElementById('ticketOverlay').style.display='flex';
+  const printBtn=document.getElementById('ticketPrintBtn');if(printBtn)printBtn.style.display=(S.role==='passenger')?'none':'';
   const handoff=document.getElementById('ticketHandoffZone');
   if(S.role==='receiver'&&handoff){
     // Le receveur montre ce QR au passager : il contient le ticket complet, lisible
