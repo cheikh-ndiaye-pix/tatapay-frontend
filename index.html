@@ -5249,7 +5249,15 @@ window.recvToggleGeo=()=>{
     const {latitude:lat,longitude:lng,accuracy}=pos.coords;
     st.innerHTML=`🟢 Actif · ${lat.toFixed(4)}, ${lng.toFixed(4)} <span style="color:#555;">(±${Math.round(accuracy)}m)</span>`;st.style.color='#34d399';
     try{await setDoc(doc(db,'bus_locations',S.uid),{lat,lng,accuracy,updatedAt:serverTimestamp(),vehicle:S.profile?.vehicle||'',ligne:S.profile?.ligne||''});}catch(e){console.warn('[recv geo write]',e);}busTraceAdd(lat,lng,accuracy);
-  },err=>{st.textContent='Erreur GPS: '+err.message;st.style.color='#DF0024';recvGeoWatchId=null;btn.textContent='📡 Réessayer';},{enableHighAccuracy:true,maximumAge:10000,timeout:15000});
+  },err=>{
+    // Délai dépassé : le signal tarde (surtout à l'intérieur), on garde la surveillance active et on continue d'attendre
+    if(err&&err.code===3){st.textContent='🔎 Recherche du signal GPS… (placez le téléphone près d\'une fenêtre)';st.style.color='#FF6B00';return;}
+    try{navigator.geolocation.clearWatch(recvGeoWatchId);}catch(e){}
+    recvGeoWatchId=null;try{_wlOff();}catch(e){}
+    const c=err&&err.code;
+    st.textContent=c===1?'⚠️ Localisation refusée : autorisez la position pour ce site dans les réglages du navigateur, puis réessayez.':c===2?'⚠️ Position indisponible : activez le GPS (localisation) du téléphone, puis réessayez.':'Erreur GPS: '+((err&&err.message)||'inconnue');
+    st.style.color='#DF0024';btn.textContent='📡 Réessayer';btn.style.background='linear-gradient(135deg,#0ea5e9,#0369a1)';
+  },{enableHighAccuracy:true,maximumAge:10000,timeout:30000});
   btn.textContent='🛑 Arrêter le partage GPS';btn.style.background='linear-gradient(135deg,#DF0024,#B71C1C)';
   notify('📡','GPS','Partage de position démarré. Les passagers pourront suivre votre bus.');
 };
