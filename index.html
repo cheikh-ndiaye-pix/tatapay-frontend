@@ -5202,11 +5202,12 @@ async function tripLoad(){
     if(!live&&!H){info.innerHTML='⏳ Le trajet du bus est en cours d’enregistrement. L’itinéraire apparaîtra ici dans quelques minutes (mise à jour automatique).'+(()=>{const g=window._tripDbg||{};return '<br><span style="color:#888;font-size:11px;">Détail : véhicule '+_escH(String(g.veh||t.vehicle||'?'))+' · positions du jour : '+all.length+' (après le ticket : '+r.pts.length+') · destination trouvée : '+(g.dest?'oui':'non')+' · point de montée : '+(g.org?'oui':'non')+' · trajets enregistrés : '+(g.docs||0)+'</span>';})();return;}
     const last=live?r.pts[r.pts.length-1]:null;
     let cur=null;if(live)cur={lat:last.a,lng:last.o};else if(H&&H.cur)cur=H.cur;
-    let etaHtml='';
+    let etaHtml='',destLL=null;
     if(!(live&&r.ended)){
       try{
         const dest=H?H.dest:await stopLL(t.busUid,t.to);
         if(dest){
+          destLL=dest;
           let rem=null;
           if(H){
             if(cur){
@@ -5242,18 +5243,19 @@ async function tripLoad(){
     if(H){
       const hl=H.pts.map(x=>[x.a,x.o]);bounds.push(...hl);
       layers.push(L.polyline(hl,{color:'#0ea5e9',weight:6,opacity:.8,dashArray:'10 8'}));
-      layers.push(L.circleMarker(hl[hl.length-1],{radius:9,color:'#fff',weight:3,fillColor:'#DF0024',fillOpacity:1}).bindTooltip('🏁 '+t.to,{permanent:false}));
-      if(!live)layers.push(L.circleMarker(hl[0],{radius:9,color:'#fff',weight:3,fillColor:'#16a34a',fillOpacity:1}).bindTooltip('🟢 Montée dans le bus',{permanent:false}));
+      layers.push(L.circleMarker(hl[hl.length-1],{radius:9,color:'#fff',weight:3,fillColor:'#DF0024',fillOpacity:1}).bindTooltip('🏁 Arrivée : '+t.to,{permanent:true,direction:'top'}));
+      if(!live)layers.push(L.circleMarker(hl[0],{radius:9,color:'#fff',weight:3,fillColor:'#16a34a',fillOpacity:1}).bindTooltip('🟢 Votre montée : '+t.from,{permanent:true,direction:'right'}));
     }
     if(live){
       const ll=r.pts.map(x=>[x.a,x.o]);bounds.push(...ll);
       layers.push(L.polyline(ll,{color:'#7c3aed',weight:6,opacity:.9}));
-      layers.push(L.circleMarker(ll[0],{radius:9,color:'#fff',weight:3,fillColor:'#16a34a',fillOpacity:1}).bindTooltip('🟢 Montée dans le bus',{permanent:false}));
-      layers.push(L.circleMarker(ll[ll.length-1],{radius:9,color:'#fff',weight:3,fillColor:r.ended?'#DF0024':'#f59e0b',fillOpacity:1}).bindTooltip(r.ended?'🏁 Fin du trajet':'🚌 Position actuelle du bus',{permanent:false}));
+      layers.push(L.circleMarker(ll[0],{radius:9,color:'#fff',weight:3,fillColor:'#16a34a',fillOpacity:1}).bindTooltip('🟢 Votre montée : '+t.from,{permanent:true,direction:'right'}));
+      layers.push(L.circleMarker(ll[ll.length-1],{radius:9,color:'#fff',weight:3,fillColor:r.ended?'#DF0024':'#f59e0b',fillOpacity:1}).bindTooltip(r.ended?'🏁 Fin du trajet':'🚌 Vous êtes ici (dans le bus)',{permanent:true,direction:'top'}));
     }else if(cur){
       bounds.push([cur.lat,cur.lng]);
-      layers.push(L.circleMarker([cur.lat,cur.lng],{radius:9,color:'#fff',weight:3,fillColor:'#f59e0b',fillOpacity:1}).bindTooltip('🚌 Position actuelle du bus',{permanent:false}));
+      layers.push(L.circleMarker([cur.lat,cur.lng],{radius:9,color:'#fff',weight:3,fillColor:'#f59e0b',fillOpacity:1}).bindTooltip('🚌 Vous êtes ici (dans le bus)',{permanent:false}));
     }
+    if(live&&!H&&destLL){bounds.push([destLL.lat,destLL.lng]);layers.push(L.circleMarker([destLL.lat,destLL.lng],{radius:9,color:'#fff',weight:3,fillColor:'#DF0024',fillOpacity:1}).bindTooltip('🏁 Arrivée : '+t.to,{permanent:true,direction:'top'}));}
     tripLayer=L.layerGroup(layers).addTo(tripMap);
     if(bounds.length)tripMap.fitBounds(bounds,{padding:[30,30],maxZoom:16});
   }catch(e){
