@@ -319,6 +319,7 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
     <button onclick="closeTripRoute()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px 12px;color:#fff;font-weight:800;cursor:pointer;">✕</button>
   </div>
   <div id="tripInfo" style="margin:0 16px 10px;padding:10px 14px;border-radius:12px;background:#ffffff0d;color:#ddd;font-size:12px;line-height:1.6;">Chargement…</div>
+  <div id="tripDistInfo" style="display:none;margin:0 16px 10px;padding:12px 14px;border-radius:12px;font-weight:900;font-size:15px;line-height:1.4;text-align:center;"></div>
   <div style="margin:0 16px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
     <div id="tripGpsStatus" style="font-size:12px;font-weight:700;color:#fbbf24;flex:1;">🔎 Recherche du signal GPS…</div>
     <button id="tripFollowBtn" onclick="tripToggleFollow()" style="background:#7c3aed;border:none;border-radius:10px;padding:8px 12px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;">🗺️ Vue d'ensemble</button>
@@ -5270,7 +5271,7 @@ function clearCachedActiveTicket(){try{localStorage.removeItem(_tkActiveKey());}
 function renderPassTicketsList(tickets,offline){const cont=document.getElementById('passTicketsContainer');if(!tickets.length){cont.innerHTML='<div style="text-align:center;padding:48px 20px;"><div style="font-size:56px;opacity:.4;margin-bottom:16px;">🎫</div><div style="color:#555;font-weight:800;">Aucun ticket</div><button class="btn btn-purple" style="margin-top:16px;" onclick="openTicketFlow()">🎫 Acheter un ticket</button></div>';return;}const banner=offline?'<div style="background:#FF6B0015;border:1px solid #FF6B0044;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#FFB97A;">📴 Mode hors-ligne · tickets enregistrés localement</div>':'';cont.innerHTML=banner+tickets.map(t=>`<div onclick='showTicketData(${JSON.stringify(t).replace(/'/g,"&#39;")})' style="cursor:pointer;margin-bottom:14px;"><div class="ticket-thermal"><div class="t-header">🚌 TATAPAY</div><div style="font-size:12px;line-height:1.9;">GIE:${_escH(t.gie)} = ${_escH(t.vehicle)} = Ligne:${_escH(t.ligne)}<br>Trajet: ${_escH(t.from)}-->${_escH(t.to)}<br>Section: ${t.section} == Prix: ${t.price} FCFA<br>Date: ${t.date} ${t.time||''}</div><div class="t-sn">SN: ${t.sn} == Zone:${_escH(t.zone)}<br>✅ Validé${offline?' · 📴 hors-ligne':''}</div></div></div>`).join('');}
 
 // ══ ITINÉRAIRE DU TRAJET : le chemin réellement suivi par le bus depuis que le passager a payé son ticket ══
-let tripMap=null,tripLayer=null,tripTimer=null,tripMe=null,tripWatch=null,tripFitted=false,tripPoll=null,tripFollow=true,tripBounds=[];
+let tripMap=null,tripLayer=null,tripTimer=null,tripMe=null,tripWatch=null,tripFitted=false,tripPoll=null,tripFollow=true,tripBounds=[],tripDest=null,tripDestLine=null,tripTrail=null,tripTrailPts=[],tripD0=null,tripLastFit=null,tripArrBuzz=false;
 // Position en direct du téléphone (le passager est dans le bus) : le point orange avance avec lui, sans attendre la mise à jour
 function _tripGpFresh(){const g=window._tripPos;return !!(g&&Date.now()-g.t<180000);}
 function _tripFollowBtn(){const b=document.getElementById('tripFollowBtn');if(b)b.textContent=tripFollow?'🗺️ Vue d\'ensemble':'📍 Me suivre';}
@@ -5280,14 +5281,44 @@ function _tripEnsureMap(){
   tripMap=L.map(document.getElementById('tripMap'),{zoomControl:true,attributionControl:false});
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(tripMap);
   tripMap.setView([14.6937,-17.4441],13);
+  if(!document.getElementById('tripMeCss')){const st=document.createElement('style');st.id='tripMeCss';st.textContent='.tpMe{background:none;border:none}.tpMeDot{width:22px;height:22px;border-radius:50%;background:#22c55e;border:3px solid #fff;animation:tpPulse 1.6s infinite}@keyframes tpPulse{0%{box-shadow:0 0 0 0 #22c55eaa}100%{box-shadow:0 0 0 18px #22c55e00}}';document.head.appendChild(st);}
   tripMap.on('dragstart',()=>{tripFollow=false;_tripFollowBtn();});
 }
 function _tripMoveMe(follow){
   if(!tripMap||!_tripGpFresh())return;
   const g=window._tripPos,ll=[g.lat,g.lng];
-  if(!tripMe){tripMe=L.circleMarker(ll,{radius:9,color:'#fff',weight:3,fillColor:'#f59e0b',fillOpacity:1}).bindTooltip('🚌 Vous êtes ici (dans le bus)',{permanent:true,direction:'top'}).addTo(tripMap);}
+  if(!tripMe){tripMe=L.marker(ll,{icon:L.divIcon({className:'tpMe',html:'<div class="tpMeDot"></div>',iconSize:[22,22],iconAnchor:[11,11]}),zIndexOffset:1000}).bindTooltip('📍 Vous',{permanent:true,direction:'top',offset:[0,-12]}).addTo(tripMap);}
   else tripMe.setLatLng(ll);
-  if(follow&&tripFollow){const z=tripMap.getZoom();tripMap.setView(ll,(Number.isFinite(z)&&z>=14)?z:16,{animate:true});}
+  // Trace verte du chemin déjà fait : on voit le point avancer
+  const lp=tripTrailPts[tripTrailPts.length-1];
+  if(!lp||_haversineKm(lp[0],lp[1],g.lat,g.lng)>=0.01){tripTrailPts.push(ll);if(tripTrailPts.length>600)tripTrailPts.shift();}
+  if(!tripTrail)tripTrail=L.polyline(tripTrailPts,{color:'#22c55e',weight:6,opacity:.95}).addTo(tripMap);else tripTrail.setLatLngs(tripTrailPts);
+  if(follow&&tripFollow){
+    if(tripDest&&Number.isFinite(tripDest.lat)&&Number.isFinite(tripDest.lng)){
+      // Cadre « moi + arrivée » : le point vert se rapproche du point rouge au fil du trajet
+      const moved=!tripLastFit||_haversineKm(tripLastFit.lat,tripLastFit.lng,g.lat,g.lng)>=0.02||tripLastFit.d!==tripDest.lat+','+tripDest.lng;
+      if(moved){tripMap.fitBounds([ll,[tripDest.lat,tripDest.lng]],{padding:[50,50],maxZoom:17,animate:true});tripLastFit={lat:g.lat,lng:g.lng,d:tripDest.lat+','+tripDest.lng};}
+    }else{const z=tripMap.getZoom();tripMap.setView(ll,(Number.isFinite(z)&&z>=14)?z:16,{animate:true});}
+  }
+}
+function _tripUpdateDest(){
+  try{
+    if(!tripMap||!tripDest||!_tripGpFresh())return;
+    const g=window._tripPos,km=_haversineKm(g.lat,g.lng,tripDest.lat,tripDest.lng),to=(window._tripTicket&&window._tripTicket.to)||'';
+    const pts=[[g.lat,g.lng],[tripDest.lat,tripDest.lng]];
+    if(!tripDestLine)tripDestLine=L.polyline(pts,{color:'#ef4444',weight:4,opacity:.9,dashArray:'4 8'}).addTo(tripMap);else tripDestLine.setLatLngs(pts);
+    const el=document.getElementById('tripDistInfo');if(!el)return;
+    const d=km<1?(Math.max(10,Math.round(km*100)*10))+' m':km.toFixed(1)+' km';
+    el.style.display='block';
+    if(tripD0==null||km>tripD0)tripD0=km;
+    const pct=tripD0>0.05?Math.max(0,Math.min(100,Math.round((1-km/tripD0)*100))):0;
+    const bar='<div style="height:8px;border-radius:6px;background:#ffffff40;margin-top:8px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:#fff;transition:width .6s;"></div></div>';
+    if(tripMe)tripMe.setTooltipContent('📍 Vous · '+d);
+    if(km<=ARR.AT_KM){el.style.background='#16a34a';el.style.color='#fff';el.innerHTML='🏁 Vous êtes arrivé à '+_escH(to)+' !<div style="font-size:12px;font-weight:700;margin-top:4px;">Vous pouvez descendre</div>'+bar;
+      if(!tripArrBuzz){tripArrBuzz=true;try{if(navigator.vibrate)navigator.vibrate([400,150,400,150,400]);}catch(e){}}}
+    else if(km<=ARR.NEAR_KM){el.style.background='#f59e0b';el.style.color='#1a1a1a';el.innerHTML='🔔 Vous approchez de '+_escH(to)+' · encore '+d+bar;}
+    else{el.style.background='#1e3a8a';el.style.color='#fff';el.innerHTML='📏 Il vous reste '+d+' avant '+_escH(to)+bar;}
+  }catch(e){}
 }
 window.tripToggleFollow=()=>{
   tripFollow=!tripFollow;_tripFollowBtn();
@@ -5298,7 +5329,7 @@ function _tripGotPos(pos){
   window._tripPos={lat:pos.coords.latitude,lng:pos.coords.longitude,t:Date.now()};
   const acc=Math.round(pos.coords.accuracy||0);
   _tripGpsSet('📡 GPS actif'+(acc?' · précision ~'+acc+' m':''),true);
-  _tripMoveMe(true);
+  _tripMoveMe(true);_tripUpdateDest();
 }
 function _tripGpsErr(e){
   const c=e&&e.code;
@@ -5313,7 +5344,7 @@ function _tripStartWatch(){
   clearInterval(tripPoll);
   tripPoll=setInterval(()=>{try{navigator.geolocation.getCurrentPosition(_tripGotPos,()=>{},{enableHighAccuracy:true,maximumAge:0,timeout:8000});}catch(e){}},5000);
 }
-function _tripStopWatch(){clearInterval(tripPoll);tripPoll=null;if(tripWatch!=null){try{navigator.geolocation.clearWatch(tripWatch);}catch(e){}tripWatch=null;}if(tripMe&&tripMap){try{tripMap.removeLayer(tripMe);}catch(e){}}tripMe=null;tripFitted=false;window._tripPos=null;}
+function _tripStopWatch(){clearInterval(tripPoll);tripPoll=null;if(tripWatch!=null){try{navigator.geolocation.clearWatch(tripWatch);}catch(e){}tripWatch=null;}if(tripMe&&tripMap){try{tripMap.removeLayer(tripMe);}catch(e){}}if(tripDestLine&&tripMap){try{tripMap.removeLayer(tripDestLine);}catch(e){}}if(tripTrail&&tripMap){try{tripMap.removeLayer(tripTrail);}catch(e){}}tripTrail=null;tripTrailPts=[];tripD0=null;tripLastFit=null;tripArrBuzz=false;tripMe=null;tripDestLine=null;tripDest=null;tripFitted=false;window._tripPos=null;const di=document.getElementById('tripDistInfo');if(di)di.style.display='none';}
 function _tkStart(t){
   try{
     if(t.ts&&t.ts.seconds)return t.ts.seconds*1000;if(typeof t.ts==='number')return t.ts;
@@ -5398,6 +5429,14 @@ async function tripLoad(){
     const r=tripCut(all,st);
     let H=null;try{H=await tripHistory(t,st,all);}catch(e){console.warn('[trip hist]',e);}
     const live=r.pts.length>=2;
+    if(!live&&!H){
+      try{if(!tripDest)tripDest=await stopLL(t.busUid,t.to);}catch(e){}
+      if(tripDest){
+        if(tripLayer){tripMap.removeLayer(tripLayer);tripLayer=null;}
+        tripLayer=L.layerGroup([L.circleMarker([tripDest.lat,tripDest.lng],{radius:9,color:'#fff',weight:3,fillColor:'#DF0024',fillOpacity:1}).bindTooltip('🏁 Arrivée : '+t.to,{permanent:true,direction:'top'})]).addTo(tripMap);
+        _tripUpdateDest();
+      }
+    }
     if(!live&&!H){info.innerHTML='⏳ Le trajet du bus est en cours d’enregistrement. L’itinéraire apparaîtra ici dans quelques minutes (mise à jour automatique).'+(()=>{const g=window._tripDbg||{};return '<br><span style="color:#888;font-size:11px;">Détail : véhicule '+_escH(String(g.veh||t.vehicle||'?'))+' · positions du jour : '+all.length+' (après le ticket : '+r.pts.length+') · destination trouvée : '+(g.dest?'oui':'non')+' · point de montée : '+(g.org?'oui':'non')+' · trajets enregistrés : '+(g.docs||0)+'</span>';})();_tripMoveMe(true);return;}
     const last=live?r.pts[r.pts.length-1]:null;
     let cur=null;if(live)cur={lat:last.a,lng:last.o};else if(H&&H.cur)cur=H.cur;
@@ -5407,7 +5446,7 @@ async function tripLoad(){
       try{
         const dest=H?H.dest:await stopLL(t.busUid,t.to);
         if(dest){
-          destLL=dest;
+          destLL=dest;tripDest=dest;
           let rem=null;
           if(H){
             if(cur){
@@ -5446,12 +5485,12 @@ async function tripLoad(){
       layers.push(L.polyline(hl,{color:'#0ea5e9',weight:6,opacity:.8,dashArray:'10 8'}));
       const _ap=(H.dest&&Number.isFinite(H.dest.lat)&&Number.isFinite(H.dest.lng))?[H.dest.lat,H.dest.lng]:hl[hl.length-1];bounds.push(_ap);
       layers.push(L.circleMarker(_ap,{radius:9,color:'#fff',weight:3,fillColor:'#DF0024',fillOpacity:1}).bindTooltip('🏁 Arrivée : '+t.to,{permanent:true,direction:'top'}));
-      if(!live)layers.push(L.circleMarker(hl[0],{radius:9,color:'#fff',weight:3,fillColor:'#16a34a',fillOpacity:1}).bindTooltip('🟢 Votre montée : '+t.from,{permanent:true,direction:'right'}));
+      if(!live)layers.push(L.circleMarker(hl[0],{radius:9,color:'#fff',weight:3,fillColor:'#3b82f6',fillOpacity:1}).bindTooltip('🔵 Votre montée : '+t.from,{permanent:true,direction:'right'}));
     }
     if(live){
       const ll=r.pts.map(x=>[x.a,x.o]);bounds.push(...ll);
       layers.push(L.polyline(ll,{color:'#7c3aed',weight:6,opacity:.9}));
-      layers.push(L.circleMarker(ll[0],{radius:9,color:'#fff',weight:3,fillColor:'#16a34a',fillOpacity:1}).bindTooltip('🟢 Votre montée : '+t.from,{permanent:true,direction:'right'}));
+      layers.push(L.circleMarker(ll[0],{radius:9,color:'#fff',weight:3,fillColor:'#3b82f6',fillOpacity:1}).bindTooltip('🔵 Votre montée : '+t.from,{permanent:true,direction:'right'}));
       if(r.ended||!gpOk)layers.push(L.circleMarker(ll[ll.length-1],{radius:9,color:'#fff',weight:3,fillColor:r.ended?'#DF0024':'#f59e0b',fillOpacity:1}).bindTooltip(r.ended?'🏁 Fin du trajet':'🚌 Vous êtes ici (dans le bus)',{permanent:true,direction:'top'}));
     }else if(cur&&!gpOk){
       bounds.push([cur.lat,cur.lng]);
@@ -5461,7 +5500,7 @@ async function tripLoad(){
     tripLayer=L.layerGroup(layers).addTo(tripMap);
     if(gpOk&&!(live&&r.ended)){bounds.push([window._tripPos.lat,window._tripPos.lng]);_tripMoveMe(false);}
     tripBounds=bounds.slice();if(bounds.length&&!tripFitted&&!(tripFollow&&gpOk)){tripMap.fitBounds(bounds,{padding:[30,30],maxZoom:16});tripFitted=true;}
-    _tripMoveMe(true);
+    _tripMoveMe(true);_tripUpdateDest();
   }catch(e){
     console.warn('[trip]',e);
     info.textContent=(e&&e.code==='permission-denied')?'Itinéraire indisponible (accès aux trajets non autorisé).':'Itinéraire indisponible pour le moment. Réessayez dans un instant.';
@@ -5470,11 +5509,11 @@ async function tripLoad(){
 window.openTripRoute=()=>{
   const m=document.getElementById('modalTripRoute');if(!m||!window._tripTicket)return;
   m.style.display='flex';document.getElementById('tripInfo').textContent='Chargement…';
-  tripFitted=false;tripFollow=true;_tripFollowBtn();_tripStartWatch();
+  tripFitted=false;tripFollow=true;_tripFollowBtn();_tripStartWatch();if(S.role==='passenger'){try{_wlOn();}catch(e){}}
   setTimeout(()=>{tripLoad();},150);
   clearInterval(tripTimer);tripTimer=setInterval(tripLoad,10000);
 };
-window.closeTripRoute=()=>{clearInterval(tripTimer);tripTimer=null;_tripStopWatch();const m=document.getElementById('modalTripRoute');if(m)m.style.display='none';};
+window.closeTripRoute=()=>{clearInterval(tripTimer);tripTimer=null;_tripStopWatch();if(S.role==='passenger'){try{_wlOff();}catch(e){}}const m=document.getElementById('modalTripRoute');if(m)m.style.display='none';};
 async function loadPassTickets(){
   if(S.role!=='passenger')return;
   // Affichage immédiat depuis le cache (fonctionne même hors-ligne)
