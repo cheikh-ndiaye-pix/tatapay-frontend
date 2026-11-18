@@ -2005,6 +2005,8 @@ function loginUI(){
     recvBusSelection=new Set(p.linkedOwnerUids||[]);
     unsubRecvBalance=onSnapshot(doc(db,'users',S.uid),snap=>{if(snap.exists()){S.profile.balance=snap.data().balance||0;S.profile.cashDue=snap.data().cashDue||0;S.profile.cashPending=snap.data().cashPending||0;const el=document.getElementById('recvBalance');if(el)el.textContent=fmt(S.profile.balance);renderCashBox();}});
     show('screenReceiver');notify('✅','Connecté',p.name);
+    // Le GPS démarre tout seul à l'ouverture (sans toucher le bouton) ; si déjà actif, on ne fait rien
+    setTimeout(()=>{try{if(recvGeoWatchId==null&&typeof window.recvToggleGeo==='function')window.recvToggleGeo();}catch(e){console.warn('[auto gps]',e);}},1200);
   }else if(S.role==='directeur'&&p.status==='approved'){
     document.getElementById('dirGreet').textContent=p.name;
     document.getElementById('dirOrgName').textContent=p.org||'—';
