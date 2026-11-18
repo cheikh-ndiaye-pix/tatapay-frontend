@@ -4333,7 +4333,7 @@ function updateBalanceUI(){document.getElementById('passBalance').textContent=fm
 
 // ══ ALERTE « PRESQUE ARRIVÉ » : une voix prévient le passager quand il approche de sa destination ══
 // La destination du ticket est un nom (ex : Kounoune) : on la convertit en coordonnées (OpenStreetMap), puis on suit le GPS du passager.
-const ARR={NEAR_KM:0.7,AT_KM:0.15,MAXAGE:4*3600*1000,CENTER:[14.69,-17.45],MAXDIST:90};
+const ARR={NEAR_KM:0.05,AT_KM:0.01,MAXAGE:4*3600*1000,CENTER:[14.69,-17.45],MAXDIST:90};
 let _arr={sn:null,id:null,dest:null,stage:0};
 function arriveNear(lat,lng,dest){return !!dest&&_haversineKm(lat,lng,dest.lat,dest.lng)<=ARR.NEAR_KM;}
 // ── Arrêts marqués par le receveur (coordonnées exactes), utilisés avant OpenStreetMap ──
@@ -4423,7 +4423,10 @@ function arriveFinal(t){
   try{notify('🏁',lang==='wo'?'Agsi nga !':(lang==='en'?'You have arrived':'Vous êtes arrivé'),txt);}catch(e){}
   setTimeout(()=>{try{aiSpeak(txt,'arrived');}catch(e){}},1500);
 }
-function arriveWatchStop(){
+// Garde l'écran allumé pendant le trajet : sinon le téléphone coupe le GPS et la voix
+async function _arrWake(){try{if('wakeLock' in navigator&&!_arr.wl&&document.visibilityState==='visible'){_arr.wl=await navigator.wakeLock.request('screen');}}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&_arr.sn){_arr.wl=null;_arrWake();}});
+function arriveWatchStop(){try{_arr.wl&&_arr.wl.release();}catch(e){}
   try{if(_arr.id!=null&&navigator.geolocation)navigator.geolocation.clearWatch(_arr.id);}catch(e){}
   _arr={sn:null,id:null,dest:null,stage:0};
 }
@@ -4437,13 +4440,13 @@ async function arriveWatchStart(t){
     const dest=await stopLL(t.busUid,t.to);
     if(_arr.sn!==t.sn)return;
     if(!dest){console.warn('[arrivee] destination introuvable :',t.to);return;}
-    _arr.dest=dest;
+    _arr.dest=dest;_arr.t0=Date.now();_arrWake();
     try{if(localStorage.getItem('tatapay_near_'+t.sn))_arr.stage=1;}catch(e){}
     _arr.id=navigator.geolocation.watchPosition(pos=>{
       if(_arr.sn!==t.sn)return;
       if(pos.coords.accuracy>200)return;
       const dk=_haversineKm(pos.coords.latitude,pos.coords.longitude,_arr.dest.lat,_arr.dest.lng);
-      if(!_arr.wasFar){if(dk>ARR.NEAR_KM*1.3)_arr.wasFar=true;else return;} // au départ on est loin : pas d'annonce tant qu'on n'a pas roulé
+      if(!_arr.wasFar){if(dk>ARR.NEAR_KM*1.3||Date.now()-_arr.t0>180000)_arr.wasFar=true;else return;} // au départ on est loin : pas d'annonce tant qu'on n'a pas roulé
       if(dk<=ARR.AT_KM){arriveWatchStop();arriveFinal(t);return;}
       if(_arr.stage<1&&dk<=ARR.NEAR_KM){_arr.stage=1;arriveFire(t);}
     },()=>{},{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
@@ -4712,7 +4715,7 @@ try{speechSynthesis.onvoiceschanged=()=>{try{speechSynthesis.getVoices();}catch(
 function _replayPending(){const t=S.aiPendingSpeak;if(!t)return;S.aiPendingSpeak=null;
   if(!t.at||Date.now()-t.at>45000)return; // trop vieux : on ne le rejoue pas
   const isArr=t.key==='near'||t.key==='arrived';
-  if(isArr&&!_arr.sn)return; // trajet fini ou pas encore commencé
+   // trajet fini ou pas encore commencé
   if(!isArr&&document.getElementById('aiPanel')?.style.display!=='block')return;
   aiSpeak(t.text,t.key,t.onEnd);}
 document.addEventListener('pointerdown',()=>{_unlockAudio();_replayPending();},{passive:true});
@@ -4734,7 +4737,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 const VC_KEYS=['bonroute','ask','go','empty','found','none','nolist','mic','routes','similar','noroute','pick','near','arrived'];
 // Tant qu'un vocal n'est pas enregistré pour une nouvelle phrase, on rejoue celui de la phrase la plus proche
 const VC_FALLBACK={routes:'found',similar:'found',noroute:'none',pick:'go'};
-const VC_LABEL={bonroute:'🚌 Bonne route (au début du trajet)',arrived:'🏁 Arrivé à destination (à ~150 m de l\'arrêt)',near:'📍 Presque arrivé (à ~700 m de la destination)',ask:'👋 Accueil (à l\'entrée dans l\'app)',go:'📷 Après la réponse (ouvre le scanner)',empty:'🤐 Le passager n\'a rien dit',found:'✅ Destination trouvée dans le bus',none:'❌ Destination absente de ce bus',nolist:'⚠️ Aucun trajet inscrit par le receveur',mic:'🎤 Micro : pas compris',routes:'📋 Trajets trouvés : « choisissez le vôtre »',similar:'🔎 Pas exact, voici des destinations similaires',noroute:'🚫 Aucun trajet trouvé (le scanner s\'ouvre ensuite)',pick:'👆 Trajet choisi : « scannez le QR du bus »'};
+const VC_LABEL={bonroute:'🚌 Bonne route (au début du trajet)',arrived:'🏁 Arrivé à destination (à ~10 m de l\'arrêt)',near:'📍 Presque arrivé (à ~50 m de la destination)',ask:'👋 Accueil (à l\'entrée dans l\'app)',go:'📷 Après la réponse (ouvre le scanner)',empty:'🤐 Le passager n\'a rien dit',found:'✅ Destination trouvée dans le bus',none:'❌ Destination absente de ce bus',nolist:'⚠️ Aucun trajet inscrit par le receveur',mic:'🎤 Micro : pas compris',routes:'📋 Trajets trouvés : « choisissez le vôtre »',similar:'🔎 Pas exact, voici des destinations similaires',noroute:'🚫 Aucun trajet trouvé (le scanner s\'ouvre ensuite)',pick:'👆 Trajet choisi : « scannez le QR du bus »'};
 const VC_TXT={
   wo:{bonroute:'Yàlla na nga am yoon wu baax ! Jërëjëf ci TataPay.',arrived:'Agsi nga ! Wàccal léegi.',near:'Jege nanu ! Waajal ngir wàcc.',routes:'Baax na ! Gis naa trajet yi. Tànnal bi la neex.',similar:'Gisuma ko bu leer, waaye gis naa yu mel ni ko. Tànnal bi la neex.',noroute:'Gisuma trajet ngir destination bi. Scanil bus bi.',pick:'Baax na ! Scanil QR bu bus bi.',found:'Baax na ! Destination bi nekk na ci bus bii. Duggal ko te fey.',none:'Gisuma ko ci bus bii. Laajal receveur bi. Gis nga trajet yi nekk ci bus bi ci suuf.'},
   fr:{bonroute:'Bonne route ! Merci de voyager avec nous.',arrived:'Vous êtes arrivé ! Descendez maintenant.',near:'Vous êtes presque arrivé ! Préparez-vous à descendre.',routes:'J\'ai trouvé des trajets pour cette destination. Choisissez le vôtre.',similar:'Je n\'ai pas trouvé exactement, mais voici des destinations similaires. Choisissez la bonne.',noroute:'Aucun trajet trouvé pour cette destination. Scannez directement le bus.',pick:'Parfait ! Scannez maintenant le QR de ce bus.',found:'C\'est bon ! Cette destination est desservie par ce bus. Validez et payez.',none:'Cette destination n\'est pas inscrite dans ce bus. Demandez au receveur. Voici les trajets disponibles dans ce bus, juste en dessous.'},
