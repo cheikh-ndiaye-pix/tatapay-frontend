@@ -5227,6 +5227,7 @@ async function tripLoad(){
         }
       }catch(e){console.warn('[trip eta]',e);}
     }
+    if(!destLL&&!(live&&r.ended))etaHtml+='<br><span style="color:#fbbf24;font-size:12px;">📍 Position de « '+_escH(t.to)+' » inconnue : le receveur doit marquer cet arrêt pour afficher l’arrivée.</span>';
     if(live){
       const mins=Math.max(1,Math.round((last.t-st)/60000));
       info.innerHTML=`🚌 <b>${_escH(t.vehicle)}</b> · ${_escH(t.from)} → ${_escH(t.to)}<br>📏 ${_fmtDist(r.km)} parcourus · ⏱️ ${_fmtMin(mins)} depuis votre ticket${r.ended?' · ✅ trajet terminé':' · 🔄 le bus roule encore, la ligne s’allonge'}${etaHtml}`;
