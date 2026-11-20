@@ -636,10 +636,12 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
     <div class="tab-content" id="recvTab-trajets">
       <div style="padding:20px;">
         <div style="font-weight:900;font-size:22px;margin-bottom:4px;">📍 Zones de prix</div>
-        <div style="color:#888;font-size:12px;line-height:1.6;margin-bottom:14px;">Créez une zone par prix (ex : 100 F), puis écrivez-y les trajets qui coûtent ce prix.</div>
+        <div style="color:#888;font-size:12px;line-height:1.6;margin-bottom:14px;">Une zone est un tronçon de la ligne avec un prix. Écrivez où elle commence, où elle finit, puis ajoutez les arrêts qui sont dedans.</div>
         <div style="background:#ffffff0a;border:1px solid #ffffff14;border-radius:14px;padding:12px;margin-bottom:16px;">
-          <div style="display:flex;gap:8px;margin-bottom:8px;"><input class="input-field" id="zoneNewPrice" type="number" min="50" placeholder="Prix de la zone (FCFA)" style="flex:1;min-width:0;"/><button class="btn btn-primary" onclick="zoneNew()">+ Zone</button></div>
-          <div class="quick-grid"><button onclick="document.getElementById('zoneNewPrice').value=100" class="quick-btn">100</button><button onclick="document.getElementById('zoneNewPrice').value=150" class="quick-btn">150</button><button onclick="document.getElementById('zoneNewPrice').value=200" class="quick-btn">200</button><button onclick="document.getElementById('zoneNewPrice').value=250" class="quick-btn">250</button><button onclick="document.getElementById('zoneNewPrice').value=300" class="quick-btn">300</button><button onclick="document.getElementById('zoneNewPrice').value=350" class="quick-btn">350</button><button onclick="document.getElementById('zoneNewPrice').value=400" class="quick-btn">400</button></div>
+          <div class="quick-grid" style="margin-bottom:8px;"><button onclick="document.getElementById('zoneNewPrice').value=100" class="quick-btn">100</button><button onclick="document.getElementById('zoneNewPrice').value=150" class="quick-btn">150</button><button onclick="document.getElementById('zoneNewPrice').value=200" class="quick-btn">200</button><button onclick="document.getElementById('zoneNewPrice').value=250" class="quick-btn">250</button><button onclick="document.getElementById('zoneNewPrice').value=300" class="quick-btn">300</button><button onclick="document.getElementById('zoneNewPrice').value=350" class="quick-btn">350</button><button onclick="document.getElementById('zoneNewPrice').value=400" class="quick-btn">400</button></div>
+          <input class="input-field" id="zoneNewPrice" type="number" min="50" placeholder="Prix de la zone (FCFA)" style="margin-bottom:8px;"/>
+          <div style="display:flex;gap:8px;margin-bottom:8px;"><input class="input-field" id="zoneNewFrom" list="zoneNames" placeholder="Début de la zone" style="flex:1;min-width:0;"/><input class="input-field" id="zoneNewTo" list="zoneNames" placeholder="Fin de la zone" style="flex:1;min-width:0;"/></div>
+          <button class="btn btn-primary btn-full" onclick="zoneNew()">+ Créer la zone</button>
         </div>
         <datalist id="zoneNames"></datalist>
         <div id="trajetsList"></div>
@@ -4643,48 +4645,91 @@ window.doAddTrajet=async()=>{
 window.delTrajet=async(id)=>{try{await deleteDoc(doc(db,'users',S.uid,'destinations',id));loadTrajets();}catch(e){notify('❌','Erreur',e.message);}};
 function _fbBadge(label,ok){const c=ok?'#22c55e':'#f59e0b';return `<span style="display:inline-flex;align-items:center;gap:4px;margin:6px 6px 0 0;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:700;color:${c};background:${c}1f;border:1px solid ${c}55;">${ok?'☁️⬇️':'⚠️'} ${label} ${ok?'enregistré':'non enregistré'}</span>`;}
 function _fbBadges(t){const f=Number.isFinite(t.fromLat)&&Number.isFinite(t.fromLng),a=Number.isFinite(t.toLat)&&Number.isFinite(t.toLng);return `<div>${_fbBadge('Départ',f)}${_fbBadge('Arrivée',a)}</div>`;}
-const ZN={empty:[]};
-window.zoneNew=()=>{const p=parseInt(document.getElementById('zoneNewPrice').value);if(!(p>=50)){notify('⚠️','Zone','Entrez un prix d\'au moins 50 FCFA.');return;}if(!ZN.empty.includes(p))ZN.empty.push(p);document.getElementById('zoneNewPrice').value='';loadTrajets();};
-window.zoneAddTrajet=async(price)=>{
-  const f=document.getElementById('zf_'+price),to=document.getElementById('zt_'+price);
-  const from=f.value.trim(),dest=to.value.trim();
-  if(!from||!dest){notify('⚠️','Trajet','Écrivez le départ et l\'arrivée.');return;}
-  if(_pl(from)===_pl(dest)){notify('⚠️','Trajet','Le départ et l\'arrivée sont identiques.');return;}
+const ZN={zones:{}};
+const ZEND=1000000;
+window.zoneNew=async()=>{
+  const price=parseInt(document.getElementById('zoneNewPrice').value),from=document.getElementById('zoneNewFrom').value.trim(),to=document.getElementById('zoneNewTo').value.trim();
+  if(!(price>=50)){notify('⚠️','Zone','Entrez un prix d\'au moins 50 FCFA.');return;}
+  if(!from||!to){notify('⚠️','Zone','Écrivez où la zone commence et où elle finit.');return;}
+  if(_pl(from)===_pl(to)){notify('⚠️','Zone','Le début et la fin sont identiques.');return;}
   try{
     const col=collection(db,'users',S.uid,'destinations');
     const snap=await getDocs(col);
-    if(snap.docs.some(d=>{const x=d.data();return _pl(x.from)===_pl(from)&&_pl(x.to)===_pl(dest);})){notify('⚠️','Trajet','Ce trajet existe déjà (dans une zone).');return;}
-    const prices=[...new Set([...snap.docs.map(d=>d.data().price||0),price])].sort((a,b)=>a-b);
-    await addDoc(col,{from,to:dest,section:prices.indexOf(price)+1,price,createdAt:serverTimestamp()});
-    ZN.empty=ZN.empty.filter(p=>p!==price);
+    const n=new Set(snap.docs.map(d=>d.data().zoneId).filter(Boolean)).size;
+    const zoneId='z'+Date.now().toString(36);
+    await addDoc(col,{from,to,section:n+1,price,zoneId,zoneStart:from,zoneEnd:to,ord:ZEND,createdAt:serverTimestamp()});
+    ['zoneNewPrice','zoneNewFrom','zoneNewTo'].forEach(i=>document.getElementById(i).value='');
     await loadTrajets();
-    const nf=document.getElementById('zf_'+price);if(nf)nf.focus();
-    notify('✅','Trajet ajouté',from+' → '+dest+' · '+price+' FCFA');
+    notify('✅','Zone créée','Zone '+price+' FCFA · '+from+' → '+to+'. Ajoutez maintenant les arrêts.');
+  }catch(e){notify('❌','Erreur',(e&&e.message)||'Création impossible');}
+};
+window.zoneAddStop=async(zoneId)=>{
+  const z=ZN.zones[zoneId],inp=document.getElementById('zs_'+zoneId);if(!z||!inp)return;
+  const name=inp.value.trim();if(!name){notify('⚠️','Arrêt','Écrivez le nom de l\'arrêt.');return;}
+  if(z.stops.some(s=>_pl(s.to)===_pl(name))||_pl(name)===_pl(z.start)){notify('⚠️','Arrêt','Cet arrêt est déjà dans la zone.');return;}
+  try{
+    const ord=Math.max(0,...z.stops.filter(s=>(s.ord||0)<ZEND).map(s=>s.ord||0))+1;
+    await addDoc(collection(db,'users',S.uid,'destinations'),{from:z.start,to:name,section:z.section,price:z.price,zoneId,zoneStart:z.start,zoneEnd:z.end,ord,createdAt:serverTimestamp()});
+    await loadTrajets();
+    const ni=document.getElementById('zs_'+zoneId);if(ni)ni.focus();
   }catch(e){notify('❌','Erreur',(e&&e.message)||'Ajout impossible');}
+};
+window.zoneMove=async(zoneId,id,dir)=>{
+  const z=ZN.zones[zoneId];if(!z)return;
+  const arr=z.stops.filter(s=>(s.ord||0)<ZEND),i=arr.findIndex(s=>s.id===id),j=i+dir;
+  if(i<0||j<0||j>=arr.length)return;
+  try{
+    const a=arr[i],b=arr[j];
+    await updateDoc(doc(db,'users',S.uid,'destinations',a.id),{ord:b.ord||j+1});
+    await updateDoc(doc(db,'users',S.uid,'destinations',b.id),{ord:a.ord||i+1});
+    loadTrajets();
+  }catch(e){notify('❌','Erreur',(e&&e.message)||'Déplacement impossible');}
+};
+window.zoneDelete=async(zoneId)=>{
+  const z=ZN.zones[zoneId];if(!z)return;
+  if(!confirm('Supprimer la zone '+z.price+' FCFA ('+z.start+' → '+z.end+') et ses '+z.stops.length+' arrêts ?'))return;
+  try{for(const s of z.stops)await deleteDoc(doc(db,'users',S.uid,'destinations',s.id));loadTrajets();}
+  catch(e){notify('❌','Erreur',(e&&e.message)||'Suppression impossible');}
 };
 async function loadTrajets(){
   if(S.role!=='receiver')return;
   const snap=await getDocs(collection(db,'users',S.uid,'destinations'));
   const cont=document.getElementById('trajetsList');if(!cont)return;
-  const groups={};
-  snap.docs.forEach(d=>{const x=d.data(),p=x.price||0;(groups[p]=groups[p]||[]).push({id:d.id,...x});});
-  ZN.empty.forEach(p=>{if(!groups[p])groups[p]=[];});
-  const prices=Object.keys(groups).map(Number).sort((a,b)=>a-b);
-  const names=new Set();snap.docs.forEach(d=>{const x=d.data();if(x.from)names.add(x.from);if(x.to)names.add(x.to);});
+  const zones={},legacy={},names=new Set();
+  snap.docs.forEach(d=>{
+    const x={id:d.id,...d.data()};
+    if(x.from)names.add(x.from);if(x.to)names.add(x.to);
+    if(x.zoneId){const z=zones[x.zoneId]=zones[x.zoneId]||{id:x.zoneId,price:x.price||0,section:x.section||0,start:x.zoneStart||x.from,end:x.zoneEnd||x.to,stops:[]};z.stops.push(x);}
+    else{(legacy[x.price||0]=legacy[x.price||0]||[]).push(x);}
+  });
+  ZN.zones=zones;
+  Object.values(zones).forEach(z=>z.stops.sort((a,b)=>(a.ord||0)-(b.ord||0)));
   const dl=document.getElementById('zoneNames');if(dl)dl.innerHTML=[...names].map(n=>`<option value="${_escH(n)}"></option>`).join('');
-  if(!prices.length){cont.innerHTML='<div style="text-align:center;padding:36px 20px;color:#555;">Aucune zone. Créez-en une avec son prix ci-dessus.</div>';return;}
-  cont.innerHTML=prices.map(p=>`<div style="background:#ffffff08;border:1.5px solid #2a3a2a;border-radius:16px;padding:14px;margin-bottom:16px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><div style="font-weight:900;font-size:18px;color:var(--y);">Zone ${p} FCFA</div><div style="color:#888;font-size:12px;">${groups[p].length} trajet${groups[p].length>1?'s':''}</div></div>
-    ${groups[p].map(t=>`<div class="trajet-row"><div style="flex:1;min-width:0;"><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${_escH(t.from)} → ${_escH(t.to)}</div>${_fbBadges(t)}</div><button onclick="delTrajet('${t.id}')" style="background:#DF002422;border:1px solid #DF002444;border-radius:10px;padding:8px;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>`).join('')}
-    <div style="display:flex;gap:6px;margin-top:8px;"><input class="input-field" id="zf_${p}" list="zoneNames" placeholder="Départ" style="flex:1;min-width:0;padding:10px;"/><input class="input-field" id="zt_${p}" list="zoneNames" placeholder="Arrivée" style="flex:1;min-width:0;padding:10px;"/><button class="btn btn-primary" onclick="zoneAddTrajet(${p})" style="padding:10px 14px;">+</button></div>
-  </div>`).join('');
+  const zl=Object.values(zones).sort((a,b)=>a.price-b.price||a.section-b.section);
+  const lp=Object.keys(legacy).map(Number).sort((a,b)=>a-b);
+  if(!zl.length&&!lp.length){cont.innerHTML='<div style="text-align:center;padding:36px 20px;color:#555;">Aucune zone. Créez-en une ci-dessus.</div>';return;}
+  const sb='background:#ffffff15;border:1px solid #ffffff22;border-radius:8px;padding:6px 9px;cursor:pointer;color:#fff;font-weight:800;font-size:12px;';
+  const trash='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>';
+  const delBtn=id=>`<button onclick="delTrajet('${id}')" style="background:#DF002422;border:1px solid #DF002444;border-radius:10px;padding:8px;cursor:pointer;">${trash}</button>`;
+  const zoneHtml=zl.map(z=>{
+    const mid=z.stops.filter(s=>(s.ord||0)<ZEND),end=z.stops.filter(s=>(s.ord||0)>=ZEND);
+    return `<div style="background:#ffffff08;border:1.5px solid #2a3a2a;border-radius:16px;padding:14px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;"><div><div style="font-weight:900;font-size:18px;color:var(--y);">Zone ${z.price} FCFA</div><div style="font-size:12px;color:#aaa;margin-top:2px;">de <b>${_escH(z.start)}</b> à <b>${_escH(z.end)}</b></div></div><button onclick="zoneDelete('${z.id}')" style="${sb}color:#ff6b6b;">Supprimer la zone</button></div>
+      <div style="font-size:11px;font-weight:800;color:#888;letter-spacing:1px;text-transform:uppercase;margin:10px 0 6px;">Arrêts dans la zone (${z.stops.length})</div>
+      <div class="trajet-row" style="opacity:.7;"><div style="width:20px;">🟢</div><div style="flex:1;font-weight:700;font-size:13px;">${_escH(z.start)} <span style="color:#888;font-weight:400;">(début)</span></div></div>
+      ${mid.map((s,i)=>`<div class="trajet-row" style="gap:8px;"><div style="width:20px;font-weight:900;color:#888;">${i+1}</div><div style="flex:1;min-width:0;font-weight:800;font-size:14px;">${_escH(s.to)}</div><button onclick="zoneMove('${z.id}','${s.id}',-1)" style="${sb}">↑</button><button onclick="zoneMove('${z.id}','${s.id}',1)" style="${sb}">↓</button>${delBtn(s.id)}</div>`).join('')}
+      ${end.map(s=>`<div class="trajet-row" style="gap:8px;"><div style="width:20px;">🏁</div><div style="flex:1;min-width:0;font-weight:800;font-size:14px;">${_escH(s.to)} <span style="color:#888;font-weight:400;">(fin)</span></div>${delBtn(s.id)}</div>`).join('')}
+      <div style="display:flex;gap:6px;margin-top:8px;"><input class="input-field" id="zs_${z.id}" list="zoneNames" placeholder="Ajouter un arrêt dans cette zone" style="flex:1;min-width:0;padding:10px;"/><button class="btn btn-primary" onclick="zoneAddStop('${z.id}')" style="padding:10px 14px;">+</button></div>
+    </div>`;}).join('');
+  const legHtml=lp.map(p=>`<div style="background:#ffffff08;border:1.5px dashed #2a3a2a;border-radius:16px;padding:14px;margin-bottom:16px;"><div style="font-weight:900;font-size:16px;color:var(--y);">${p} FCFA <span style="font-size:11px;color:#888;font-weight:400;">· anciens trajets</span></div>${legacy[p].map(x=>`<div class="trajet-row" style="margin-top:8px;"><div style="flex:1;min-width:0;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${_escH(x.from)} → ${_escH(x.to)}</div>${delBtn(x.id)}</div>`).join('')}</div>`).join('');
+  cont.innerHTML=zoneHtml+legHtml;
 }
 
 /* ═══════════════ ASSISTANT IA (Wolof / Français / English) ═══════════════ */
 const AI_TXT={
- wo:{ask:'Salaam aleekum ! 👋 Fan nga dem ?',ph:'Ex: Liberté 6, Pikine…',go:'Baax na ! Tey scanil QR bu bus bi.',empty:'Wax ma fan ngay dem.',found:(d,p)=>`Baax na ! ✅ ${d} nekk na ci bus bii : ${p} FCFA. Duggal ko te fey.`,none:d=>`Gisuma "${d}" ci bus bii. ❌ Laajal receveur bi.`,nolist:'Receveur bi dalul ba tey ay trajet ci bus bii. Laajal ko.',mic:'Mënuma dégg. Bind tur bi.'},
- fr:{ask:'Bonjour ! 👋 Où allez-vous ? Dites-moi le nom de votre destination (ou écrivez-le).',ph:'Ex : Liberté 6, Pikine…',go:'Parfait ! Scannez maintenant le QR du bus.',empty:'Dites-moi où vous allez.',found:(d,p)=>`C'est bon ! ✅ ${d} est desservi par ce bus : ${p} FCFA. Validez et payez.`,none:d=>`« ${d} » n'est pas inscrit dans ce bus. ❌ Demandez au receveur.`,nolist:'Le receveur n\'a pas encore inscrit de trajets dans ce bus. Demandez-lui.',mic:'Je n\'ai pas compris. Écrivez le nom.'},
- en:{ask:'Hello! 👋 Where are you going? Tell me the name of your destination (or type it).',ph:'e.g. Liberté 6, Pikine…',go:'Great! Now scan the bus QR code.',empty:'Please tell me where you are going.',found:(d,p)=>`Good! ✅ ${d} is served by this bus: ${p} FCFA. Confirm and pay.`,none:d=>`"${d}" is not registered on this bus. ❌ Please ask the conductor.`,nolist:'The conductor has not registered any routes on this bus yet. Please ask them.',mic:'I could not hear you. Please type the name.'}
+ wo:{ask:'Salaam aleekum ! 👋 Waxal : « Dama dem ci », ba noppi tur bi (walla bindal ko).',ph:'Ex: Liberté 6, Pikine…',go:'Baax na ! Tey scanil QR bu bus bi.',empty:'Wax ma fan ngay dem.',found:(d,p)=>`Baax na ! ✅ ${d} nekk na ci bus bii : ${p} FCFA. Duggal ko te fey.`,none:d=>`Gisuma "${d}" ci bus bii. ❌ Laajal receveur bi.`,nolist:'Receveur bi dalul ba tey ay trajet ci bus bii. Laajal ko.',mic:'Mënuma dégg. Bind tur bi.'},
+ fr:{ask:'Bonjour ! 👋 Dites : « Je vais à », puis le nom de votre destination (ou écrivez-le).',ph:'Ex : Liberté 6, Pikine…',go:'Parfait ! Scannez maintenant le QR du bus.',empty:'Dites : « Je vais à », puis votre destination.',found:(d,p)=>`C'est bon ! ✅ ${d} est desservi par ce bus : ${p} FCFA. Validez et payez.`,none:d=>`« ${d} » n'est pas inscrit dans ce bus. ❌ Demandez au receveur.`,nolist:'Le receveur n\'a pas encore inscrit de trajets dans ce bus. Demandez-lui.',mic:'Je n\'ai pas compris. Écrivez le nom.'},
+ en:{ask:'Hello! 👋 Say: “I\'m going to”, then the name of your destination (or type it).',ph:'e.g. Liberté 6, Pikine…',go:'Great! Now scan the bus QR code.',empty:'Please tell me where you are going.',found:(d,p)=>`Good! ✅ ${d} is served by this bus: ${p} FCFA. Confirm and pay.`,none:d=>`"${d}" is not registered on this bus. ❌ Please ask the conductor.`,nolist:'The conductor has not registered any routes on this bus yet. Please ask them.',mic:'I could not hear you. Please type the name.'}
 };
 const AI_LOC={wo:'fr-SN',fr:'fr-FR',en:'en-US'};
 S.aiLang=S.aiLang||'wo';
@@ -4871,7 +4916,10 @@ window.aiListen=(auto)=>{
   try{rec.start();}catch(e){S.aiRec=null;if(btn)btn.textContent='🎤';}
 };
 window.aiSubmit=()=>{
-  const v=(document.getElementById('aiDestInput')?.value||'').trim();
+  const _raw=(document.getElementById('aiDestInput')?.value||'').trim();
+  // on retire « je vais à » / « dama dem ci » / « I'm going to » : il reste seulement la destination
+  const v=_raw.replace(/^\s*(je\s+vais|je\s+veux\s+aller|dama\s+b[ëe]gg\s+dem|dama\s+dem|i['’]?m\s+going|i\s+am\s+going|i\s+want\s+to\s+go)\s*(à|a|au|aux|vers|ci|to)?\s+/i,'').trim()||_raw;
+  const _di=document.getElementById('aiDestInput');if(_di&&v)_di.value=v;
   if(!v){aiBubble(AI_TXT[S.aiLang].empty);aiSpeak(AI_TXT[S.aiLang].empty,'empty',aiAutoListen);return;}
   aiStopListen();aiOpen(false);
   openTicketFlow();S.wantedDest=v;
@@ -4978,6 +5026,18 @@ async function aiLLMPick(want,cands){
     return j.index===null?null:(cands[j.index]||undefined);
   }catch(e){console.warn('[aiLLMPick]',e);return undefined;}
 }
+function zoneGroupBox(destList,t){
+  if(!t.zoneId)return destList;
+  const g=destList._zg=destList._zg||{};
+  if(!g[t.zoneId]){
+    const w=document.createElement('div');w.style.cssText='display:flex;flex-direction:column;gap:8px;';
+    const h=document.createElement('div');h.style.cssText='font-size:12px;font-weight:800;color:#FDEF42;margin-top:6px;';
+    h.textContent='Zone '+t.price+' F · de '+(t.zoneStart||t.from)+' à '+(t.zoneEnd||'');
+    const c=document.createElement('div');c.style.cssText='display:flex;flex-direction:column;gap:8px;';
+    w.appendChild(h);w.appendChild(c);destList.appendChild(w);g[t.zoneId]=c;
+  }
+  return g[t.zoneId];
+}
 window.aiCheckDest=async(cands)=>{
   const want=S.wantedDest;const box=document.getElementById('aiResult');if(!want||!box)return;
   const T=AI_TXT[S.aiLang];
@@ -4997,7 +5057,7 @@ window.resetFlow=()=>{{const _dl=document.getElementById('destList');if(_dl)_dl.
 function setDots(s){for(let i=0;i<3;i++){const d=document.getElementById('tdot'+i);if(d)d.className='step-dot'+(i<s?' done':i===s?' active':'');}}
 async function loadBusInFlow(walletId){
   loader('Chargement bus…');
-  try{const wSnap=await getDoc(doc(db,'wallets',walletId));if(!wSnap.exists()){loader('',false);notify('❌','Bus inconnu','QR non reconnu.');return;}const recvUid=wSnap.data().uid;const rSnap=await getDoc(doc(db,'users',recvUid));if(!rSnap.exists()){loader('',false);notify('❌','Erreur','Receveur introuvable.');return;}const recv={...rSnap.data(),uid:recvUid};S.ticketBus=recv;S.ticketSection=null;document.getElementById('detectedBusInfo').innerHTML=`GIE:${_escH(recv.gie)} = ${_escH(recv.vehicle)} = Ligne:${_escH(recv.ligne)}<br>Zone:${_escH(recv.zone)}`;const destSnap=await getDocs(collection(db,'users',recvUid,'destinations'));const destList=document.getElementById('destList');destList.innerHTML='';destList.style.outline='none';if(destSnap.empty){destList.innerHTML='<div style="background:#FFD10015;border:1px solid #FFD10044;border-radius:12px;padding:12px;color:#888;font-size:13px;text-align:center;">Aucune section définie.</div>';}else{const aiCands=[];[...destSnap.docs].sort((a,b)=>(a.data().price||0)-(b.data().price||0)).forEach(d=>{const t=d.data();const chip=document.createElement('div');chip.style.cssText='background:#ffffff0d;border:1.5px solid #2a3a2a;border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .2s;';chip.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${_escH(t.from)}-->${_escH(t.to)}</div><div style="color:#888;font-size:11px;">Section ${t.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${t.price} F</div></div>`;chip.onclick=()=>{S.ticketSection={...t,docId:d.id};destList.querySelectorAll('div').forEach(c=>{c.style.background='#ffffff0d';c.style.borderColor='#2a3a2a';});chip.style.background='#00A65033';chip.style.borderColor='var(--g)';document.getElementById('ticketPriceDisplay').textContent=t.price.toLocaleString('fr-FR')+' FCFA';document.getElementById('btnPayTicket').disabled=false;};destList.appendChild(chip);aiCands.push({t,chip,id:d.id});});const _pk=S.aiPick&&recv.uid===S.aiPick.recvUid?aiCands.find(x=>x.id===S.aiPick.destId):null;if(S.aiPick&&!_pk){notify('⚠️','Autre bus','Ce n\'est pas le bus que vous avez choisi.');}aiCheckDest(_pk?[_pk]:aiCands);}if(destSnap.empty)aiCheckDest([]);loader('',false);document.getElementById('ticketStep0').style.display='none';{const _ai=document.getElementById('ticketStepAI');if(_ai)_ai.style.display='none';}document.getElementById('ticketStep1').style.display='block';setDots(1);notify('🚌','Bus détecté',recv.vehicle+' · Ligne '+recv.ligne);}
+  try{const wSnap=await getDoc(doc(db,'wallets',walletId));if(!wSnap.exists()){loader('',false);notify('❌','Bus inconnu','QR non reconnu.');return;}const recvUid=wSnap.data().uid;const rSnap=await getDoc(doc(db,'users',recvUid));if(!rSnap.exists()){loader('',false);notify('❌','Erreur','Receveur introuvable.');return;}const recv={...rSnap.data(),uid:recvUid};S.ticketBus=recv;S.ticketSection=null;document.getElementById('detectedBusInfo').innerHTML=`GIE:${_escH(recv.gie)} = ${_escH(recv.vehicle)} = Ligne:${_escH(recv.ligne)}<br>Zone:${_escH(recv.zone)}`;const destSnap=await getDocs(collection(db,'users',recvUid,'destinations'));const destList=document.getElementById('destList');destList.innerHTML='';destList._zg={};destList.style.outline='none';if(destSnap.empty){destList.innerHTML='<div style="background:#FFD10015;border:1px solid #FFD10044;border-radius:12px;padding:12px;color:#888;font-size:13px;text-align:center;">Aucune section définie.</div>';}else{const aiCands=[];[...destSnap.docs].sort((a,b)=>{const x=a.data(),y=b.data();return((x.price||0)-(y.price||0))||((x.section||0)-(y.section||0))||String(x.zoneId||'').localeCompare(String(y.zoneId||''))||((x.ord||0)-(y.ord||0));}).forEach(d=>{const t=d.data();const chip=document.createElement('div');chip.className='dchip';chip.style.cssText='background:#ffffff0d;border:1.5px solid #2a3a2a;border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .2s;';chip.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.zoneId?'🚏 '+_escH(t.to):_escH(t.from)+'-->'+_escH(t.to)}</div><div style="color:#888;font-size:11px;">${t.zoneId?'Zone '+t.price+' F · de '+_escH(t.zoneStart||t.from)+' à '+_escH(t.zoneEnd||''):'Section '+t.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${t.price} F</div></div>`;chip.onclick=()=>{S.ticketSection={...t,docId:d.id};destList.querySelectorAll('.dchip').forEach(c=>{c.style.background='#ffffff0d';c.style.borderColor='#2a3a2a';});chip.style.background='#00A65033';chip.style.borderColor='var(--g)';document.getElementById('ticketPriceDisplay').textContent=t.price.toLocaleString('fr-FR')+' FCFA';document.getElementById('btnPayTicket').disabled=false;};zoneGroupBox(destList,t).appendChild(chip);aiCands.push({t,chip,id:d.id});});const _pk=S.aiPick&&recv.uid===S.aiPick.recvUid?aiCands.find(x=>x.id===S.aiPick.destId):null;if(S.aiPick&&!_pk){notify('⚠️','Autre bus','Ce n\'est pas le bus que vous avez choisi.');}aiCheckDest(_pk?[_pk]:aiCands);}if(destSnap.empty)aiCheckDest([]);loader('',false);document.getElementById('ticketStep0').style.display='none';{const _ai=document.getElementById('ticketStepAI');if(_ai)_ai.style.display='none';}document.getElementById('ticketStep1').style.display='block';setDots(1);notify('🚌','Bus détecté',recv.vehicle+' · Ligne '+recv.ligne);}
   catch(e){loader('',false);notify('❌','Erreur',e.message);}
 }
 window.goPay=async()=>{
