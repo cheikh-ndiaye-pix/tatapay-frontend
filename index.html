@@ -4780,7 +4780,7 @@ function aiSpeak(text,key,onEnd){
 }
 async function loadAiVoices(){
   try{
-    const sn=await withTimeout(getDocs(collection(db,'aiVoices')),4000,'voix');
+    const sn=await withTimeout(getDocs(collection(db,'aiVoices')),12000,'voix');
     const v={};sn.docs.forEach(d=>{const u=d.data().data||d.data().url;if(u)v[d.id]=u;});
     S.aiVoices=v;try{localStorage.setItem('tatapay_aiVoices',JSON.stringify(v));}catch(e){}
   }catch(e){try{S.aiVoices=JSON.parse(localStorage.getItem('tatapay_aiVoices')||'{}');}catch(_){S.aiVoices={};}}
@@ -4885,7 +4885,7 @@ window.vcSave=async(lang,key)=>{
     const data=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>rej(new Error('Lecture du vocal impossible.'));fr.readAsDataURL(pd.blob);});
     if(data.length>900000)throw new Error('Vocal trop long (max ≈ 30 secondes). Raccourcissez-le.');
     await withTimeout(setDoc(doc(db,'aiVoices',id),{lang,key,data,ext:pd.ext,by:S.uid,updatedAt:serverTimestamp()}),20000,'sauvegarde');
-    vcSaved[id]={lang,key,data};try{URL.revokeObjectURL(pd.url);}catch(e){}delete vcPending[id];
+    vcSaved[id]={lang,key,data};try{S.aiVoices=S.aiVoices||{};S.aiVoices[id]=data;localStorage.setItem('tatapay_aiVoices',JSON.stringify(S.aiVoices));}catch(e){}try{URL.revokeObjectURL(pd.url);}catch(e){}delete vcPending[id];
     loader('',false);vcDraw();notify('✅','Vocal sauvegardé',VC_LABEL[key]);
   }catch(e){loader('',false);notify('❌','Erreur',e.timeout?'Pas de réponse du serveur. Vérifiez la connexion puis réessayez.':((e.code?e.code+' — ':'')+e.message));}
 };
@@ -4896,7 +4896,7 @@ window.vcDelete=async(lang,key)=>{
 };
 
 const aiAutoListen=()=>{const p=document.getElementById('aiPanel');if(p&&p.style.display==='block')aiListen(true);};
-window.aiGreet=()=>{aiInit();aiOpen(true);aiSpeak(AI_TXT[S.aiLang].ask,'ask',aiAutoListen);};
+window.aiGreet=()=>{try{loadAiVoices();}catch(e){}aiInit();aiOpen(true);aiSpeak(AI_TXT[S.aiLang].ask,'ask',aiAutoListen);};
 window.aiSetLang=(l)=>{S.aiLang=l;aiInit();aiSpeak(AI_TXT[l].ask,'ask',aiAutoListen);};
 window.aiListen=(auto)=>{
   auto=auto===true;
