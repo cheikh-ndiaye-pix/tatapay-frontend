@@ -4771,10 +4771,12 @@ function aiSpeak(text,key,onEnd){
     if(url){
       const a=_getPlayer();try{a.pause();}catch(_){}a.src=url;a.volume=1;S.aiAudio=a;
       a.onended=()=>{if(S.aiAudio===a&&onEnd)onEnd();};
-      a.onerror=()=>aiTTS(text,onEnd,key);
+      a.onerror=()=>{if(S.aiLang==='wo'){if(onEnd)onEnd();return;}aiTTS(text,onEnd,key);};
       a.play().then(()=>{S.aiPendingSpeak=null;}).catch(()=>{S.aiPendingSpeak={text,key,onEnd,at:Date.now()};});
       return;
     }
+    // Wolof : uniquement les vocaux enregistrés par l'admin, jamais la voix du téléphone
+    if(S.aiLang==='wo'){if(onEnd)onEnd();return;}
     aiTTS(text,onEnd,key);
   }catch(e){}
 }
