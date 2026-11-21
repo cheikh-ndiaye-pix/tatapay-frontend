@@ -450,6 +450,7 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
     <div class="input-wrap"><label class="input-label">Mot de passe *</label><input class="input-field" id="authPass" type="password" placeholder="••••••••"/></div>
     <div id="fieldPass2" style="display:none"><div class="input-wrap"><label class="input-label">Confirmer *</label><input class="input-field" id="authPass2" type="password" placeholder="••••••••"/></div></div>
     <button class="btn btn-primary btn-full" onclick="doAuth()" id="authSubmitBtn">Se connecter</button>
+    <button class="btn btn-full" id="guestBtn" onclick="doGuest()" style="margin-top:12px;background:transparent;border:1.5px solid #888;color:inherit;">Entrer sans compte (passager invité)</button>
     <div style="text-align:center;margin-top:12px;"><span onclick="forgotPassword()" style="color:#888;font-size:13px;cursor:pointer;text-decoration:underline;">Mot de passe oublié ?</span></div>
     <div style="text-align:center;margin-top:12px;color:#666;font-size:14px;">
       <span id="authSwitchText">Pas de compte ?</span>
@@ -1337,7 +1338,7 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
 
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail,signInAnonymously}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import{getFirestore,doc,setDoc,getDoc,getDocFromCache,updateDoc,addDoc,collection,collectionGroup,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove,runTransaction,writeBatch}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{getStorage,ref as storageRef,uploadBytes,getDownloadURL,listAll}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
@@ -1624,6 +1625,7 @@ window.setRole=async(r)=>{
   const tabs=S.authTabs||Object.keys(tabIds);
   Object.entries(tabIds).forEach(([role,id])=>{const btn=document.getElementById(id);if(btn)btn.style.cssText=`background:${role===r?colors[role]:'transparent'};color:${role===r?'var(--w)':'#888'};font-size:11px;`;if(btn)btn.style.display=tabs.includes(role)?'inline-block':'none';});
   const bar=document.getElementById('authRoleTabs');if(bar)bar.style.display=tabs.length>1?'flex':'none';
+  {const gb=document.getElementById('guestBtn');if(gb)gb.style.display=(r==='passenger'&&!S.isReg)?'block':'none';}
   const ttl=document.getElementById('authTitle');if(ttl)ttl.textContent=(S.isReg?'Inscription':'Connexion')+(tabs.length===1?' · '+(ROLE_LABEL[r]||''):'');
   ['fieldsReceiver','fieldsOwner','fieldsDirecteur','fieldsChauffeur'].forEach(id=>document.getElementById(id).style.display='none');
   {const fl=document.getElementById('fieldLang');if(fl){fl.style.display=(S.isReg&&r==='passenger')?'block':'none';if(S.isReg&&r==='passenger'){if(!S.regLang)S.regLang=S.lang||'fr';setAppLang(S.regLang,false);}}}
@@ -1893,6 +1895,27 @@ window.doSubmitReceiverCandidature=async()=>{
     const mb=document.getElementById('pendingMoreBtn');if(mb)mb.style.display='inline-block';
     watchReceiverApproval(uid);
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
+window.doGuest=async()=>{
+  loader('Entrée…');
+  _authFlowInProgress=true;
+  try{
+    const cred=await signInAnonymously(auth);
+    const uid=cred.user.uid;
+    const ex=await getDoc(doc(db,'users',uid));
+    if(!ex.exists()){
+      const walletId='TP-'+uid.slice(0,6).toUpperCase();
+      await setDoc(doc(db,'users',uid),{walletId,name:'Invité',email:'',phone:'',role:'passenger',status:'approved',balance:0,guest:true,lang:S.regLang||S.lang||'fr',createdAt:serverTimestamp()});
+      await setDoc(doc(db,'wallets',walletId),{uid,role:'passenger'});
+    }
+    S.expectedLoginRole='passenger';
+    _authFlowInProgress=false;
+    await attemptSessionRestore(cred.user);
+  }catch(e){
+    _authFlowInProgress=false;loader('',false);
+    if(e.code==='auth/operation-not-allowed')notify('❌','Mode invité désactivé','Activez « Anonyme » dans Firebase > Authentication > Sign-in method.');
+    else notify('❌','Erreur',e.message);
+  }
 };
 window.forgotPassword=async()=>{const email=document.getElementById('authEmail').value.trim().toLowerCase();if(!email){notify('⚠️','Email requis','Entrez votre email.');return;}try{await sendPasswordResetEmail(auth,email);notify('✅','Email envoyé','Vérifiez votre boîte mail.');}catch(e){notify('❌','Erreur',e.message);}};
 window.doLogout=async()=>{detachListeners();try{clearCachedActiveTicket();}catch(e){}await signOut(auth);S={...S,role:null,uid:null,profile:null,expectedLoginRole:null};activeTicketData=null;hideDescendBtn();goAuth('login','passenger');};
