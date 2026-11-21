@@ -1918,7 +1918,7 @@ window.doDemo=async(role)=>{
   if(!a||a.pass==='REMPLIR'){notify('⚠️','Démo','Renseignez le compte « '+role+' » dans DEMO_ACCOUNTS.');return;}
   loader('Entrée en mode démo…');
   try{
-    S.expectedLoginRole=(role==='chauffeur')?'owner':role; // le chauffeur entre par l'entrée propriétaire
+    S.expectedLoginRole=null; // démo : pas de vérification d'onglet, l'appli ouvre l'espace réel du compte
     if(role==='directeur'){try{history.replaceState(null,'',location.pathname+'?role=directeur&mode=login&demo=1');}catch(_){}}
     const passes=Array.isArray(a.pass)?a.pass:[a.pass];
     let lastErr=null,ok=false;
