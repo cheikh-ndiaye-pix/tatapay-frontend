@@ -390,6 +390,16 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
     <div style="font-weight:900;font-size:22px;" id="authTitle">Connexion</div>
   </div>
   <div style="padding:20px 24px;flex:1;overflow-y:auto;">
+    <div id="demoPanel" style="margin-bottom:18px;padding:12px;border:1.5px dashed #888;border-radius:12px;">
+      <div style="text-align:center;font-weight:700;font-size:13px;margin-bottom:8px;">🎬 MODE DÉMO · accès direct</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button class="btn" onclick="doDemo('passenger')" style="background:var(--g);color:var(--w);">👤 Client</button>
+        <button class="btn" onclick="doDemo('receiver')" style="background:var(--orange);color:var(--w);">🎫 Receveur</button>
+        <button class="btn" onclick="doDemo('chauffeur')" style="background:#334155;color:#fff;">🚌 Chauffeur</button>
+        <button class="btn" onclick="doDemo('directeur')" style="background:#0ea5e9;color:#fff;">🏢 Directeur</button>
+      </div>
+      <div style="text-align:center;font-size:12px;margin-top:10px;opacity:.85;">Vous pouvez aussi créer votre propre compte : <span onclick="goAuth('register',S.authRole||'passenger')" style="text-decoration:underline;cursor:pointer;font-weight:700;">S'inscrire</span></div>
+    </div>
     <div class="sel-tabs" id="authRoleTabs" style="margin-bottom:20px;">
       <button class="sel-tab" id="tabPassenger" onclick="setRole('passenger')" style="background:var(--g);color:var(--w);font-size:11px;">🧍 Passager</button>
       <button class="sel-tab" id="tabReceiver" onclick="setRole('receiver')" style="background:transparent;color:#888;font-size:11px;">🎫 Receveur</button>
@@ -450,16 +460,6 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
     <div class="input-wrap"><label class="input-label">Mot de passe *</label><input class="input-field" id="authPass" type="password" placeholder="••••••••"/></div>
     <div id="fieldPass2" style="display:none"><div class="input-wrap"><label class="input-label">Confirmer *</label><input class="input-field" id="authPass2" type="password" placeholder="••••••••"/></div></div>
     <button class="btn btn-primary btn-full" onclick="doAuth()" id="authSubmitBtn">Se connecter</button>
-    <div id="demoPanel" style="margin-top:18px;padding:12px;border:1.5px dashed #888;border-radius:12px;">
-      <div style="text-align:center;font-weight:700;font-size:13px;margin-bottom:8px;">🎬 MODE DÉMO · accès direct</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button class="btn" onclick="doDemo('passenger')" style="background:var(--g);color:var(--w);">👤 Client</button>
-        <button class="btn" onclick="doDemo('receiver')" style="background:var(--orange);color:var(--w);">🎫 Receveur</button>
-        <button class="btn" onclick="doDemo('chauffeur')" style="background:#334155;color:#fff;">🚌 Chauffeur</button>
-        <button class="btn" onclick="doDemo('directeur')" style="background:#0ea5e9;color:#fff;">🏢 Directeur</button>
-      </div>
-      <div style="text-align:center;font-size:12px;margin-top:10px;opacity:.85;">Vous pouvez aussi créer votre propre compte : <span onclick="goAuth('register',S.authRole||'passenger')" style="text-decoration:underline;cursor:pointer;font-weight:700;">S'inscrire</span></div>
-    </div>
     <button class="btn btn-full" id="guestBtn" onclick="doGuest()" style="margin-top:12px;background:transparent;border:1.5px solid #888;color:inherit;">Entrer sans compte (passager invité)</button>
     <div style="text-align:center;margin-top:12px;"><span onclick="forgotPassword()" style="color:#888;font-size:13px;cursor:pointer;text-decoration:underline;">Mot de passe oublié ?</span></div>
     <div style="text-align:center;margin-top:12px;color:#666;font-size:14px;">
@@ -1909,7 +1909,7 @@ window.doSubmitReceiverCandidature=async()=>{
 // ====== MODE DÉMO (jury) : remplir les vrais comptes déjà créés, puis RETIRER après la soutenance ======
 const DEMO_ACCOUNTS={
   passenger:{email:'cheikh204@gmail.com',pass:'cheikh'},
-  receiver:{email:'dembandiaye@gmail.com',pass:'Cheikh'},
+  receiver:{email:'dembandiaye@gmail.com',pass:['CHEIKH','Cheikh','cheikh']},
   chauffeur:{email:'fama2@gmail.com',pass:'cheikh'},
   directeur:{email:'goudiaby1@gmail.com',pass:'cheikh'}
 };
@@ -1920,7 +1920,13 @@ window.doDemo=async(role)=>{
   try{
     S.expectedLoginRole=role;
     if(role==='directeur'){try{history.replaceState(null,'',location.pathname+'?role=directeur&mode=login&demo=1');}catch(_){}}
-    await signInWithEmailAndPassword(auth,a.email,a.pass);
+    const passes=Array.isArray(a.pass)?a.pass:[a.pass];
+    let lastErr=null,ok=false;
+    for(const pw of passes){
+      try{await signInWithEmailAndPassword(auth,a.email,pw);ok=true;break;}
+      catch(er){lastErr=er;if(er.code!=='auth/invalid-credential'&&er.code!=='auth/wrong-password')throw er;}
+    }
+    if(!ok)throw lastErr;
     loader('',false);
   }catch(e){
     loader('',false);S.expectedLoginRole=null;
