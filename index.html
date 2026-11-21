@@ -385,12 +385,7 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
 
 <div class="screen" id="screenAuth">
   <div class="sn-stripe"></div>
-  <div style="background:#0c1f12;padding:28px 24px 20px;border-bottom:1px solid #009A4422;">
-    <button onclick="goSplash()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px 14px;cursor:pointer;color:var(--w);margin-bottom:16px;font-family:'Space Grotesk',sans-serif;font-size:13px;">← Retour</button>
-    <div style="font-weight:900;font-size:22px;" id="authTitle">Connexion</div>
-  </div>
-  <div style="padding:20px 24px;flex:1;overflow-y:auto;">
-    <div id="demoPanel" style="margin-bottom:18px;padding:12px;border:1.5px dashed #888;border-radius:12px;">
+  <div id="demoPanel" style="margin:10px 16px;padding:12px;border:1.5px dashed #888;border-radius:12px;">
       <div style="text-align:center;font-weight:700;font-size:13px;margin-bottom:8px;">🎬 MODE DÉMO · accès direct</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <button class="btn" onclick="doDemo('passenger')" style="background:var(--g);color:var(--w);">👤 Client</button>
@@ -400,7 +395,12 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
       </div>
       <div style="text-align:center;font-size:12px;margin-top:10px;opacity:.85;">Vous pouvez aussi créer votre propre compte : <span onclick="goAuth('register',S.authRole||'passenger')" style="text-decoration:underline;cursor:pointer;font-weight:700;">S'inscrire</span></div>
     </div>
-    <div class="sel-tabs" id="authRoleTabs" style="margin-bottom:20px;">
+  <div style="background:#0c1f12;padding:28px 24px 20px;border-bottom:1px solid #009A4422;">
+    <button onclick="goSplash()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px 14px;cursor:pointer;color:var(--w);margin-bottom:16px;font-family:'Space Grotesk',sans-serif;font-size:13px;">← Retour</button>
+    <div style="font-weight:900;font-size:22px;" id="authTitle">Connexion</div>
+  </div>
+  <div style="padding:20px 24px;flex:1;overflow-y:auto;">
+        <div class="sel-tabs" id="authRoleTabs" style="margin-bottom:20px;">
       <button class="sel-tab" id="tabPassenger" onclick="setRole('passenger')" style="background:var(--g);color:var(--w);font-size:11px;">🧍 Passager</button>
       <button class="sel-tab" id="tabReceiver" onclick="setRole('receiver')" style="background:transparent;color:#888;font-size:11px;">🎫 Receveur</button>
       <button class="sel-tab" id="tabOwner" onclick="setRole('owner')" style="background:transparent;color:#888;font-size:11px;">🚌 Proprio</button>
@@ -1918,7 +1918,7 @@ window.doDemo=async(role)=>{
   if(!a||a.pass==='REMPLIR'){notify('⚠️','Démo','Renseignez le compte « '+role+' » dans DEMO_ACCOUNTS.');return;}
   loader('Entrée en mode démo…');
   try{
-    S.expectedLoginRole=role;
+    S.expectedLoginRole=(role==='chauffeur')?'owner':role; // le chauffeur entre par l'entrée propriétaire
     if(role==='directeur'){try{history.replaceState(null,'',location.pathname+'?role=directeur&mode=login&demo=1');}catch(_){}}
     const passes=Array.isArray(a.pass)?a.pass:[a.pass];
     let lastErr=null,ok=false;
