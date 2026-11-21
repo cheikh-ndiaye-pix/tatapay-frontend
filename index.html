@@ -1895,7 +1895,7 @@ window.doSubmitReceiverCandidature=async()=>{
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
 window.forgotPassword=async()=>{const email=document.getElementById('authEmail').value.trim().toLowerCase();if(!email){notify('⚠️','Email requis','Entrez votre email.');return;}try{await sendPasswordResetEmail(auth,email);notify('✅','Email envoyé','Vérifiez votre boîte mail.');}catch(e){notify('❌','Erreur',e.message);}};
-window.doLogout=async()=>{detachListeners();try{clearCachedActiveTicket();}catch(e){}await signOut(auth);S={...S,role:null,uid:null,profile:null,expectedLoginRole:null};activeTicketData=null;hideDescendBtn();show('screenSplash');};
+window.doLogout=async()=>{detachListeners();try{clearCachedActiveTicket();}catch(e){}await signOut(auth);S={...S,role:null,uid:null,profile:null,expectedLoginRole:null};activeTicketData=null;hideDescendBtn();goAuth('login','passenger');};
 
 let _pendingAuthUser=null;
 async function attemptSessionRestore(user){
@@ -1949,7 +1949,7 @@ async function attemptSessionRestore(user){
 onAuthStateChanged(auth,user=>{
   if(_authFlowInProgress)return; // inscription en cours : doAuth() gère déjà tout, ne pas interférer (évite un signOut prématuré si le doc users/{uid} n'existe pas encore)
   if(user){_deepLink=null;attemptSessionRestore(user);}
-  else{show('screenSplash');splashView('main');loader('',false);applyDeepLink();}
+  else{loader('',false);if(_deepLink){applyDeepLink();}else{goAuth('login','passenger');}}
 });
 
 function detachListeners(){[unsubPending,unsubNotif,unsubBalance,unsubRecvBalance,unsubAdmin,unsubChProfile,unsubChReceiver,unsubChTickets,unsubChNotif,unsubChVersements,unsubChCandidatures,unsubChPendingVers,unsubBusLoc,unsubChOwnerBalance,unsubDirOwnersA,unsubPassNotif].forEach(u=>{if(u){try{u();}catch(e){}}});unsubPending=unsubNotif=unsubBalance=unsubRecvBalance=unsubAdmin=unsubChProfile=unsubChReceiver=unsubChTickets=unsubChNotif=unsubChVersements=unsubChCandidatures=unsubChPendingVers=unsubBusLoc=unsubChOwnerBalance=unsubDirOwnersA=unsubPassNotif=null;Object.keys(dirOwnersLocUnsubs).forEach(uid=>{try{dirOwnersLocUnsubs[uid]();}catch(e){}delete dirOwnersLocUnsubs[uid];});if(S.rgUnsub){try{S.rgUnsub();}catch(e){}S.rgUnsub=null;}if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}if(chRevChartInst){chRevChartInst.destroy();chRevChartInst=null;}if(chPerfChartInst){chPerfChartInst.destroy();chPerfChartInst=null;}if(chRecvPerfChartInst){chRecvPerfChartInst.destroy();chRecvPerfChartInst=null;}if(chGeoWatchId!=null){try{navigator.geolocation.clearWatch(chGeoWatchId);}catch(e){}chGeoWatchId=null;}if(recvGeoWatchId!=null){try{navigator.geolocation.clearWatch(recvGeoWatchId);}catch(e){}recvGeoWatchId=null;}if(chMap){try{chMap.remove();}catch(e){}chMap=null;chMapMarker=null;}resetTrackBus();}
