@@ -450,6 +450,16 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
     <div class="input-wrap"><label class="input-label">Mot de passe *</label><input class="input-field" id="authPass" type="password" placeholder="••••••••"/></div>
     <div id="fieldPass2" style="display:none"><div class="input-wrap"><label class="input-label">Confirmer *</label><input class="input-field" id="authPass2" type="password" placeholder="••••••••"/></div></div>
     <button class="btn btn-primary btn-full" onclick="doAuth()" id="authSubmitBtn">Se connecter</button>
+    <div id="demoPanel" style="margin-top:18px;padding:12px;border:1.5px dashed #888;border-radius:12px;">
+      <div style="text-align:center;font-weight:700;font-size:13px;margin-bottom:8px;">🎬 MODE DÉMO · accès direct</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button class="btn" onclick="doDemo('passenger')" style="background:var(--g);color:var(--w);">👤 Client</button>
+        <button class="btn" onclick="doDemo('receiver')" style="background:var(--orange);color:var(--w);">🎫 Receveur</button>
+        <button class="btn" onclick="doDemo('chauffeur')" style="background:#334155;color:#fff;">🚌 Chauffeur</button>
+        <button class="btn" onclick="doDemo('directeur')" style="background:#0ea5e9;color:#fff;">🏢 Directeur</button>
+      </div>
+      <div style="text-align:center;font-size:12px;margin-top:10px;opacity:.85;">Vous pouvez aussi créer votre propre compte : <span onclick="goAuth('register',S.authRole||'passenger')" style="text-decoration:underline;cursor:pointer;font-weight:700;">S'inscrire</span></div>
+    </div>
     <button class="btn btn-full" id="guestBtn" onclick="doGuest()" style="margin-top:12px;background:transparent;border:1.5px solid #888;color:inherit;">Entrer sans compte (passager invité)</button>
     <div style="text-align:center;margin-top:12px;"><span onclick="forgotPassword()" style="color:#888;font-size:13px;cursor:pointer;text-decoration:underline;">Mot de passe oublié ?</span></div>
     <div style="text-align:center;margin-top:12px;color:#666;font-size:14px;">
@@ -1895,6 +1905,27 @@ window.doSubmitReceiverCandidature=async()=>{
     const mb=document.getElementById('pendingMoreBtn');if(mb)mb.style.display='inline-block';
     watchReceiverApproval(uid);
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
+};
+// ====== MODE DÉMO (jury) : remplir les vrais comptes déjà créés, puis RETIRER après la soutenance ======
+const DEMO_ACCOUNTS={
+  passenger:{email:'cheikhdiop204@gmail.com',pass:'cheikh'},
+  receiver:{email:'dembandiaye@gmail.com',pass:'cheikh'},
+  chauffeur:{email:'fama2@gmail.com',pass:'cheikh'},
+  directeur:{email:'goudiaby1@gmail.com',pass:'cheikh'}
+};
+window.doDemo=async(role)=>{
+  const a=DEMO_ACCOUNTS[role];
+  if(!a||a.pass==='REMPLIR'){notify('⚠️','Démo','Renseignez le compte « '+role+' » dans DEMO_ACCOUNTS.');return;}
+  loader('Entrée en mode démo…');
+  try{
+    S.expectedLoginRole=role;
+    if(role==='directeur'){try{history.replaceState(null,'',location.pathname+'?role=directeur&mode=login&demo=1');}catch(_){}}
+    await signInWithEmailAndPassword(auth,a.email,a.pass);
+    loader('',false);
+  }catch(e){
+    loader('',false);S.expectedLoginRole=null;
+    notify('❌','Démo',e.code==='auth/network-request-failed'?'Pas de réseau.':'Compte démo invalide : '+(e.code||e.message));
+  }
 };
 window.doGuest=async()=>{
   loader('Entrée…');
