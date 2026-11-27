@@ -385,22 +385,12 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
 
 <div class="screen" id="screenAuth">
   <div class="sn-stripe"></div>
-  <div id="demoPanel" style="margin:10px 16px;padding:12px;border:1.5px dashed #888;border-radius:12px;">
-      <div style="text-align:center;font-weight:700;font-size:13px;margin-bottom:8px;">🎬 MODE DÉMO · accès direct</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button class="btn" onclick="doDemo('passenger')" style="background:var(--g);color:var(--w);">👤 Client</button>
-        <button class="btn" onclick="doDemo('receiver')" style="background:var(--orange);color:var(--w);">🎫 Receveur</button>
-        <button class="btn" onclick="doDemo('chauffeur')" style="background:#334155;color:#fff;">🚌 Chauffeur</button>
-        <button class="btn" onclick="doDemo('directeur')" style="background:#0ea5e9;color:#fff;">🏢 Directeur</button>
-      </div>
-      <div style="text-align:center;font-size:12px;margin-top:10px;opacity:.85;">Vous pouvez aussi créer votre propre compte : <span onclick="goAuth('register',S.authRole||'passenger')" style="text-decoration:underline;cursor:pointer;font-weight:700;">S'inscrire</span></div>
-    </div>
   <div style="background:#0c1f12;padding:28px 24px 20px;border-bottom:1px solid #009A4422;">
     <button onclick="goSplash()" style="background:#ffffff15;border:none;border-radius:10px;padding:8px 14px;cursor:pointer;color:var(--w);margin-bottom:16px;font-family:'Space Grotesk',sans-serif;font-size:13px;">← Retour</button>
     <div style="font-weight:900;font-size:22px;" id="authTitle">Connexion</div>
   </div>
   <div style="padding:20px 24px;flex:1;overflow-y:auto;">
-        <div class="sel-tabs" id="authRoleTabs" style="margin-bottom:20px;">
+    <div class="sel-tabs" id="authRoleTabs" style="margin-bottom:20px;">
       <button class="sel-tab" id="tabPassenger" onclick="setRole('passenger')" style="background:var(--g);color:var(--w);font-size:11px;">🧍 Passager</button>
       <button class="sel-tab" id="tabReceiver" onclick="setRole('receiver')" style="background:transparent;color:#888;font-size:11px;">🎫 Receveur</button>
       <button class="sel-tab" id="tabOwner" onclick="setRole('owner')" style="background:transparent;color:#888;font-size:11px;">🚌 Proprio</button>
@@ -460,7 +450,6 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
     <div class="input-wrap"><label class="input-label">Mot de passe *</label><input class="input-field" id="authPass" type="password" placeholder="••••••••"/></div>
     <div id="fieldPass2" style="display:none"><div class="input-wrap"><label class="input-label">Confirmer *</label><input class="input-field" id="authPass2" type="password" placeholder="••••••••"/></div></div>
     <button class="btn btn-primary btn-full" onclick="doAuth()" id="authSubmitBtn">Se connecter</button>
-    <button class="btn btn-full" id="guestBtn" onclick="doGuest()" style="margin-top:12px;background:transparent;border:1.5px solid #888;color:inherit;">Entrer sans compte (passager invité)</button>
     <div style="text-align:center;margin-top:12px;"><span onclick="forgotPassword()" style="color:#888;font-size:13px;cursor:pointer;text-decoration:underline;">Mot de passe oublié ?</span></div>
     <div style="text-align:center;margin-top:12px;color:#666;font-size:14px;">
       <span id="authSwitchText">Pas de compte ?</span>
@@ -646,15 +635,10 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
 
     <div class="tab-content" id="recvTab-trajets">
       <div style="padding:20px;">
-        <div style="font-weight:900;font-size:22px;margin-bottom:4px;">📍 Zones de prix</div>
-        <div style="color:#888;font-size:12px;line-height:1.6;margin-bottom:14px;">Une zone est un tronçon de la ligne avec un prix. Écrivez où elle commence, où elle finit, puis ajoutez les arrêts qui sont dedans.</div>
-        <div style="background:#ffffff0a;border:1px solid #ffffff14;border-radius:14px;padding:12px;margin-bottom:16px;">
-          <div class="quick-grid" style="margin-bottom:8px;"><button onclick="document.getElementById('zoneNewPrice').value=100" class="quick-btn">100</button><button onclick="document.getElementById('zoneNewPrice').value=150" class="quick-btn">150</button><button onclick="document.getElementById('zoneNewPrice').value=200" class="quick-btn">200</button><button onclick="document.getElementById('zoneNewPrice').value=250" class="quick-btn">250</button><button onclick="document.getElementById('zoneNewPrice').value=300" class="quick-btn">300</button><button onclick="document.getElementById('zoneNewPrice').value=350" class="quick-btn">350</button><button onclick="document.getElementById('zoneNewPrice').value=400" class="quick-btn">400</button></div>
-          <input class="input-field" id="zoneNewPrice" type="number" min="50" placeholder="Prix de la zone (FCFA)" style="margin-bottom:8px;"/>
-          <div style="display:flex;gap:8px;margin-bottom:8px;"><input class="input-field" id="zoneNewFrom" list="zoneNames" placeholder="Début de la zone" style="flex:1;min-width:0;"/><input class="input-field" id="zoneNewTo" list="zoneNames" placeholder="Fin de la zone" style="flex:1;min-width:0;"/></div>
-          <button class="btn btn-primary btn-full" onclick="zoneNew()">+ Créer la zone</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+          <div><div style="font-weight:900;font-size:22px;">📍 Sections & Trajets</div></div>
+          <button onclick="openAddTrajet()" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:14px;padding:10px 14px;cursor:pointer;color:#fff;font-weight:800;font-size:13px;font-family:'Space Grotesk',sans-serif;">+ Ajouter</button>
         </div>
-        <datalist id="zoneNames"></datalist>
         <div id="trajetsList"></div>
       </div>
     </div>
@@ -1348,7 +1332,7 @@ body.print-qr #qrSheet .qrCell canvas,body.print-qr #qrSheet .qrCell img{width:8
 
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail,signInAnonymously}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import{getFirestore,doc,setDoc,getDoc,getDocFromCache,updateDoc,addDoc,collection,collectionGroup,query,where,getDocs,onSnapshot,deleteDoc,increment,serverTimestamp,orderBy,limit,getCountFromServer,arrayUnion,arrayRemove,runTransaction,writeBatch}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{getStorage,ref as storageRef,uploadBytes,getDownloadURL,listAll}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
@@ -1635,7 +1619,6 @@ window.setRole=async(r)=>{
   const tabs=S.authTabs||Object.keys(tabIds);
   Object.entries(tabIds).forEach(([role,id])=>{const btn=document.getElementById(id);if(btn)btn.style.cssText=`background:${role===r?colors[role]:'transparent'};color:${role===r?'var(--w)':'#888'};font-size:11px;`;if(btn)btn.style.display=tabs.includes(role)?'inline-block':'none';});
   const bar=document.getElementById('authRoleTabs');if(bar)bar.style.display=tabs.length>1?'flex':'none';
-  {const gb=document.getElementById('guestBtn');if(gb)gb.style.display=(r==='passenger'&&!S.isReg)?'block':'none';}
   const ttl=document.getElementById('authTitle');if(ttl)ttl.textContent=(S.isReg?'Inscription':'Connexion')+(tabs.length===1?' · '+(ROLE_LABEL[r]||''):'');
   ['fieldsReceiver','fieldsOwner','fieldsDirecteur','fieldsChauffeur'].forEach(id=>document.getElementById(id).style.display='none');
   {const fl=document.getElementById('fieldLang');if(fl){fl.style.display=(S.isReg&&r==='passenger')?'block':'none';if(S.isReg&&r==='passenger'){if(!S.regLang)S.regLang=S.lang||'fr';setAppLang(S.regLang,false);}}}
@@ -1906,56 +1889,8 @@ window.doSubmitReceiverCandidature=async()=>{
     watchReceiverApproval(uid);
   }catch(e){loader('',false);notify('❌','Erreur',e.message);}
 };
-// ====== MODE DÉMO (jury) : remplir les vrais comptes déjà créés, puis RETIRER après la soutenance ======
-const DEMO_ACCOUNTS={
-  passenger:{email:'cheikh204@gmail.com',pass:'cheikh'},
-  receiver:{email:'dembandiaye@gmail.com',pass:['CHEIKH','Cheikh','cheikh']},
-  chauffeur:{email:'fama2@gmail.com',pass:'cheikh'},
-  directeur:{email:'goudiaby1@gmail.com',pass:'cheikh'}
-};
-window.doDemo=async(role)=>{
-  const a=DEMO_ACCOUNTS[role];
-  if(!a||a.pass==='REMPLIR'){notify('⚠️','Démo','Renseignez le compte « '+role+' » dans DEMO_ACCOUNTS.');return;}
-  loader('Entrée en mode démo…');
-  try{
-    S.expectedLoginRole=null; // démo : pas de vérification d'onglet, l'appli ouvre l'espace réel du compte
-    if(role==='directeur'){try{history.replaceState(null,'',location.pathname+'?role=directeur&mode=login&demo=1');}catch(_){}}
-    const passes=Array.isArray(a.pass)?a.pass:[a.pass];
-    let lastErr=null,ok=false;
-    for(const pw of passes){
-      try{await signInWithEmailAndPassword(auth,a.email,pw);ok=true;break;}
-      catch(er){lastErr=er;if(er.code!=='auth/invalid-credential'&&er.code!=='auth/wrong-password')throw er;}
-    }
-    if(!ok)throw lastErr;
-    loader('',false);
-  }catch(e){
-    loader('',false);S.expectedLoginRole=null;
-    notify('❌','Démo',e.code==='auth/network-request-failed'?'Pas de réseau.':'Compte démo invalide : '+(e.code||e.message));
-  }
-};
-window.doGuest=async()=>{
-  loader('Entrée…');
-  _authFlowInProgress=true;
-  try{
-    const cred=await signInAnonymously(auth);
-    const uid=cred.user.uid;
-    const ex=await getDoc(doc(db,'users',uid));
-    if(!ex.exists()){
-      const walletId='TP-'+uid.slice(0,6).toUpperCase();
-      await setDoc(doc(db,'users',uid),{walletId,name:'Invité',email:'',phone:'',role:'passenger',status:'approved',balance:0,guest:true,lang:S.regLang||S.lang||'fr',createdAt:serverTimestamp()});
-      await setDoc(doc(db,'wallets',walletId),{uid,role:'passenger'});
-    }
-    S.expectedLoginRole='passenger';
-    _authFlowInProgress=false;
-    await attemptSessionRestore(cred.user);
-  }catch(e){
-    _authFlowInProgress=false;loader('',false);
-    if(e.code==='auth/operation-not-allowed')notify('❌','Mode invité désactivé','Activez « Anonyme » dans Firebase > Authentication > Sign-in method.');
-    else notify('❌','Erreur',e.message);
-  }
-};
 window.forgotPassword=async()=>{const email=document.getElementById('authEmail').value.trim().toLowerCase();if(!email){notify('⚠️','Email requis','Entrez votre email.');return;}try{await sendPasswordResetEmail(auth,email);notify('✅','Email envoyé','Vérifiez votre boîte mail.');}catch(e){notify('❌','Erreur',e.message);}};
-window.doLogout=async()=>{detachListeners();try{clearCachedActiveTicket();}catch(e){}await signOut(auth);S={...S,role:null,uid:null,profile:null,expectedLoginRole:null};activeTicketData=null;hideDescendBtn();goAuth('login','passenger');};
+window.doLogout=async()=>{detachListeners();try{clearCachedActiveTicket();}catch(e){}await signOut(auth);S={...S,role:null,uid:null,profile:null,expectedLoginRole:null};activeTicketData=null;hideDescendBtn();show('screenSplash');};
 
 let _pendingAuthUser=null;
 async function attemptSessionRestore(user){
@@ -2009,7 +1944,7 @@ async function attemptSessionRestore(user){
 onAuthStateChanged(auth,user=>{
   if(_authFlowInProgress)return; // inscription en cours : doAuth() gère déjà tout, ne pas interférer (évite un signOut prématuré si le doc users/{uid} n'existe pas encore)
   if(user){_deepLink=null;attemptSessionRestore(user);}
-  else{loader('',false);if(_deepLink){applyDeepLink();}else{goAuth('login','passenger');}}
+  else{show('screenSplash');splashView('main');loader('',false);applyDeepLink();}
 });
 
 function detachListeners(){[unsubPending,unsubNotif,unsubBalance,unsubRecvBalance,unsubAdmin,unsubChProfile,unsubChReceiver,unsubChTickets,unsubChNotif,unsubChVersements,unsubChCandidatures,unsubChPendingVers,unsubBusLoc,unsubChOwnerBalance,unsubDirOwnersA,unsubPassNotif].forEach(u=>{if(u){try{u();}catch(e){}}});unsubPending=unsubNotif=unsubBalance=unsubRecvBalance=unsubAdmin=unsubChProfile=unsubChReceiver=unsubChTickets=unsubChNotif=unsubChVersements=unsubChCandidatures=unsubChPendingVers=unsubBusLoc=unsubChOwnerBalance=unsubDirOwnersA=unsubPassNotif=null;Object.keys(dirOwnersLocUnsubs).forEach(uid=>{try{dirOwnersLocUnsubs[uid]();}catch(e){}delete dirOwnersLocUnsubs[uid];});if(S.rgUnsub){try{S.rgUnsub();}catch(e){}S.rgUnsub=null;}if(S.rgTimeout){clearTimeout(S.rgTimeout);S.rgTimeout=null;}if(chRevChartInst){chRevChartInst.destroy();chRevChartInst=null;}if(chPerfChartInst){chPerfChartInst.destroy();chPerfChartInst=null;}if(chRecvPerfChartInst){chRecvPerfChartInst.destroy();chRecvPerfChartInst=null;}if(chGeoWatchId!=null){try{navigator.geolocation.clearWatch(chGeoWatchId);}catch(e){}chGeoWatchId=null;}if(recvGeoWatchId!=null){try{navigator.geolocation.clearWatch(recvGeoWatchId);}catch(e){}recvGeoWatchId=null;}if(chMap){try{chMap.remove();}catch(e){}chMap=null;chMapMarker=null;}resetTrackBus();}
@@ -4066,7 +4001,7 @@ setOnlineIndicator(navigator.onLine);
 window.addEventListener('online',()=>{setOnlineIndicator(true);notify('🟢','En ligne','Synchronisation des données…');if(_pendingAuthUser){const u=_pendingAuthUser;attemptSessionRestore(u);}});
 window.addEventListener('offline',()=>{setOnlineIndicator(false);notify('🔴','Hors-ligne','Les paiements seront synchronisés au retour du réseau.');});
 
-function playChauffeurAlarm(){try{const ctx=_getCtx();const seq=[[0,1200,.22],[.28,900,.22],[.56,1200,.22],[.84,900,.22],[1.12,1500,.35]];seq.forEach(([s,f,d])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;o.type='square';g.gain.setValueAtTime(0,ctx.currentTime+s);g.gain.linearRampToValueAtTime(.6,ctx.currentTime+s+.02);g.gain.linearRampToValueAtTime(0,ctx.currentTime+s+d);o.start(ctx.currentTime+s);o.stop(ctx.currentTime+s+d+.05);});if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);}catch(e){}}
+function playChauffeurAlarm(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const seq=[[0,1200,.22],[.28,900,.22],[.56,1200,.22],[.84,900,.22],[1.12,1500,.35]];seq.forEach(([s,f,d])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;o.type='square';g.gain.setValueAtTime(0,ctx.currentTime+s);g.gain.linearRampToValueAtTime(.6,ctx.currentTime+s+.02);g.gain.linearRampToValueAtTime(0,ctx.currentTime+s+d);o.start(ctx.currentTime+s);o.stop(ctx.currentTime+s+d+.05);});if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);}catch(e){}}
 function showChToast(type,data){
   const stack=document.getElementById('chToastStack');if(!stack)return;
   const div=document.createElement('div');div.className='ch-toast';
@@ -4398,7 +4333,7 @@ function updateBalanceUI(){document.getElementById('passBalance').textContent=fm
 
 // ══ ALERTE « PRESQUE ARRIVÉ » : une voix prévient le passager quand il approche de sa destination ══
 // La destination du ticket est un nom (ex : Kounoune) : on la convertit en coordonnées (OpenStreetMap), puis on suit le GPS du passager.
-const ARR={NEAR_KM:0.02,AT_KM:0.01,MAXAGE:4*3600*1000,CENTER:[14.69,-17.45],MAXDIST:90};
+const ARR={NEAR_KM:0.7,AT_KM:0.15,MAXAGE:4*3600*1000,CENTER:[14.69,-17.45],MAXDIST:90};
 let _arr={sn:null,id:null,dest:null,stage:0};
 function arriveNear(lat,lng,dest){return !!dest&&_haversineKm(lat,lng,dest.lat,dest.lng)<=ARR.NEAR_KM;}
 // ── Arrêts marqués par le receveur (coordonnées exactes), utilisés avant OpenStreetMap ──
@@ -4477,7 +4412,7 @@ function arriveFire(t){
   try{if(navigator.vibrate)navigator.vibrate([300,150,300,150,600]);}catch(e){}
   try{playDescendreSound();}catch(e){}
   try{notify('📍',lang==='wo'?'Jege nanu !':(lang==='en'?'Almost there':'Presque arrivé'),txt);}catch(e){}
-  setTimeout(()=>{try{aiSpeak(txt,'near');}catch(e){}},1500);
+  setTimeout(()=>{try{aiSpeak(txt,'near');}catch(e){}},900);
 }
 // Arrivée à destination : annonce vocale en wolof (vocal enregistré par l'admin), français ou anglais
 function arriveFinal(t){
@@ -4486,12 +4421,9 @@ function arriveFinal(t){
   try{if(navigator.vibrate)navigator.vibrate([600,200,600,200,900]);}catch(e){}
   try{playDescendreSound();}catch(e){}
   try{notify('🏁',lang==='wo'?'Agsi nga !':(lang==='en'?'You have arrived':'Vous êtes arrivé'),txt);}catch(e){}
-  setTimeout(()=>{try{aiSpeak(txt,'arrived');}catch(e){}},1500);
+  setTimeout(()=>{try{aiSpeak(txt,'arrived');}catch(e){}},900);
 }
-// Garde l'écran allumé pendant le trajet : sinon le téléphone coupe le GPS et la voix
-async function _arrWake(){try{if('wakeLock' in navigator&&!_arr.wl&&document.visibilityState==='visible'){_arr.wl=await navigator.wakeLock.request('screen');}}catch(e){}}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&_arr.sn){_arr.wl=null;_arrWake();}});
-function arriveWatchStop(){try{_arr.wl&&_arr.wl.release();}catch(e){}
+function arriveWatchStop(){
   try{if(_arr.id!=null&&navigator.geolocation)navigator.geolocation.clearWatch(_arr.id);}catch(e){}
   _arr={sn:null,id:null,dest:null,stage:0};
 }
@@ -4505,20 +4437,18 @@ async function arriveWatchStart(t){
     const dest=await stopLL(t.busUid,t.to);
     if(_arr.sn!==t.sn)return;
     if(!dest){console.warn('[arrivee] destination introuvable :',t.to);return;}
-    _arr.dest=dest;_arr.t0=Date.now();_arrWake();
+    _arr.dest=dest;
     try{if(localStorage.getItem('tatapay_near_'+t.sn))_arr.stage=1;}catch(e){}
     _arr.id=navigator.geolocation.watchPosition(pos=>{
       if(_arr.sn!==t.sn)return;
       if(pos.coords.accuracy>200)return;
       const dk=_haversineKm(pos.coords.latitude,pos.coords.longitude,_arr.dest.lat,_arr.dest.lng);
-      if(!_arr.wasFar){if(dk>ARR.NEAR_KM*1.3||Date.now()-_arr.t0>180000)_arr.wasFar=true;else return;} // au départ on est loin : pas d'annonce tant qu'on n'a pas roulé
       if(dk<=ARR.AT_KM){arriveWatchStop();arriveFinal(t);return;}
       if(_arr.stage<1&&dk<=ARR.NEAR_KM){_arr.stage=1;arriveFire(t);}
     },()=>{},{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
   }catch(e){console.warn('[arrivee]',e);}
 }
-function bonRoute(t){try{if(S.role!=='passenger'||!t||!t.sn)return;if(localStorage.getItem('tatapay_bon_'+t.sn))return;const st=(typeof _tkStart==='function')?_tkStart(t):null;if(st&&Date.now()-st>10*60000)return;localStorage.setItem('tatapay_bon_'+t.sn,'1');const lang=S.aiLang||'wo',txt=(VC_TXT[lang]&&VC_TXT[lang].bonroute)||VC_TXT.fr.bonroute;setTimeout(()=>{try{aiSpeak(txt,'bonroute');}catch(e){}},1500);}catch(e){}}
-function showDescendBtn(t){activeTicketData=t;arriveWatchStart(t);bonRoute(t);document.getElementById('descendInfo').textContent=`${t.from}→${t.to} · ${t.price} FCFA`;document.getElementById('activeTicketBanner').style.display='block';document.getElementById('activeTicketLabel').textContent=`🚌 ${t.gie}/${t.vehicle} — ${t.from}→${t.to}`;}
+function showDescendBtn(t){activeTicketData=t;arriveWatchStart(t);document.getElementById('descendInfo').textContent=`${t.from}→${t.to} · ${t.price} FCFA`;document.getElementById('activeTicketBanner').style.display='block';document.getElementById('activeTicketLabel').textContent=`🚌 ${t.gie}/${t.vehicle} — ${t.from}→${t.to}`;}
 function hideDescendBtn(){arriveWatchStop();document.getElementById('descendBtn').style.display='none';document.getElementById('activeTicketBanner').style.display='none';activeTicketData=null;}
 window.demandDescendre=async()=>{
   if(!activeTicketData){const c=getCachedActiveTicket();if(c)activeTicketData=c;}
@@ -4705,91 +4635,13 @@ window.doAddTrajet=async()=>{
 window.delTrajet=async(id)=>{try{await deleteDoc(doc(db,'users',S.uid,'destinations',id));loadTrajets();}catch(e){notify('❌','Erreur',e.message);}};
 function _fbBadge(label,ok){const c=ok?'#22c55e':'#f59e0b';return `<span style="display:inline-flex;align-items:center;gap:4px;margin:6px 6px 0 0;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:700;color:${c};background:${c}1f;border:1px solid ${c}55;">${ok?'☁️⬇️':'⚠️'} ${label} ${ok?'enregistré':'non enregistré'}</span>`;}
 function _fbBadges(t){const f=Number.isFinite(t.fromLat)&&Number.isFinite(t.fromLng),a=Number.isFinite(t.toLat)&&Number.isFinite(t.toLng);return `<div>${_fbBadge('Départ',f)}${_fbBadge('Arrivée',a)}</div>`;}
-const ZN={zones:{}};
-const ZEND=1000000;
-window.zoneNew=async()=>{
-  const price=parseInt(document.getElementById('zoneNewPrice').value),from=document.getElementById('zoneNewFrom').value.trim(),to=document.getElementById('zoneNewTo').value.trim();
-  if(!(price>=50)){notify('⚠️','Zone','Entrez un prix d\'au moins 50 FCFA.');return;}
-  if(!from||!to){notify('⚠️','Zone','Écrivez où la zone commence et où elle finit.');return;}
-  if(_pl(from)===_pl(to)){notify('⚠️','Zone','Le début et la fin sont identiques.');return;}
-  try{
-    const col=collection(db,'users',S.uid,'destinations');
-    const snap=await getDocs(col);
-    const n=new Set(snap.docs.map(d=>d.data().zoneId).filter(Boolean)).size;
-    const zoneId='z'+Date.now().toString(36);
-    await addDoc(col,{from,to,section:n+1,price,zoneId,zoneStart:from,zoneEnd:to,ord:ZEND,createdAt:serverTimestamp()});
-    ['zoneNewPrice','zoneNewFrom','zoneNewTo'].forEach(i=>document.getElementById(i).value='');
-    await loadTrajets();
-    notify('✅','Zone créée','Zone '+price+' FCFA · '+from+' → '+to+'. Ajoutez maintenant les arrêts.');
-  }catch(e){notify('❌','Erreur',(e&&e.message)||'Création impossible');}
-};
-window.zoneAddStop=async(zoneId)=>{
-  const z=ZN.zones[zoneId],inp=document.getElementById('zs_'+zoneId);if(!z||!inp)return;
-  const name=inp.value.trim();if(!name){notify('⚠️','Arrêt','Écrivez le nom de l\'arrêt.');return;}
-  if(z.stops.some(s=>_pl(s.to)===_pl(name))||_pl(name)===_pl(z.start)){notify('⚠️','Arrêt','Cet arrêt est déjà dans la zone.');return;}
-  try{
-    const ord=Math.max(0,...z.stops.filter(s=>(s.ord||0)<ZEND).map(s=>s.ord||0))+1;
-    await addDoc(collection(db,'users',S.uid,'destinations'),{from:z.start,to:name,section:z.section,price:z.price,zoneId,zoneStart:z.start,zoneEnd:z.end,ord,createdAt:serverTimestamp()});
-    await loadTrajets();
-    const ni=document.getElementById('zs_'+zoneId);if(ni)ni.focus();
-  }catch(e){notify('❌','Erreur',(e&&e.message)||'Ajout impossible');}
-};
-window.zoneMove=async(zoneId,id,dir)=>{
-  const z=ZN.zones[zoneId];if(!z)return;
-  const arr=z.stops.filter(s=>(s.ord||0)<ZEND),i=arr.findIndex(s=>s.id===id),j=i+dir;
-  if(i<0||j<0||j>=arr.length)return;
-  try{
-    const a=arr[i],b=arr[j];
-    await updateDoc(doc(db,'users',S.uid,'destinations',a.id),{ord:b.ord||j+1});
-    await updateDoc(doc(db,'users',S.uid,'destinations',b.id),{ord:a.ord||i+1});
-    loadTrajets();
-  }catch(e){notify('❌','Erreur',(e&&e.message)||'Déplacement impossible');}
-};
-window.zoneDelete=async(zoneId)=>{
-  const z=ZN.zones[zoneId];if(!z)return;
-  if(!confirm('Supprimer la zone '+z.price+' FCFA ('+z.start+' → '+z.end+') et ses '+z.stops.length+' arrêts ?'))return;
-  try{for(const s of z.stops)await deleteDoc(doc(db,'users',S.uid,'destinations',s.id));loadTrajets();}
-  catch(e){notify('❌','Erreur',(e&&e.message)||'Suppression impossible');}
-};
-async function loadTrajets(){
-  if(S.role!=='receiver')return;
-  const snap=await getDocs(collection(db,'users',S.uid,'destinations'));
-  const cont=document.getElementById('trajetsList');if(!cont)return;
-  const zones={},legacy={},names=new Set();
-  snap.docs.forEach(d=>{
-    const x={id:d.id,...d.data()};
-    if(x.from)names.add(x.from);if(x.to)names.add(x.to);
-    if(x.zoneId){const z=zones[x.zoneId]=zones[x.zoneId]||{id:x.zoneId,price:x.price||0,section:x.section||0,start:x.zoneStart||x.from,end:x.zoneEnd||x.to,stops:[]};z.stops.push(x);}
-    else{(legacy[x.price||0]=legacy[x.price||0]||[]).push(x);}
-  });
-  ZN.zones=zones;
-  Object.values(zones).forEach(z=>z.stops.sort((a,b)=>(a.ord||0)-(b.ord||0)));
-  const dl=document.getElementById('zoneNames');if(dl)dl.innerHTML=[...names].map(n=>`<option value="${_escH(n)}"></option>`).join('');
-  const zl=Object.values(zones).sort((a,b)=>a.price-b.price||a.section-b.section);
-  const lp=Object.keys(legacy).map(Number).sort((a,b)=>a-b);
-  if(!zl.length&&!lp.length){cont.innerHTML='<div style="text-align:center;padding:36px 20px;color:#555;">Aucune zone. Créez-en une ci-dessus.</div>';return;}
-  const sb='background:#ffffff15;border:1px solid #ffffff22;border-radius:8px;padding:6px 9px;cursor:pointer;color:#fff;font-weight:800;font-size:12px;';
-  const trash='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>';
-  const delBtn=id=>`<button onclick="delTrajet('${id}')" style="background:#DF002422;border:1px solid #DF002444;border-radius:10px;padding:8px;cursor:pointer;">${trash}</button>`;
-  const zoneHtml=zl.map(z=>{
-    const mid=z.stops.filter(s=>(s.ord||0)<ZEND),end=z.stops.filter(s=>(s.ord||0)>=ZEND);
-    return `<div style="background:#ffffff08;border:1.5px solid #2a3a2a;border-radius:16px;padding:14px;margin-bottom:16px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;"><div><div style="font-weight:900;font-size:18px;color:var(--y);">Zone ${z.price} FCFA</div><div style="font-size:12px;color:#aaa;margin-top:2px;">de <b>${_escH(z.start)}</b> à <b>${_escH(z.end)}</b></div></div><button onclick="zoneDelete('${z.id}')" style="${sb}color:#ff6b6b;">Supprimer la zone</button></div>
-      <div style="font-size:11px;font-weight:800;color:#888;letter-spacing:1px;text-transform:uppercase;margin:10px 0 6px;">Arrêts dans la zone (${z.stops.length})</div>
-      <div class="trajet-row" style="opacity:.7;"><div style="width:20px;">🟢</div><div style="flex:1;font-weight:700;font-size:13px;">${_escH(z.start)} <span style="color:#888;font-weight:400;">(début)</span></div></div>
-      ${mid.map((s,i)=>`<div class="trajet-row" style="gap:8px;"><div style="width:20px;font-weight:900;color:#888;">${i+1}</div><div style="flex:1;min-width:0;font-weight:800;font-size:14px;">${_escH(s.to)}</div><button onclick="zoneMove('${z.id}','${s.id}',-1)" style="${sb}">↑</button><button onclick="zoneMove('${z.id}','${s.id}',1)" style="${sb}">↓</button>${delBtn(s.id)}</div>`).join('')}
-      ${end.map(s=>`<div class="trajet-row" style="gap:8px;"><div style="width:20px;">🏁</div><div style="flex:1;min-width:0;font-weight:800;font-size:14px;">${_escH(s.to)} <span style="color:#888;font-weight:400;">(fin)</span></div>${delBtn(s.id)}</div>`).join('')}
-      <div style="display:flex;gap:6px;margin-top:8px;"><input class="input-field" id="zs_${z.id}" list="zoneNames" placeholder="Ajouter un arrêt dans cette zone" style="flex:1;min-width:0;padding:10px;"/><button class="btn btn-primary" onclick="zoneAddStop('${z.id}')" style="padding:10px 14px;">+</button></div>
-    </div>`;}).join('');
-  const legHtml=lp.map(p=>`<div style="background:#ffffff08;border:1.5px dashed #2a3a2a;border-radius:16px;padding:14px;margin-bottom:16px;"><div style="font-weight:900;font-size:16px;color:var(--y);">${p} FCFA <span style="font-size:11px;color:#888;font-weight:400;">· anciens trajets</span></div>${legacy[p].map(x=>`<div class="trajet-row" style="margin-top:8px;"><div style="flex:1;min-width:0;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${_escH(x.from)} → ${_escH(x.to)}</div>${delBtn(x.id)}</div>`).join('')}</div>`).join('');
-  cont.innerHTML=zoneHtml+legHtml;
-}
+async function loadTrajets(){if(S.role!=='receiver')return;const snap=await getDocs(collection(db,'users',S.uid,'destinations'));const cont=document.getElementById('trajetsList');if(snap.empty){cont.innerHTML='<div style="text-align:center;padding:48px 20px;color:#555;">Aucune section. Cliquez + Ajouter.</div>';return;}cont.innerHTML=snap.docs.map(d=>{const t=d.data();return`<div class="trajet-row"><div style="flex:1;"><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${_escH(t.from)}-->${_escH(t.to)}</div><div style="color:#888;font-size:11px;margin-top:2px;">Section: ${t.section} == <strong style="color:var(--y);">${t.price} FCFA</strong></div>${_fbBadges(t)}</div><button onclick="delTrajet('${d.id}')" style="background:#DF002422;border:1px solid #DF002444;border-radius:10px;padding:8px;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>`;}).join('');}
 
 /* ═══════════════ ASSISTANT IA (Wolof / Français / English) ═══════════════ */
 const AI_TXT={
- wo:{ask:'Salaam aleekum ! 👋 Waxal : « Dama dem ci », ba noppi tur bi (walla bindal ko).',ph:'Ex: Liberté 6, Pikine…',go:'Baax na ! Tey scanil QR bu bus bi.',empty:'Wax ma fan ngay dem.',found:(d,p)=>`Baax na ! ✅ ${d} nekk na ci bus bii : ${p} FCFA. Duggal ko te fey.`,none:d=>`Gisuma "${d}" ci bus bii. ❌ Laajal receveur bi.`,nolist:'Receveur bi dalul ba tey ay trajet ci bus bii. Laajal ko.',mic:'Mënuma dégg. Bind tur bi.'},
- fr:{ask:'Bonjour ! 👋 Dites : « Je vais à », puis le nom de votre destination (ou écrivez-le).',ph:'Ex : Liberté 6, Pikine…',go:'Parfait ! Scannez maintenant le QR du bus.',empty:'Dites : « Je vais à », puis votre destination.',found:(d,p)=>`C'est bon ! ✅ ${d} est desservi par ce bus : ${p} FCFA. Validez et payez.`,none:d=>`« ${d} » n'est pas inscrit dans ce bus. ❌ Demandez au receveur.`,nolist:'Le receveur n\'a pas encore inscrit de trajets dans ce bus. Demandez-lui.',mic:'Je n\'ai pas compris. Écrivez le nom.'},
- en:{ask:'Hello! 👋 Say: “I\'m going to”, then the name of your destination (or type it).',ph:'e.g. Liberté 6, Pikine…',go:'Great! Now scan the bus QR code.',empty:'Please tell me where you are going.',found:(d,p)=>`Good! ✅ ${d} is served by this bus: ${p} FCFA. Confirm and pay.`,none:d=>`"${d}" is not registered on this bus. ❌ Please ask the conductor.`,nolist:'The conductor has not registered any routes on this bus yet. Please ask them.',mic:'I could not hear you. Please type the name.'}
+ wo:{ask:'Salaam aleekum ! 👋 Fan nga dem ?',ph:'Ex: Liberté 6, Pikine…',go:'Baax na ! Tey scanil QR bu bus bi.',empty:'Wax ma fan ngay dem.',found:(d,p)=>`Baax na ! ✅ ${d} nekk na ci bus bii : ${p} FCFA. Duggal ko te fey.`,none:d=>`Gisuma "${d}" ci bus bii. ❌ Laajal receveur bi.`,nolist:'Receveur bi dalul ba tey ay trajet ci bus bii. Laajal ko.',mic:'Mënuma dégg. Bind tur bi.'},
+ fr:{ask:'Bonjour ! 👋 Où allez-vous ? Dites-moi le nom de votre destination (ou écrivez-le).',ph:'Ex : Liberté 6, Pikine…',go:'Parfait ! Scannez maintenant le QR du bus.',empty:'Dites-moi où vous allez.',found:(d,p)=>`C'est bon ! ✅ ${d} est desservi par ce bus : ${p} FCFA. Validez et payez.`,none:d=>`« ${d} » n'est pas inscrit dans ce bus. ❌ Demandez au receveur.`,nolist:'Le receveur n\'a pas encore inscrit de trajets dans ce bus. Demandez-lui.',mic:'Je n\'ai pas compris. Écrivez le nom.'},
+ en:{ask:'Hello! 👋 Where are you going? Tell me the name of your destination (or type it).',ph:'e.g. Liberté 6, Pikine…',go:'Great! Now scan the bus QR code.',empty:'Please tell me where you are going.',found:(d,p)=>`Good! ✅ ${d} is served by this bus: ${p} FCFA. Confirm and pay.`,none:d=>`"${d}" is not registered on this bus. ❌ Please ask the conductor.`,nolist:'The conductor has not registered any routes on this bus yet. Please ask them.',mic:'I could not hear you. Please type the name.'}
 };
 const AI_LOC={wo:'fr-SN',fr:'fr-FR',en:'en-US'};
 S.aiLang=S.aiLang||'wo';
@@ -4808,15 +4660,14 @@ window.aiOpen=(force)=>{const p=document.getElementById('aiPanel');if(!p)return;
 function aiTTS(text,onEnd,key){
   try{
     if(!('speechSynthesis' in window)){if(onEnd)onEnd();return;}
-    speechSynthesis.cancel();try{speechSynthesis.resume();}catch(_){}
+    speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(String(text).replace(/[\u{1F300}-\u{1FAFF}✅❌]/gu,''));
-    u.lang=AI_LOC[S.aiLang]||'fr-FR';u.rate=0.95;u.volume=1;
-    try{const vs=speechSynthesis.getVoices()||[];const want=S.aiLang==='en'?'en':'fr';const v=vs.find(x=>x.lang&&x.lang.replace('_','-').toLowerCase()===u.lang.toLowerCase())||vs.find(x=>x.lang&&x.lang.toLowerCase().startsWith(want));if(v){u.voice=v;u.lang=v.lang;}}catch(_){}
-    u.onerror=(ev)=>{if(ev&&(ev.error==='canceled'||ev.error==='interrupted'))return;S.aiPendingSpeak={text,key:key||null,onEnd,at:Date.now()};};
+    u.lang=AI_LOC[S.aiLang]||'fr-FR';u.rate=0.95;
+    u.onerror=(ev)=>{if(ev&&(ev.error==='canceled'||ev.error==='interrupted'))return;S.aiPendingSpeak={text,key:key||null,onEnd};};
     u.onstart=()=>{S.aiPendingSpeak=null;};
     u.onend=()=>{if(onEnd)onEnd();};
-    setTimeout(()=>{try{speechSynthesis.speak(u);}catch(_){}},120);
-    setTimeout(()=>{if(!speechSynthesis.speaking&&!S.aiPendingSpeak)S.aiPendingSpeak={text,key:key||null,onEnd,at:Date.now()};},700);
+    speechSynthesis.speak(u);
+    setTimeout(()=>{if(!speechSynthesis.speaking&&!S.aiPendingSpeak)S.aiPendingSpeak={text,key:key||null,onEnd};},700);
   }catch(e){if(onEnd)onEnd();}
 }
 function aiStopListen(){try{if(S.aiRec){const r=S.aiRec;S.aiRec=null;r.onend=null;r.onerror=null;r.onresult=null;r.abort();}}catch(e){}const b=document.getElementById('aiMicBtn');if(b)b.textContent='🎤';}
@@ -4829,49 +4680,23 @@ function aiSpeak(text,key,onEnd){
     try{speechSynthesis.cancel();}catch(e){}
     const url=key&&S.aiVoices&&(S.aiVoices[S.aiLang+'_'+key]||(VC_FALLBACK[key]&&S.aiVoices[S.aiLang+'_'+VC_FALLBACK[key]]));
     if(url){
-      const a=_getPlayer();try{a.pause();}catch(_){}a.src=url;a.volume=1;S.aiAudio=a;
+      const a=new Audio(url);S.aiAudio=a;
       a.onended=()=>{if(S.aiAudio===a&&onEnd)onEnd();};
-      a.onerror=()=>{if(S.aiLang==='wo'){if(onEnd)onEnd();return;}aiTTS(text,onEnd,key);};
-      a.play().then(()=>{S.aiPendingSpeak=null;}).catch(()=>{S.aiPendingSpeak={text,key,onEnd,at:Date.now()};});
+      a.onerror=()=>aiTTS(text,onEnd,key);
+      a.play().then(()=>{S.aiPendingSpeak=null;}).catch(()=>{S.aiPendingSpeak={text,key,onEnd};});
       return;
     }
-    // Wolof : uniquement les vocaux enregistrés par l'admin, jamais la voix du téléphone
-    if(S.aiLang==='wo'){if(onEnd)onEnd();return;}
     aiTTS(text,onEnd,key);
   }catch(e){}
 }
 async function loadAiVoices(){
   try{
-    const sn=await withTimeout(getDocs(collection(db,'aiVoices')),12000,'voix');
+    const sn=await withTimeout(getDocs(collection(db,'aiVoices')),4000,'voix');
     const v={};sn.docs.forEach(d=>{const u=d.data().data||d.data().url;if(u)v[d.id]=u;});
     S.aiVoices=v;try{localStorage.setItem('tatapay_aiVoices',JSON.stringify(v));}catch(e){}
   }catch(e){try{S.aiVoices=JSON.parse(localStorage.getItem('tatapay_aiVoices')||'{}');}catch(_){S.aiVoices={};}}
 }
-// Débloque le son au premier toucher (sinon le téléphone bloque la voix « presque arrivé » qui part toute seule)
-let _audioUnlocked=false;
-let _sharedCtx=null,_sharedPlayer=null;
-function _getCtx(){if(!_sharedCtx)_sharedCtx=new(window.AudioContext||window.webkitAudioContext)();try{if(_sharedCtx.state!=='running')_sharedCtx.resume();}catch(e){}return _sharedCtx;}
-function _getPlayer(){if(!_sharedPlayer){_sharedPlayer=new Audio();_sharedPlayer.setAttribute('playsinline','');}return _sharedPlayer;}
-function _unlockAudio(){
-  if(_audioUnlocked)return;
-  try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u);}catch(e){}
-  try{const a=_getPlayer();a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';a.muted=true;a.play().then(()=>{_audioUnlocked=true;a.muted=false;}).catch(()=>{a.muted=false;});}catch(e){}
-  try{const c=_getCtx();const o=c.createOscillator(),g=c.createGain();g.gain.value=0;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.05);}catch(e){}
-  try{speechSynthesis.getVoices();}catch(e){}
-}
-try{speechSynthesis.onvoiceschanged=()=>{try{speechSynthesis.getVoices();}catch(e){}};}catch(e){}
-// Si la voix a été bloquée, on la rejoue au prochain toucher n'importe où (même assistant fermé) ou au retour dans l'app
-function _replayPending(){const t=S.aiPendingSpeak;if(!t)return;S.aiPendingSpeak=null;
-  if(!t.at||Date.now()-t.at>45000)return; // trop vieux : on ne le rejoue pas
-  const isArr=t.key==='near'||t.key==='arrived';
-   // trajet fini ou pas encore commencé
-  if(!isArr&&document.getElementById('aiPanel')?.style.display!=='block')return;
-  aiSpeak(t.text,t.key,t.onEnd);}
-document.addEventListener('pointerdown',()=>{_unlockAudio();_replayPending();},{passive:true});
-document.addEventListener('touchstart',_unlockAudio,{passive:true});
-document.addEventListener('touchend',()=>{_unlockAudio();_replayPending();},{passive:true});
-document.addEventListener('click',()=>{_unlockAudio();_replayPending();},{passive:true});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(_replayPending,400);});
+document.addEventListener('pointerdown',()=>{if(S.aiPendingSpeak&&document.getElementById('aiPanel')?.style.display==='block'){const t=S.aiPendingSpeak;S.aiPendingSpeak=null;aiSpeak(t.text,t.key,t.onEnd);}},{passive:true});
 
 (function(){
   const fab=document.getElementById('aiFab'),box=document.getElementById('aiFloat');if(!fab||!box)return;
@@ -4885,14 +4710,14 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 })();
 
 /* ═══════════════ ADMIN : VOCAUX DE L'ASSISTANT ═══════════════ */
-const VC_KEYS=['bonroute','ask','go','empty','found','none','nolist','mic','routes','similar','noroute','pick','near','arrived'];
+const VC_KEYS=['ask','go','empty','found','none','nolist','mic','routes','similar','noroute','pick','near','arrived'];
 // Tant qu'un vocal n'est pas enregistré pour une nouvelle phrase, on rejoue celui de la phrase la plus proche
 const VC_FALLBACK={routes:'found',similar:'found',noroute:'none',pick:'go'};
-const VC_LABEL={bonroute:'🚌 Bonne route (au début du trajet)',arrived:'🏁 Arrivé à destination (à ~10 m de l\'arrêt)',near:'📍 Presque arrivé (à ~50 m de la destination)',ask:'👋 Accueil (à l\'entrée dans l\'app)',go:'📷 Après la réponse (ouvre le scanner)',empty:'🤐 Le passager n\'a rien dit',found:'✅ Destination trouvée dans le bus',none:'❌ Destination absente de ce bus',nolist:'⚠️ Aucun trajet inscrit par le receveur',mic:'🎤 Micro : pas compris',routes:'📋 Trajets trouvés : « choisissez le vôtre »',similar:'🔎 Pas exact, voici des destinations similaires',noroute:'🚫 Aucun trajet trouvé (le scanner s\'ouvre ensuite)',pick:'👆 Trajet choisi : « scannez le QR du bus »'};
+const VC_LABEL={arrived:'🏁 Arrivé à destination (à ~150 m de l\'arrêt)',near:'📍 Presque arrivé (à ~700 m de la destination)',ask:'👋 Accueil (à l\'entrée dans l\'app)',go:'📷 Après la réponse (ouvre le scanner)',empty:'🤐 Le passager n\'a rien dit',found:'✅ Destination trouvée dans le bus',none:'❌ Destination absente de ce bus',nolist:'⚠️ Aucun trajet inscrit par le receveur',mic:'🎤 Micro : pas compris',routes:'📋 Trajets trouvés : « choisissez le vôtre »',similar:'🔎 Pas exact, voici des destinations similaires',noroute:'🚫 Aucun trajet trouvé (le scanner s\'ouvre ensuite)',pick:'👆 Trajet choisi : « scannez le QR du bus »'};
 const VC_TXT={
-  wo:{bonroute:'Yàlla na nga am yoon wu baax ! Jërëjëf ci TataPay.',arrived:'Agsi nga ! Wàccal léegi.',near:'Jege nanu ! Waajal ngir wàcc.',routes:'Baax na ! Gis naa trajet yi. Tànnal bi la neex.',similar:'Gisuma ko bu leer, waaye gis naa yu mel ni ko. Tànnal bi la neex.',noroute:'Gisuma trajet ngir destination bi. Scanil bus bi.',pick:'Baax na ! Scanil QR bu bus bi.',found:'Baax na ! Destination bi nekk na ci bus bii. Duggal ko te fey.',none:'Gisuma ko ci bus bii. Laajal receveur bi. Gis nga trajet yi nekk ci bus bi ci suuf.'},
-  fr:{bonroute:'Bonne route ! Merci de voyager avec nous.',arrived:'Vous êtes arrivé ! Descendez maintenant.',near:'Vous êtes presque arrivé ! Préparez-vous à descendre.',routes:'J\'ai trouvé des trajets pour cette destination. Choisissez le vôtre.',similar:'Je n\'ai pas trouvé exactement, mais voici des destinations similaires. Choisissez la bonne.',noroute:'Aucun trajet trouvé pour cette destination. Scannez directement le bus.',pick:'Parfait ! Scannez maintenant le QR de ce bus.',found:'C\'est bon ! Cette destination est desservie par ce bus. Validez et payez.',none:'Cette destination n\'est pas inscrite dans ce bus. Demandez au receveur. Voici les trajets disponibles dans ce bus, juste en dessous.'},
-  en:{bonroute:'Have a good trip! Thank you for travelling with us.',arrived:'You have arrived! Please get off now.',near:'You are almost there! Get ready to get off.',routes:'I found routes for this destination. Please choose yours.',similar:'I did not find an exact match, but here are similar destinations. Please choose the right one.',noroute:'No route found for this destination. Please scan the bus directly.',pick:'Great! Now scan this bus QR code.',found:'Good! This destination is served by this bus. Confirm and pay.',none:'This destination is not registered on this bus. Please ask the conductor. Here are the routes available on this bus, just below.'}
+  wo:{arrived:'Agsi nga ! Wàccal léegi.',near:'Jege nanu ! Waajal ngir wàcc.',routes:'Baax na ! Gis naa trajet yi. Tànnal bi la neex.',similar:'Gisuma ko bu leer, waaye gis naa yu mel ni ko. Tànnal bi la neex.',noroute:'Gisuma trajet ngir destination bi. Scanil bus bi.',pick:'Baax na ! Scanil QR bu bus bi.',found:'Baax na ! Destination bi nekk na ci bus bii. Duggal ko te fey.',none:'Gisuma ko ci bus bii. Laajal receveur bi. Gis nga trajet yi nekk ci bus bi ci suuf.'},
+  fr:{arrived:'Vous êtes arrivé ! Descendez maintenant.',near:'Vous êtes presque arrivé ! Préparez-vous à descendre.',routes:'J\'ai trouvé des trajets pour cette destination. Choisissez le vôtre.',similar:'Je n\'ai pas trouvé exactement, mais voici des destinations similaires. Choisissez la bonne.',noroute:'Aucun trajet trouvé pour cette destination. Scannez directement le bus.',pick:'Parfait ! Scannez maintenant le QR de ce bus.',found:'C\'est bon ! Cette destination est desservie par ce bus. Validez et payez.',none:'Cette destination n\'est pas inscrite dans ce bus. Demandez au receveur. Voici les trajets disponibles dans ce bus, juste en dessous.'},
+  en:{arrived:'You have arrived! Please get off now.',near:'You are almost there! Get ready to get off.',routes:'I found routes for this destination. Please choose yours.',similar:'I did not find an exact match, but here are similar destinations. Please choose the right one.',noroute:'No route found for this destination. Please scan the bus directly.',pick:'Great! Now scan this bus QR code.',found:'Good! This destination is served by this bus. Confirm and pay.',none:'This destination is not registered on this bus. Please ask the conductor. Here are the routes available on this bus, just below.'}
 };
 const VC_LANG={wo:'Wolof',fr:'Français',en:'English'};
 let vcSaved={},vcPending={},vcRec=null,vcCur='wo';
@@ -4947,7 +4772,7 @@ window.vcSave=async(lang,key)=>{
     const data=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>rej(new Error('Lecture du vocal impossible.'));fr.readAsDataURL(pd.blob);});
     if(data.length>900000)throw new Error('Vocal trop long (max ≈ 30 secondes). Raccourcissez-le.');
     await withTimeout(setDoc(doc(db,'aiVoices',id),{lang,key,data,ext:pd.ext,by:S.uid,updatedAt:serverTimestamp()}),20000,'sauvegarde');
-    vcSaved[id]={lang,key,data};try{S.aiVoices=S.aiVoices||{};S.aiVoices[id]=data;localStorage.setItem('tatapay_aiVoices',JSON.stringify(S.aiVoices));}catch(e){}try{URL.revokeObjectURL(pd.url);}catch(e){}delete vcPending[id];
+    vcSaved[id]={lang,key,data};try{URL.revokeObjectURL(pd.url);}catch(e){}delete vcPending[id];
     loader('',false);vcDraw();notify('✅','Vocal sauvegardé',VC_LABEL[key]);
   }catch(e){loader('',false);notify('❌','Erreur',e.timeout?'Pas de réponse du serveur. Vérifiez la connexion puis réessayez.':((e.code?e.code+' — ':'')+e.message));}
 };
@@ -4958,7 +4783,7 @@ window.vcDelete=async(lang,key)=>{
 };
 
 const aiAutoListen=()=>{const p=document.getElementById('aiPanel');if(p&&p.style.display==='block')aiListen(true);};
-window.aiGreet=()=>{try{loadAiVoices();}catch(e){}aiInit();aiOpen(true);aiSpeak(AI_TXT[S.aiLang].ask,'ask',aiAutoListen);};
+window.aiGreet=()=>{aiInit();aiOpen(true);aiSpeak(AI_TXT[S.aiLang].ask,'ask',aiAutoListen);};
 window.aiSetLang=(l)=>{S.aiLang=l;aiInit();aiSpeak(AI_TXT[l].ask,'ask',aiAutoListen);};
 window.aiListen=(auto)=>{
   auto=auto===true;
@@ -4978,10 +4803,7 @@ window.aiListen=(auto)=>{
   try{rec.start();}catch(e){S.aiRec=null;if(btn)btn.textContent='🎤';}
 };
 window.aiSubmit=()=>{
-  const _raw=(document.getElementById('aiDestInput')?.value||'').trim();
-  // on retire « je vais à » / « dama dem ci » / « I'm going to » : il reste seulement la destination
-  const v=_raw.replace(/^\s*(je\s+vais|je\s+veux\s+aller|dama\s+b[ëe]gg\s+dem|dama\s+dem|i['’]?m\s+going|i\s+am\s+going|i\s+want\s+to\s+go)\s*(à|a|au|aux|vers|ci|to)?\s+/i,'').trim()||_raw;
-  const _di=document.getElementById('aiDestInput');if(_di&&v)_di.value=v;
+  const v=(document.getElementById('aiDestInput')?.value||'').trim();
   if(!v){aiBubble(AI_TXT[S.aiLang].empty);aiSpeak(AI_TXT[S.aiLang].empty,'empty',aiAutoListen);return;}
   aiStopListen();aiOpen(false);
   openTicketFlow();S.wantedDest=v;
@@ -5088,18 +4910,6 @@ async function aiLLMPick(want,cands){
     return j.index===null?null:(cands[j.index]||undefined);
   }catch(e){console.warn('[aiLLMPick]',e);return undefined;}
 }
-function zoneGroupBox(destList,t){
-  if(!t.zoneId)return destList;
-  const g=destList._zg=destList._zg||{};
-  if(!g[t.zoneId]){
-    const w=document.createElement('div');w.style.cssText='display:flex;flex-direction:column;gap:8px;';
-    const h=document.createElement('div');h.style.cssText='font-size:12px;font-weight:800;color:#FDEF42;margin-top:6px;';
-    h.textContent='Zone '+t.price+' F · de '+(t.zoneStart||t.from)+' à '+(t.zoneEnd||'');
-    const c=document.createElement('div');c.style.cssText='display:flex;flex-direction:column;gap:8px;';
-    w.appendChild(h);w.appendChild(c);destList.appendChild(w);g[t.zoneId]=c;
-  }
-  return g[t.zoneId];
-}
 window.aiCheckDest=async(cands)=>{
   const want=S.wantedDest;const box=document.getElementById('aiResult');if(!want||!box)return;
   const T=AI_TXT[S.aiLang];
@@ -5119,7 +4929,7 @@ window.resetFlow=()=>{{const _dl=document.getElementById('destList');if(_dl)_dl.
 function setDots(s){for(let i=0;i<3;i++){const d=document.getElementById('tdot'+i);if(d)d.className='step-dot'+(i<s?' done':i===s?' active':'');}}
 async function loadBusInFlow(walletId){
   loader('Chargement bus…');
-  try{const wSnap=await getDoc(doc(db,'wallets',walletId));if(!wSnap.exists()){loader('',false);notify('❌','Bus inconnu','QR non reconnu.');return;}const recvUid=wSnap.data().uid;const rSnap=await getDoc(doc(db,'users',recvUid));if(!rSnap.exists()){loader('',false);notify('❌','Erreur','Receveur introuvable.');return;}const recv={...rSnap.data(),uid:recvUid};S.ticketBus=recv;S.ticketSection=null;document.getElementById('detectedBusInfo').innerHTML=`GIE:${_escH(recv.gie)} = ${_escH(recv.vehicle)} = Ligne:${_escH(recv.ligne)}<br>Zone:${_escH(recv.zone)}`;const destSnap=await getDocs(collection(db,'users',recvUid,'destinations'));const destList=document.getElementById('destList');destList.innerHTML='';destList._zg={};destList.style.outline='none';if(destSnap.empty){destList.innerHTML='<div style="background:#FFD10015;border:1px solid #FFD10044;border-radius:12px;padding:12px;color:#888;font-size:13px;text-align:center;">Aucune section définie.</div>';}else{const aiCands=[];[...destSnap.docs].sort((a,b)=>{const x=a.data(),y=b.data();return((x.price||0)-(y.price||0))||((x.section||0)-(y.section||0))||String(x.zoneId||'').localeCompare(String(y.zoneId||''))||((x.ord||0)-(y.ord||0));}).forEach(d=>{const t=d.data();const chip=document.createElement('div');chip.className='dchip';chip.style.cssText='background:#ffffff0d;border:1.5px solid #2a3a2a;border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .2s;';chip.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${t.zoneId?'🚏 '+_escH(t.to):_escH(t.from)+'-->'+_escH(t.to)}</div><div style="color:#888;font-size:11px;">${t.zoneId?'Zone '+t.price+' F · de '+_escH(t.zoneStart||t.from)+' à '+_escH(t.zoneEnd||''):'Section '+t.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${t.price} F</div></div>`;chip.onclick=()=>{S.ticketSection={...t,docId:d.id};destList.querySelectorAll('.dchip').forEach(c=>{c.style.background='#ffffff0d';c.style.borderColor='#2a3a2a';});chip.style.background='#00A65033';chip.style.borderColor='var(--g)';document.getElementById('ticketPriceDisplay').textContent=t.price.toLocaleString('fr-FR')+' FCFA';document.getElementById('btnPayTicket').disabled=false;};zoneGroupBox(destList,t).appendChild(chip);aiCands.push({t,chip,id:d.id});});const _pk=S.aiPick&&recv.uid===S.aiPick.recvUid?aiCands.find(x=>x.id===S.aiPick.destId):null;if(S.aiPick&&!_pk){notify('⚠️','Autre bus','Ce n\'est pas le bus que vous avez choisi.');}aiCheckDest(_pk?[_pk]:aiCands);}if(destSnap.empty)aiCheckDest([]);loader('',false);document.getElementById('ticketStep0').style.display='none';{const _ai=document.getElementById('ticketStepAI');if(_ai)_ai.style.display='none';}document.getElementById('ticketStep1').style.display='block';setDots(1);notify('🚌','Bus détecté',recv.vehicle+' · Ligne '+recv.ligne);}
+  try{const wSnap=await getDoc(doc(db,'wallets',walletId));if(!wSnap.exists()){loader('',false);notify('❌','Bus inconnu','QR non reconnu.');return;}const recvUid=wSnap.data().uid;const rSnap=await getDoc(doc(db,'users',recvUid));if(!rSnap.exists()){loader('',false);notify('❌','Erreur','Receveur introuvable.');return;}const recv={...rSnap.data(),uid:recvUid};S.ticketBus=recv;S.ticketSection=null;document.getElementById('detectedBusInfo').innerHTML=`GIE:${_escH(recv.gie)} = ${_escH(recv.vehicle)} = Ligne:${_escH(recv.ligne)}<br>Zone:${_escH(recv.zone)}`;const destSnap=await getDocs(collection(db,'users',recvUid,'destinations'));const destList=document.getElementById('destList');destList.innerHTML='';destList.style.outline='none';if(destSnap.empty){destList.innerHTML='<div style="background:#FFD10015;border:1px solid #FFD10044;border-radius:12px;padding:12px;color:#888;font-size:13px;text-align:center;">Aucune section définie.</div>';}else{const aiCands=[];destSnap.docs.forEach(d=>{const t=d.data();const chip=document.createElement('div');chip.style.cssText='background:#ffffff0d;border:1.5px solid #2a3a2a;border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .2s;';chip.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;">${_escH(t.from)}-->${_escH(t.to)}</div><div style="color:#888;font-size:11px;">Section ${t.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${t.price} F</div></div>`;chip.onclick=()=>{S.ticketSection={...t,docId:d.id};destList.querySelectorAll('div').forEach(c=>{c.style.background='#ffffff0d';c.style.borderColor='#2a3a2a';});chip.style.background='#00A65033';chip.style.borderColor='var(--g)';document.getElementById('ticketPriceDisplay').textContent=t.price.toLocaleString('fr-FR')+' FCFA';document.getElementById('btnPayTicket').disabled=false;};destList.appendChild(chip);aiCands.push({t,chip,id:d.id});});const _pk=S.aiPick&&recv.uid===S.aiPick.recvUid?aiCands.find(x=>x.id===S.aiPick.destId):null;if(S.aiPick&&!_pk){notify('⚠️','Autre bus','Ce n\'est pas le bus que vous avez choisi.');}aiCheckDest(_pk?[_pk]:aiCands);}if(destSnap.empty)aiCheckDest([]);loader('',false);document.getElementById('ticketStep0').style.display='none';{const _ai=document.getElementById('ticketStepAI');if(_ai)_ai.style.display='none';}document.getElementById('ticketStep1').style.display='block';setDots(1);notify('🚌','Bus détecté',recv.vehicle+' · Ligne '+recv.ligne);}
   catch(e){loader('',false);notify('❌','Erreur',e.message);}
 }
 window.goPay=async()=>{
@@ -5191,7 +5001,7 @@ window.showScanPanel=async(walletId,qrBal,qrTs,qrUid)=>{
 // au receveur == prix du ticket (cf. firestore.rules).
 // Taux de commission TataPay sur les tickets payés par portefeuille.
 // 0 = désactivée (phase de lancement). Pour la réactiver : 0.02 = 2 %, 0.01 = 1 %…
-const COMMISSION_RATE=0;
+const COMMISSION_RATE=0.02;
 const calcCommission=(price)=>Math.round(price*COMMISSION_RATE);
 let _adminUid=null;
 async function getAdminUid(){
@@ -5410,7 +5220,7 @@ window.confirmScan=async()=>{
 window.rejectScan=async()=>{if(!currentScanReq)return;await deleteDoc(doc(db,'pending',currentScanReq.id));document.getElementById('scanPanelEl')?.remove();currentScanReq=null;notify('❌','Rejeté','Demande annulée.');};
 function attachPendingListener(){const q=query(collection(db,'pending'),where('busUid','==',S.uid));unsubPending=onSnapshot(q,snap=>{renderPendingList(snap.docs.map(d=>({id:d.id,...d.data()})));});}
 function attachNotifListener(){const q=query(collection(db,'notifications'),where('toUid','==',S.uid),where('read','==',false));unsubNotif=onSnapshot(q,snap=>{const n=snap.docs.length;const badge=document.getElementById('bellBadge');if(badge){badge.textContent=n;badge.className='bell-badge'+(n>0?' show':'');}snap.docs.forEach(d=>{const data=d.data();showRecvToast(data.type,data);updateDoc(doc(db,'notifications',d.id),{read:true});});});}
-function playDescendreSound(){try{const ctx=_getCtx();[[0,880,.18],[.2,1100,.18],[.4,1320,.28]].forEach(([s,f,d])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(0,ctx.currentTime+s);g.gain.linearRampToValueAtTime(.5,ctx.currentTime+s+.02);g.gain.linearRampToValueAtTime(0,ctx.currentTime+s+d);o.start(ctx.currentTime+s);o.stop(ctx.currentTime+s+d+.05);});}catch(e){}}
+function playDescendreSound(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();[[0,880,.18],[.2,1100,.18],[.4,1320,.28]].forEach(([s,f,d])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(0,ctx.currentTime+s);g.gain.linearRampToValueAtTime(.5,ctx.currentTime+s+.02);g.gain.linearRampToValueAtTime(0,ctx.currentTime+s+d);o.start(ctx.currentTime+s);o.stop(ctx.currentTime+s+d+.05);});}catch(e){}}
 function showRecvToast(type,data){const stack=document.getElementById('recvToastStack');const div=document.createElement('div');div.className='recv-toast';let icon='🔔',title='Notification',body='',color='var(--orange)';if(type==='descendre'){icon='🛑';title='Passager veut descendre !';body=`${data.passenger||'—'} · ${data.from||''}→${data.to||''}`;color='#DF0024';playDescendreSound();}else if(type==='ticket_request'){icon='🎫';title='Nouvelle demande ticket';body=`${data.passenger||'—'} · ${data.price||0} FCFA`;}div.innerHTML=`<button onclick="this.closest('.recv-toast').remove()" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:#888;font-size:14px;">✕</button><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="font-size:18px;">${icon}</span><div style="font-weight:900;font-size:13px;color:${color};">${title}</div></div><div style="font-size:12px;color:#ccc;line-height:1.5;font-family:'JetBrains Mono',monospace;">${body}</div>`;stack.appendChild(div);const bell=document.getElementById('bellIcon');if(bell){bell.classList.remove('bell-anim');void bell.offsetWidth;bell.classList.add('bell-anim');}setTimeout(()=>{div.classList.add('out');setTimeout(()=>div.remove(),300);},type==='descendre'?8000:5000);}
 function renderPendingList(items){const cont=document.getElementById('recvPending');if(!items.length){cont.innerHTML='<div style="text-align:center;color:#555;padding:16px 0;font-size:13px;">Aucune demande en attente.</div>';return;}cont.innerHTML=items.map(req=>`<div style="background:#FFD10010;border:1px solid #FFD10044;border-radius:18px;padding:14px 16px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><div style="font-size:28px;">⏳</div><div style="flex:1;"><div style="font-weight:900;font-size:14px;">${_escH(req.passengerName||'Passager')}</div><div style="color:#888;font-size:11px;font-family:'JetBrains Mono',monospace;">${_escH(req.from)}→${_escH(req.to)} · S${req.section}</div></div><div style="font-weight:900;font-size:18px;color:var(--y);">${req.price} F</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><button onclick="recvRejectTicket('${req.id}')" style="background:linear-gradient(135deg,#DF0024,#B71C1C);border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✗ Annuler</button><button onclick="recvConfirmTicket('${req.id}','${req.passengerUid}','${req.passengerId}','${_escH(req.passengerName)}','${_escH(req.from)}','${_escH(req.to)}','${req.section}',${req.price},'${req.busUid||S.uid}')" style="background:linear-gradient(135deg,var(--g),var(--gd));border:none;border-radius:12px;padding:12px;color:#fff;font-weight:900;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;">✅ Confirmer</button></div></div>`).join('');}
 window.recvConfirmTicket=async(pendingId,paxUid,passengerId,passengerName,from,to,section,price,busUid)=>{
